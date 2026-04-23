@@ -1,0 +1,17 @@
+# Editor and OS artifacts
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.vscode/
+.idea/
+
+# Scratch / temp working files
+temp/
+scratch/
+*.tmp
+*.bak
+
+# Local-only notes (never synced)
+local/
+private_notes/

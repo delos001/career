@@ -205,3 +205,6 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Personal (nested private repo with its own git history; never committed to the career repo)
+personal/

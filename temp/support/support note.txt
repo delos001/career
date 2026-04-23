@@ -1,0 +1,1 @@
+this folder contains information and documents that are relevant to the personal repo you will create.  Information in this folder should be moved into your personal nested repo.
