@@ -24,12 +24,14 @@ career/
 │   │   ├── positioning/SKILL.md
 │   │   ├── knowledge_update/SKILL.md
 │   │   ├── specialty_builder/SKILL.md
-│   │   └── domain_builder/SKILL.md
+│   │   ├── domain_builder/SKILL.md
+│   │   └── level_builder/SKILL.md
 │   ├── agents/                                    # Pattern A sub-agents, flat
 │   │   ├── role_research.md
 │   │   ├── organization_research.md
 │   │   ├── domain_research.md
 │   │   ├── specialty_research.md
+│   │   ├── level_research.md
 │   │   ├── qc_cv_format.md
 │   │   ├── qc_cv_structural.md
 │   │   └── qc_cv_content.md                       # more QC agents added as identified
@@ -70,7 +72,8 @@ career/
 ├── scripts/
 │   ├── retrieval/                                 # slice knowledge docs by key/tag
 │   ├── resolvers/                                 # e.g., application ID assignment
-│   └── format/                                    # e.g., python-docx CV renderer
+│   ├── format/                                    # e.g., python-docx CV renderer
+│   └── display/                                   # orient.py + orientations.yaml; sibling catalogs added as needed
 ├── outputs/                                       # temporary holding for deliverables
 ├── personal/                                      # nested private repo; PII, not shared
 │   ├── knowledge/

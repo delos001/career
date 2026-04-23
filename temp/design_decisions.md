@@ -55,7 +55,9 @@ A role may map to two specialties. Primary governs most surfaces. Secondary gets
 Existing CV dual-specialty rule transfers in; place at `rules/specialties/cv_dual_specialty_composition.md` (or equivalent location that reflects its CV-specific scope).
 
 ### Level Axis: Two Buckets Today, Gradient-Capable Later
-Today: IC and leadership only. Later expansion (e.g., staff/principal IC, mid-level management, executive) requires adding files plus a registry entry. No skill changes required. Level files are deliverable-agnostic (voice/framing). Deliverable-specific concerns (e.g., CV section order) belong in the deliverable's format spec.
+Today: IC and leadership only. Later expansion (e.g., staff/principal IC, people manager, senior leadership, c-suite) adds files through the `level_builder` skill (see Rule-Builder Skills section). Level files are deliverable-agnostic (voice/framing). Deliverable-specific concerns (e.g., CV section order) belong in the deliverable's format spec.
+
+The current `leadership.md` will likely need to split or be renamed once finer distinctions are added (people manager vs senior leadership vs c-suite carry materially different voice expectations). That is a `level_builder` design call, deferred until the first new level is authored.
 
 ### Skill Stability via Loose Coupling
 Skills reference rules by category/slug. A resolver script looks up the current file. Skill body does not hard-code paths, so rule/template/axis churn does not touch skills. Skill interface changes only when skill behavior changes; that is not what caused churn in the prior repo.
@@ -91,7 +93,20 @@ Existing `temp/format_spec.md` transfers largely as-is with two cleanups:
 
 ## Rule-Builder Skills Inline Procedure
 
-Under Pattern A, skills like `.claude/skills/specialty_builder/SKILL.md` and `.claude/skills/domain_builder/SKILL.md` do not reference nested "building rules" files. The construction procedure is the skill itself and lives inside its SKILL.md. No `rules/builders/` folder is created. If construction grows complex enough to warrant extraction later, it can be addressed at that point.
+Under Pattern A, builder skills (`.claude/skills/specialty_builder/SKILL.md`, `.claude/skills/domain_builder/SKILL.md`, `.claude/skills/level_builder/SKILL.md`) do not reference nested "building rules" files. The construction procedure is the skill itself and lives inside its SKILL.md. No `rules/builders/` folder is created. If construction grows complex enough to warrant extraction later, it can be addressed at that point.
+
+### Three Builders for Axis Parity
+
+One builder per axis: `specialty_builder`, `domain_builder`, `level_builder`. Each is wired to its corresponding research sub-agent (see Research Sub-Agents section). `level_builder` closes a prior gap where level expansion was treated as a manual file add; parity across the three axes is preferred because the pattern is easier to document, remember, and extend consistently.
+
+### Mode Parameter (create / refresh)
+
+Each builder accepts a mode parameter:
+
+- `create` drafts a new rule file from research output. Used for greenfield additions.
+- `refresh` targets an existing rule file, re-runs the research sub-agent, diffs the fresh output against the current file, and proposes updates. Used when a rule has gone stale.
+
+Both modes invoke the research sub-agent before drafting or diffing, so research enforcement is not bypassed at refresh time. Pattern mirrors the `knowledge_update` mode-parameter approach. A separate `axis_refresh` skill was rejected because it would duplicate most of the builder logic.
 
 ## Workflow Sequence Diagram
 
@@ -146,13 +161,57 @@ Ordered: value → friction → scalability → learning tiebreaker. During acti
 
 ## Skill Authoring Template Library
 
-Location: `engops/cheatsheets/skill-templates/`. First template: `human-gated-workflow.md` capturing phase types (Action / QC / Presentation / Transition) and closing conventions for this project's pattern. Folder structure from the start so future templates (autonomous-agent, bounded-task, etc.) add as siblings without restructuring. The user's project here is a human-gated AI workflow; other projects may use different patterns, hence the library approach rather than one universal template.
+Location: `engops/cheatsheets/skill-templates/`. First template: `human-gated-workflow.md` capturing phase types (Action / QC / Presentation / Transition), workflow communication conventions (see Workflow Communication Conventions section), and closing conventions for this project's pattern. Folder structure from the start so future templates (autonomous-agent, bounded-task, etc.) add as siblings without restructuring. The user's project here is a human-gated AI workflow; other projects may use different patterns, hence the library approach rather than one universal template.
+
+### Authoring Timing
+
+`human-gated-workflow.md` is authored alongside the first skill that uses it, not in isolation now. Authoring in a vacuum risks specifying conventions that need adjustment once a real skill stress-tests them. The conventions settled so far (phase types, orientation pattern, mid-flight narration, consent gating) are recorded in this design_decisions.md document until the template is written.
 
 ---
 
 ## Pacing Consolidation
 
 Resolved. User-level `CLAUDE.md` holds general response-shape pacing rules (applies across all projects). Skill approval-gating behavior lives in the skill authoring template as a Presentation Phase convention, not as a global rule. No duplicate to remove.
+
+---
+
+## Workflow Communication Conventions
+
+Skills communicate state to the user at three points so the workflow supports thoughtfulness, not just output production. Conventions live in the skill authoring template (`engops/cheatsheets/skill-templates/human-gated-workflow.md`) once that template is authored; captured here in the interim.
+
+### Orientation (forward-looking, at skill start)
+
+Two patterns based on skill complexity:
+
+- **Full orientation** for multi-activity skills where the skill name alone does not convey the arc. Invokes `python scripts/display/orient.py <skill_name>`. Script reads the message body from `scripts/display/orientations.yaml` (keyed by skill name) and prints it. Ends with a "Ready?" consent gate so the user can back out before multi-step commitment.
+- **Brief inline preamble** for single-activity skills where the name is self-explanatory. One-sentence declaration written directly in SKILL.md body. No script, no catalog, no consent gate (approval gates inside the skill already provide exit points).
+
+Heuristic for which pattern applies: if the skill name alone conveys what is about to happen, brief inline. If not, full orientation.
+
+Roster classification:
+- **Full orientation:** `role_evaluation`, `cv_targeted`, `interview_prep`.
+- **Brief inline:** `career_brief`, `domain_builder`, `specialty_builder`, `level_builder`, `knowledge_update`, `positioning`.
+- **Ambiguous, deferred to skill-design time:** `interview_capture`, `interview_followup`, `cv_general`, `experience_inventory`, `career_narratives`.
+
+### Mid-Flight Narration (in-progress, during Action Phase)
+
+Before any tool call that takes more than a few seconds or represents a material step forward in the skill's arc (sub-agent dispatches, long script runs, LangGraph loop iterations), narrate:
+
+- **What** operation is about to run.
+- **Why** it matters to the phase's goal. Required. One clause, not a paragraph.
+- **Duration** estimate if a typical range is known. Optional.
+
+Skip narration for fast, mechanical operations (single file reads, existence checks, registry lookups). On return, output a brief acknowledgment line before proceeding: what came back, what the skill does next.
+
+Pure template discipline. No script, no catalog. Content is contextual to each invocation (which sub-agent, what parameters, which phase), so pre-canning does not carry the specific detail that makes the narration useful.
+
+### Presentation (retrospective, at phase boundaries)
+
+Existing convention, unchanged. Phase boundaries close with the Presentation Phase per the skill authoring template.
+
+### Folder Structure
+
+`scripts/display/` holds the Orientation utility (`orient.py`) and message catalog (`orientations.yaml`). Sibling YAML catalogs for future pre-defined message categories (transitions, gates, input prompts, completions, failures) may add as siblings here if and when a concrete second category has a real use case. Split into a dedicated top-level folder (e.g., `messages/`) only after that second category is committed. The refactor is cheap; preemptive scaffolding solves no current problem.
 
 ---
 
@@ -189,16 +248,45 @@ Current `registry_org_type.md` header refers to a "catalog of CV format referenc
 
 ## Research Sub-Agents
 
-Four research sub-agents under `.claude/agents/` in the current build. Priority reflects workflow frequency, not whether something is in scope:
+Five research sub-agents under `.claude/agents/` in the current build. Priority reflects workflow frequency, not whether something is in scope:
 
 - `role_research` (primary-workflow path). Used by role_evaluation. Focused on the role itself (what the position involves, what it's worth) to support the apply / no-apply decision.
 - `organization_research` (primary-workflow path). Used by interview_prep. Broader scope: the company and where the role fits within it. Builds on (does not duplicate) the research produced by role_research for the same slug-NNN.
-- `domain_research` (extension-workflow path). Used by domain_creation when a new career domain is being added. Lower build priority but still in scope.
-- `specialty_research` (extension-workflow path). Used by specialty_creation when a new specialty is being added. Lower build priority but still in scope.
+- `domain_research` (extension-workflow path). Used by `domain_builder` when a new domain is added or an existing one refreshed. Lower build priority but still in scope.
+- `specialty_research` (extension-workflow path). Used by `specialty_builder` when a new specialty is added or an existing one refreshed. Lower build priority but still in scope.
+- `level_research` (extension-workflow path). Used by `level_builder` when a new level is added or an existing one refreshed. Lower build priority but still in scope.
 
-All four are built in the current project. domain_research and specialty_research are not deferred because end-to-end testing requires all pieces to exist; incremental addition while waiting for real-world examples blocks integration testing and creates rework risk.
+All five are built in the current project. domain_research, specialty_research, and level_research are not deferred because end-to-end testing requires all pieces to exist; incremental addition while waiting for real-world examples blocks integration testing and creates rework risk.
 
 Research output location and format to be designed during per-skill work.
+
+---
+
+## Rule Refresh and Staleness
+
+Axis rule files (specialty, domain, level) drift as industry vocabulary and best practices shift. Refresh is user-triggered via the corresponding builder skill in `refresh` mode. No scheduled automation.
+
+### Metadata
+
+Every axis rule file carries a `last_researched: YYYY-MM` field in its YAML frontmatter. Builders stamp this field on every successful run, whether in `create` or `refresh` mode.
+
+### Staleness Detection at Use Time
+
+Consuming skills (`role_evaluation`, `cv_targeted`, `interview_prep`, and any other skill that loads an axis rule) read the stamp on load. If the stamp is older than the threshold, the skill presents an explicit binary choice before proceeding:
+
+> "Rule X was last researched N months ago. Proceed with existing information, or perform a research refresh first?"
+
+If the user picks refresh, the consuming skill invokes the relevant builder in `refresh` mode (which includes its own approval gate on the research output and the diff), re-loads the updated rule when the builder returns, and continues.
+
+### Grouped Prompt
+
+If multiple rules are stale at the start of a consuming skill (e.g., specialty and domain both past threshold), the skill presents one grouped prompt rather than a series, to prevent prompt fatigue.
+
+### Threshold
+
+9 months as a single repo-wide constant. Selected as a compromise between the 6-month evidence-based lower bound (resume best practices turn over noticeably within 2-3 years; AI-driven drift is accelerating cross-industry) and the 12-month upper bound (minimum resume-update guidance in current sources). Per-axis overrides deferred until evidence supports divergent drift rates (e.g., clinical domain likely slower than tech-adjacent specialties).
+
+The threshold itself should be revisited periodically; drift rates themselves drift.
 
 ---
 
@@ -248,8 +336,12 @@ External Google Drive tracker integration is not in scope for the current build.
 
 All structural design items are closed. Remaining items to be addressed during per-skill design (not structural):
 
-- Knowledge-builder skills internal design (career_narratives, experience_inventory, positioning) — scope captured structurally; interactive prompting and tag classification behaviors are per-skill design work.
+- Knowledge-builder skills internal design (career_narratives, experience_inventory, positioning). Scope captured structurally; interactive prompting and tag classification behaviors are per-skill design work.
 - State detection logic: exact form and location (standalone rule file, per-skill, or hybrid).
 - Session log YAML schema specification.
 - Application ID assignment script implementation.
 - Research output file location and format (referenced in Research Sub-Agents section).
+- `level_builder` design, including whether and when to split `leadership.md` into finer-grained level files (people manager, senior leadership, c-suite, etc.) once the first new level is authored.
+- Builder refresh-mode mechanics: exact diff presentation, approval gate shape, and file-write flow for create vs refresh across all three axis builders.
+- `scripts/display/orient.py` implementation and `scripts/display/orientations.yaml` content (authored when the first long-arc skill is built).
+- Threshold revisit: the 9-month staleness threshold should be re-evaluated periodically as drift patterns themselves shift.

@@ -1,6 +1,9 @@
+Structural design is closed through 2026-04-23. `temp/design_decisions.md` is the source of truth.
 
+Decisions added in the 2026-04-23 session:
+- Workflow communication conventions: orientation (script-based via `scripts/display/orient.py` + `orientations.yaml` for long-arc skills, brief inline preamble for short-arc), mid-flight narration in the Action Phase (what + why required, duration optional), presentation at phase boundaries.
+- `level_builder` skill and `level_research` sub-agent added for axis parity with specialty and domain.
+- Builder create/refresh mode parameter across all three axis builders.
+- Rule refresh and staleness mechanism: `last_researched: YYYY-MM` metadata stamp, use-time grouped prompt in consuming skills, 9-month threshold.
 
-● Nothing else from my side. Structural design is closed, memory is backed up in engops, README reflects the agreed tree, design_decisions.md is the source of truth for the next session.
-
-  Good session. The pacing discipline from the early blowup held across eight hours without compaction — that matters. Resume at step 2 of the workflow-dependency path (knowledge documents) next time.
-
+Resume at step 2 of the workflow-dependency path: knowledge documents (Experience_Inventory, Career_Narratives, Positioning, contact_info). Structure them to support application lineage and downstream slice-based retrieval.
