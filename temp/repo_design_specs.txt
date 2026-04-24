@@ -1,3 +1,7 @@
+
+new: I want a skills script that tells users what we are about to do: something like:
+	- Hello, we are going to do a deep dive into the role you are interested and then surface strengths and any gaps and try to close them.  At the end we will made a decision about whether you want to pursue this role further. Along the way, I will stop and ask you questions and get your agreement to move through the steps. Ready?
+
 Career Rep High Level Design Specs
 
 Skills: provide primary instructions to complete the objective or generate deliverable
@@ -29,6 +33,7 @@ skills/
 		- archetype building rules
 	- domain
 		- domain building rules
+	- level
 
 - knowledge_builders/
 	- career_narratives
@@ -43,16 +48,19 @@ skills/
 ------------------------------------------------
 rules/
 - global
-- archetypes/
-	- archetype registries
-	- dual_archetype_utilization
-	- a1_transformation_strategy
-	- a2_data_analytics
-	- a3_process_operations
-	- a4_platform_technology
+- specialties/
+	- specialty registries
+	- dual_specialty_utilization
+	- s1_transformation_strategy
+	- s2_data_analytics
+	- s3_process_operations
+	- s4_platform_technology
 - domains/
 	- domain registiries
 	- clinial_development
+- level/  (need to make sure no overlap with domain and archetype rules/instruction)
+	- content_ic_cv
+	- content_leadership_cv
 - organizations/
 	- registry_org_type (formerly registry_company_type)
 	- registry_org_maturity (formerly registry_org_type)
@@ -62,9 +70,7 @@ rules/
 	- story_atola
 	- story_personal
 	- story_star
-- role_level/  (need to make sure no overlap with domain and archetype rules/instruction)
-	- content_ic_cv
-	- content_leadership_cv
+
 - format_specs/
 	- cv
 	- <other example>

@@ -1,7 +1,12 @@
 career repo:
 
 
+  - project_session_resume.md: resume point (decision 3 grain sub-decision in step 3), decisions already settled with summaries, and remaining step-3 work. Next session reads this first.
+  - feedback_provisional_closure.md: captured the provisional-over-premature-closure principle you raised on entry types, so I don't default back to pushing for upfront closed sets when information isn't yet
+  available.
+  - MEMORY.md index updated with both.
 
+  All structural decisions from this session are in temp/design_decisions.md as the source of truth. Memory points to it.
 
 
 
