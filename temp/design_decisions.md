@@ -72,13 +72,65 @@ Skills reference rules by category/slug. A resolver script looks up the current 
 ### Terminology and Folder Renames Committed
 - `archetypes` → `specialties` (rules folder: `rules/specialties/`)
 - `role_level` → `levels` (rules folder: `rules/levels/`)
-- Under Pattern A, skills are flat under `.claude/skills/` (no `rule_builders/` parent folder). The old `rule_builders/archetype/` concept becomes a standalone skill such as `.claude/skills/specialty_builder/SKILL.md`.
+- Under Pattern A, skills are flat under `.claude/skills/` (no `rule_builders/` parent folder). The old `rule_builders/archetype/` concept becomes a standalone skill such as `.claude/skills/specialty-builder/SKILL.md`.
+
+### File and Folder Naming Convention
+
+Authoritative naming rule for the repo.
+
+**Folders:** lowercase kebab-case. No underscores. Examples: `rules/specialties/`, `docs/decisions/`, `personal/applications/`, `scripts/display/`, `.claude/skills/specialty-builder/`.
+
+**Files:** lowercase. Underscore between semantic fields; kebab within a field. A "semantic field" is a distinct meaning unit (company, identifier, date, document type, round number). Compound document-type tokens (session log, gap analysis, content decisions, interview followup) count as one field, joined with kebab.
+
+Examples:
+- `pfizer-001_session-log.md` (two fields: application-id, document-type).
+- `gap-analysis_pfizer-001.md` (two fields: document-type, application-id).
+- `interview-followup_r1_pfizer-001.md` (three fields: document-type, round, application-id).
+
+Attention files and ADR files are the exceptions (below).
+
+### Attention Files
+
+Capitalized files are reserved for top-tier navigation, reference, or specification documents that a reader should notice first when entering a directory. All-caps signals "read me first / authoritative reference."
+
+Applied set for this repo: `README.md`, `SETUP.md`, `COMPONENTS.md`. If a future attention-tier file emerges (e.g., a repo-level README under a new directory), it inherits capitalization automatically without further discussion.
+
+Dropped from consideration: `LICENSE` (not open source), `CONTRIBUTING.md` (single user), `CHANGELOG.md` (git and ADRs already cover evolution), `SPEC.md` (specs live scoped inside `rules/`).
+
+### ADR Naming
+
+Architecture Decision Records follow the MADR / adr-tools convention:
+
+- Zero-padded three-digit sequential number prefix + kebab-case descriptive title.
+- Three digits accommodates 999 decisions.
+- Numbers are sequential and never reused. Supersession is a new record that references the old.
+- Example: `001-base-overlay-pattern.md`.
+
+Location: `docs/decisions/`. Directory created when formalization happens. The current `temp/design_decisions.md` is an informal ADR log; contents split into individually numbered files during formalization. Retroactive-vs-forward-only timing deferred.
 
 ### Specialty File Names
-Drop the numeric prefix (previously `a1_`, `a2_`, etc. from the archetype era). Files use descriptive slugs only: `transformation_strategy.md`, `data_analytics.md`, `process_operations.md`, `platform_technology.md`. Retrieval scripts look up by descriptive name, so the prefix adds no functional value.
+Drop the numeric prefix (previously `a1_`, `a2_`, etc. from the archetype era). Files use descriptive slugs only: `transformation-strategy.md`, `data-analytics.md`, `process-operations.md`, `platform-technology.md`. Retrieval scripts look up by descriptive name, so the prefix adds no functional value.
 
 ### Level File Names
 Drop deliverable prefix. `ic.md` and `leadership.md` (not `content_ic_cv.md`). Folder path provides context.
+
+### Cascade to Earlier Sections
+
+Earlier inline examples throughout this document predate this taxonomy and use an older underscore-everywhere pattern. Most prominent rule-stating examples updated inline (Specialty File Names above; Application Folder and File Naming Convention in the Lineage and Traceability section). Other inline examples (QC naming at `qc_<scope>_<aspect>`, skill and sub-agent folder identifiers, builder folder names, etc.) stand corrected by the convention above and will be swept during migration.
+
+---
+
+## Terminology
+
+Vocabulary discipline for three granularity levels commonly discussed together:
+
+- **Phase**: a process or major step WITHIN a single skill. Example: within `role_evaluation`, phases might include research, specialty confirmation, fit analysis.
+- **Skill**: one standalone skill (e.g., `role_evaluation`, `cv_targeted`, `interview_prep`).
+- **Workflow**: the overall project-level flow across skills.
+
+"Phase" is reserved for sub-skill granularity. Skills are not phases even though the project has workflow-level stages. Workflow-level stages are described as workflow stages, not phases.
+
+Matters for: the session log body (`phase_complete` entries refer to within-skill phases), skill authoring docs, and any workflow description that spans multiple skills.
 
 ---
 
@@ -157,8 +209,9 @@ Ordered: value → friction → scalability → learning tiebreaker. During acti
 
 ## Pending Follow-on Work
 
-- Application ID assignment script: prompts for company slug at first encounter, stores it plus the full company name in `rules/organizations/company_slugs.md`, increments the per-company counter, returns the compound ID.
+- Application ID assignment script: prompts for company slug at first encounter, stores it plus the full company name in `rules/organizations/company-slugs.yaml`, increments the per-company counter, returns the compound ID.
 - Session log YAML schema: specify metadata fields and body entry format.
+- Session log parser latest-wins tests: verify consumers receive the most recent entry per topic (for `decision` entries) and per phase (for `phase_complete` entries), never superseded data. Authored when parser implementation lands.
 - cv_targeted weighted matching logic: when target role JD emphasizes industry experience, weight Industry match higher than Skill match in inventory entry selection. When JD emphasizes skill, weight Skill higher. When both are required, weight equally and surface entries with both tags. Per-skill design work, not structural.
 - cv_targeted hybrid retrieval (structured filter + semantic ranking): structured tag filters narrow inventory candidates (e.g., Director-level entries in clinical_development with Capability matching role); semantic similarity ranking against the role description picks the strongest N from the narrowed set. Combines the reproducibility of categorical filtering with relevance ranking from semantic similarity. Considered alongside the weighted matching logic; same per-skill design phase.
 - Initial skill-pack content design: which skill packs to create at build time (candidate set: clinical_operations, data_science, data_engineering, ai_engineering, quality_compliance, technology_strategy, leadership), and how Capability values from the existing inventory map to each.
@@ -383,7 +436,7 @@ This also closes the format_spec transfer note about parameterizing the hardcode
 ### Files
 - `org_industry.md` (was `registry_company_type`): research scoping for interview_prep, listing research branches per industry type (CRO, Pharma, Biotech, SaaS, Consulting, etc.). Parallel naming to `org_maturity.md`.
 - `org_maturity.md` (was `registry_org_type`): context framing modifier for cv_targeted. Two states today (Large Enterprise Established, Mid-Size Scale-Up), extensible.
-- `company_slugs.md`: slug registry for application IDs (per Lineage and Traceability section above).
+- `company-slugs.yaml`: slug registry for application IDs (per Lineage and Traceability section above).
 
 ### Naming
 Drop the `registry_` prefix. Folder already indicates reference tables; prefix is redundant.
@@ -452,22 +505,76 @@ Scope is application lineage only. Knowledge-doc version history is handled by g
 `<company-slug>-NNN`. All lowercase. Per-company counter — NNN increments per company, not globally. Compound form yields globally unique, meaningful identifiers. Examples: `pfizer-001`, `jnj-003`, `jpmc-002`.
 
 ### Company Slug Registry
-User enters a short slug at first encounter with each company. Skill prompts for slug, stores it plus the full legal company name in `rules/organizations/company_slugs.md` (or equivalent). Subsequent applications for the same company reuse the registry lookup. No auto-derivation; user picks the slug.
+User enters a short slug at first encounter with each company. Skill prompts for slug, stores it plus the full legal company name in `rules/organizations/company-slugs.yaml`. Subsequent applications for the same company reuse the registry lookup. No auto-derivation; user picks the slug.
+
+#### Schema
+YAML, keyed by slug. Three fields per entry:
+- **Key** (slug): user-picked short identifier at first encounter. Lowercase kebab. Used as the slug in application IDs.
+- **name**: full legal company name. Used for matching on repeat encounter and for display.
+- **counter**: per-company application count. Incremented on each ID issue.
+
+Example:
+```yaml
+pfizer:
+  name: Pfizer Inc.
+  counter: 3
+jnj:
+  name: Johnson & Johnson
+  counter: 1
+beone:
+  name: BeOne Medicines
+  counter: 2
+```
+
+Fields considered and cut (minimum viable; add if a consumer emerges):
+- `aliases`: variation handling done at match time via disambiguation prompt.
+- `former_names`: rebrand cases (e.g., BeiGene → BeOne) handled by manual entry update.
+- `first_seen`: nice-to-have metadata, no consumer.
+- `applications` list: derivable from counter plus lookup.
+- Access stamp (`Last Used` / `Last Accessed`): no consumer acts on the timestamp; recency is derivable from counter and application folder dates. Access stamps are selective in the system; they appear only where a specific consumer uses the timestamp (Experience_Inventory and Career_Narratives stamp `Last Used` to drive active-vs-dormant selection; axis rule files stamp `last_researched` to drive builder-refresh staleness detection).
+
+Format chosen over `.md` because this is structured data primarily read by scripts, matching the rationale for `tags.yaml`.
 
 ### Session Log
-Created at start of role_evaluation regardless of whether the user ultimately applies. Location: `personal/sessions/<slug>-NNN_session_log.md`. Records phase completions with timestamps plus key decisions (specialty confirmed, industry/skill locked, fit verdict). Read on resume to determine state.
+Created at start of role_evaluation regardless of whether the user ultimately applies. Location: `personal/sessions/<slug>-NNN_session-log.md`. Records phase completions with timestamps plus key decisions (specialty confirmed, industry/skill locked, fit verdict). Read on resume to determine state.
 
 ### Session Log Format
-YAML frontmatter for metadata (ID, company, role, creation date, current state, etc.). Structured entries in body for phase completions and decisions. No free-form narrative. Enables future tracker integration via script parsing.
+YAML frontmatter for metadata. Structured entries in body for phase completions and decisions. No free-form narrative. Enables future tracker integration via script parsing.
+
+#### Frontmatter Schema
+
+Five fields:
+
+```yaml
+---
+application_id: pfizer-001
+company: Pfizer Inc.
+role: Director, Clinical Data Operations
+created: 2026-04-24
+state: evaluating
+---
+```
+
+- **application_id**: compound slug-NNN. Required. Mirrors the filename prefix.
+- **company**: snapshot of the company name at session creation. Denormalized from the registry for self-containment (session log readable without loading the registry) and historical accuracy (preserves the name at time of application if the company later rebrands; e.g., "BeiGene" retained even after BeOne rebrand).
+- **role**: role title as entered by the user. Free-text; not in any registry.
+- **created**: YYYY-MM-DD date of session creation.
+- **state**: workflow state. Enum: `evaluating | applied | interviewing | do-not-pursue`. Self-contained in frontmatter so consumers don't need path-checking. Session log file stays at `personal/sessions/` regardless of state; closure is signaled by state value, not file location.
+
+Fields considered and cut:
+- `role_slug`: derivable from `role` when the application folder is created.
+- `last_updated`: programmatic recency is accessible via the timestamp of the last body entry; no current consumer needs a denormalized frontmatter field. File mtime handles casual browsing. Add if a scenario emerges that git operations would break mtime-based checks.
+- `outcome` / `fit_verdict`: captured in body as structured decision entries (decision 3).
+- Access stamps (`Last Used` / `Last Accessed`): per the access-stamp filter (consumer-driven), no consumer acts on session-log access timestamps.
 
 ### Per-Application Folder
-`personal/applications/<slug>-NNN_<role_slug>_<yyyy-mm>/`. Created only if the user decides to apply. Self-describing — folder name shows company, app counter, role, and date without opening the contents. User enters a short role slug at application start (lowercase, underscores or dashes). Holds downstream artifacts (CV, interview_prep, interview_completion, interview_scratch, interview_followup). Files inside the folder do not restate the role_slug; they use `<slug>-NNN` alone since role is clear from folder path.
+`personal/applications/<slug>-NNN-<role-slug>-<yyyy-mm>/`. Created only if the user decides to apply. Self-describing: folder name shows company, app counter, role, and date without opening the contents. User enters a short role slug at application start (lowercase kebab). Holds downstream artifacts (CV, interview-prep, interview-completion, interview-scratch, interview-followup). Files inside the folder do not restate the role-slug; they use `<slug>-NNN` alone since role is clear from folder path.
 
-### do_not_pursue Folder
-`personal/do_not_pursue/` holds artifacts from role_evaluations that did not advance to application.
+### Do-Not-Pursue Folder
+`personal/do-not-pursue/` holds artifacts from role_evaluations that did not advance to application.
 
 ### File Naming Convention
-Lowercase throughout. Compound ID embedded. Examples: `gap_analysis_pfizer-001.md`, `cv_pfizer-001.docx`, `interview_prep_pfizer-001.md`.
+Follows the File and Folder Naming Convention in the Naming section. Compound application ID embedded. Examples: `gap-analysis_pfizer-001.md`, `cv_pfizer-001.docx`, `interview-prep_pfizer-001.md`.
 
 ### Last Used Stamping
 Preserved for both `Experience_Inventory` and `Career_Narratives` entries. Skills that produce accepted outputs stamp cited entries with `Last Used: YYYY-MM`. Enables distinguishing active from dormant content.
