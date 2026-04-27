@@ -1,17 +1,11 @@
-career repo:
+Resume career repo work. Apply the session-start protocol in memory `process_session_protocol.md`.
 
+Quick reminder of where things are:
+- `temp/design_decisions.md`: closed decisions.
+- `temp/deferrals.md`: deferred items.
+- `temp/open_questions.md`: blocking questions.
+- `project_session_resume.md` (memory): planned next action.
 
-  - project_session_resume.md: resume point (decision 3 grain sub-decision in step 3), decisions already settled with summaries, and remaining step-3 work. Next session reads this first.
-  - feedback_provisional_closure.md: captured the provisional-over-premature-closure principle you raised on entry types, so I don't default back to pushing for upfront closed sets when information isn't yet
-  available.
-  - MEMORY.md index updated with both.
+Two open questions are gating before any foundation work proceeds: `foundation-execution-order` and `knowledge-doc-update-mechanism`. Resolve both with the user first.
 
-  All structural decisions from this session are in temp/design_decisions.md as the source of truth. Memory points to it.
-
-
-
-  
-  
-  
-  
-  
+Verify current repo state (filesystem, especially `personal/knowledge/`) before asking the user about it.
