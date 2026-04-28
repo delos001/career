@@ -27,8 +27,8 @@ All-caps signals "read me first." Applied set: `README.md`, `SETUP.md`, `COMPONE
 MADR convention: zero-padded three-digit prefix + kebab-case title. Sequential, never reused. Supersession is a new record. Example: `001-base-overlay-pattern.md`. Location: `docs/decisions/` at formalization.
 Refs: `adr-formalization-timing` (deferral).
 
-#### specialty-file-names
-Drop numeric prefix. Files: `transformation-strategy.md`, `data-analytics.md`, `process-operations.md`, `platform-technology.md`. Retrieval scripts look up by descriptive name.
+#### orientation-file-names
+Drop numeric prefix. Files in `rules/orientations/`: `transformation-strategy.md`, `data-analytics.md`, `process-operations.md`, `platform-technology.md`. Retrieval scripts look up by descriptive name.
 
 #### level-file-names
 Drop deliverable prefix. `ic.md` and `leadership.md`. Folder path provides context.
@@ -41,19 +41,20 @@ Templates are physical carrier files (e.g., Word) that get filled in. Format spe
 
 ### Composition Model
 
-#### four-orthogonal-axes
-- **Specialty** (renamed from archetype): governs deliverable structure. `rules/specialties/`.
-- **Industry**: sector. Vocabulary, dialect, regulatory framing. `rules/industries/`.
-- **Skill**: technical/professional area. Capability vocabulary and skill-specific framing. `rules/skills/`.
-- **Level**: IC vs leadership. Framing and voice.
+#### five-orthogonal-axes
+- **Orientation** (renamed from prior Specialty / Archetype): governs deliverable structure. `rules/orientations/`. Values: transformation-strategy, data-analytics, process-operations, platform-technology.
+- **Industry**: sector. Vocabulary, dialect, regulatory framing. `rules/industries/`. Values: pharma authored; others as built.
+- **Specialty** (renamed from prior Skill): professional field of practice. Capability vocabulary and field-specific framing. `rules/specialties/`. Values: clinical-operations, data-engineering, ai-engineering, quality-compliance, people-leadership.
+- **Level**: IC vs leadership. Voice and scope framing. `rules/levels/`.
+- **Work-state**: operating state of the work environment. `rules/work-states/`. Values: greenfield, scaling, mature, turnaround, post-merger-integration, divestiture, pivot.
 
-Industry/Skill split replaces prior Domain axis (clinical-research company hiring an AI engineer requires independent weighting). Axes are independent files. Overrides only where axes genuinely interact, narrow rules not mini-archetypes.
+Industry/Specialty split replaces prior Domain axis. Axes are independent files. Overrides only where axes genuinely interact, narrow rules not mini-archetypes. Each axis is a discrete categorical dimension; partial-match scoring runs through the adjacency map in each value's frontmatter.
 
-#### dual-specialty-asymmetric-authority
-A role may map to two specialties. Primary governs most surfaces; secondary gets bounded explicitly-scoped slots. They do not compete over the same surface.
+#### dual-orientation-asymmetric-authority
+A role may map to two orientations. Primary governs most surfaces; secondary gets bounded explicitly-scoped slots. They do not compete over the same surface.
 - CV: secondary in 2-3 achievements and 1-2 Core Competencies items. Summary primary-only.
 - Other deliverables: per-deliverable composition rule as needed.
-Existing CV dual-specialty rule transfers to `rules/specialties/cv_dual_specialty_composition.md`.
+Existing CV dual-orientation rule transfers to `rules/orientations/cv_dual_orientation_composition.md`.
 
 #### level-axis-two-buckets
 IC and leadership only today. Expansion via `level_builder`. Level files are deliverable-agnostic; deliverable-specific concerns belong in the deliverable's format spec.
@@ -77,9 +78,10 @@ Refs: `user-info-existing-data-migration` (deferral).
 
 #### career-narratives-schema
 - IDs: `ST-NNN` for stories (10 currently), `DC-NNN` for decisions (6 currently). First line of metadata block.
-- Field renames: `Tags` → `Capability`; `Archetype` → `Specialty`.
-- New fields: `Industry` (multi), `Skill` (multi), `Role Level`, `Org Context`, `Purpose` (optional). `Era` retained as company-specific.
-- Final metadata block: ID, Capability, Industry, Skill, Specialty, Role Level, Org Context, Purpose, Framework, Linked Inventory (optional), Era, Added, Last Used.
+- Field renames: `Tags` → `Capability`; `Archetype` → `Orientation`.
+- New fields: `Industry` (multi), `Specialty` (multi), `Role Level`, `Purpose` (optional). `Era` retained as company-specific.
+- Final metadata block: ID, Capability, Industry, Specialty, Orientation, Role Level, Purpose, Framework, Linked Inventory (optional), Era, Added, Last Used.
+- Orientation and Work-state per-entry fields pending `retrieval-method-for-discrete-elements` resolution.
 - Header: `**Used by:** cv_targeted, cv_general, interview_prep, role_evaluation, positioning, career_brief`. `**Stamps:** Last Used (YYYY-MM)`.
 - Tag Taxonomy section removed.
 - Framework field: stories → `story_personal` (all 10); decisions → `decision_adr` (all 6). Migration: fold "Who Pushed Back" into Context; drop "What I'd Own Differently" subsections.
@@ -103,11 +105,13 @@ Refs: `career-narratives-existing-data-migration`, `career-narratives-cleanup-sc
 Refs: `positioning-existing-data-migration` (deferral).
 
 #### experience-inventory-domain-scoping
-Every retrievable entry (EX-NNN, PR-NNN) carries `Industry:` and `Skill:` fields. Multi-value, pipe-delimited. No document-level Active Domain.
+Every retrievable entry (EX-NNN, PR-NNN) carries `Industry:` and `Specialty:` fields. Multi-value, pipe-delimited. No document-level Active Domain.
 - Industry validates against `rules/industries/registry.md`. May be empty.
-- Skill required. Validates against `rules/skills/registry.md`. Identifies skill pack for Capability validation.
-- Capability validation: any-skill rule.
+- Specialty required. Validates against `rules/specialties/registry.md`. Identifies specialty pack for Capability validation.
+- Capability validation: any-specialty rule.
 - Reference sections (Education, Certifications, etc.) untagged.
+
+Per-entry fields for Orientation and Work-state pending `retrieval-method-for-discrete-elements` resolution.
 
 #### experience-inventory-entry-types
 `EX-NNN` (employment, Section 8), `PR-NNN` (independent and volunteer, Section 10). Same field schema. Differ in ID prefix, descriptor field name (`Role:` vs `Project:`), section. New categories add new prefix ad hoc.
@@ -142,9 +146,9 @@ Refs: `experience-inventory-existing-data-migration` (deferral).
 `rules/narratives/` with five files: `decision_adr`, `decision_personal`, `story_atola`, `story_star`, `story_personal`.
 
 #### tag-taxonomy
-`rules/tags.yaml` holds only global tag vocabularies that apply to every entry: Role Level, Org Context, Purpose. YAML.
-Skill-specific tags do not live here. Capability values in `rules/skills/<skill>.md` Section 1. Industry packs hold industry content but not Capability lists.
-Specialty values in `rules/specialties/`. Industry/Skill registries: `rules/industries/registry.md`, `rules/skills/registry.md`.
+`rules/tags.yaml` holds only global tag vocabularies that apply to every entry: Role Level, Purpose. YAML. Org Context absorbed into the Work-state axis.
+Specialty-specific tags do not live here. Capability values in `rules/specialties/<specialty>.md` Section 1. Industry packs hold industry content but not Capability lists.
+Orientation values in `rules/orientations/`. Industry/Specialty registries: `rules/industries/registry.md`, `rules/specialties/registry.md`.
 
 #### field-rename-outcome-purpose
 `Outcome:` → `Purpose:` in inventory entries. Field semantically classifies value type, not measurable outcome.
@@ -171,9 +175,9 @@ Kept distinct. Shared inputs resolved by retrieval scripts (slice-level lookup).
 One skill with mode parameter, replacing `knowledge_update_adhoc` and `knowledge_update_inline`. Retrieval script fetches relevant slice at read time.
 
 #### rule-builder-skills-inline-procedure
-Builder skills (`specialty_builder`, `industry_builder`, `skill_builder`, `level_builder`) hold construction procedure inline in SKILL.md. No `rules/builders/` folder.
+Builder skills (`orientation_builder`, `industry_builder`, `specialty_builder`, `level_builder`, `work_state_builder`) hold construction procedure inline in SKILL.md. No `rules/builders/` folder.
 
-#### four-builders-axis-parity
+#### builders-axis-parity
 One builder per axis. Each wired to its corresponding research sub-agent.
 
 #### builder-mode-parameter
@@ -183,14 +187,15 @@ Both invoke research sub-agent.
 Refs: `builder-refresh-mechanics` (deferral).
 
 #### research-sub-agents-roster
-Six sub-agents in `.claude/agents/`:
+Seven sub-agents in `.claude/agents/`:
 - `role_research` (used by role_evaluation)
 - `organization_research` (used by interview_prep)
 - `industry_research` (used by industry_builder)
-- `skill_research` (used by skill_builder)
 - `specialty_research` (used by specialty_builder)
+- `orientation_research` (used by orientation_builder)
 - `level_research` (used by level_builder)
-All six built (end-to-end testing requires all pieces).
+- `work_state_research` (used by work_state_builder)
+All seven built (end-to-end testing requires all pieces).
 Refs: `research-output-location-and-format` (deferral).
 
 #### qc-organization
@@ -203,18 +208,18 @@ Location: `engops/cheatsheets/skill-templates/`. First template: `human-gated-wo
 #### workflow-communication-conventions
 Three communication points in skills.
 
-**Orientation (skill start):**
-- Full: multi-activity skills. Invokes `python scripts/display/orient.py <skill_name>`. Reads from `scripts/display/orientations.yaml`. Ends with "Ready?" consent gate.
+**Introduction (skill start):**
+- Full: multi-activity skills. Invokes `python scripts/display/introduce.py <skill_name>`. Reads from `scripts/display/introductions.yaml`. Ends with "Ready?" consent gate.
 - Brief inline: single-activity skills. One-sentence declaration in SKILL.md.
 Heuristic: name conveys arc → brief; otherwise → full.
-Roster: full = role_evaluation, cv_targeted, interview_prep. Brief = career_brief, industry_builder, skill_builder, specialty_builder, level_builder, knowledge_update, positioning. Ambiguous (deferred): interview_capture, interview_followup, cv_general, experience_inventory, career_narratives.
+Roster: full = role_evaluation, cv_targeted, interview_prep. Brief = career_brief, industry_builder, specialty_builder, orientation_builder, level_builder, work_state_builder, knowledge_update, positioning. Ambiguous (deferred): interview_capture, interview_followup, cv_general, experience_inventory, career_narratives.
 
 **Mid-flight narration:** before tool calls > a few seconds, narrate What/Why (one clause)/Duration (optional). Skip for fast operations. On return, brief acknowledgment.
 
 **Presentation (phase boundaries):** existing convention.
 
 Folder: `scripts/display/`.
-Refs: `orient-py-implementation`, `orientation-roster-ambiguous-skills` (deferrals).
+Refs: `introduce-py-implementation`, `introduction-roster-ambiguous-skills` (deferrals).
 
 ### Lineage & Traceability
 
@@ -322,10 +327,8 @@ Refs: `staleness-threshold-revisit`, `staleness-per-axis-overrides` (deferrals).
 #### organizations-folder
 `rules/organizations/`:
 - `org_industry.md` (was `registry_company_type`): research scoping for interview_prep.
-- `org_maturity.md` (was `registry_org_type`): context framing modifier for cv_targeted. Two states today (Large Enterprise Established, Mid-Size Scale-Up).
 - `company-slugs.yaml`: slug registry.
-Drop `registry_` prefix.
-Refs: `org-maturity-content-rewrite` (deferral).
+Drop `registry_` prefix. Prior `org_maturity.md` plan superseded by Work-state axis (per-entry tagging supersedes org-level modifier).
 
 ### Templates & Format Specs
 

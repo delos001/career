@@ -28,10 +28,10 @@ Sweeps in-scope docs, parses metadata headers, cross-references against COMPONEN
 - Blocks: drift detection (not a hard blocker).
 - Refs: `document-metadata-header-discipline`, `component-documentation-discipline`.
 
-### orient-py-implementation
-`scripts/display/orient.py` and `scripts/display/orientations.yaml` content.
+### introduce-py-implementation
+`scripts/display/introduce.py` and `scripts/display/introductions.yaml` content.
 - Trigger: first long-arc skill built.
-- Blocks: full-orientation pattern in classified skills.
+- Blocks: full-introduction pattern in classified skills.
 - Refs: `workflow-communication-conventions`.
 
 ## Per-Skill Design Items
@@ -54,8 +54,8 @@ Where research sub-agent outputs land and what format.
 - Blocks: any skill calling research.
 - Refs: `research-sub-agents-roster`.
 
-### orientation-roster-ambiguous-skills
-Orientation classification for `interview_capture`, `interview_followup`, `cv_general`, `experience_inventory`, `career_narratives`.
+### introduction-roster-ambiguous-skills
+Introduction classification for `interview_capture`, `interview_followup`, `cv_general`, `experience_inventory`, `career_narratives`.
 - Trigger: each skill at its design time.
 - Blocks: those skill builds.
 - Refs: `workflow-communication-conventions`.
@@ -64,25 +64,25 @@ Orientation classification for `interview_capture`, `interview_followup`, `cv_ge
 Diff presentation, approval gate shape, file-write flow for create vs refresh across the four axis builders.
 - Trigger: first builder skill at design time.
 - Blocks: builder skill builds.
-- Refs: `builder-mode-parameter`, `four-builders-axis-parity`.
+- Refs: `builder-mode-parameter`, `builders-axis-parity`.
 
-### initial-skill-pack-content-design
-Which skill packs at build time (candidate set: clinical_operations, data_science, data_engineering, ai_engineering, quality_compliance, technology_strategy, leadership). How Capability values map.
-- Trigger: skill_builder design or first skill pack.
-- Blocks: skill pack authoring; downstream Capability validation.
-- Refs: `four-orthogonal-axes`, `tag-taxonomy`.
+### initial-specialty-pack-content-design
+Specialty pack roster: clinical-operations, data-engineering, ai-engineering, quality-compliance, people-leadership. Initial Capability values drafted in each pack; validation against current practitioner usage pending specialty_builder refresh-mode run.
+- Trigger: specialty_builder design or first refresh against drafted packs.
+- Blocks: validated Capability lists; downstream Capability validation in inventory.
+- Refs: `five-orthogonal-axes`, `tag-taxonomy`.
 
 ### initial-industry-pack-content-design
 Which industries at build time (clinical_development first); content scope (vocabulary, dialect, regulations) vs what stays in inventory.
 - Trigger: industry_builder design or first industry pack.
 - Blocks: industry pack authoring.
-- Refs: `four-orthogonal-axes`.
+- Refs: `five-orthogonal-axes`.
 
 ### cv-targeted-weighted-matching
-Weighted matching by JD emphasis: industry-emphasis weights Industry higher; skill-emphasis weights Skill higher; both required = equal weight.
+Weighted matching by JD emphasis: industry-emphasis weights Industry higher; specialty-emphasis weights Specialty higher; both required = equal weight. Generalizes to all five axes once per-axis weighting heuristics are defined.
 - Trigger: cv_targeted skill design.
 - Blocks: cv_targeted build.
-- Refs: `four-orthogonal-axes`, `experience-inventory-domain-scoping`.
+- Refs: `five-orthogonal-axes`, `experience-inventory-domain-scoping`.
 
 ### cv-targeted-hybrid-retrieval
 Structured tag filter + semantic similarity ranking.
@@ -102,6 +102,44 @@ Whether/when to split `leadership.md` into people manager, senior leadership, c-
 - Blocks: nothing currently.
 - Refs: `level-axis-two-buckets`.
 
+### cv-targeted-content-rules-from-axes
+Procedural content stripped from axis rule files (`rules/orientations/*`, `rules/levels/*`, `rules/industries/*`, `rules/specialties/*`, `rules/work-states/*`) during data-only-discipline cleanup. Belongs in the cv_targeted skill, not the rule files. Items to apply when designing cv_targeted:
+- Bullet construction (CCAR framework). IC compresses Context/Challenge into one clause; leadership requires all four components.
+- Impact statement types and preference order: Type 1 quantified, Type 2 bounded qualitative, Type 3 contextual narrative. Fallback chain when quantitative data is absent (bounded qualitative → contextual narrative → proxy metrics → scope as signal).
+- Tag query logic: filter by Role Level for leadership; do not filter by Role Level for IC.
+- Compound tag query requirement for `platform-technology` orientation: single-tag queries on Technology Implementation are invalid; require Capability AND Capability or Capability AND Context combinations.
+- Core Competencies zoning for `data-analytics` orientation (3 zones: data strategy/governance, analytics capability/operating model, technical credibility) and `platform-technology` orientation (3 zones: technology strategy/platform governance, systems/domain knowledge, analytical/process credibility).
+- Selected Projects voice exception: leadership voice rules apply to Professional Experience entries only; project entries follow design/build voice without organizational framing.
+- Achievement framing patterns by orientation/level (problem → strategy → execution → outcome variants per orientation). Full set in `temp/Archetype_*.md`.
+- Inventory coverage gap flagging: when fewer than two High priority compound queries return qualifying entries, flag before generating.
+- Adjacency translation behavior: entries tagged with adjacent industries/specialties/orientations/work-states get translated (not filtered out) per adjacency weight; non-adjacent entries get role-translation only (cross-cutting capabilities), not industry-translation.
+- Acronym expansion rule: spell out less-common acronyms on first use; common in-industry acronyms (e.g., FDA, GCP, ICH, IRB in pharma) need no expansion.
+- Trigger: cv_targeted skill design.
+- Blocks: cv_targeted build.
+- Refs: `rules/orientations/*`, `rules/levels/*`, `rules/industries/*`, `rules/specialties/*`, `rules/work-states/*`, `temp/Archetype_*.md`, `temp/content_rules_ic.md`, `temp/content_rules_leadership.md`.
+
+### cv-format-spec-from-axes
+Bullet formatting, section order, item counts, and page targets stripped from axis rule files. Belongs in CV format spec, not rule files. Items to apply when authoring/refining CV format spec:
+- Bullet length: target 2 lines per bullet; 3 lines acceptable for highest-value complex achievements with significant detail; 4+ lines never acceptable (compress or split).
+- Em-dash rules: prohibited as clause connectors in bullet text and prose (rewrite or use natural connective language); permitted only as structural separators in company/location header lines.
+- Section order: Professional Summary, Core Competencies, Professional Experience, Selected Projects (only if entries exist), Education, Certifications and Training, Technical Proficiencies. Identical across all four specialties; format-spec home because it does not vary by specialty.
+- Core Competencies item counts: 8-10 items at IC, 8-12 items at leadership.
+- Page targets: 2-3 pages for IC; 4-5 pages for leadership (flexibility for role depth; do not artificially truncate relevant content).
+- No unnecessary carriage returns; spacing handled by format spec.
+- Trigger: CV format spec authoring or refinement.
+- Blocks: CV format spec completion.
+- Refs: `temp/format_spec.md`, `temp/content_rules_ic.md`, `temp/content_rules_leadership.md`, `temp/Archetype_*.md`, `format-spec-cv-boundary`.
+
+### role-evaluation-orientation-selection-from-axes
+Orientation selection logic and match criteria stripped from axis rule files. Belongs in role_evaluation, not rule files. Items to apply when designing role_evaluation:
+- Orientation match criteria split by IC vs leadership scope (e.g., transformation-strategy at leadership level requires enterprise-level organizational change; transformation-strategy at IC level requires execution within a transformation program). Full set in `temp/Archetype_*.md`.
+- Disambiguation logic ("verify against orientation N if..."): if the role centers on standardization or steady-state efficiency, verify against process-operations; if platform-focused, verify against platform-technology; if data-strategy-focused, verify against data-analytics; if enterprise organizational transformation, verify against transformation-strategy.
+- Dual-orientation detection: when a role legitimately maps to two orientations; primary/secondary asymmetric authority per `dual-orientation-asymmetric-authority`.
+- Orientation exclusion criteria (route-to-other-orientation logic): each orientation file's Identity section names exclusion conditions; role_evaluation enforces them during orientation selection.
+- Trigger: role_evaluation skill design.
+- Blocks: role_evaluation build.
+- Refs: `rules/orientations/*`, `temp/Archetype_*.md`, `dual-orientation-asymmetric-authority`.
+
 ## Migration Items
 
 All trigger on foundation execution; all block foundation completion. Apply the referenced design decisions to the existing files in `personal/knowledge/`.
@@ -120,7 +158,7 @@ One-time script: strip Pandoc underline syntax; remove HTML comment blocks. Mech
 Apply `positioning-schema` to `Positioning.md`. Migration surfaces existing inaccuracies: "Story 7 (Direct Report Accountability)" is misclassified (it's DC-003); appendix lists Stories 1-9 but 10 exist (ST-010 may need addition).
 
 ### experience-inventory-existing-data-migration
-Apply `experience-inventory-domain-scoping`, `-section-6-rename`, `-section-4-restructure`, `-section-5-restructure`, `-section-7-flat-records`, `-section-ordering`, `field-rename-outcome-purpose` to `Experience_Inventory.md`. Roughly 190+ EX entries and 5+ PR entries gain Industry/Skill fields.
+Apply `experience-inventory-domain-scoping`, `-section-6-rename`, `-section-4-restructure`, `-section-5-restructure`, `-section-7-flat-records`, `-section-ordering`, `field-rename-outcome-purpose` to `Experience_Inventory.md`. Roughly 190+ EX entries and 5+ PR entries gain Industry/Specialty fields.
 
 ### questions-library-deletion
 Delete `personal/knowledge/Questions_Library.md` after manual content extraction if any.
@@ -137,12 +175,6 @@ Strip phase-based references; describe loading patterns descriptively; update sk
 - Trigger: scaffolding migration.
 - Blocks: scaffolding migration.
 - Refs: `knowledge-document-scaffolding`, `document-metadata-header-discipline`.
-
-### org-maturity-content-rewrite
-Rewrite `org_maturity.md` header (currently old-repo language about "catalog of CV format references").
-- Trigger: organizations folder migration.
-- Blocks: organizations folder migration.
-- Refs: `organizations-folder`.
 
 ## Periodic Revisits
 

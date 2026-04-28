@@ -23,42 +23,55 @@ career/
 │   │   ├── career-narratives/SKILL.md
 │   │   ├── positioning/SKILL.md
 │   │   ├── knowledge-update/SKILL.md              # mode parameter (adhoc / inline)
-│   │   ├── specialty-builder/SKILL.md
+│   │   ├── orientation-builder/SKILL.md
 │   │   ├── industry-builder/SKILL.md
-│   │   ├── skill-builder/SKILL.md
-│   │   └── level-builder/SKILL.md
+│   │   ├── specialty-builder/SKILL.md
+│   │   ├── level-builder/SKILL.md
+│   │   └── work-state-builder/SKILL.md
 │   ├── agents/                                    # flat
 │   │   ├── role_research.md
 │   │   ├── organization_research.md
 │   │   ├── industry_research.md
-│   │   ├── skill_research.md
 │   │   ├── specialty_research.md
+│   │   ├── orientation_research.md
 │   │   ├── level_research.md
+│   │   ├── work_state_research.md
 │   │   ├── qc_cv_format.md
 │   │   ├── qc_cv_structural.md
 │   │   └── qc_cv_content.md                       # qc agents grow as identified
 │   └── settings.json                              # optional
 ├── rules/
 │   ├── global_rules.md                            # three rules only
-│   ├── tags.yaml                                  # globals: Role Level, Org Context, Purpose
-│   ├── specialties/
+│   ├── tags.yaml                                  # globals: Role Level, Purpose
+│   ├── orientations/
 │   │   ├── transformation-strategy.md
 │   │   ├── data-analytics.md
 │   │   ├── process-operations.md
 │   │   ├── platform-technology.md
-│   │   └── cv_dual_specialty_composition.md
+│   │   └── cv_dual_orientation_composition.md
 │   ├── industries/
 │   │   ├── registry.md
-│   │   └── clinical_development.md                # plus others as built
-│   ├── skills/
+│   │   └── pharma.md                              # plus others as built
+│   ├── specialties/
 │   │   ├── registry.md
-│   │   └── <skill-pack>.md                        # Capability lists live in skill packs
+│   │   ├── clinical-operations.md
+│   │   ├── data-engineering.md
+│   │   ├── ai-engineering.md
+│   │   ├── quality-compliance.md
+│   │   └── people-leadership.md
 │   ├── levels/
 │   │   ├── ic.md
 │   │   └── leadership.md
+│   ├── work-states/
+│   │   ├── greenfield.md
+│   │   ├── scaling.md
+│   │   ├── mature.md
+│   │   ├── turnaround.md
+│   │   ├── post-merger-integration.md
+│   │   ├── divestiture.md
+│   │   └── pivot.md
 │   ├── organizations/
 │   │   ├── org_industry.md
-│   │   ├── org_maturity.md
 │   │   └── company-slugs.yaml
 │   ├── narratives/
 │   │   ├── decision_adr.md
@@ -82,7 +95,7 @@ career/
 │   ├── format/
 │   ├── registry/
 │   ├── migration/
-│   └── display/                                   # orient.py + orientations.yaml
+│   └── display/                                   # introduce.py + introductions.yaml
 ├── outputs/                                       # temporary holding for deliverables
 ├── support/                                       # scaffolding for fresh user setup
 │   └── knowledge_repo_scaffolding/                # final folder layout deferred
@@ -124,7 +137,7 @@ career/
 
 ## Key Concepts
 
-- **Four orthogonal axes.** Specialty, Industry, Skill, Level govern deliverable content and voice. Industry/Skill split replaces the prior single Domain axis. Org maturity is a narrow modifier on CV context framing, not a fifth axis.
+- **Five orthogonal axes.** Orientation, Industry, Specialty, Level, Work-state govern deliverable content and voice. Each axis is a discrete categorical dimension; partial-match scoring runs through adjacency maps in each value's frontmatter.
 - **Application ID.** Compound `<company-slug>-NNN`. User-entered slug, per-company counter. Example: `pfizer-001`.
 - **Session Log.** `personal/sessions/<slug>-NNN_session-log.md`. Written regardless of apply decision; enables resume.
 - **Personal nested repo.** `personal/` holds PII and knowledge documents.
@@ -132,7 +145,7 @@ career/
 
 ## Status
 
-Pre-build. Foundation block (knowledge documents creatable + four-axis builders working) is the next execution target. Per-skill detail design happens at each skill's build time.
+Pre-build. Foundation block (knowledge documents creatable + five-axis builders working) is the next execution target. Per-skill detail design happens at each skill's build time.
 
 ## References
 
