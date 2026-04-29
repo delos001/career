@@ -1,10 +1,6 @@
 ---
 work-state: mature
-last_researched: 2026-04-29
-adjacency:
-  scaling: 0.55
-  post-merger-integration: 0.45
-  turnaround: 0.40
+last_researched: 2026-04
 ---
 
 # Mature — CV Framing Rules
@@ -13,7 +9,7 @@ adjacency:
 
 ## Identity
 
-Steady-state operation of established systems and processes. The deliverable is operational continuity, incremental improvement, governance, and risk management within a working operating model. Characteristic contexts: ongoing operation of an established function, optimization of well-understood processes, governance of stable platforms, risk management within mature regulated environments.
+Steady-state operation of established systems and processes. The deliverable is operational continuity, incremental improvement, governance, and risk management within a working operating model. Characteristic contexts: ongoing operation of an established function, optimization of well-understood processes, governance of stable platforms, risk management within established operations.
 
 The work-state does not fit when the work is establishing new capability (greenfield), expanding scope (scaling), recovering from underperformance (turnaround), or merging/separating organizations (post-merger integration, divestiture).
 

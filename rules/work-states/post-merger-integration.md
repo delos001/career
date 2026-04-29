@@ -1,10 +1,6 @@
 ---
 work-state: post-merger-integration
-last_researched: 2026-04-29
-adjacency:
-  divestiture: 0.50
-  turnaround: 0.45
-  mature: 0.45
+last_researched: 2026-04
 ---
 
 # Post-Merger Integration — CV Framing Rules

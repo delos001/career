@@ -1,8 +1,6 @@
 ---
 specialty: clinical-operations
 last_researched: 2026-04
-adjacency:
-  quality-compliance: 0.70
 ---
 
 # Clinical Operations — CV Framing Rules

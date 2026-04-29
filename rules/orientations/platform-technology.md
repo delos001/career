@@ -1,10 +1,6 @@
 ---
 orientation: platform-technology
-last_researched: 2026-04-29
-adjacency:
-  transformation-strategy: 0.40
-  data-analytics: 0.60
-  process-operations: 0.55
+last_researched: 2026-04
 ---
 
 # Platform & Technology — CV Framing Rules
@@ -27,7 +23,7 @@ Does-not-lead-with content: programming languages, data science methods, operati
 
 - Core Competencies: split across technology strategy and platform governance, systems and domain knowledge, and analytical or process credibility. The analytical/process zone signals cross-functional depth without displacing the technology lead.
 - Technical Proficiencies: expanded relative to transformation-strategy and process-operations orientations; systems and platforms are the priority subsection. Domain depth in the systems landscape is a differentiator where present.
-- Professional Experience: greenfield, scaling, capability-building, and risk-reduction contexts surface most strongly.
+- Professional Experience: platform establishment, scale-up, capability-building, and risk-reduction contexts surface most strongly.
 
 ## Adjacency
 

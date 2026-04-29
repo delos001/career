@@ -1,10 +1,6 @@
 ---
 orientation: process-operations
-last_researched: 2026-04-29
-adjacency:
-  transformation-strategy: 0.50
-  data-analytics: 0.55
-  platform-technology: 0.55
+last_researched: 2026-04
 ---
 
 # Process & Operations — CV Framing Rules

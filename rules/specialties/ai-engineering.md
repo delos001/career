@@ -1,8 +1,6 @@
 ---
 specialty: ai-engineering
 last_researched: 2026-04
-adjacency:
-  data-engineering: 0.70
 ---
 
 # AI Engineering — CV Framing Rules

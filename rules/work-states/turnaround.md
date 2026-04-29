@@ -1,10 +1,6 @@
 ---
 work-state: turnaround
-last_researched: 2026-04-29
-adjacency:
-  pivot: 0.55
-  post-merger-integration: 0.45
-  mature: 0.40
+last_researched: 2026-04
 ---
 
 # Turnaround — CV Framing Rules

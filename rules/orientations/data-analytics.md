@@ -1,10 +1,6 @@
 ---
 orientation: data-analytics
-last_researched: 2026-04-29
-adjacency:
-  transformation-strategy: 0.40
-  process-operations: 0.55
-  platform-technology: 0.60
+last_researched: 2026-04
 ---
 
 # Data & Analytics — CV Framing Rules

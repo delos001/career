@@ -1,10 +1,6 @@
 ---
 work-state: pivot
-last_researched: 2026-04-29
-adjacency:
-  turnaround: 0.55
-  scaling: 0.45
-  greenfield: 0.40
+last_researched: 2026-04
 ---
 
 # Pivot — CV Framing Rules

@@ -60,6 +60,53 @@ Existing CV dual-orientation rule transfers to `rules/orientations/cv_dual_orien
 IC and leadership only today. Expansion via `level_builder`. Level files are deliverable-agnostic; deliverable-specific concerns belong in the deliverable's format spec.
 Refs: `level-axis-finer-grained-files`, `level-builder-design` (deferrals).
 
+#### axes-composition-precedence
+Each axis owns a primary surface for cv_targeted composition:
+- **Orientation** → Section structure, Section emphasis, Summary lead framing.
+- **Level** → Voice, verb selection, scope framing within bullets.
+- **Specialty** → Capability vocabulary, field-specific terminology, capability surfacing in Professional Experience.
+- **Industry** → Sector vocabulary, dialect (acronym recognition, non-preferred terms), sector-emphasis signal.
+- **Work-state** → Achievement framing (signal verbs, before/after framing, off-spec patterns) within bullets.
+
+Default conflict resolution: orientation governs structure; other axes govern content within that structure. The more-specific axis wins within its surface — specialty terminology supersedes industry vocabulary in capability descriptions; industry dialect supersedes specialty terminology for sector-recognized acronyms.
+
+Surface ownership is the default precedence, not absolute authority. cv_targeted may implement cross-axis review or challenge mechanisms (e.g., per-axis sub-agents proposing content for their owned surface and reviewing peers' outputs) where converged outputs override default precedence. Mechanism deferred to cv_targeted skill design.
+
+Refs: `five-orthogonal-axes`, `cv-targeted-content-rules-from-axes`, `cross-axis-composition-mechanism` (deferrals).
+
+#### role-evaluation-axis-matching-protocol
+role_evaluation matches a JD to each axis by axis-specific mechanism:
+- **Framing axes** (orientations, work-states, levels): match via Identity + Selection rule. Read the JD, apply the rule, pick the value.
+- **Vocabulary axes** (industries, specialties): match via vocabulary/terminology overlap against the file's existing data sections — Vocabulary + Dialect + Emphasis for industries; Capability vocabulary + Terminology for specialties.
+
+The asymmetry reflects the matching task. Framing decisions require interpreting the JD's primary deliverable, scope, or organizational state (rule-driven). Vocabulary matches resolve via signal overlap (count-driven). Disambiguation between adjacent values within an axis falls to Adjacency rules + JD context.
+
+Refs: `axes-composition-precedence`, `five-orthogonal-axes`, `role-evaluation-orientation-selection-from-axes` (deferral).
+
+#### specialty-axis-tagging-by-work-nature
+Specialty tags on inventory and narrative entries reflect the nature of the work performed, not the role's title or formal classification. An entry tags every specialty whose work was meaningfully present, regardless of whether the role was titled with that specialty.
+
+Other axes (industry, orientation, level, work-state) tag by role context — the role's industry, primary deliverable, scope of authority, and organizational state respectively. Specialty is the exception because field-of-practice work can genuinely span within a single role; the other axes describe role-level attributes that do not span within a single role.
+
+Rationale: titles in the wild are unreliable signals (Data Scientist, ML Engineer, Data Engineer overlap; titles drift by company and era). Work-nature tagging trades precision for recall at the inventory level. Precision is recovered at retrieval time when cv_targeted and role_evaluation rank entries by JD relevance.
+
+Refs: `experience-inventory-domain-scoping`, `five-orthogonal-axes`.
+
+#### axes-file-schema
+Each axis carries a distinct file schema reflecting its purpose per `axes-composition-precedence`:
+
+- **Industries** (`rules/industries/<value>.md`): frontmatter (industry, last_researched) + body sections: Vocabulary, Dialect, Emphasis, Adjacency.
+- **Specialties** (`rules/specialties/<value>.md`): frontmatter (specialty, last_researched) + body sections: Capability vocabulary, Terminology, Adjacency.
+- **Orientations** (`rules/orientations/<value>.md`): frontmatter (orientation, last_researched) + body sections: Identity, Summary lead, Section emphasis, Adjacency.
+- **Levels** (`rules/levels/<value>.md`): frontmatter (level, last_researched) + body sections: Identity, Voice, Verb vocabulary, Scope signals, Adjacency.
+- **Work-states** (`rules/work-states/<value>.md`): frontmatter (work-state, last_researched) + body sections: Identity, Achievement framing, Adjacency.
+
+All axis files carry a `**Used by:**` metadata header below the title per `document-metadata-header-discipline`.
+
+Per-section content authoring guidance (what each section should contain, depth expectations, framing rules) is per-axis-builder design territory and deferred to those skills.
+
+Refs: `axes-composition-precedence`, `document-metadata-header-discipline`, `foundation-execution-order`.
+
 #### skill-stability-loose-coupling
 Skills reference rules by category/slug. Resolver script looks up the current file. Skill body does not hard-code paths.
 

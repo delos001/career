@@ -1,10 +1,6 @@
 ---
 orientation: transformation-strategy
-last_researched: 2026-04-29
-adjacency:
-  data-analytics: 0.40
-  process-operations: 0.50
-  platform-technology: 0.40
+last_researched: 2026-04
 ---
 
 # Transformation & Strategy — CV Framing Rules

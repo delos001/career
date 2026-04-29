@@ -1,10 +1,6 @@
 ---
 work-state: scaling
-last_researched: 2026-04-29
-adjacency:
-  greenfield: 0.65
-  mature: 0.55
-  pivot: 0.45
+last_researched: 2026-04
 ---
 
 # Scaling — CV Framing Rules

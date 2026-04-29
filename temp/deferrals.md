@@ -22,12 +22,6 @@ Tests verifying latest-wins per topic (decision entries) and per phase (phase_co
 - Blocks: vocabulary browsing (not a skill blocker).
 - Refs: `tag-taxonomy`.
 
-### cross-axis-reconciliation
-After all five axes are drafted (industries, specialties, orientations, levels, work-states), perform a reconciliation pass to surface content that belongs on a different axis than where it currently sits. Per-file reconciliation candidates are tracked in `temp/axis_research_notes.md`.
-- Trigger: all five axes drafted and approved.
-- Blocks: finalizing axis content; downstream knowledge-doc updates depend on reconciled axis vocabulary.
-- Refs: `temp/axis_research_notes.md`, `five-orthogonal-axes`.
-
 ### metadata-header-reconciliation-script
 Sweeps in-scope docs, parses metadata headers, cross-references against COMPONENTS.md and skill load patterns. Flags drift either direction.
 - Trigger: first metadata header in place AND at least one consuming skill.
@@ -54,6 +48,12 @@ Form and location: standalone rule file, per-skill, or hybrid.
 - Blocks: role_evaluation skill build.
 - Refs: `state-detection`.
 
+### gap-analysis-schema
+Output schema for the role_evaluation gap analysis artifact: which axis values to capture from JD, JD emphasis signals (must-haves vs nice-to-haves), detected vocabulary, and application-specific framing notes that cv_targeted will consume. Format depends on axis structure (now stable post-axis-cleanup) and on the matching protocol per `role-evaluation-axis-matching-protocol`.
+- Trigger: role_evaluation skill design.
+- Blocks: role_evaluation build; cv_targeted consumes this format and depends on it.
+- Refs: `role-evaluation-and-cv-targeted-separate`, `role-evaluation-axis-matching-protocol`, `cv-targeted-weighted-matching`.
+
 ### research-output-location-and-format
 Where research sub-agent outputs land and what format.
 - Trigger: first skill invoking a research sub-agent.
@@ -76,13 +76,25 @@ Diff presentation, approval gate shape, file-write flow for create vs refresh ac
 Weighted matching by JD emphasis: industry-emphasis weights Industry higher; specialty-emphasis weights Specialty higher; both required = equal weight. Generalizes to all five axes once per-axis weighting heuristics are defined.
 - Trigger: cv_targeted skill design.
 - Blocks: cv_targeted build.
-- Refs: `five-orthogonal-axes`, `experience-inventory-domain-scoping`.
+- Refs: `five-orthogonal-axes`, `experience-inventory-domain-scoping`, `axis-adjacency-weights-redefinition`.
 
 ### cv-targeted-hybrid-retrieval
 Structured tag filter + semantic similarity ranking.
 - Trigger: cv_targeted skill design.
 - Blocks: cv_targeted build.
 - Refs: `experience-inventory-domain-scoping`, `stack-retrieval`.
+
+### cross-axis-composition-mechanism
+Mechanism by which cv_targeted reconciles per-axis composition outputs. Possibilities range from per-axis sub-agents proposing content for their owned surface and engaging in review/challenge rounds to converge, to rule-based application of default precedence with no cross-axis review. Specific implementation deferred to cv_targeted skill design.
+- Trigger: cv_targeted skill design.
+- Blocks: cv_targeted build.
+- Refs: `axes-composition-precedence`, `cv-targeted-content-rules-from-axes`, `cv-targeted-weighted-matching`.
+
+### axis-adjacency-weights-redefinition
+Numeric adjacency weights stripped from all axis file frontmatter; rule-format adjacency text in file bodies remains as actionable content. Weights to be re-authored with documented semantics at cv_targeted skill design — what a weight should drive (translation strength threshold, retrieval ranking, bullet count modulation, or other) is undefined and was never deliberately set when the original weights were authored.
+- Trigger: cv_targeted skill design specifies what adjacency weights should drive in translation behavior.
+- Blocks: cv_targeted weighted-translation behavior.
+- Refs: `cv-targeted-weighted-matching`, `cv-targeted-content-rules-from-axes`.
 
 ### level-builder-design
 Full level_builder design, including whether/when to split `leadership.md` into finer levels.
@@ -213,3 +225,9 @@ Extending Document Metadata Header schema with `Maintained by:` field.
 - Trigger: experience-inventory entry surfaces that fits crisis-response framing (acute, event-driven recovery) and reads off-spec under turnaround.
 - Blocks: nothing currently.
 - Refs: `rules/work-states/turnaround.md`.
+
+### regulated-industry-cross-specialty-adjacency
+quality-compliance ↔ data-engineering and ↔ ai-engineering adjacencies are not added now. Work-nature dual-tagging captures cross-applicability at the entry tag level (entries doing CSV/CSA-applicable or ALCOA+-relevant data or AI work in regulated industry tag both specialties). Adjacency would catch edge cases where reasonable tagging missed the cross-applicability.
+- Trigger: cv_targeted use against real JDs surfaces an entry that should have surfaced under quality-compliance retrieval but didn't, despite reasonable work-nature tagging.
+- Blocks: nothing currently.
+- Refs: `specialty-axis-tagging-by-work-nature`, `experience-inventory-domain-scoping`.

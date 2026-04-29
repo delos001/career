@@ -1,7 +1,6 @@
 ---
 specialty: people-leadership
 last_researched: 2026-04
-adjacency: {}
 ---
 
 # People Leadership — CV Framing Rules
@@ -46,4 +45,4 @@ adjacency: {}
 
 ## Adjacency
 
-An entry can carry the people-leadership tag together with a technical specialty tag (e.g., data-engineering, clinical-operations) when the role involved both — for example, leading a data engineering team or function. Adjacency to other specialties is low because the relationship is dual-tagging on the same entry, not similarity translation between specialties.
+An entry tags people-leadership when people-leadership work was meaningfully present in the role; this commonly co-occurs with a technical specialty tag (e.g., data-engineering, clinical-operations) for roles combining people leadership with technical-specialty work. Unlike technical specialties, people-leadership has no similarity-translation rule to other specialties — people-leadership work does not carry across via similarity, only via dual-tagging when the role held both.

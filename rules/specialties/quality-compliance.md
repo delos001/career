@@ -1,8 +1,6 @@
 ---
 specialty: quality-compliance
 last_researched: 2026-04
-adjacency:
-  clinical-operations: 0.70
 ---
 
 # Quality & Compliance — CV Framing Rules

@@ -1,10 +1,6 @@
 ---
 work-state: divestiture
-last_researched: 2026-04-29
-adjacency:
-  post-merger-integration: 0.50
-  greenfield: 0.45
-  pivot: 0.40
+last_researched: 2026-04
 ---
 
 # Divestiture — CV Framing Rules

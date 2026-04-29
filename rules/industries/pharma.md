@@ -1,12 +1,6 @@
 ---
 industry: pharma
 last_researched: 2026-04
-adjacency:
-  biotech: 0.85
-  cro: 0.80
-  generics: 0.70
-  med-device: 0.55
-  diagnostics: 0.50
 ---
 
 # Pharma — CV Framing Rules
@@ -15,7 +9,7 @@ adjacency:
 
 ## Vocabulary
 
-Trial-lifecycle terms: study, trial, protocol, site, investigator (PI, sub-I), participant, patient, subject, Phase I/II/III/IV, FIH, pivotal, registrational, arm, cohort, randomization, blinding (single-blind, double-blind, open-label), placebo-controlled, endpoint, screening, enrollment, indication, therapeutic area.
+Trial-lifecycle terms: study, trial, protocol, site, investigator (PI, sub-I), participant, patient, Phase I/II/III/IV, FIH, pivotal, registrational, arm, cohort, randomization, blinding (single-blind, double-blind, open-label), placebo-controlled, endpoint, screening, enrollment, indication, therapeutic area.
 
 Participant terminology: "participant" is the current preference in protocols and consent forms (TransCelerate Common Protocol Template, NIH/FDA templates, ClinicalTrials.gov, NEJM editorial standard); "patient" remains acceptable when the trial population is patients; "subject" is dated.
 

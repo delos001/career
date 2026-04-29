@@ -1,13 +1,17 @@
 ---
 level: leadership
-last_researched: 2026-04-29
-adjacency:
-  ic: 0.40
+last_researched: 2026-04
 ---
 
 # Leadership — CV Framing Rules
 
 **Used by:** cv_targeted, role_evaluation
+
+## Identity
+
+The CV is framed as organizational leadership and the building or governance of capabilities, teams, and functions. Headline content reads as: cross-functional or portfolio ownership, organizational decision-making, capability-building, governance frameworks, multi-function influence, headcount and budget responsibility.
+
+Select this level when the target role carries direct people-management authority, organizational scope, or multi-function leadership — manager, director, associate director, VP, C-suite. Do not select when the role is individual technical execution without management authority, even at senior IC scope (Staff, Principal, Architect) (use ic).
 
 ## Voice
 
@@ -29,4 +33,6 @@ Reads as under-leveled: tool selection without organizational framing, individua
 
 ## Adjacency
 
-A leader's hands-on technical work or individual deliverables translate as IC-level signal when surfaced without organizational framing. Such work is rarely useful in a leadership-positioned CV unless it explains how a strategic outcome was achievable. Surfacing it as primary content reads as scope inflation in reverse: leadership reframed as IC.
+Translation rule for entries tagged with ic when this level is selected for the CV:
+
+- **ic**: translates when the entry's individual technical work can be re-anchored on a strategic outcome it enabled or a capability it built. Hands-on execution surfaced without organizational framing does not translate; it reads as scope inflation in reverse (leadership reframed as IC).
