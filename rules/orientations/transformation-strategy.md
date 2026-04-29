@@ -23,7 +23,7 @@ Does-not-lead-with content: process optimization, technical tools, data or analy
 
 - Core Competencies: items relating to change management, organizational design, stakeholder influence, and capability building lift to the top. Technical and tool-centric items sit minimally.
 - Technical Proficiencies: low weight; the section confirms literacy without differentiating.
-- Professional Experience: greenfield, scaling, and turnaround contexts surface most strongly. Mature contexts without an explicit transformation anchor are off-spec.
+- Professional Experience: entries demonstrating organizational capability construction, structural change leadership, and rebuild from sustained failure surface most strongly. Steady-state operation contexts without an explicit transformation anchor are off-spec.
 
 ## Adjacency
 

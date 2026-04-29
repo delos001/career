@@ -34,6 +34,12 @@ Sweeps in-scope docs, parses metadata headers, cross-references against COMPONEN
 - Blocks: full-introduction pattern in classified skills.
 - Refs: `workflow-communication-conventions`.
 
+### research-notes-disposition
+`temp/axis_research_notes.md` retained as historical record of pre-reconciliation research candidates. Disposition deferred until axis-builder skills are built — at that point either delete the notes or formalize them into a research-sources file (precedent from prior projects where research sources were maintained as permanent reference).
+- Trigger: axis-builder skills built (industry_builder, specialty_builder, orientation_builder, level_builder, work_state_builder).
+- Blocks: nothing currently.
+- Refs: `temp/axis_research_notes.md`, `builders-axis-parity`.
+
 ## Per-Skill Design Items
 
 ### session-log-body-schema
