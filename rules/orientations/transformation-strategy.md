@@ -1,6 +1,6 @@
 ---
 orientation: transformation-strategy
-last_researched: 2026-04
+last_researched: 2026-04-29
 adjacency:
   data-analytics: 0.40
   process-operations: 0.50
@@ -13,9 +13,9 @@ adjacency:
 
 ## Identity
 
-The deliverable is an organizational capability or structural change — not a product, process, or technology. Characteristic contexts: greenfield capability building, operating model redesign, enterprise-scope change programs, turnaround scenarios where an existing model must be rebuilt rather than optimized.
+The CV is framed as the delivery of organizational capability or structural change. Headline deliverables read as: enterprise-scope capability built, operating model redesigned and adopted, change program led at scale, turnaround executed by rebuilding rather than optimizing.
 
-The orientation does not fit when the primary subject is standardizing or steady-state-optimizing an existing operating model, when the primary deliverable is a platform or process framework, or when incremental improvements are framed as transformation.
+Select this orientation when the target role's primary deliverable is organizational capability or structural change at enterprise scope. Do not select when the headline deliverable is standardization or steady-state optimization (use process-operations), a platform or system (use platform-technology), analytical or data-strategic work (use data-analytics), or when incremental improvements would have to be reframed as transformation.
 
 ## Summary lead
 
@@ -31,8 +31,8 @@ Does-not-lead-with content: process optimization, technical tools, data or analy
 
 ## Adjacency
 
-Translation signal for entries tagged with adjacent orientations:
+Translation rule for entries tagged with another orientation when this orientation is selected for the CV:
 
-- **process-operations**: process design and standardization work translates only when framed as new capability construction; pure efficiency or steady-state optimization does not carry.
-- **data-analytics**: analytical work translates only when it directly informed a transformation decision; otherwise reads as off-spec.
-- **platform-technology**: platform work translates when adoption or capability shift was the primary outcome; pure technology delivery does not carry.
+- **process-operations**: translates when the entry's process work can be re-anchored on new capability construction. Pure efficiency or steady-state optimization does not translate.
+- **data-analytics**: translates when the entry's analytical work can be re-anchored on a transformation decision it informed. Otherwise does not translate.
+- **platform-technology**: translates when the entry's platform work can be re-anchored on adoption or capability shift as the outcome. Pure technology delivery does not translate.

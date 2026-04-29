@@ -1,6 +1,6 @@
 ---
 orientation: data-analytics
-last_researched: 2026-04
+last_researched: 2026-04-29
 adjacency:
   transformation-strategy: 0.40
   process-operations: 0.55
@@ -13,13 +13,13 @@ adjacency:
 
 ## Identity
 
-The deliverable is data-driven insight, analytical capability, or a governed data or analytics operating model. Characteristic contexts: building analytics functions, establishing data governance, delivering insights that shape decisions, designing data acquisition or quality frameworks. Applies whether the candidate directs the analytical capability or is the hands-on practitioner producing the analysis.
+The CV is framed as the delivery of data-driven insight or governed analytical capability. Headline deliverables read as: decisions improved by analysis, data translated into action that executives or operators can use, analytics functions built or governed, data quality or acquisition frameworks established as decision infrastructure.
 
-The orientation does not fit when the primary output is a technology platform (orientation is platform-technology) or when data work is incidental to process standardization (orientation is process-operations).
+Select this orientation when the target role's primary deliverable is analytical or data-strategic. Do not select when the headline deliverable is a technology platform (use platform-technology), a standardized operating process (use process-operations), or enterprise-scope organizational change (use transformation-strategy), even if data work is part of the underlying activity.
 
 ## Summary lead
 
-Lead-with content: data strategy, governance, analytics capability, decision-relevant insight, analytical depth in a specific method or domain.
+Lead-with content: data strategy, governance, analytics capability, decision-relevant insight, translation of data into business outcomes, analytical depth in a specific method or domain.
 
 Does-not-lead-with content: programming languages, ML method names, specific tools, or hands-on data work as the primary subject of the lead.
 
@@ -31,8 +31,8 @@ Does-not-lead-with content: programming languages, ML method names, specific too
 
 ## Adjacency
 
-Translation signal for entries tagged with adjacent orientations:
+Translation rule for entries tagged with another orientation when this orientation is selected for the CV:
 
-- **platform-technology**: platform work involving data infrastructure or analytics enablement translates when the data-strategy framing is preserved; pure system or vendor work does not.
-- **process-operations**: process work governing how data was assessed or made decision-ready translates; SOP authoring without a data dimension does not.
-- **transformation-strategy**: transformation work that built an analytics capability translates; broader operating-model redesigns without a data anchor do not.
+- **platform-technology**: translates when the entry's deliverable can be re-anchored on analytical capability or data strategy outcome. Pure system or vendor delivery does not translate.
+- **process-operations**: translates when the entry's process work can be re-anchored on data quality, governance, or decision-readiness outcome. Standalone process work without a data dimension does not translate.
+- **transformation-strategy**: translates when the entry's transformation can be re-anchored on the analytical capability built. Operating-model redesigns without a data anchor do not translate.

@@ -1,6 +1,6 @@
 ---
 level: ic
-last_researched: 2026-04
+last_researched: 2026-04-29
 adjacency:
   leadership: 0.40
 ---
@@ -11,7 +11,7 @@ adjacency:
 
 ## Voice
 
-Individual contribution, technical execution, and subject matter expertise. The work being described is what the candidate built, delivered, analyzed, or solved, with impact stated at the team, project, or organizational level. Senior IC voice differs from junior IC voice in depth, independence, and complexity — not in organizational scope.
+Individual contribution, technical execution, and subject matter expertise. The work being described is what the candidate built, delivered, analyzed, or solved, with impact stated at the team, project, or organizational level. Senior IC voice differs from junior IC voice in depth, independence, complexity, and breadth of technical influence, not in management authority.
 
 ## Verb vocabulary
 
@@ -21,7 +21,7 @@ Reads as inflated at IC level: championed, orchestrated, spearheaded, redesigned
 
 ## Scope signals
 
-Reads as IC-level scope: project ownership, technical execution, individual delivery against defined objectives, depth in a specific tool/method/domain, self-initiated work, independent judgment, technical leadership within a team.
+Reads as IC-level scope: project ownership, technical execution, individual delivery against defined objectives, depth in a specific tool/method/domain, architecture or system-scale decisions, self-initiated work, independent judgment, technical leadership and influence within or across teams.
 
 Reads as inflated at IC level: organizational leadership, multi-function governance, portfolio-scale ownership, budget authority, headcount management.
 

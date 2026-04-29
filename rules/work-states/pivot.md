@@ -1,6 +1,6 @@
 ---
 work-state: pivot
-last_researched: 2026-04
+last_researched: 2026-04-29
 adjacency:
   turnaround: 0.55
   scaling: 0.45
@@ -13,7 +13,7 @@ adjacency:
 
 ## Identity
 
-Work that redirects a function, business model, or strategic focus while operations continue. The deliverable is changed direction without starting over: the existing organization, capability, or operation is repointed at a different objective, market, or model. Characteristic contexts: shifting a product line to a new market, redirecting a function from one therapeutic area to another, transitioning a service model from internal to external (or vice versa), refocusing a capability from one strategic priority to another.
+Work that redirects a function, business model, or strategic focus while operations continue. The deliverable is changed direction without starting over: the existing organization, capability, or operation is repointed at a different objective, market, or model. Characteristic contexts: shifting a product line to a new market, transitioning a service model from internal to external (or vice versa), refocusing a capability from one strategic priority to another.
 
 The work-state does not fit when no prior direction existed (greenfield), when the redirect was driven by chronic underperformance rather than strategic choice (turnaround), or when the work is steady-state operation in an unchanged direction (mature).
 

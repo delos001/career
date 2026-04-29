@@ -96,6 +96,12 @@ Whether/when to split `leadership.md` into people manager, senior leadership, c-
 - Blocks: nothing currently.
 - Refs: `level-axis-two-buckets`.
 
+### ic-axis-finer-grained-files
+Parallel to `level-axis-finer-grained-files`: whether/when to split `ic.md` into junior-IC, mid-IC, senior-IC (Staff/Principal). 2026-04-29 research surfaced a meaningful gap between junior IC framing (project scope, hands-on verbs) and Staff/Principal framing (architecture-scale decisions, cross-team influence, influence without authority). Currently bridged within one file via voice/scope qualifiers ("differs in depth, independence, complexity, and breadth of technical influence"). Splitting deferred until a Staff/Principal-flavored role application surfaces and the unified file's framing fails to carry senior IC voice cleanly.
+- Trigger: Staff/Principal-flavored role application where unified `ic.md` framing does not produce a clean CV; OR resolution of `level-axis-finer-grained-files` (the leadership-side parallel) creates pressure for symmetric IC granularity.
+- Blocks: nothing currently.
+- Refs: `level-axis-two-buckets`, `level-axis-finer-grained-files`.
+
 ### cv-targeted-content-rules-from-axes
 Procedural content stripped from axis rule files (`rules/orientations/*`, `rules/levels/*`, `rules/industries/*`, `rules/specialties/*`, `rules/work-states/*`) during data-only-discipline cleanup. Belongs in the cv_targeted skill, not the rule files. Items to apply when designing cv_targeted:
 - Bullet construction (CCAR framework). IC compresses Context/Challenge into one clause; leadership requires all four components.
@@ -201,3 +207,9 @@ Extending Document Metadata Header schema with `Maintained by:` field.
 - Trigger: concrete need (currently in COMPONENTS.md).
 - Blocks: nothing currently.
 - Refs: `document-metadata-header-discipline`, `career-narratives-schema`.
+
+### crisis-response-as-separate-work-state
+`rules/work-states/turnaround.md` notes that acute, event-driven underperformance ("crisis response") is currently absorbed into turnaround, distinct from chronic distress. Decision deferred on whether crisis response should split into its own work-state.
+- Trigger: experience-inventory entry surfaces that fits crisis-response framing (acute, event-driven recovery) and reads off-spec under turnaround.
+- Blocks: nothing currently.
+- Refs: `rules/work-states/turnaround.md`.

@@ -1,6 +1,6 @@
 ---
 orientation: platform-technology
-last_researched: 2026-04
+last_researched: 2026-04-29
 adjacency:
   transformation-strategy: 0.40
   data-analytics: 0.60
@@ -13,13 +13,13 @@ adjacency:
 
 ## Identity
 
-The deliverable is a technology platform, system, or vendor ecosystem that enables business capability. Characteristic contexts: platform ownership, system implementation and integration, vendor selection and management, product management for internal platforms, translating domain requirements into platform features. Applies whether the candidate directs the platform strategy or contributes hands-on to implementation and configuration.
+The CV is framed as the delivery of a technology platform, system, or vendor ecosystem that enables business capability. Headline deliverables read as: platform built or scaled, system implemented or integrated, vendor ecosystem governed, internal platform owned as a product, platform adoption and user outcomes improved.
 
-The orientation does not fit when technology is a supporting tool for data governance (orientation is data-analytics), a supporting tool for process improvement (orientation is process-operations), or when the primary subject is organizational adoption rather than the technology itself (orientation is transformation-strategy).
+Select this orientation when the target role's primary deliverable is a platform, system, or vendor ecosystem. Do not select when the headline deliverable is data governance or analytical capability with technology in a supporting role (use data-analytics), process improvement with technology in a supporting role (use process-operations), or organizational adoption rather than the technology itself (use transformation-strategy).
 
 ## Summary lead
 
-Lead-with content: technology strategy, platform leadership, system governance, vendor or ecosystem oversight, systems and domain knowledge, platform implementation depth.
+Lead-with content: technology strategy, platform leadership, system governance, vendor or ecosystem oversight, platform adoption and user outcomes, systems and domain knowledge, platform implementation depth.
 
 Does-not-lead-with content: programming languages, data science methods, operational process work as primary subject, hands-on configuration as the framing of the lead.
 
@@ -31,8 +31,8 @@ Does-not-lead-with content: programming languages, data science methods, operati
 
 ## Adjacency
 
-Translation signal for entries tagged with adjacent orientations:
+Translation rule for entries tagged with another orientation when this orientation is selected for the CV:
 
-- **data-analytics**: data work translates when a platform or system was the medium for the analytics capability; pure analytical or modeling work without a platform anchor does not.
-- **process-operations**: process work translates when technology was the enabling mechanism; pure SOP or process design work without a technology dimension does not.
-- **transformation-strategy**: transformation work translates when the technology was the change mechanism; pure organizational capability building without a technology anchor does not.
+- **data-analytics**: translates when the entry's deliverable can be re-anchored on the platform or system that carried the analytics capability. Pure analytical or modeling work without a platform anchor does not translate.
+- **process-operations**: translates when the entry's process work can be re-anchored on the technology as the enabling mechanism. Pure process design work without a technology dimension does not translate.
+- **transformation-strategy**: translates when the entry's transformation can be re-anchored on the technology as the change mechanism. Pure organizational capability building without a technology anchor does not translate.

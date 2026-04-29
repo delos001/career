@@ -1,6 +1,6 @@
 ---
 orientation: process-operations
-last_researched: 2026-04
+last_researched: 2026-04-29
 adjacency:
   transformation-strategy: 0.50
   data-analytics: 0.55
@@ -13,13 +13,13 @@ adjacency:
 
 ## Identity
 
-The deliverable is operational efficiency, standardization, quality, or process excellence. Characteristic contexts: SOP design and maintenance, process harmonization across functions or sites, steady-state operational management, inspection or audit readiness, optimization of established ways of working. Emphasizes durable process improvement rather than organizational transformation or new capability construction.
+The CV is framed as the delivery of operational efficiency, standardization, quality, or process excellence. Headline deliverables read as: durable process improvement, governance or SOP frameworks established, regulated-environment readiness sustained, harmonization or optimization across functions or sites.
 
-The orientation does not fit when the primary subject is technology platform ownership (orientation is platform-technology), data strategy (orientation is data-analytics), or organizational transformation at enterprise scope (orientation is transformation-strategy).
+Select this orientation when the target role's primary deliverable is process, governance, or operational excellence. Do not select when the headline deliverable is a technology platform (use platform-technology), analytical or data-strategic work (use data-analytics), or enterprise-scope organizational transformation (use transformation-strategy).
 
 ## Summary lead
 
-Lead-with content: process and governance expertise, standardization and harmonization, operational impact, regulated-environment execution, framework or SOP ownership.
+Lead-with content: process and governance expertise, standardization and harmonization, operational impact, framework or SOP ownership.
 
 Does-not-lead-with content: technical capabilities, data science credentials, programming languages, analytical tools, or technology-platform implementation as primary subject.
 
@@ -31,8 +31,8 @@ Does-not-lead-with content: technical capabilities, data science credentials, pr
 
 ## Adjacency
 
-Translation signal for entries tagged with adjacent orientations:
+Translation rule for entries tagged with another orientation when this orientation is selected for the CV:
 
-- **transformation-strategy**: transformation work translates when the deliverable was a process or governance structure; pure organizational capability building without a process anchor does not.
-- **data-analytics**: data quality or governance work translates when it produced a more reliable process; pure analytical or modeling work does not.
-- **platform-technology**: platform work translates when the primary outcome was a process or governance capability enabled by the technology; pure system implementation does not.
+- **transformation-strategy**: translates when the entry's deliverable can be re-anchored on a process, governance, or SOP outcome. Pure organizational capability building without a process anchor does not translate.
+- **data-analytics**: translates when the entry's data work can be re-anchored on improved process reliability or governance outcome. Pure analytical or modeling work does not translate.
+- **platform-technology**: translates when the entry's platform work can be re-anchored on a process or governance capability enabled by the technology. Pure system implementation does not translate.

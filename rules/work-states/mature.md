@@ -1,6 +1,6 @@
 ---
 work-state: mature
-last_researched: 2026-04
+last_researched: 2026-04-29
 adjacency:
   scaling: 0.55
   post-merger-integration: 0.45

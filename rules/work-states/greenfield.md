@@ -1,6 +1,6 @@
 ---
 work-state: greenfield
-last_researched: 2026-04
+last_researched: 2026-04-29
 adjacency:
   scaling: 0.65
   divestiture: 0.45

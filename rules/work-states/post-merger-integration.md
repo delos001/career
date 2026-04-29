@@ -1,6 +1,6 @@
 ---
 work-state: post-merger-integration
-last_researched: 2026-04
+last_researched: 2026-04-29
 adjacency:
   divestiture: 0.50
   turnaround: 0.45

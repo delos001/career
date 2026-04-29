@@ -1,6 +1,6 @@
 ---
 work-state: scaling
-last_researched: 2026-04
+last_researched: 2026-04-29
 adjacency:
   greenfield: 0.65
   mature: 0.55
@@ -19,7 +19,7 @@ The work-state does not fit when there is no prior working model to scale (green
 
 ## Achievement framing
 
-Reads as scaling signal: "scaled," "expanded," "replicated," "harmonized across," "standardized across," "extended to," "multiplied." Outcomes describe scope or volume multipliers (X studies to Y studies, single-site to multi-site, regional to global, pilot to production). Before-and-after framing emphasizes scope expansion, not capability creation.
+Reads as scaling signal: "scaled," "expanded," "accelerated," "replicated," "harmonized across," "standardized across," "extended to," "multiplied." Outcomes describe scope or volume multipliers (X studies to Y studies, single-site to multi-site, regional to global, pilot to production). Before-and-after framing emphasizes scope expansion, not capability creation.
 
 Reads as off-spec for scaling: capability-creation framing where no prior model existed, optimization of a single-site/single-function operation, recovery framing.
 

@@ -1,6 +1,6 @@
 ---
 work-state: divestiture
-last_researched: 2026-04
+last_researched: 2026-04-29
 adjacency:
   post-merger-integration: 0.50
   greenfield: 0.45
@@ -13,7 +13,7 @@ adjacency:
 
 ## Identity
 
-Work that separates an existing unit from a parent organization and establishes it as independent, or prepares it for sale or transfer. The deliverable is severed dependencies, standalone capability, and operational independence. Characteristic contexts: carving out a therapeutic area, business unit, or functional capability; separating shared services into independent operations; preparing a unit for divestment to a buyer; standing up independent infrastructure where shared parent infrastructure was used before.
+Work that separates an existing unit from a parent organization and establishes it as independent, or prepares it for sale or transfer. The deliverable is severed dependencies, standalone capability, and operational independence. Characteristic contexts: carving out a business unit or functional capability; separating shared services into independent operations; preparing a unit for divestment to a buyer; standing up independent infrastructure where shared parent infrastructure was used before.
 
 The work-state does not fit when the work is combining organizations (post-merger integration), when no separation event triggered the work, or when the work is standing up a new capability with no prior parent (greenfield without inheritance).
 

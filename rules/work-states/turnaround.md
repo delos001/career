@@ -1,6 +1,6 @@
 ---
 work-state: turnaround
-last_researched: 2026-04
+last_researched: 2026-04-29
 adjacency:
   pivot: 0.55
   post-merger-integration: 0.45
