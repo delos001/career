@@ -11,13 +11,15 @@ adjacency:
 
 ## Capability vocabulary
 
-- Quality system design and implementation
+- Quality system (QMS) design across GxP domains; Pharmaceutical Quality System (PQS) per ICH Q10 for manufacturing-side
 - GxP framework application (GCP, GMP, GLP, GDP, GVP)
+- Quality Risk Management (QRM) per ICH Q9(R1)
 - Internal, supplier, and sponsor audit leadership
-- Regulatory inspection response and remediation
+- Regulatory inspection response and remediation (FDA Form 483, Warning Letter, EMA inspection findings)
+- Pre-approval inspection (PAI) readiness
 - CAPA design, oversight, and effectiveness checks
-- Risk-based quality management
-- Computer system validation (CSV) and process validation strategy
+- Computer System Validation (CSV) and Computer Software Assurance (CSA) per FDA Sep 2025 final guidance; process validation strategy
+- Data integrity program design (ALCOA+) and audit trail review
 - SOP authoring, lifecycle, and change control
 - Vendor qualification and quality auditing
 - Quality KPI design and monitoring
@@ -28,14 +30,17 @@ adjacency:
 
 Sector-wide pharma frameworks (GxP family, 21 CFR Part 11, EU Annex 11) and bodies (FDA, EMA) live in `rules/industries/pharma.md` Vocabulary. QMS-specific terminology below.
 
-- ISO 9001, ICH Q9 (risk), ICH Q10 (quality systems)
-- CAPA, CAR, deviation, nonconformance
-- SOP, work instruction, quality manual, quality policy
-- Validation: IQ, OQ, PQ; user requirements specification (URS)
-- Audit types: internal, supplier, sponsor, regulatory
-- Inspection readiness, mock inspection, 483, warning letter
-- Compliance officer, QA, QC, quality lead
-- Change control, document control
+- ISO 9001, ISO 13485 (medical devices); ICH Q8(R2) pharmaceutical development/QbD, Q9(R1) quality risk management, Q10 pharmaceutical quality system, Q11 drug substance, Q12 lifecycle management
+- CAPA, CAR (corrective action request), deviation, nonconformance, root cause analysis (RCA)
+- SOP, work instruction, quality manual, quality policy, quality plan
+- Validation: IQ, OQ, PQ, URS; CSV (Computer System Validation), CSA (Computer Software Assurance per FDA Sep 2025 final guidance)
+- Audit types: internal, supplier, sponsor, regulatory; mock inspection
+- Inspection outcomes: FDA Form 483, Warning Letter, Untitled Letter, Consent Decree; inspection types: pre-approval (PAI), routine, for-cause
+- Data integrity: ALCOA+ (Attributable, Legible, Contemporaneous, Original, Accurate, Complete, Consistent, Enduring, Available); audit trail review
+- Manufacturing-quality artifacts: Contamination Control Strategy (CCS) per EU GMP Annex 1 (2022); Annual Product Review (APR) / Product Quality Review (PQR)
+- FDA programs: Quality Management Maturity (QMM, voluntary)
+- Roles: QA, QC, compliance officer, quality lead, qualified person (QP, EU)
+- Change control, document control, knowledge management
 
 ## Adjacency
 

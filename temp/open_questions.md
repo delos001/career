@@ -10,16 +10,6 @@ How does cv_targeted retrieve and filter across the five axes? Pure tag-based (e
 - Blocks: finalizing inventory entry schema (Orientation/Work-state fields), Tools tag-vs-reference decision, applying tagging to existing entries.
 - Refs: `five-orthogonal-axes`, `experience-inventory-domain-scoping`, `cv-targeted-hybrid-retrieval`, `stack-retrieval`.
 
-### foundation-execution-order
-In what order across knowledge documents and axis builder skills?
-- (a) Migrate existing knowledge docs by hand → build knowledge-doc builder skills against migrated examples → build axis builders.
-- (b) Axis builders first (greenfield) → migrate knowledge docs → build knowledge-doc builders.
-- (c) Knowledge docs only via builder skills (no manual migration); start with smallest.
-- (d) Interleave (axis builders + knowledge-doc audit independent).
-- Triggered by: operating-model lock-in.
-- Blocks: starting foundation work.
-- Refs: `approach-foundation-first`, `builders-axis-parity`, `knowledge-document-roster`.
-
 ### knowledge-doc-update-mechanism
 Hand-edit, builder-skill refresh-mode, or one-time migration script for existing knowledge documents?
 - (a) Hand-edit: fastest, no reusable skill.

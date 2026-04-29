@@ -22,6 +22,12 @@ Tests verifying latest-wins per topic (decision entries) and per phase (phase_co
 - Blocks: vocabulary browsing (not a skill blocker).
 - Refs: `tag-taxonomy`.
 
+### cross-axis-reconciliation
+After all five axes are drafted (industries, specialties, orientations, levels, work-states), perform a reconciliation pass to surface content that belongs on a different axis than where it currently sits. Per-file reconciliation candidates are tracked in `temp/axis_research_notes.md`.
+- Trigger: all five axes drafted and approved.
+- Blocks: finalizing axis content; downstream knowledge-doc updates depend on reconciled axis vocabulary.
+- Refs: `temp/axis_research_notes.md`, `five-orthogonal-axes`.
+
 ### metadata-header-reconciliation-script
 Sweeps in-scope docs, parses metadata headers, cross-references against COMPONENTS.md and skill load patterns. Flags drift either direction.
 - Trigger: first metadata header in place AND at least one consuming skill.
@@ -65,18 +71,6 @@ Diff presentation, approval gate shape, file-write flow for create vs refresh ac
 - Trigger: first builder skill at design time.
 - Blocks: builder skill builds.
 - Refs: `builder-mode-parameter`, `builders-axis-parity`.
-
-### initial-specialty-pack-content-design
-Specialty pack roster: clinical-operations, data-engineering, ai-engineering, quality-compliance, people-leadership. Initial Capability values drafted in each pack; validation against current practitioner usage pending specialty_builder refresh-mode run.
-- Trigger: specialty_builder design or first refresh against drafted packs.
-- Blocks: validated Capability lists; downstream Capability validation in inventory.
-- Refs: `five-orthogonal-axes`, `tag-taxonomy`.
-
-### initial-industry-pack-content-design
-Which industries at build time (clinical_development first); content scope (vocabulary, dialect, regulations) vs what stays in inventory.
-- Trigger: industry_builder design or first industry pack.
-- Blocks: industry pack authoring.
-- Refs: `five-orthogonal-axes`.
 
 ### cv-targeted-weighted-matching
 Weighted matching by JD emphasis: industry-emphasis weights Industry higher; specialty-emphasis weights Specialty higher; both required = equal weight. Generalizes to all five axes once per-axis weighting heuristics are defined.

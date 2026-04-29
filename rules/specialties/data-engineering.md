@@ -12,31 +12,35 @@ adjacency:
 ## Capability vocabulary
 
 - Data pipeline design and implementation (batch and streaming)
-- Data warehouse and lakehouse architecture
-- ETL/ELT system design and orchestration
+- Data warehouse, data lake, and lakehouse architecture (open table formats: Iceberg, Delta Lake, Hudi)
+- ETL/ELT system design and orchestration (Airflow, Prefect, Dagster, dbt)
 - Data modeling (dimensional, normalized, semi-structured)
 - Schema design and evolution
-- Data quality framework design
+- Data quality and observability programs (dbt tests, Great Expectations, Soda; Monte Carlo, Bigeye)
 - Data governance, lineage, and cataloging
-- Real-time/streaming data architecture
+- Real-time/streaming data architecture (Kafka, Flink, Spark Structured Streaming)
+- Data contracts, data products, and data mesh patterns
 - Data platform migration leadership
-- DataOps and pipeline observability
+- DataOps practices (CI/CD for data, infrastructure-as-code, deployment automation)
 - Data infrastructure cost optimization
-- Cross-functional data delivery
+- Cross-functional data delivery (analytics engineering, ML/AI, operational systems)
 
 ## Terminology
 
-- ETL, ELT, CDC
+- ETL, ELT, reverse ETL (Hightouch, Census), CDC (change data capture)
 - OLAP, OLTP
-- Data warehouse, data lake, lakehouse, data mesh
-- Star schema, snowflake schema, dimensional modeling, slowly changing dimensions
+- Data warehouse, data lake, lakehouse, data mesh; medallion architecture (Bronze/Silver/Gold)
+- Star schema, snowflake schema, dimensional modeling, slowly changing dimensions (SCD)
 - Schema-on-read, schema-on-write
-- SQL, NoSQL
-- Apache Spark, Kafka, Airflow, dbt, Flink, Beam
-- Snowflake, Databricks, Redshift, BigQuery, Synapse
-- AWS (S3, Glue, EMR), GCP (Dataflow, Dataproc), Azure (Data Factory, Fabric)
-- DAG, orchestration, idempotency
-- Lineage, data catalog, data contracts, data products
+- Open table formats: Apache Iceberg, Delta Lake, Apache Hudi
+- SQL, NoSQL (document, columnar, key-value, graph)
+- Processing engines: Apache Spark, Spark Structured Streaming, Apache Flink, Kafka Streams, ksqlDB
+- Orchestration: Airflow, Prefect, Dagster; transformation: dbt (Core/Cloud), analytics engineering
+- Platforms: Snowflake, Databricks, Redshift, BigQuery, Microsoft Fabric, Synapse
+- AWS (S3, Glue, EMR, Athena, Kinesis, MSK), GCP (BigQuery, Dataflow, Dataproc, Pub/Sub), Azure (Data Factory, Fabric, Event Hubs)
+- Data quality and observability: dbt tests, Great Expectations, Soda, Elementary; Monte Carlo, Bigeye
+- Lineage, data catalog (Atlan, Collibra, Unity Catalog), data contracts, data products
+- DAG, orchestration, idempotency; exactly-once vs at-least-once delivery; watermarking
 
 ## Adjacency
 

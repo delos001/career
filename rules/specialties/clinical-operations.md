@@ -11,31 +11,35 @@ adjacency:
 
 ## Capability vocabulary
 
-- Study start-up management
-- Site selection and activation
-- Operational vendor and CRO management
-- Site monitoring (centralized and on-site)
-- Risk-based monitoring (RBM) implementation
-- Investigator engagement and site management
-- Patient recruitment and retention strategy
+- Study start-up and site activation (feasibility through first-patient-in)
+- Operational input to protocol design (feasibility, recruitment, site selection)
+- Operational vendor and CRO management; sponsor oversight per ICH E6(R3) Section 3.9
+- Functional Service Provider (FSP) and Full-Service Outsourcing (FSO) governance
+- Site monitoring (on-site, centralized, remote)
+- Risk-Based Quality Management (RBQM) including Quality Tolerance Limits (QTL) and Key Risk Indicators (KRI)
+- Investigator and site engagement; CRA team leadership
+- Participant recruitment and retention strategy
 - Protocol deviation and amendment management
 - Trial conduct oversight (Phase I–IV)
-- Database lock and trial close-out
+- Decentralized/hybrid clinical trial operations (per FDA Sep 2024 final guidance)
+- Trial Master File (TMF/eTMF) governance and inspection-readiness
+- Budget forecasting and timeline management; re-forecasting at operational milestones
+- Database lock, trial close-out, and contribution to clinical study report (CSR)
 - Inspection readiness from operational data and trial conduct
-- Cross-functional clinical program execution
+- Cross-functional clinical program execution (regulatory, biostatistics, data management, pharmacovigilance, medical affairs, CMC)
 - Clinical operations leadership across multi-study portfolios
 
 ## Terminology
 
-Sector-wide pharma terms (regulatory bodies, frameworks, submission docs, trial-lifecycle, sector-wide stakeholders) live in `rules/industries/pharma.md` Vocabulary. Practice-specific terminology below.
+Sector-wide pharma terms (regulatory bodies, frameworks, submission docs, trial-lifecycle, sector-wide stakeholders, pharmacovigilance) live in `rules/industries/pharma.md` Vocabulary. Practice-specific terminology below.
 
 - ICF, CRF, eCRF (operational data-capture artifacts)
 - EDC, CTMS, eTMF, IRT, IWRS (operational systems)
-- SDV, SDR, central monitoring, RBM (operational monitoring practices)
-- PI, sub-I, site coordinator, study coordinator (operational site roles)
-- FSP (functional service provider staffing model)
-- Adverse events (AE), serious adverse events (SAE), SUSAR (pharmacovigilance terms used in trial conduct)
-- Database lock, clinical study report (CSR), CTD module 5 (close-out and submission outputs)
+- SDV, SDR, central monitoring, remote monitoring, RBM, RBQM, QTL, KRI (operational monitoring practices)
+- PI, sub-I, CRC (clinical research coordinator), study coordinator (operational site roles)
+- CRA, CTA (clinical trial assistant), CPM (clinical project manager) (sponsor/CRO operational team roles)
+- FPI (first patient in), LPI (last patient in), LPO (last patient out), DBL (database lock) (study-conduct milestones)
+- Protocol deviation, important protocol deviation (per FDA Dec 2024 draft guidance), protocol amendment (deviation/amendment workflow)
 
 ## Adjacency
 

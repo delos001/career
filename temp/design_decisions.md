@@ -150,6 +150,14 @@ Refs: `experience-inventory-existing-data-migration` (deferral).
 Specialty-specific tags do not live here. Capability values in `rules/specialties/<specialty>.md` Section 1. Industry packs hold industry content but not Capability lists.
 Orientation values in `rules/orientations/`. Industry/Specialty registries: `rules/industries/registry.md`, `rules/specialties/registry.md`.
 
+#### initial-industry-pack-content-design
+Pharma industry pack (`rules/industries/pharma.md`) content-validated through manual research against current practitioner sources (FDA, ICH, ACRP, regulatory publications, hiring keyword surveys). Vocabulary, dialect, emphasis, adjacency captured. Future industry packs trigger `industry_builder` build at that time; pharma serves as the worked example.
+Refs: `temp/axis_research_notes.md`, `foundation-execution-order`, `five-orthogonal-axes`.
+
+#### initial-specialty-pack-content-design
+Five specialty packs (`rules/specialties/clinical-operations.md`, `data-engineering.md`, `ai-engineering.md`, `quality-compliance.md`, `people-leadership.md`) content-validated through manual research against current practitioner sources (industry frameworks, hiring keyword surveys, regulatory publications, framework authorities). Capability vocabulary, terminology, adjacency captured per specialty. Future refresh runs through `specialty_builder` if/when built.
+Refs: `temp/axis_research_notes.md`, `foundation-execution-order`, `five-orthogonal-axes`, `tag-taxonomy`.
+
 #### field-rename-outcome-purpose
 `Outcome:` → `Purpose:` in inventory entries. Field semantically classifies value type, not measurable outcome.
 
@@ -369,6 +377,10 @@ Foundation-up order:
 4. Each workflow skill in sequence.
 5. Remaining items.
 Qualified by `feedback_build_incrementally.md`: per-skill detail at skill build time, not in advance.
+
+#### foundation-execution-order
+Hand-edit axis rule files first → finalize knowledge documents next → build axis_builder skills later, only if refresh demand recurs. Builder skills become refresh tools, not validation gates that block progress. Decision driven by avoiding the planning-paralysis pattern that killed the prior build (deferring real work because a hypothetical future skill might do it differently).
+Refs: `initial-industry-pack-content-design`, `initial-specialty-pack-content-design`, `cross-axis-reconciliation` (deferral), `approach-foundation-first`, `builders-axis-parity`.
 
 #### decision-filter
 Order: value, friction, scalability, learning tiebreaker. Scope creep and gold plating route to "enhancements" list, not inline.
