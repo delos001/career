@@ -40,6 +40,12 @@ Sweeps in-scope docs, parses metadata headers, cross-references against COMPONEN
 - Blocks: nothing currently.
 - Refs: `temp/axis_research_notes.md`, `builders-axis-parity`.
 
+### industry-rule-files-buildout
+Author `rules/industries/registry.md` (values: pharma, biotech, cro, med-device, eclinical, generics, diagnostics). Refresh `rules/industries/pharma.md` to narrow scope (small-molecule focus). Author `biotech.md`, `cro.md`, `med-device.md` (research-validated). Vocabulary sections may short-form ("inherits pharma vocabulary; specific differences below") where overlap warrants. eclinical = registry-only. generics, diagnostics = file authoring deferred until a target JD surfaces.
+- Trigger: next session.
+- Blocks: per-entry Industry tagging on 197 inventory entries.
+- Refs: `industry-value-granularity`, `initial-industry-pack-content-design`, `axes-file-schema`.
+
 ## Per-Skill Design Items
 
 ### session-log-body-schema
@@ -176,7 +182,8 @@ One-time script: strip Pandoc underline syntax; remove HTML comment blocks. Mech
 Apply `positioning-schema` to `Positioning.md`. Migration surfaces existing inaccuracies: "Story 7 (Direct Report Accountability)" is misclassified (it's DC-003); appendix lists Stories 1-9 but 10 exist (ST-010 may need addition).
 
 ### experience-inventory-existing-data-migration
-Apply `experience-inventory-domain-scoping`, `-section-6-rename`, `-section-4-restructure`, `-section-5-restructure`, `-section-7-flat-records`, `-section-ordering`, `field-rename-outcome-purpose` to `Experience_Inventory.md`. Roughly 190+ EX entries and 5+ PR entries gain Industry/Specialty fields.
+Remaining: Section 4/5/6/7 structural restructures; per-entry axis tagging for Industry/Specialty/Orientation across 197 entries (blocked on `industry-rule-files-buildout`); Work-state re-tag on 5 PR entries (currently `Independent`); `inventory-field-drift-cleanup` (Outcome/Capability/Context/Impact).
+Earlier work applied: Active Domain delete, Section 9/10 swap, `Added` field cleanup, 197-entry structural restructure (Title|Project + Company split, Description+Context+Impact at end with field label and bold preserved, axis field skeleton, Role Level → Level + Org Context → Work-state with value translations).
 
 ### questions-library-deletion
 Delete `personal/knowledge/Questions_Library.md` after manual content extraction if any.
@@ -237,3 +244,9 @@ quality-compliance ↔ data-engineering and ↔ ai-engineering adjacencies are n
 - Trigger: cv_targeted use against real JDs surfaces an entry that should have surfaced under quality-compliance retrieval but didn't, despite reasonable work-nature tagging.
 - Blocks: nothing currently.
 - Refs: `specialty-axis-tagging-by-work-nature`, `experience-inventory-domain-scoping`.
+
+### inventory-field-drift-cleanup
+Rationalize Outcome (rename to Purpose per `field-rename-outcome-purpose` or alternative term), Capability (obsolete; values don't match new specialty-pack vocabularies), Context, Impact. Drift across these four prose-style fields was deferred during structural migration since they overlap semantically.
+- Trigger: inventory finalization session after industry rule files complete.
+- Blocks: inventory schema finalization.
+- Refs: `field-rename-outcome-purpose`, `tag-taxonomy`, `inventory-entry-structure-applied`.

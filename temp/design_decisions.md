@@ -110,6 +110,12 @@ Refs: `axes-composition-precedence`, `document-metadata-header-discipline`, `fou
 #### skill-stability-loose-coupling
 Skills reference rules by category/slug. Resolver script looks up the current file. Skill body does not hard-code paths.
 
+#### retrieval-method-pure-tag-based
+Every retrievable inventory entry tagged on every applicable axis (Industry, Specialty, Orientation, Level, Work-state). Pure tag-based as default retrieval mechanism; semantic retrieval can layer on later if cv_targeted needs it. Tagging is reversible; deferring foundation completion is not. Resolves the open question `retrieval-method-for-discrete-elements`.
+
+#### level-on-entries-effective-level
+Level lives on both RL-NNN role records (titled level — factual record of the role) and EX/PR entries (effective level — defaults to role's titled level, override-able when work was above-title-level). Captures the pattern of doing higher-than-title-level work within a titled role. Revises `experience-inventory-section-7-flat-records` (which had Level only on RL records).
+
 ### Knowledge Documents (Schemas)
 
 #### knowledge-document-roster
@@ -217,6 +223,18 @@ Refs: `scaffolding-folder-layout`, `scaffolding-content-updates` (deferrals).
 #### questions-library-eliminated
 Originally context-free interview question library; drifted to per-application questions. Eliminated. Per-application questions live in application folder.
 Refs: `questions-library-deletion` (deferral).
+
+#### knowledge-doc-update-mechanism-hand-edit
+Existing knowledge documents (User_Info, Experience_Inventory, Career_Narratives, Positioning) updated by hand-edit. Builder skills become refresh tools later, only if refresh demand recurs. Mechanical sub-tasks may use one-off scripts (e.g., `temp/migrate_inventory.py`). Resolves the open question `knowledge-doc-update-mechanism`.
+
+#### inventory-entry-structure-applied
+EX-NNN and PR-NNN entries carry, in order: ID, Title-or-Project, Company, Industry, Specialty, Orientation, Level, Work-state, Outcome (rename pending cleanup), Capability (fate pending cleanup), Added, Last Used, Description (`Description:` label, bold preserved on value), Context (sparse), Impact (sparse). Title|Project + Company replaces prior compound `Role:`/`Project:` field. Description+Context+Impact at end of block as the prose section.
+Refs: `experience-inventory-domain-scoping`, `experience-inventory-entry-types`, `inventory-field-drift-cleanup` (deferral).
+
+#### industry-value-granularity
+Industry registry values: pharma, biotech, cro, med-device, eclinical, generics, diagnostics. Discrete rule files for pharma (refresh, narrow scope to small-molecule), biotech, cro, med-device. eclinical = registry-only (single inventory entry; pharma adjacency handles translation). generics, diagnostics = file authoring deferred.
+Reasoning: GICS/NAICS treat pharma and biotech distinct; submission pathway (NDA via CDER vs BLA via CBER) is meaningful CV signal. CRO is service-side perspective with distinct hiring emphasis (cross-sponsor, contract delivery). Med-device has fundamentally different regulatory framework (510(k)/PMA/De Novo, ISO 13485, design controls).
+Refs: `industry-rule-files-buildout` (deferral), `initial-industry-pack-content-design`.
 
 ### Skills System
 
