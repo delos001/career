@@ -232,9 +232,13 @@ EX-NNN and PR-NNN entries carry, in order: ID, Title-or-Project, Company, Indust
 Refs: `experience-inventory-domain-scoping`, `experience-inventory-entry-types`, `inventory-field-drift-cleanup` (deferral).
 
 #### industry-value-granularity
-Industry registry values: pharma, biotech, cro, med-device, eclinical, generics, diagnostics. Discrete rule files for pharma (refresh, narrow scope to small-molecule), biotech, cro, med-device. eclinical = registry-only (single inventory entry; pharma adjacency handles translation). generics, diagnostics = file authoring deferred.
+Industry registry values: pharma, biotech, cro, med-device, eclinical, generics, diagnostics. Discrete rule files for pharma, biotech, cro, med-device (all research-validated 2026-04). eclinical = registry-only (single inventory entry; pharma adjacency handles translation). generics, diagnostics = file authoring deferred.
 Reasoning: GICS/NAICS treat pharma and biotech distinct; submission pathway (NDA via CDER vs BLA via CBER) is meaningful CV signal. CRO is service-side perspective with distinct hiring emphasis (cross-sponsor, contract delivery). Med-device has fundamentally different regulatory framework (510(k)/PMA/De Novo, ISO 13485, design controls).
-Refs: `industry-rule-files-buildout` (deferral), `initial-industry-pack-content-design`.
+Refs: `industry-files-full-enumeration`, `initial-industry-pack-content-design`.
+
+#### industry-files-full-enumeration
+Each industry file (`pharma.md`, `biotech.md`, `cro.md`, `med-device.md`) enumerates its full vocabulary, dialect, and stakeholder content. No `inherits from <other>.md` shorthand. Shorthand was attempted in initial biotech.md and cro.md drafts and broke `role-evaluation-axis-matching-protocol` (vocabulary axes match by overlap against the file's data sections; a matcher reading the file alone misses inherited terms). Resolution: full enumeration accepts cross-file content redundancy as the cost of discrete-industry granularity. Update propagation tracked via `registry-overlap-tracking`.
+Refs: `axes-file-schema`, `role-evaluation-axis-matching-protocol`, `industry-value-granularity`, `registry-overlap-tracking` (deferral).
 
 ### Skills System
 

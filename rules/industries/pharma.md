@@ -15,7 +15,7 @@ Participant terminology: "participant" is the current preference in protocols an
 
 Submission terms: regulatory submission, pre-IND, IND, NDA, BLA, ANDA, sNDA, sBLA, MAA, 505(b)(2), CTD, eCTD (v3.2.2 current; v4.0 supported), DMF.
 
-Regulatory frameworks: GxP family (GCP, GMP, GLP, GDP, GVP), ICH (E6(R3) is current GCP standard, finalized Jan 2025; E2 family for PV; E8(R1), E9, M4, M11), 21 CFR Part 11, EU Annex 11, EU CTR (536/2014).
+Regulatory frameworks: GxP family (GCP, GMP, GLP, GDP, GVP), ICH (E6(R3) is current GCP standard, finalized Jan 2025; E2 family for PV; E8(R1), E9, M4, M11), 21 CFR Part 11, EU Annex 11, EU CTR (536/2014). E6(R3) Section 3.9 establishes sponsor oversight of transferred trial-related duties and functions to service providers (broader term replacing "CRO" in R3); sponsor accountability is explicit and non-delegable. Key R3 phrasing: "service provider," "fit-for-purpose," "risk-proportionate." (Replaces R2 Section 5.2 vocabulary; entries phrased to R2 read dated.)
 
 Data standards: CDISC (SDTM, ADaM, CDASH, SEND), Define-XML, Dataset-JSON.
 
@@ -35,7 +35,7 @@ The industry is acronym-dense. Acronyms recognized without expansion in pharma h
 
 ## Emphasis
 
-Hiring-panel emphasis falls on: regulated-environment work; multi-function integration across clinical, regulatory, quality, and CMC; external-partner ecosystem (CRO, FSP, FSO, vendor); therapeutic-area depth; trial-phase exposure (Phase I, II, III, post-marketing); submission-era exposure (pre-IND, pivotal, registrational); risk-based and quality-by-design approaches (per ICH E6(R3)); decentralized/hybrid trial elements (per FDA Sep 2024 final guidance); data-standards literacy (CDISC) for data-adjacent roles.
+Hiring-panel emphasis falls on: regulated-environment work; multi-function integration across clinical, regulatory, quality, and CMC; external-partner ecosystem (CRO, FSP, FSO, vendor) under ICH E6(R3) Section 3.9 sponsor-oversight framework (transferred duties documented, sponsor accountability non-delegable, fit-for-purpose service-provider selection); therapeutic-area depth; trial-phase exposure (Phase I, II, III, post-marketing); submission-era exposure (pre-IND, pivotal, registrational); risk-based and quality-by-design approaches (per ICH E6(R3)); decentralized/hybrid trial elements (per FDA Sep 2024 final guidance); data-standards literacy (CDISC) for data-adjacent roles.
 
 Regulated work paired with its governing framework (GCP-compliant, ICH E6(R3)-aligned, 21 CFR Part 11-aligned) reads as regulatory literacy. Regulatory presence without framework attribution does not.
 
@@ -52,3 +52,4 @@ Translation signal for entries tagged with adjacent industries:
 - **generics**: ANDA/505(b)(2)/regulatory and CMC are the relevant signal; clinical novelty is not.
 - **med-device**: 510(k)/PMA experience translates as regulatory rigor; ISO 13485 maps to GMP discipline; device-specific terminology does not carry.
 - **diagnostics**: regulated-environment and quality-systems work translates; LDT/IVDR context is the relevant signal; assay-specific detail does not.
+- **eclinical**: pharma sponsors are the primary buyer of eClinical platforms (EDC, CTMS, eTMF, RTSM/IRT, eCOA/ePRO, eConsent, RBQM). Sponsor-side platform-evaluation, vendor selection, system validation (CSV/CSA), integration, and SOP-aligned configuration translate to eclinical vendor or platform-role contexts. Veeva Vault, Medidata Rave, Oracle Clinical One, Florence are current dominant platforms.

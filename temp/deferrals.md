@@ -40,11 +40,23 @@ Sweeps in-scope docs, parses metadata headers, cross-references against COMPONEN
 - Blocks: nothing currently.
 - Refs: `temp/axis_research_notes.md`, `builders-axis-parity`.
 
-### industry-rule-files-buildout
-Author `rules/industries/registry.md` (values: pharma, biotech, cro, med-device, eclinical, generics, diagnostics). Refresh `rules/industries/pharma.md` to narrow scope (small-molecule focus). Author `biotech.md`, `cro.md`, `med-device.md` (research-validated). Vocabulary sections may short-form ("inherits pharma vocabulary; specific differences below") where overlap warrants. eclinical = registry-only. generics, diagnostics = file authoring deferred until a target JD surfaces.
-- Trigger: next session.
-- Blocks: per-entry Industry tagging on 197 inventory entries.
-- Refs: `industry-value-granularity`, `initial-industry-pack-content-design`, `axes-file-schema`.
+### registry-overlap-tracking
+Use `rules/industries/registry.md` (or an extension file) as a cross-reference of which terms appear in which industry files, so updates to shared regulatory/vocabulary terms (FDA guidance, ICH adoptions) can be propagated to all relevant files. Full-enumeration approach (`industry-files-full-enumeration`) duplicates shared terms across pharma/biotech/cro; redundancy is acceptable now but update-cost grows over time.
+- Trigger: first shared-term update where propagation cost surfaces as friction; or earlier if foundation tooling investment is warranted.
+- Blocks: nothing currently.
+- Refs: `industry-files-full-enumeration`.
+
+### axis-programmatic-slicing-audit
+Audit all axes (industries, specialties, orientations, levels, work-states) to verify section structure supports programmatic section-level retrieval rather than full-file reads into LLM context. Goal: skills consume only relevant sections of axis files (Vocabulary, Dialect, Emphasis, Adjacency individually addressable), not entire files. Refactor where not.
+- Trigger: knowledge files finalized.
+- Blocks: section-level retrieval scripts; downstream skills depending on retrieval pattern.
+- Refs: `axes-file-schema`, `stack-retrieval`.
+
+### specialties-registry-buildout
+Author `rules/specialties/registry.md` per `experience-inventory-domain-scoping`. Validates Specialty values used on inventory entries. Currently missing — surfaced during industry-files audit (O1).
+- Trigger: knowledge files finalized.
+- Blocks: per-entry Specialty tagging on inventory entries.
+- Refs: `experience-inventory-domain-scoping`, `tag-taxonomy`.
 
 ## Per-Skill Design Items
 
