@@ -114,7 +114,8 @@ Skills reference rules by category/slug. Resolver script looks up the current fi
 Every retrievable inventory entry tagged on every applicable axis (Industry, Specialty, Orientation, Level, Work-state). Pure tag-based as default retrieval mechanism; semantic retrieval can layer on later if cv_targeted needs it. Tagging is reversible; deferring foundation completion is not. Resolves the open question `retrieval-method-for-discrete-elements`.
 
 #### level-on-entries-effective-level
-Level lives on both RL-NNN role records (titled level — factual record of the role) and EX/PR entries (effective level — defaults to role's titled level, override-able when work was above-title-level). Captures the pattern of doing higher-than-title-level work within a titled role. Revises `experience-inventory-section-7-flat-records` (which had Level only on RL records).
+Level lives only on EX/PR entries (effective level). Captures the pattern of doing higher-than-title-level work within a titled role.
+Prior version had Level on both RL-NNN role records (titled level) and EX/PR entries (effective level), with EX/PR defaulting from RL when missing. Removed RL Level after per-entry Level became fully populated on all 197 EX/PR entries: cv_targeted matches JD Level against entry effective level directly; RL Level was never read in retrieval and added no signal. If a future builder skill needs role-level defaulting for new EX entries, the field can be reintroduced.
 
 ### Knowledge Documents (Schemas)
 
@@ -171,11 +172,25 @@ Per-entry fields for Orientation and Work-state pending `retrieval-method-for-di
 
 #### experience-inventory-section-6-rename
 Renamed "Therapeutic Area and Domain Exposure" → "Industry Exposure Profile". `**Bold:**` lines → `### Sub-section` headings.
-Sub-sections: Therapeutic Areas, Trial Phases, Study Types, Geographic Scope, Data Domains (renamed from Data Modalities), Data Modalities (new), Standards (new), Regulatory Frameworks, Functional Experience (renamed from Functional Domains).
-"Data Domains" reuses domain in CDISC sense (DM, AE, LB), distinct from retired axis term.
+Sub-sections: Therapeutic Areas, Trial Phases, Study Types, Geographic Scope, Data Sources (renamed from Data Modalities), Standards (new), Regulatory Frameworks, Functional Experience (renamed from Functional Domains).
+Data Modalities sub-section dropped — content folded; "Data Sources" carries the operative meaning (EDC, central lab, ePRO, IXRS, etc.).
+
+#### experience-inventory-section-1-structured-fields
+Section 1 (Education) entries carry structured fields, no IDs: Degree, Discipline, Institution, Start Date, End Date. Year-only date granularity (YYYY). Honors/GPA omitted. No retrieval tagging — section remains reference content per `experience-inventory-tagging-granularity`; structure exists to give cv_targeted's renderer reliable field handles instead of comma-parsing a flat line (which broke on disciplines containing commas).
+Refs: `experience-inventory-tagging-granularity`.
+
+#### experience-inventory-section-2-structured-fields
+Section 2 (Professional Certifications) entries carry structured fields, no IDs: Certification, Issuer, Date Earned, Expiration Date, Status. Year-only date granularity. Expiration Date optional (blank for non-expiring or unknown). Status enum: Active | Inactive. No retrieval tagging — reference content. Schema designed for generalization (other users may hold active expiring certs); blank fields acceptable.
+Refs: `experience-inventory-tagging-granularity`, `feedback_design_for_generalization`.
+
+#### experience-inventory-section-3-structured-fields
+Section 3 (Professional Affiliations) entries carry structured fields, no IDs: Affiliation, Role, Start Date, End Date, Status. Year-only date granularity. Role field accommodates Member through Board/Officer/Committee Chair (general-utility, not just current user's "Member"). Status enum: Active | Inactive (extensible). No retrieval tagging.
+Refs: `experience-inventory-tagging-granularity`, `feedback_design_for_generalization`.
 
 #### experience-inventory-section-4-restructure
 Professional Training: Completed and In Progress sub-sections. Year dropped from In Progress sub-header.
+Structured fields per entry, no IDs: Training, Provider, Format, Start Date, End Date. Date granularity YYYY-MM. Format optional (Online | In-Person | Hybrid). Sub-section split provides Status indicator (no separate Status field). No retrieval tagging — reference content. Schema designed for generalization.
+Refs: `experience-inventory-tagging-granularity`, `feedback_design_for_generalization`.
 
 #### experience-inventory-section-5-restructure
 Technical Experience: three sub-sections.
@@ -183,6 +198,11 @@ Technical Experience: three sub-sections.
 - Office & Collaboration (SharePoint, MS Teams, OneNote, Visio, Adobe Acrobat Pro, Adobe LiveCycle Designer)
 - Clinical Application Systems (9 categories carried forward)
 Methodologies sub-section dropped; items relocated. Recategorizations: Minitab → ML & Analytics; MS Access → Languages & Data Engineering; JIRA, MS Project → Project Management Tools. Oracle Apex dropped.
+
+Tools-only discipline: Section 5 lists named tools, products, libraries, and platforms only. Capability descriptions, methods, algorithms, and work-scope descriptors do not belong here — that content lives in Section 8 (EX entries) or other sections. Cleanup pass stripped: ETL/ELT workflows, file parsing, ML methods (ARIMA, regression, clustering, PCA, NLP, EDA, etc.), simulation/optimization, decision analytics, Python/R viz libraries (generic), custom user-built apps, "(generic)" placeholders.
+
+Flat-list convention: one tool/product per token, comma-separated. Sub-products enumerated separately (Jupyter Notebook, JupyterLab — not Jupyter (Notebooks, Lab); Git, GitHub — not Git/GitHub). Acronym-expansion parens permitted (eRT (e-Research Technology)) since JDs may use either form. Scope/role descriptors stripped from parens. Generic category mentions (ePRO platforms, eCOA platforms) retained when no specific named platform exists — supports JD category-level matching. Versions dropped from tool names (Minitab, not Minitab17).
+Refs: `feedback_design_for_generalization`.
 
 #### experience-inventory-section-7-flat-records
 Flat records, each role self-contained, company as a field. Stable ID `RL-NNN`.
@@ -200,8 +220,9 @@ Refs: `experience-inventory-existing-data-migration` (deferral).
 
 #### tag-taxonomy
 `rules/tags.yaml` holds only global tag vocabularies that apply to every entry: Role Level, Purpose. YAML. Org Context absorbed into the Work-state axis.
-Specialty-specific tags do not live here. Capability values in `rules/specialties/<specialty>.md` Section 1. Industry packs hold industry content but not Capability lists.
-Orientation values in `rules/orientations/`. Industry/Specialty registries: `rules/industries/registry.md`, `rules/specialties/registry.md`.
+Specialty-specific tags do not live here. Specialty-pack capability vocabulary (fine-grained, specialty-specific) in `rules/specialties/<specialty>.md` Capability vocabulary section. Industry packs hold industry content but not Capability lists.
+Entry-level Competency tags (coarse functional groupings, distinct from specialty-pack vocabulary) in `rules/competencies/registry.md`. Per `competency-field-and-registry`.
+Orientation values in `rules/orientations/`. Industry/Specialty/Competency registries: `rules/industries/registry.md`, `rules/specialties/registry.md`, `rules/competencies/registry.md`.
 
 #### initial-industry-pack-content-design
 Pharma industry pack (`rules/industries/pharma.md`) content-validated through manual research against current practitioner sources (FDA, ICH, ACRP, regulatory publications, hiring keyword surveys). Vocabulary, dialect, emphasis, adjacency captured. Future industry packs trigger `industry_builder` build at that time; pharma serves as the worked example.
@@ -211,8 +232,24 @@ Refs: `temp/axis_research_notes.md`, `foundation-execution-order`, `five-orthogo
 Five specialty packs (`rules/specialties/clinical-operations.md`, `data-engineering.md`, `ai-engineering.md`, `quality-compliance.md`, `people-leadership.md`) content-validated through manual research against current practitioner sources (industry frameworks, hiring keyword surveys, regulatory publications, framework authorities). Capability vocabulary, terminology, adjacency captured per specialty. Future refresh runs through `specialty_builder` if/when built.
 Refs: `temp/axis_research_notes.md`, `foundation-execution-order`, `five-orthogonal-axes`, `tag-taxonomy`.
 
-#### field-rename-outcome-purpose
-`Outcome:` → `Purpose:` in inventory entries. Field semantically classifies value type, not measurable outcome.
+#### outcome-folded-into-impact
+`Outcome:` field removed from inventory entries. Closed-enum value (Capability Building, Risk Reduction, Quality Improvement, Efficiency Gain, Cost Savings, Scalability/Growth Enablement) folded into `Impact:` field as a colon-delimited prefix: `Impact: <value-type>: <prose>` when prose exists, `Impact: <value-type>` when prose was absent.
+Rationale: Outcome was not called out as a retrieval signal in `cv-targeted-content-rules-from-axes`; coverage was 64% (126/197) so it added a sparse field with no committed downstream consumer. Folding into Impact preserves the value-type signal (grep-extractable via the leading colon-delimited token) while collapsing schema. Reads as natural narrative — the value-type clause is not "wrong" as the leading word of impact prose.
+Supersedes the prior `field-rename-outcome-purpose` decision (Outcome was to be renamed to Purpose; now removed entirely).
+Refs: `inventory-entry-structure-applied`, `inventory-field-drift-cleanup` (deferral), `cv-targeted-content-rules-from-axes` (deferral).
+
+#### competency-field-and-registry
+Inventory entry field `Capability:` renamed to `Competency:`. Controlled vocabulary at `rules/competencies/registry.md`. Validator (deferred to script build) parses inventory Competency lines, splits on `|`, rejects unknown tokens; aliases auto-canonicalize near-misses.
+Rationale: name-collision avoided with specialty-pack `Capability vocabulary` sections; "Competency" links semantically to CV format spec's "Core Competencies" section.
+Initial 16-term registry derived from existing inventory tags. **Superseded by `competency-registry-bottom-up-redesign-2026-05`** which replaced the registry contents with 31 lowercase-kebab values via bottom-up phrase extraction across all 197 entries. The Capability→Competency rename and registry-as-controlled-vocabulary concept established here remain valid; only the value list was replaced.
+Refs: `tag-taxonomy`, `inventory-entry-structure-applied`, `competency-registry-bottom-up-redesign-2026-05`.
+
+#### competency-registry-bottom-up-redesign-2026-05
+Replaced prior 16-term coarse Competency registry with a 31-term granular registry. Format changed from Title Case (`Clinical Trial Execution`) to lowercase kebab (`site-monitoring-and-visit-conduct`) to match all other axis value formats. Designed for orthogonality with Specialty axis: no Competency value duplicates a Specialty value (`quality-compliance`, `data-engineering`, `ai-engineering`, `people-leadership`).
+Rationale: the prior registry had three structural problems — (1) value-name overlap with Specialty (e.g., Competency `Quality & Compliance` vs Specialty `quality-compliance` were the same concept at different levels, doing the same job inefficiently); (2) Title-Case format inconsistent with kebab format used by every other axis; (3) coarse buckets like "Quality & Compliance" conflated formal QA function work (audits, CAPA, SOPs) with day-to-day quality activities, producing low-precision tags that couldn't distinguish JD-relevant work. Redesign addressed all three.
+Process: bottom-up extraction of free-vocabulary competency phrases from all 197 EX/PR entries' Descriptions (`temp/competency_extraction.md`); aggregation and clustering into 31 candidate clusters across 5 navigation domains (`temp/competency_clustering_proposal.md`); user-driven cluster refinement via 6 targeted feedback points; final registry authored at `rules/competencies/registry.md`. Bottom-up rather than top-down because the user's experience is broad enough across clinical operations, data, vendor, technology, and leadership domains that data-driven clustering captures real practitioner work patterns rather than imposing a generic taxonomy.
+Status: registry written (Step 3 complete). Step 5 (re-tag 197 entries against new registry) and Step 6 (sub-section reassignment pass) deferred to subsequent session per user request for clean-pass review of the registry first to mitigate over-fitting risk.
+Refs: `competency-field-and-registry`, `tag-taxonomy`, `inventory-entry-structure-applied`, `feedback_design_for_generalization`, `competency-retagging-step-5` (deferral), `inventory-section-8-subsection-reassignment` (deferral).
 
 #### knowledge-document-scaffolding
 `support/` folder at repo root holds scaffolding files; user copies into private personal repo on first clone. Career repo never holds user's personal data.
@@ -228,8 +265,9 @@ Refs: `questions-library-deletion` (deferral).
 Existing knowledge documents (User_Info, Experience_Inventory, Career_Narratives, Positioning) updated by hand-edit. Builder skills become refresh tools later, only if refresh demand recurs. Mechanical sub-tasks may use one-off scripts (e.g., `temp/migrate_inventory.py`). Resolves the open question `knowledge-doc-update-mechanism`.
 
 #### inventory-entry-structure-applied
-EX-NNN and PR-NNN entries carry, in order: ID, Title-or-Project, Company, Industry, Specialty, Orientation, Level, Work-state, Outcome (rename pending cleanup), Capability (fate pending cleanup), Added, Last Used, Description (`Description:` label, bold preserved on value), Context (sparse), Impact (sparse). Title|Project + Company replaces prior compound `Role:`/`Project:` field. Description+Context+Impact at end of block as the prose section.
-Refs: `experience-inventory-domain-scoping`, `experience-inventory-entry-types`, `inventory-field-drift-cleanup` (deferral).
+EX-NNN and PR-NNN entries carry, in order: ID, Title-or-Project, Company, Industry, Specialty, Orientation, Level, Work-state, Competency (renamed from Capability per `competency-field-and-registry`), Added, Last Used, Description (`Description:` label, bold preserved on value), Impact, Context. Title|Project + Company replaces prior compound `Role:`/`Project:` field.
+Prose section order at end of block: Description (Action), then Impact (Result), then Context (Situation). Impact is sparse-permitted, may carry a colon-delimited value-type prefix per `outcome-folded-into-impact` (e.g., `Impact: Risk Reduction: <prose>` or `Impact: Risk Reduction`). Context is sparse-permitted, free prose.
+Refs: `experience-inventory-domain-scoping`, `experience-inventory-entry-types`, `outcome-folded-into-impact`, `competency-field-and-registry`, `inventory-field-drift-cleanup` (deferral).
 
 #### industry-value-granularity
 Industry registry values: pharma, biotech, cro, med-device, eclinical, generics, diagnostics. Discrete rule files for pharma, biotech, cro, med-device (all research-validated 2026-04). eclinical = registry-only (single inventory entry; pharma adjacency handles translation). generics, diagnostics = file authoring deferred.

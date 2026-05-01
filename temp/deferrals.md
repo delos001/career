@@ -40,6 +40,32 @@ Sweeps in-scope docs, parses metadata headers, cross-references against COMPONEN
 - Blocks: nothing currently.
 - Refs: `temp/axis_research_notes.md`, `builders-axis-parity`.
 
+### competency-retagging-step-5
+Re-tag all 197 EX/PR entries' `Competency:` field against the new 31-term registry (`rules/competencies/registry.md`). Each entry's existing tags (drawn from the prior 16-term Title-Case registry) get replaced with new tags drawn from the new registry, based on the entry's Description. Entries that previously carried over-broad tags (`Quality & Compliance`, `Clinical Trial Execution`) get split across the more granular successors. Under-tagged entries (EX-006 recruitment, EX-013 site selection, EX-016 training examples) gain tags they were missing.
+Approach: proposal-first — write proposed re-tagging to `temp/competency_retagging_proposal.md` (one line per entry showing old tags → new tags), user reviews and flags corrections, then apply to `Experience_Inventory.md`.
+- Trigger: user completes clean-pass review of new registry to validate against over-fitting risk.
+- Blocks: cv_targeted's reliance on Competency tagging signal; downstream sub-section reassignment (Step 6).
+- Refs: `competency-registry-bottom-up-redesign-2026-05`, `temp/competency_extraction.md`, `temp/competency_clustering_proposal.md`.
+
+### inventory-section-8-subsection-reassignment
+After Step 5 re-tagging completes, perform a pass over Section 8 entries to verify each sits under the correct sub-section heading given its new tags. Section 8 currently organizes entries under sub-sections like Clinical Monitoring & Site Management, Vendor Management & Oversight, Risk-Based Monitoring & Quality, etc. New granular Competency tags may surface entries currently mis-placed (e.g., an entry tagged `subject-recruitment-and-retention` may currently sit under Clinical Monitoring but belong under a recruitment-focused sub-section).
+- Trigger: Step 5 re-tagging complete.
+- Blocks: nothing currently; navigability/cleanliness improvement.
+- Refs: `competency-retagging-step-5`, `competency-registry-bottom-up-redesign-2026-05`.
+
+### inventory-company-field-rl-reference
+Replace `Company:` string field on EX entries with `Role: RL-NNN` reference to the Section 7 role record. Optionally drop `Title:` from EX entries (RL is canonical). Resolves the update-burden problem when a company rebrands or is acquired (currently 190+ entry updates required; with RL reference, 1 record updates).
+Per session 2026-05-01 Cluster C discussion: the design principle was confirmed (RL exists for this purpose; using ID instead of denormalized string is correct), but execution deferred alongside Step 5/Step 6 work.
+- Trigger: Step 5/6 complete OR independent push to address Company-field rebrand resilience.
+- Blocks: nothing currently.
+- Refs: `experience-inventory-section-7-flat-records`, `competency-retagging-step-5`.
+
+### inventory-builder-research-classification-sections-5-6
+experience_inventory builder skill needs a research component to classify Section 5 (Technical Experience) tools and Section 6 (Industry Exposure Profile) content against industry-pack and specialty-pack vocabularies. Drives downstream retrieval relevance and cv_targeted's ability to surface section content matched to JD industry/specialty signals.
+- Trigger: experience_inventory builder skill design.
+- Blocks: experience_inventory builder build; cv_targeted's section-5/section-6 consumption pattern.
+- Refs: `experience-inventory-section-5-restructure`, `experience-inventory-section-6-rename`, `cv-targeted-content-rules-from-axes`.
+
 ### registry-overlap-tracking
 Use `rules/industries/registry.md` (or an extension file) as a cross-reference of which terms appear in which industry files, so updates to shared regulatory/vocabulary terms (FDA guidance, ICH adoptions) can be propagated to all relevant files. Full-enumeration approach (`industry-files-full-enumeration`) duplicates shared terms across pharma/biotech/cro; redundancy is acceptable now but update-cost grows over time.
 - Trigger: first shared-term update where propagation cost surfaces as friction; or earlier if foundation tooling investment is warranted.
@@ -52,11 +78,6 @@ Audit all axes (industries, specialties, orientations, levels, work-states) to v
 - Blocks: section-level retrieval scripts; downstream skills depending on retrieval pattern.
 - Refs: `axes-file-schema`, `stack-retrieval`.
 
-### specialties-registry-buildout
-Author `rules/specialties/registry.md` per `experience-inventory-domain-scoping`. Validates Specialty values used on inventory entries. Currently missing — surfaced during industry-files audit (O1).
-- Trigger: knowledge files finalized.
-- Blocks: per-entry Specialty tagging on inventory entries.
-- Refs: `experience-inventory-domain-scoping`, `tag-taxonomy`.
 
 ## Per-Skill Design Items
 
@@ -194,8 +215,20 @@ One-time script: strip Pandoc underline syntax; remove HTML comment blocks. Mech
 Apply `positioning-schema` to `Positioning.md`. Migration surfaces existing inaccuracies: "Story 7 (Direct Report Accountability)" is misclassified (it's DC-003); appendix lists Stories 1-9 but 10 exist (ST-010 may need addition).
 
 ### experience-inventory-existing-data-migration
-Remaining: Section 4/5/6/7 structural restructures; per-entry axis tagging for Industry/Specialty/Orientation across 197 entries (blocked on `industry-rule-files-buildout`); Work-state re-tag on 5 PR entries (currently `Independent`); `inventory-field-drift-cleanup` (Outcome/Capability/Context/Impact).
-Earlier work applied: Active Domain delete, Section 9/10 swap, `Added` field cleanup, 197-entry structural restructure (Title|Project + Company split, Description+Context+Impact at end with field label and bold preserved, axis field skeleton, Role Level → Level + Org Context → Work-state with value translations).
+Remaining (deferred to next session per user's clean-pass-recon plan):
+- Step 5: re-tag 197 entries against new 31-term Competency registry (`competency-retagging-step-5`)
+- Step 6: Section 8 sub-section reassignment based on new tags (`inventory-section-8-subsection-reassignment`)
+- Cluster C: Company field → `Role: RL-NNN` reference (`inventory-company-field-rl-reference`)
+
+Done 2026-05-01:
+- Sections 1-4 restructured with structured-field schemas (Education, Certifications, Affiliations, Training); year-only or YYYY-MM date granularity per section.
+- Section 5 cleaned to tools-only discipline; flat-list convention; capability/method tokens stripped (moved to Section 8 territory).
+- Section 6 closed: Data Sources renamed from Data Modalities; Data Modalities sub-section dropped.
+- Competency registry redesigned bottom-up: 16 → 31 terms, lowercase-kebab format, designed orthogonal to Specialty axis (`competency-registry-bottom-up-redesign-2026-05`).
+- Phrase extraction (Step 1) and clustering proposal (Step 2/3) artifacts saved at `temp/competency_extraction.md` and `temp/competency_clustering_proposal.md`.
+
+Done 2026-04-30:
+- Section 4/5/6/7 initial restructures per their decisions; per-entry Industry/Specialty/Orientation/Level/Work-state tagging across 197 entries; Capability→Competency rename + initial 16-term registry; Outcome→Impact fold; sub-section reorganization (9 moves); 5 PR Work-state Independent→greenfield; Level removed from RL records; field-drift cleanup. Background Roles encoding-artifact cleanup cleared as no-op (bytes are correct UTF-8; appearance was terminal-rendering artifact).
 
 ### questions-library-deletion
 Delete `personal/knowledge/Questions_Library.md` after manual content extraction if any.
@@ -257,8 +290,3 @@ quality-compliance ↔ data-engineering and ↔ ai-engineering adjacencies are n
 - Blocks: nothing currently.
 - Refs: `specialty-axis-tagging-by-work-nature`, `experience-inventory-domain-scoping`.
 
-### inventory-field-drift-cleanup
-Rationalize Outcome (rename to Purpose per `field-rename-outcome-purpose` or alternative term), Capability (obsolete; values don't match new specialty-pack vocabularies), Context, Impact. Drift across these four prose-style fields was deferred during structural migration since they overlap semantically.
-- Trigger: inventory finalization session after industry rule files complete.
-- Blocks: inventory schema finalization.
-- Refs: `field-rename-outcome-purpose`, `tag-taxonomy`, `inventory-entry-structure-applied`.
