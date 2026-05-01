@@ -40,19 +40,6 @@ Sweeps in-scope docs, parses metadata headers, cross-references against COMPONEN
 - Blocks: nothing currently.
 - Refs: `temp/axis_research_notes.md`, `builders-axis-parity`.
 
-### competency-retagging-step-5
-Re-tag all 197 EX/PR entries' `Competency:` field against the new 36-term activity-level registry (`rules/competencies/registry.md`). Each entry's existing tags (drawn from prior 16-term and 31-term registries) get replaced with new activity-level tags based on the entry's Description. Clinical-specific work re-mapped to underlying activity competencies (RBM/CSM → `risk-management` or `quality-management`; TMF → `procedure-authoring` or `regulatory-compliance`; site monitoring → `operations-management`; investigator training → `training-delivery`).
-Approach: proposal-first. Write proposed re-tagging to `temp/competency_retagging_proposal.md` (one line per entry showing old tags → new tags), user reviews and flags corrections, then apply to `Experience_Inventory.md`.
-- Trigger: `competency-registry-runtime-value` resolved AND outcome retains the registry in cv_targeted's retrieval path. If outcome is to drop the registry (semantic retrieval wins), this deferral is closed without execution.
-- Blocks: cv_targeted's reliance on Competency tagging signal; downstream sub-section reassignment (Step 6).
-- Refs: `competency-registry-activity-level-redesign-2026-05`, `competency-registry-runtime-value` (open question), `temp/competency_extraction.md` (historical evidence trail), `temp/competency_clustering_proposal.md` (historical, pre-activity-level redesign).
-
-### inventory-section-8-subsection-reassignment
-After Step 5 re-tagging completes, perform a pass over Section 8 entries to verify each sits under the correct sub-section heading given its new tags. Section 8 currently organizes entries under sub-sections like Clinical Monitoring & Site Management, Vendor Management & Oversight, Risk-Based Monitoring & Quality, etc. New granular Competency tags may surface entries currently mis-placed (e.g., an entry tagged `subject-recruitment-and-retention` may currently sit under Clinical Monitoring but belong under a recruitment-focused sub-section).
-- Trigger: Step 5 re-tagging complete.
-- Blocks: nothing currently; navigability/cleanliness improvement.
-- Refs: `competency-retagging-step-5`, `competency-registry-bottom-up-redesign-2026-05`.
-
 ### inventory-company-field-rl-reference
 Replace `Company:` string field on EX entries with `Role: RL-NNN` reference to the Section 7 role record. Optionally drop `Title:` from EX entries (RL is canonical). Resolves the update-burden problem when a company rebrands or is acquired (currently 190+ entry updates required; with RL reference, 1 record updates).
 Per session 2026-05-01 Cluster C discussion: the design principle was confirmed (RL exists for this purpose; using ID instead of denormalized string is correct), but execution deferred alongside Step 5/Step 6 work.
@@ -124,10 +111,10 @@ Weighted matching by JD emphasis: industry-emphasis weights Industry higher; spe
 - Refs: `five-orthogonal-axes`, `experience-inventory-domain-scoping`, `axis-adjacency-weights-redefinition`.
 
 ### cv-targeted-hybrid-retrieval
-Structured tag filter + semantic similarity ranking.
+Reshaped 2026-05-01 per `cv-targeted-retrieval-architecture-2026-05`. Two-pass hybrid: (1) semantic ranking over a Description-only payload returns candidate IDs; (2) supplemental tag-pulls driven by role_evaluation's matched axis values catch entries whose descriptions undersell their nature (Specialty/Orientation are the natural triggers; Industry weights ranking; Level/Work-state are framing-only). Merge, dedup, then load full entry detail for the merged candidate set. Implementation details (pre-extracted Description payload generation, embedding vs LLM-judgment, merge weighting) deferred to cv_targeted skill design.
 - Trigger: cv_targeted skill design.
 - Blocks: cv_targeted build.
-- Refs: `experience-inventory-domain-scoping`, `stack-retrieval`.
+- Refs: `cv-targeted-retrieval-architecture-2026-05`, `role-evaluation-axis-matching-protocol`, `experience-inventory-domain-scoping`, `stack-retrieval`.
 
 ### cross-axis-composition-mechanism
 Mechanism by which cv_targeted reconciles per-axis composition outputs. Possibilities range from per-axis sub-agents proposing content for their owned surface and engaging in review/challenge rounds to converge, to rule-based application of default precedence with no cross-axis review. Specific implementation deferred to cv_targeted skill design.
@@ -215,17 +202,17 @@ One-time script: strip Pandoc underline syntax; remove HTML comment blocks. Mech
 Apply `positioning-schema` to `Positioning.md`. Migration surfaces existing inaccuracies: "Story 7 (Direct Report Accountability)" is misclassified (it's DC-003); appendix lists Stories 1-9 but 10 exist (ST-010 may need addition).
 
 ### experience-inventory-existing-data-migration
-Remaining (deferred to next session per user's clean-pass-recon plan):
-- Step 5: re-tag 197 entries against new 31-term Competency registry (`competency-retagging-step-5`)
-- Step 6: Section 8 sub-section reassignment based on new tags (`inventory-section-8-subsection-reassignment`)
+Remaining:
 - Cluster C: Company field → `Role: RL-NNN` reference (`inventory-company-field-rl-reference`)
+
+Closed:
+- Step 5 (Competency re-tagging) and Step 6 (Section 8 sub-section reassignment) both rendered moot by `competency-field-and-registry-removed-2026-05`. Field stripped 2026-05-01.
 
 Done 2026-05-01:
 - Sections 1-4 restructured with structured-field schemas (Education, Certifications, Affiliations, Training); year-only or YYYY-MM date granularity per section.
 - Section 5 cleaned to tools-only discipline; flat-list convention; capability/method tokens stripped (moved to Section 8 territory).
 - Section 6 closed: Data Sources renamed from Data Modalities; Data Modalities sub-section dropped.
-- Competency registry redesigned bottom-up: 16 → 31 terms, lowercase-kebab format, designed orthogonal to Specialty axis (`competency-registry-bottom-up-redesign-2026-05`).
-- Phrase extraction (Step 1) and clustering proposal (Step 2/3) artifacts saved at `temp/competency_extraction.md` and `temp/competency_clustering_proposal.md`.
+- Competency field and registry removed entirely (`competency-field-and-registry-removed-2026-05`).
 
 Done 2026-04-30:
 - Section 4/5/6/7 initial restructures per their decisions; per-entry Industry/Specialty/Orientation/Level/Work-state tagging across 197 entries; Capability→Competency rename + initial 16-term registry; Outcome→Impact fold; sub-section reorganization (9 moves); 5 PR Work-state Independent→greenfield; Level removed from RL records; field-drift cleanup. Background Roles encoding-artifact cleanup cleared as no-op (bytes are correct UTF-8; appearance was terminal-rendering artifact).

@@ -112,6 +112,24 @@ Skills reference rules by category/slug. Resolver script looks up the current fi
 
 #### retrieval-method-pure-tag-based
 Every retrievable inventory entry tagged on every applicable axis (Industry, Specialty, Orientation, Level, Work-state). Pure tag-based as default retrieval mechanism; semantic retrieval can layer on later if cv_targeted needs it. Tagging is reversible; deferring foundation completion is not. Resolves the open question `retrieval-method-for-discrete-elements`.
+**Superseded by `cv-targeted-retrieval-architecture-2026-05`.** Prototype testing on two real JDs (one off-corpus-center, one on-corpus-center) showed pure tag-based filtering reduced recall by excluding legitimately translatable entries — particularly IC-level entries with description text matching the JD when the target role was leadership. Semantic retrieval over Description text became the primary path; tags retained for composition-time framing and supplemental tag-pull driven by role_evaluation matched axis values.
+
+#### cv-targeted-retrieval-architecture-2026-05
+cv_targeted retrieval is a two-pass hybrid:
+1. **Primary pass (semantic on Description):** Pre-extracted Description-only payload (one line per EX-NNN/PR-NNN with ID + Description text) ranked by semantic relevance to the JD. Returns a list of candidate IDs. Cheap on context (description-only is roughly one quarter the size of full entry blocks).
+2. **Supplemental pass (tag-pull):** role_evaluation produces matched axis values for the JD. Those matched values drive targeted tag-pulls of inventory entries whose tags signal what their descriptions undersell (an entry whose description reads "designed accountability frameworks" doesn't say "this is governance work"; tags do). Specialty and Orientation are the natural supplemental triggers because they capture the kind-of-work; Level and Work-state are framing axes (used at composition, not retrieval). Industry weights ranking but rarely needs a hard supplemental pull.
+3. **Merge and dedup** the two candidate sets. Full entry detail is loaded only for the merged candidate set.
+
+Tags become composition-time data, not retrieval filter:
+- **Inclusion:** semantic on Description text, supplemented by JD-driven tag-pulls. Tag filter is dropped.
+- **Ranking:** semantic relevance score plus optional Industry/Specialty match weight.
+- **Framing:** Level / Orientation / Work-state on each entry drive voice-translation rules at bullet composition time per the axis files.
+
+Rationale: prototype testing showed (b) pure-semantic outperformed (a) tag-filter-plus-semantic on inclusion in both off-corpus-center (Insmed commercial data acquisition) and on-corpus-center (AstraZeneca process management) JDs. JDs vary too much for a fixed tag filter to handle edge cases. Semantic retrieval addresses the variability; tag supplements address the descriptions-undersell problem.
+
+Supplemental tag selection is dynamic, not static — driven by role_evaluation's axis-matching output rather than a fixed "always pull Specialty + Orientation" rule. The matched axes for the role tell us which tags should trigger supplemental pulls for that role.
+
+Refs: `competency-registry-runtime-value` (resolved here), `cv-targeted-hybrid-retrieval` (deferral, reshaped), `role-evaluation-axis-matching-protocol`, `axes-composition-precedence`, `cv-targeted-content-rules-from-axes` (deferral).
 
 #### level-on-entries-effective-level
 Level lives only on EX/PR entries (effective level). Captures the pattern of doing higher-than-title-level work within a titled role.
@@ -221,8 +239,7 @@ Refs: `experience-inventory-existing-data-migration` (deferral).
 #### tag-taxonomy
 `rules/tags.yaml` holds only global tag vocabularies that apply to every entry: Role Level, Purpose. YAML. Org Context absorbed into the Work-state axis.
 Specialty-specific tags do not live here. Specialty-pack capability vocabulary (fine-grained, specialty-specific) in `rules/specialties/<specialty>.md` Capability vocabulary section. Industry packs hold industry content but not Capability lists.
-Entry-level Competency tags (coarse functional groupings, distinct from specialty-pack vocabulary) in `rules/competencies/registry.md`. Per `competency-field-and-registry`.
-Orientation values in `rules/orientations/`. Industry/Specialty/Competency registries: `rules/industries/registry.md`, `rules/specialties/registry.md`, `rules/competencies/registry.md`.
+Orientation values in `rules/orientations/`. Industry/Specialty registries: `rules/industries/registry.md`, `rules/specialties/registry.md`. (Competency registry previously lived at `rules/competencies/registry.md`; removed per `competency-field-and-registry-removed-2026-05`.)
 
 #### initial-industry-pack-content-design
 Pharma industry pack (`rules/industries/pharma.md`) content-validated through manual research against current practitioner sources (FDA, ICH, ACRP, regulatory publications, hiring keyword surveys). Vocabulary, dialect, emphasis, adjacency captured. Future industry packs trigger `industry_builder` build at that time; pharma serves as the worked example.
@@ -241,12 +258,34 @@ Refs: `inventory-entry-structure-applied`, `inventory-field-drift-cleanup` (defe
 #### competency-field-and-registry
 Inventory entry field `Capability:` renamed to `Competency:`. Controlled vocabulary at `rules/competencies/registry.md`. Validator (deferred to script build) parses inventory Competency lines, splits on `|`, rejects unknown tokens; aliases auto-canonicalize near-misses.
 Rationale: name-collision avoided with specialty-pack `Capability vocabulary` sections; "Competency" links semantically to CV format spec's "Core Competencies" section.
-Initial 16-term registry derived from existing inventory tags. **Superseded by `competency-registry-bottom-up-redesign-2026-05`** which replaced the registry contents with 31 lowercase-kebab values via bottom-up phrase extraction across all 197 entries. The Capability→Competency rename and registry-as-controlled-vocabulary concept established here remain valid; only the value list was replaced.
-Refs: `tag-taxonomy`, `inventory-entry-structure-applied`, `competency-registry-bottom-up-redesign-2026-05`.
+Initial 16-term registry derived from existing inventory tags. **Superseded by `competency-registry-bottom-up-redesign-2026-05`** which replaced the registry contents with 31 lowercase-kebab values via bottom-up phrase extraction across all 197 entries. The Capability→Competency rename and registry-as-controlled-vocabulary concept established here remain valid; only the value list was replaced. **Further superseded by `competency-field-and-registry-removed-2026-05`** which removed the field and registry entirely.
+Refs: `tag-taxonomy`, `inventory-entry-structure-applied`, `competency-registry-bottom-up-redesign-2026-05`, `competency-field-and-registry-removed-2026-05`.
 
 #### competency-registry-bottom-up-redesign-2026-05
 Replaced prior 16-term coarse Competency registry with a 31-term granular registry. Format changed from Title Case to lowercase kebab to match other axis value formats. **Superseded by `competency-registry-activity-level-redesign-2026-05`**, which replaced the 31-term inventory-derived shape with a 36-term activity-level taxonomy. The bottom-up extraction approach was found to produce inventory-shaped clusters (over-fit to the specific texture of the user's work) rather than activity-level competencies that transcend industry and specialty.
 Refs: `competency-field-and-registry`, `competency-registry-activity-level-redesign-2026-05`.
+
+#### competency-retagging-applied-2026-05
+Re-tagged all 197 EX/PR inventory entries (`Competency:` field) against the 36-term activity-level Competency registry. JD-blind authoring; consistency-validated against a tagging-pattern reference (site-monitoring lifecycle → `operations-management` + `regulatory-compliance`; safety surveillance / SAE handling → `risk-management`; specifications → `standards-and-specification-development`; SOP / form authoring → `procedure-authoring`; etc.). Prior 16-term and 31-term Competency values fully replaced. All 36 slugs used at least once. Apply executed via `temp/apply_competency_retagging.py` against `temp/competency_retagging_proposal.md` (both retained as evidence trail).
+Resolves the work component of the prior `competency-retagging-step-5` deferral. Whether the registry remains in cv_targeted's runtime retrieval path is still pending prototype outcome (`competency-registry-runtime-value` open question); if semantic-only retrieval wins, the new Competency tags become informational rather than active retrieval signal but the labor is not wasted.
+Registry-gap candidates surfaced and resolved during user QC: `regulatory-document-authoring` (dropped — re-framed as `risk-management` + `cross-functional-collaboration`), `clinical-operations-execution` (dropped — entries won't surface in any CV), `vendor-management` ↔ `technology-evaluation` (split confirmed: service vendors → vendor-management; tool/platform vendors → technology-evaluation), audit-conducting (no separate slug — sponsor-SME audit support belongs under `audit-and-inspection-response`).
+**Superseded by `competency-field-and-registry-removed-2026-05`.** Prototype outcome was semantic-only wins; the retagging labor is not lost — it stress-tested the registry design and confirmed the orthogonality problem with Specialty. Field stripped from inventory.
+Refs: `competency-registry-activity-level-redesign-2026-05`, `competency-registry-runtime-value` (resolved by `cv-targeted-retrieval-architecture-2026-05`), `inventory-section-8-subsection-reassignment` (deferral — Step 6 trigger fires here but action deferred pending prototype outcome), `competency-field-and-registry-removed-2026-05`.
+
+#### competency-field-and-registry-removed-2026-05
+Inventory `Competency:` field removed from all 197 EX/PR entries. `rules/competencies/registry.md` deleted; `rules/competencies/` folder removed.
+
+Removal driven by the `cv-targeted-retrieval-architecture-2026-05` decision: tags become composition-time data, not retrieval filter, and Industry/Specialty/Orientation/Level/Work-state already cover the framing and ranking signals cv_targeted needs. Competency added no orthogonal axis once the activity-level redesign was understood as overlapping with what Specialty already captures (specialty-pack capability vocabularies). The bottom-up and activity-level redesign attempts (16→31→36 terms) confirmed the registry could not stably partition the corpus without either over-fitting to inventory texture or duplicating Specialty content.
+
+Strip executed via `temp/_strip_competency_field.py` (line count 3242 → 3045). Folder deletion via filesystem.
+
+Supersedes: `competency-field-and-registry`, `competency-registry-bottom-up-redesign-2026-05`, `competency-registry-activity-level-redesign-2026-05`, `competency-retagging-applied-2026-05`. Closes the work component of all four. Historical proposals retained at `temp/competency_extraction.md`, `temp/competency_clustering_proposal.md`, `temp/competency_retagging_proposal.md`, `temp/apply_competency_retagging.py` as evidence trail; their referenced data state no longer matches the inventory.
+
+Updates:
+- `inventory-entry-structure-applied`: field list shortened (Competency removed). EX/PR entries now carry: ID, Title-or-Project, Company, Industry, Specialty, Orientation, Level, Work-state, Added, Last Used, Description, Impact, Context.
+- `tag-taxonomy`: registry reference removed. `rules/tags.yaml` retains global tag vocabularies (Role Level, Purpose); axis files retain their own vocabularies. No entry-level coarse functional grouping field.
+
+Refs: `cv-targeted-retrieval-architecture-2026-05`, `inventory-entry-structure-applied`, `tag-taxonomy`, `competency-registry-runtime-value` (resolved).
 
 #### competency-registry-activity-level-redesign-2026-05
 Replaced 31-term inventory-derived registry with 36-term top-down activity taxonomy. Each value names a unit of work that means the same thing across industries (e.g., `budget-management` is the same competency for a clinical PM and a small-business owner). Industry- and specialty-agnostic by design; industry/specialty context is captured by the dedicated axes.
@@ -254,7 +293,8 @@ Rationale: the bottom-up approach over-fit to the user's inventory texture, prod
 Format: lean. Each entry is `- **slug**: one-line scope phrase`. No `Aliases:` section in this iteration; JD-language → slug mapping deferred to cv_targeted matching layer (semantic vs alias-list approach undecided).
 Process: top-down draft of activity categories validated against `temp/competency_extraction.md` for coverage (the user's 197 inventory entries should all map cleanly into the new taxonomy via Step 5).
 Status: registry written. Step 5 (re-tag 197 entries against new 36-term registry) and Step 6 (Section 8 sub-section reassignment) remain deferred.
-Refs: `competency-registry-bottom-up-redesign-2026-05` (superseded), `competency-field-and-registry`, `tag-taxonomy`, `inventory-entry-structure-applied`, `competency-retagging-step-5` (deferral), `inventory-section-8-subsection-reassignment` (deferral), `cv-targeted-content-rules-from-axes` (deferral — owns JD-to-slug matching mechanism).
+**Superseded by `competency-field-and-registry-removed-2026-05`.** Field and registry removed entirely.
+Refs: `competency-registry-bottom-up-redesign-2026-05` (superseded), `competency-field-and-registry`, `tag-taxonomy`, `inventory-entry-structure-applied`, `competency-retagging-step-5` (deferral), `inventory-section-8-subsection-reassignment` (deferral), `cv-targeted-content-rules-from-axes` (deferral — owns JD-to-slug matching mechanism), `competency-field-and-registry-removed-2026-05`.
 
 #### knowledge-document-scaffolding
 `support/` folder at repo root holds scaffolding files; user copies into private personal repo on first clone. Career repo never holds user's personal data.
@@ -270,7 +310,7 @@ Refs: `questions-library-deletion` (deferral).
 Existing knowledge documents (User_Info, Experience_Inventory, Career_Narratives, Positioning) updated by hand-edit. Builder skills become refresh tools later, only if refresh demand recurs. Mechanical sub-tasks may use one-off scripts (e.g., `temp/migrate_inventory.py`). Resolves the open question `knowledge-doc-update-mechanism`.
 
 #### inventory-entry-structure-applied
-EX-NNN and PR-NNN entries carry, in order: ID, Title-or-Project, Company, Industry, Specialty, Orientation, Level, Work-state, Competency (renamed from Capability per `competency-field-and-registry`), Added, Last Used, Description (`Description:` label, bold preserved on value), Impact, Context. Title|Project + Company replaces prior compound `Role:`/`Project:` field.
+EX-NNN and PR-NNN entries carry, in order: ID, Title-or-Project, Company, Industry, Specialty, Orientation, Level, Work-state, Added, Last Used, Description (`Description:` label, bold preserved on value), Impact, Context. Title|Project + Company replaces prior compound `Role:`/`Project:` field. Competency field removed per `competency-field-and-registry-removed-2026-05` (originally listed between Work-state and Added).
 Prose section order at end of block: Description (Action), then Impact (Result), then Context (Situation). Impact is sparse-permitted, may carry a colon-delimited value-type prefix per `outcome-folded-into-impact` (e.g., `Impact: Risk Reduction: <prose>` or `Impact: Risk Reduction`). Context is sparse-permitted, free prose.
 Refs: `experience-inventory-domain-scoping`, `experience-inventory-entry-types`, `outcome-folded-into-impact`, `competency-field-and-registry`, `inventory-field-drift-cleanup` (deferral).
 
