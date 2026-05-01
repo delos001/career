@@ -41,11 +41,11 @@ Sweeps in-scope docs, parses metadata headers, cross-references against COMPONEN
 - Refs: `temp/axis_research_notes.md`, `builders-axis-parity`.
 
 ### competency-retagging-step-5
-Re-tag all 197 EX/PR entries' `Competency:` field against the new 31-term registry (`rules/competencies/registry.md`). Each entry's existing tags (drawn from the prior 16-term Title-Case registry) get replaced with new tags drawn from the new registry, based on the entry's Description. Entries that previously carried over-broad tags (`Quality & Compliance`, `Clinical Trial Execution`) get split across the more granular successors. Under-tagged entries (EX-006 recruitment, EX-013 site selection, EX-016 training examples) gain tags they were missing.
-Approach: proposal-first — write proposed re-tagging to `temp/competency_retagging_proposal.md` (one line per entry showing old tags → new tags), user reviews and flags corrections, then apply to `Experience_Inventory.md`.
-- Trigger: user completes clean-pass review of new registry to validate against over-fitting risk.
+Re-tag all 197 EX/PR entries' `Competency:` field against the new 36-term activity-level registry (`rules/competencies/registry.md`). Each entry's existing tags (drawn from prior 16-term and 31-term registries) get replaced with new activity-level tags based on the entry's Description. Clinical-specific work re-mapped to underlying activity competencies (RBM/CSM → `risk-management` or `quality-management`; TMF → `procedure-authoring` or `regulatory-compliance`; site monitoring → `operations-management`; investigator training → `training-delivery`).
+Approach: proposal-first. Write proposed re-tagging to `temp/competency_retagging_proposal.md` (one line per entry showing old tags → new tags), user reviews and flags corrections, then apply to `Experience_Inventory.md`.
+- Trigger: `competency-registry-runtime-value` resolved AND outcome retains the registry in cv_targeted's retrieval path. If outcome is to drop the registry (semantic retrieval wins), this deferral is closed without execution.
 - Blocks: cv_targeted's reliance on Competency tagging signal; downstream sub-section reassignment (Step 6).
-- Refs: `competency-registry-bottom-up-redesign-2026-05`, `temp/competency_extraction.md`, `temp/competency_clustering_proposal.md`.
+- Refs: `competency-registry-activity-level-redesign-2026-05`, `competency-registry-runtime-value` (open question), `temp/competency_extraction.md` (historical evidence trail), `temp/competency_clustering_proposal.md` (historical, pre-activity-level redesign).
 
 ### inventory-section-8-subsection-reassignment
 After Step 5 re-tagging completes, perform a pass over Section 8 entries to verify each sits under the correct sub-section heading given its new tags. Section 8 currently organizes entries under sub-sections like Clinical Monitoring & Site Management, Vendor Management & Oversight, Risk-Based Monitoring & Quality, etc. New granular Competency tags may surface entries currently mis-placed (e.g., an entry tagged `subject-recruitment-and-retention` may currently sit under Clinical Monitoring but belong under a recruitment-focused sub-section).
