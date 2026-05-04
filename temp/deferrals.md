@@ -40,13 +40,6 @@ Sweeps in-scope docs, parses metadata headers, cross-references against COMPONEN
 - Blocks: nothing currently.
 - Refs: `temp/axis_research_notes.md`, `builders-axis-parity`.
 
-### inventory-company-field-rl-reference
-Replace `Company:` string field on EX entries with `Role: RL-NNN` reference to the Section 7 role record. Optionally drop `Title:` from EX entries (RL is canonical). Resolves the update-burden problem when a company rebrands or is acquired (currently 190+ entry updates required; with RL reference, 1 record updates).
-Per session 2026-05-01 Cluster C discussion: the design principle was confirmed (RL exists for this purpose; using ID instead of denormalized string is correct), but execution deferred alongside Step 5/Step 6 work.
-- Trigger: Step 5/6 complete OR independent push to address Company-field rebrand resilience.
-- Blocks: nothing currently.
-- Refs: `experience-inventory-section-7-flat-records`, `competency-retagging-step-5`.
-
 ### inventory-builder-research-classification-sections-5-6
 experience_inventory builder skill needs a research component to classify Section 5 (Technical Experience) tools and Section 6 (Industry Exposure Profile) content against industry-pack and specialty-pack vocabularies. Drives downstream retrieval relevance and cv_targeted's ability to surface section content matched to JD industry/specialty signals.
 - Trigger: experience_inventory builder skill design.
@@ -202,10 +195,10 @@ One-time script: strip Pandoc underline syntax; remove HTML comment blocks. Mech
 Apply `positioning-schema` to `Positioning.md`. Migration surfaces existing inaccuracies: "Story 7 (Direct Report Accountability)" is misclassified (it's DC-003); appendix lists Stories 1-9 but 10 exist (ST-010 may need addition).
 
 ### experience-inventory-existing-data-migration
-Remaining:
-- Cluster C: Company field → `Role: RL-NNN` reference (`inventory-company-field-rl-reference`)
+All clusters closed. Migration complete.
 
 Closed:
+- Cluster C (Company → `Role: RL-NNN` reference): closed 2026-05-04 by `inventory-role-rl-reference-applied-2026-05`. Title field also dropped from EX entries; two RL Title corrections during reconciliation; one compound-title cluster split per-entry between RL-011 and RL-013.
 - Step 5 (Competency re-tagging) and Step 6 (Section 8 sub-section reassignment) both rendered moot by `competency-field-and-registry-removed-2026-05`. Field stripped 2026-05-01.
 
 Done 2026-05-01:

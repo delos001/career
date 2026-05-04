@@ -224,7 +224,7 @@ Refs: `feedback_design_for_generalization`.
 
 #### experience-inventory-section-7-flat-records
 Flat records, each role self-contained, company as a field. Stable ID `RL-NNN`.
-EX entries' `Role:` field stays as "Title | Company" string (Option D strict-match validation). Both representations coexist.
+EX entries reference Section 7 via `Role: RL-NNN` field per `inventory-role-rl-reference-applied-2026-05`. RL Title and Company are canonical; EX entries do not carry duplicate Title/Company fields. Resolves the rebrand-resilience problem that motivated the original "Title | Company" coexistence design.
 
 #### experience-inventory-section-ordering
 Sections 9 and 10 swap. Independent & Volunteer Projects → 9. Academic Coursework Detail → 10. Education stays at top.
@@ -272,6 +272,23 @@ Registry-gap candidates surfaced and resolved during user QC: `regulatory-docume
 **Superseded by `competency-field-and-registry-removed-2026-05`.** Prototype outcome was semantic-only wins; the retagging labor is not lost — it stress-tested the registry design and confirmed the orthogonality problem with Specialty. Field stripped from inventory.
 Refs: `competency-registry-activity-level-redesign-2026-05`, `competency-registry-runtime-value` (resolved by `cv-targeted-retrieval-architecture-2026-05`), `inventory-section-8-subsection-reassignment` (deferral — Step 6 trigger fires here but action deferred pending prototype outcome), `competency-field-and-registry-removed-2026-05`.
 
+#### inventory-role-rl-reference-applied-2026-05
+Cluster C migration applied: EX entry `Title:` and `Company:` fields collapsed into a single `Role: RL-NNN` reference to Section 7. RL becomes canonical for role title and company; rebrand resilience is now one record's update instead of 192. PR entries unchanged (no RL counterpart).
+
+Reconciliation produced two RL Title corrections (Section 7 was holding contracted/HR titles where EX entries held operational/working titles; user resolved each by adopting the operational title as canonical):
+- RL-017: `Clinical Data Quality Consultant` → `Sr. Data Scientist, Data Management Sciences`.
+- RL-012: `Central Statistical Monitoring Lead` → `Central Statistical Monitoring Deployment Lead`.
+
+One compound EX Title (`Regional/Global Clinical Trial Manager`, Amgen-via-DOCS, 10 entries) split between RL-011 (Regional CTM) and RL-013 (Global CTM) per per-entry user assignment based on Description content. 7 → RL-011; 3 → RL-013 (EX-088, 089, 091).
+
+Mapping logic (in `temp/_apply_role_rl_reference.py`): explicit per-EX-ID overrides for the compound-title cluster, then exact (Title, Company) match, then whitespace+slash-normalized title match within company, then EX-title-as-substring of RL Title within company. Whitespace+slash normalization handled `Clinical Research Associate I/II` (EX) vs `Clinical Research Associate I / II` (RL-005, 19 entries).
+
+Apply executed via `temp/_apply_role_rl_reference.py --apply`. Line count 3045 → 2853 (delta -192). Script and dry-run output retained as evidence trail.
+
+Closes the work component of `inventory-company-field-rl-reference` deferral and the Cluster C item in `experience-inventory-existing-data-migration`.
+
+Refs: `experience-inventory-section-7-flat-records`, `inventory-entry-structure-applied`, `inventory-company-field-rl-reference` (deferral, closed here), `experience-inventory-existing-data-migration` (deferral, Cluster C closed here).
+
 #### competency-field-and-registry-removed-2026-05
 Inventory `Competency:` field removed from all 197 EX/PR entries. `rules/competencies/registry.md` deleted; `rules/competencies/` folder removed.
 
@@ -310,9 +327,12 @@ Refs: `questions-library-deletion` (deferral).
 Existing knowledge documents (User_Info, Experience_Inventory, Career_Narratives, Positioning) updated by hand-edit. Builder skills become refresh tools later, only if refresh demand recurs. Mechanical sub-tasks may use one-off scripts (e.g., `temp/migrate_inventory.py`). Resolves the open question `knowledge-doc-update-mechanism`.
 
 #### inventory-entry-structure-applied
-EX-NNN and PR-NNN entries carry, in order: ID, Title-or-Project, Company, Industry, Specialty, Orientation, Level, Work-state, Added, Last Used, Description (`Description:` label, bold preserved on value), Impact, Context. Title|Project + Company replaces prior compound `Role:`/`Project:` field. Competency field removed per `competency-field-and-registry-removed-2026-05` (originally listed between Work-state and Added).
+EX-NNN entries carry, in order: ID, Role, Industry, Specialty, Orientation, Level, Work-state, Added, Last Used, Description (`Description:` label, bold preserved on value), Impact, Context.
+PR-NNN entries carry, in order: ID, Project, Company, Industry, Specialty, Orientation, Level, Work-state, Added, Last Used, Description, Impact, Context.
+Schemas diverge on the second field: EX uses `Role: RL-NNN` reference to Section 7 (per `inventory-role-rl-reference-applied-2026-05`); PR uses `Project:` + `Company:` since Independent & Volunteer projects have no RL counterpart. Title field on EX entries dropped; RL is canonical for role title and company.
 Prose section order at end of block: Description (Action), then Impact (Result), then Context (Situation). Impact is sparse-permitted, may carry a colon-delimited value-type prefix per `outcome-folded-into-impact` (e.g., `Impact: Risk Reduction: <prose>` or `Impact: Risk Reduction`). Context is sparse-permitted, free prose.
-Refs: `experience-inventory-domain-scoping`, `experience-inventory-entry-types`, `outcome-folded-into-impact`, `competency-field-and-registry`, `inventory-field-drift-cleanup` (deferral).
+Competency field removed per `competency-field-and-registry-removed-2026-05` (originally listed between Work-state and Added).
+Refs: `experience-inventory-domain-scoping`, `experience-inventory-entry-types`, `outcome-folded-into-impact`, `competency-field-and-registry`, `inventory-role-rl-reference-applied-2026-05`, `inventory-field-drift-cleanup` (deferral).
 
 #### industry-value-granularity
 Industry registry values: pharma, biotech, cro, med-device, eclinical, generics, diagnostics. Discrete rule files for pharma, biotech, cro, med-device (all research-validated 2026-04). eclinical = registry-only (single inventory entry; pharma adjacency handles translation). generics, diagnostics = file authoring deferred.
