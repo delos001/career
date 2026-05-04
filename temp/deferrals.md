@@ -46,6 +46,12 @@ experience_inventory builder skill needs a research component to classify Sectio
 - Blocks: experience_inventory builder build; cv_targeted's section-5/section-6 consumption pattern.
 - Refs: `experience-inventory-section-5-restructure`, `experience-inventory-section-6-rename`, `cv-targeted-content-rules-from-axes`.
 
+### inventory-builder-quality-check-encoding
+experience_inventory builder must encode all quality checks accumulated across reconciliation passes, so future inventory creation/refresh does not require manual reconciliation. Specification consolidated in `temp/inventory_builder_quality_checks.md`; categories: structural integrity, content quality within entries, cross-entry quality, voice consistency, coverage. New checks surfaced during ongoing reconciliation get added to that file inline.
+- Trigger: experience_inventory builder skill design.
+- Blocks: experience_inventory builder build.
+- Refs: `temp/inventory_builder_quality_checks.md`, `inventory-builder-research-classification-sections-5-6`.
+
 ### registry-overlap-tracking
 Use `rules/industries/registry.md` (or an extension file) as a cross-reference of which terms appear in which industry files, so updates to shared regulatory/vocabulary terms (FDA guidance, ICH adoptions) can be propagated to all relevant files. Full-enumeration approach (`industry-files-full-enumeration`) duplicates shared terms across pharma/biotech/cro; redundancy is acceptable now but update-cost grows over time.
 - Trigger: first shared-term update where propagation cost surfaces as friction; or earlier if foundation tooling investment is warranted.
