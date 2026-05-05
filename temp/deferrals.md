@@ -188,7 +188,7 @@ Orientation selection logic and match criteria stripped from axis rule files. Be
 All trigger on foundation execution; all block foundation completion. Apply the referenced design decisions to the existing files in `personal/knowledge/`.
 
 ### user-info-existing-data-migration
-Apply `user-info-rename-and-schema` to `Contact_Info.md`.
+Applied 2026-05-04. Migration complete. File renamed `Contact_Info.md` → `User_Info.md`; intro paragraph and Usage Notes dropped; `**Used by:** cv_targeted, cv_general` header added; field-value brackets cleaned. External references updated: `temp/content_rules_leadership.md`, `temp/support/knowledge_repo_scaffolding/{README.md, SETUP.md}`, scaffolding template renamed to `User_Info.md`. Deeper scaffolding-template content updates (metadata header, phase-based reference stripping, descriptive loading patterns) remain owned by `scaffolding-content-updates`.
 
 ### career-narratives-existing-data-migration
 Apply `career-narratives-schema` to `Career_Narratives.md`.

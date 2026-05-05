@@ -7,7 +7,7 @@ Cumulative quality checks from manual reconciliation passes of `personal/knowled
 - **PR Industry uses `independent`.** Independent / volunteer projects tag `Industry: independent`, not an industry-pack value (employer sector framing does not apply). Validation on PR-prefixed entries.
 - **Empty optional fields render cleared.** `Last Used:` and similar render with no value, not `N/A` / `null` / placeholder text.
 - **Type field is controlled vocabulary.** Enum: `{Direct, Contract, Freelance, Military}`.
-- **Atomic inventory: one entry per role-context.** A task performed under multiple RLs creates a separate EX entry per RL. Dedup logic scopes within-RL only; cross-RL identical descriptions are intentional, not redundancy. (Memory: `feedback_atomic_inventory.md`.)
+- **Atomic inventory: one entry per role-context.** A task performed under multiple RLs creates a separate EX entry per RL. Dedup logic scopes within-RL only; cross-RL identical descriptions are intentional, not redundancy.
 
 ## 2. Content Quality Within Entries
 
@@ -19,10 +19,11 @@ Cumulative quality checks from manual reconciliation passes of `personal/knowled
 ## 3. Cross-Entry Quality
 
 - **Redundancy detection scoped within-RL only.** Within a single RL, no two entries describe substantially the same work. Identical descriptions across different RLs are preserved per atomic inventory.
-- **Impact ≠ Description restated.** The Impact line carries only what is beyond the Description; restating the Description is bloat. (Memory: `feedback_impact_no_description_restate.md`.)
-- **Impact has multiple legitimate forms.** Quantified outcome, bounded qualitative outcome, OR strategy/research/roadmap impact (alignment, optionality, decisions, risk insight). Production deployment is not required for Impact to be present. (Memory: `feedback_impact_legitimate_forms.md`.)
+- **Impact ≠ Description restated.** The Impact line carries only what is beyond the Description. Strip from Impact (not outcomes): audit/diagnostic findings (move to Description or Context), pattern descriptions (Context), qualifier clauses (Context), mechanism narratives (Description), purpose/aspirational framing (drop; value-type tag carries it), attribution caveats (Context).
+- **Impact has multiple legitimate forms.** Quantified outcome; bounded qualitative outcome; or strategy/research/roadmap impact (alignment, decision enablement, optionality created, risk surfaced, knowledge produced). Production deployment is not required for Impact to be present.
+- **Context trimmed to CV altitude.** Cut mechanics (step/person/function counts when generic descriptors suffice), colorisms restating plain claims, implementation tactics, and designer-decision defenses. Keep prior state, constraint envelope (resource model, headcount, organizational positioning), and load-bearing scope bounds.
 - **Bare-tag Impact: substantiate or drop.** An entry with `Impact: <single tag>` and no body must either gain a substantiating body at build time or have the Impact line removed. Builder flags bare-tag Impact for user resolution.
-- **Per-RL completeness.** Every RL in Section 7 must produce at least one retrieved entry in any generated CV. Dropped roles read as employment gaps regardless of retrieval-relevance score. cv_targeted enforces minimum-one-per-RL. (Memory: `feedback_cv_role_completeness.md`.)
+- **Per-RL completeness.** Every RL in Section 7 must produce at least one retrieved entry in any generated CV. Dropped roles read as employment gaps regardless of retrieval-relevance score. cv_targeted enforces minimum-one-per-RL; if retrieval surfaces no leadership-translatable bullets, include 1-2 bullets minimum framed as scope/context. Concurrent roles fold under one company header with title concatenation ("Title A / Title B (concurrent)"). "Earlier Professional Roles" section acceptable for older roles, but must list each role with company and dates. Apply at draft time, not post-hoc.
 - **Concurrent-role tag drift.** When a role is concurrent with another role at the same employer, work specific to the concurrent role tends to drift into entries tagged to the primary role. Builder must check zero-entry RLs against entries tagged to concurrent peers for drift candidates (e.g., Infosario Business Champion work tagged to the concurrent Process Technology Specialist role). 2026-05-04 reconciliation: RL-008 had zero entries; relevant work was tagged to concurrent RL-009.
 
 ## 4. Voice Consistency

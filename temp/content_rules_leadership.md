@@ -108,7 +108,7 @@ For project entries, apply these rules instead:
 - Do not inflate project entries with leadership language; a reviewer who understands the work will recognize the sophistication without it
 - Bullet construction follows the format spec project entry structure: brief, precise, design and capability focused
 - 2 to 4 bullets per project entry; compress rather than expand
-- If a GitHub link or portfolio URL is available in `knowledge/Contact_Info.md`, it may be referenced in the project entry as an optional pointer for reviewers who want to investigate further
+- If a GitHub link or portfolio URL is available in `knowledge/User_Info.md`, it may be referenced in the project entry as an optional pointer for reviewers who want to investigate further
 
 ---
 
