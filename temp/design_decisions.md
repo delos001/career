@@ -363,7 +363,35 @@ PR-NNN entries carry, in order: ID, Project, Company, Industry, Specialty, Orien
 Schemas diverge on the second field: EX uses `Role: RL-NNN` reference to Section 7 (per `inventory-role-rl-reference-applied-2026-05`); PR uses `Project:` + `Company:` since Independent & Volunteer projects have no RL counterpart. Title field on EX entries dropped; RL is canonical for role title and company.
 Prose section order at end of block: Description (Action), then Impact (Result), then Context (Situation). Impact is sparse-permitted, may carry a colon-delimited value-type prefix per `outcome-folded-into-impact` (e.g., `Impact: Risk Reduction: <prose>` or `Impact: Risk Reduction`). Context is sparse-permitted, free prose.
 Competency field removed per `competency-field-and-registry-removed-2026-05` (originally listed between Work-state and Added).
-Refs: `experience-inventory-domain-scoping`, `experience-inventory-entry-types`, `outcome-folded-into-impact`, `competency-field-and-registry`, `inventory-role-rl-reference-applied-2026-05`, `inventory-field-drift-cleanup` (deferral).
+Refs: `experience-inventory-domain-scoping`, `experience-inventory-entry-types`, `outcome-folded-into-impact`, `impact-field-semantics-2026-05`, `competency-field-and-registry`, `inventory-role-rl-reference-applied-2026-05`, `inventory-field-drift-cleanup` (deferral).
+
+#### impact-field-semantics-2026-05
+Refines `outcome-folded-into-impact` based on 2026-05-04/05 reconciliation pass against existing entries.
+
+**Multi-value-type prefix permitted.** Impact value-type prefix may be a single value or comma-delimited list (e.g., `Impact: Capability Building, Quality Improvement, Risk Reduction` or `Impact: Capability Building, Quality Improvement, Risk Reduction: <prose>`). The Impact field is free-text prose with structured value-type prefix; the prefix is grep-extractable in either single or multi-value form. Multi-value reflects that real work often produces value across multiple types.
+
+**Bare-tag is the fallback, not drop.** When an entry has no recoverable residual outcome beyond the Description, the value-type tag stays bare (`Impact: <value-type>` or `Impact: <type>, <type>`). The "substantiate or drop" wording in earlier `inventory_builder_quality_checks.md` was too aggressive: substantiate where possible, otherwise keep bare. Dropping the Impact line entirely is not the convention.
+
+**Strip-aggressively rules for Impact prose.** When prose is present, it must be only outcome content. Strip:
+- Audit/diagnostic findings ("revealed that X was opaque"). Move to Description as activity output, or Context as situational state.
+- Pattern descriptions ("a pattern that consumed significant effort"). Move to Context.
+- Qualifiers and explanatory clauses ("from sample receipt to dataset exchange"). Move with the finding.
+- Mechanism narratives ("CDISC-terminology standardization eliminated non-standard legacy terminology that had been creating downstream programming overhead"). Mechanism is in Description; outcome stays as the bare residual.
+- Purpose/aspirational framing ("to support enterprise data quality and regulatory submission objectives"). Drop entirely; the value-type tag carries this.
+- Attribution caveats ("Full attribution to the redesign alone is not claimed; concurrent improvements contributed"). Move to Context.
+- Restatements of Description's purpose clause as Impact ("worked X to support Y" with Impact "supported Y"). Description's purpose is not residual.
+
+**Context narrative trim rules.** Cut from Context:
+- Granular numbers (step counts, person counts, function counts) when generic descriptors preserve the signal.
+- Colorisms ("symbolic comfort", "concentrated risk") if they restate a plain claim already made.
+- Implementation tactics (how skepticism was overcome, what filtering choices reduced noise).
+- Designer-decision defenses unless the boundary itself is residual signal.
+
+Keep in Context: prior state when it makes the outcome legible; constraint envelope (resource model, headcount, organizational positioning); deliberate scope decisions when the bound is load-bearing.
+
+**Restructure license.** Status-reached outcomes mistakenly placed in Description (e.g., "Developed roadmaps that shaped functional priorities") should be moved to Impact. Activity verbs and methodology stay in Description; realized outcomes move to Impact.
+
+Refs: `outcome-folded-into-impact`, `inventory-entry-structure-applied`, `temp/inventory_builder_quality_checks.md`.
 
 #### industry-value-granularity
 Industry registry values: pharma, biotech, cro, med-device, eclinical, generics, diagnostics. Discrete rule files for pharma, biotech, cro, med-device (all research-validated 2026-04). eclinical = registry-only (single inventory entry; pharma adjacency handles translation). generics, diagnostics = file authoring deferred.
