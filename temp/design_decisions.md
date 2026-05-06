@@ -90,7 +90,47 @@ Other axes (industry, orientation, level, work-state) tag by role context — th
 
 Rationale: titles in the wild are unreliable signals (Data Scientist, ML Engineer, Data Engineer overlap; titles drift by company and era). Work-nature tagging trades precision for recall at the inventory level. Precision is recovered at retrieval time when cv_targeted and role_evaluation rank entries by JD relevance.
 
-Refs: `experience-inventory-domain-scoping`, `five-orthogonal-axes`.
+Refined by `specialty-axis-training-as-specialty-work-2026-05` (training delivery on a specialty's content counts as specialty work in knowledge-transfer mode, with concurrent-doing qualifier).
+
+Refs: `experience-inventory-domain-scoping`, `five-orthogonal-axes`, `specialty-axis-training-as-specialty-work-2026-05`.
+
+#### specialty-axis-training-as-specialty-work-2026-05
+Refines `specialty-axis-tagging-by-work-nature`. Training delivery on a specialty's content is specialty work performed in knowledge-transfer mode, tagged with the trained specialty, when the trainer also performs specialty-doing work in the role. Pure learning-and-development delivery (where the role is content rebroadcast without concurrent practice of the specialty) tags `people-leadership` for change leadership but not the trained specialty.
+
+Rationale: symmetry with content authoring (already specialty-tagged via the work-nature rule when authoring SOPs, controlled documents, etc.). Training delivery exercises the same specialty knowledge as the doing, just in a knowledge-transfer mode. The "concurrent specialty doing" qualifier protects the rule from over-extending into pure L&D situations where the trainer is not a practitioner of the specialty being trained. The pure-L&D edge case is not present in the user's current inventory but the qualifier keeps the rule durable.
+
+Driven by inventory retag against the extended 7-specialty axis (2026-05): four entries (EX-185, EX-199, EX-200, EX-201) sat at the boundary because they were Infosario Business Champion role training/adoption work; removing `people-leadership` left only `clinical-operations`, which understated the change-leadership delivery axis. Independently, the user surfaced that training delivery on specialty content materially exercises the specialty. Both observations resolved by this rule plus reinstating `people-leadership` on those entries via the change-leadership capability already codified in `rules/specialties/people-leadership.md`.
+
+Knock-on retags applied 2026-05 under this rule:
+- EX-016, EX-030 (training on GCP / regulatory): ADD `quality-compliance`.
+- EX-183 (GitHub adoption training): ADD `data-engineering`.
+- EX-184 (CSM adoption change management): ADD `people-leadership` (change leadership).
+- EX-188 (Excel Pivot table training): ADD `data-science`.
+- EX-189 (ELVIS regulatory compliance training): ADD `quality-compliance`.
+
+Refs: `specialty-axis-tagging-by-work-nature`, `specialty-axis-extension-data-science-operations-strategy-2026-05`, `rules/specialties/people-leadership.md`, `temp/specialty_retag_proposal_2026-05.md`, `specialty-retagging-applied-2026-05`.
+
+#### specialty-retagging-applied-2026-05
+Re-tagged 78 EX inventory entries (`Specialty:` field) against the 7-term extended specialty axis (`specialty-axis-extension-data-science-operations-strategy-2026-05`) and the training-as-specialty-work clarification (`specialty-axis-training-as-specialty-work-2026-05`).
+
+Net changes by tag:
+- ADD `data-science`: 33 entries.
+- ADD `operations-strategy`: 38 entries.
+- ADD `people-leadership`: 4 entries (where direct people-management or change-leadership work was present but tag was missing).
+- ADD `quality-compliance`: 3 entries (under training-as-specialty rule).
+- ADD `data-engineering`: 1 entry (under training-as-specialty rule).
+- REMOVE `ai-engineering`: 4 entries (work was research/POC or evaluation, not production deployment).
+- REMOVE `data-engineering`: 3 entries (work was analytical scripting or platform selection, not infrastructure).
+- REMOVE `quality-compliance`: 1 entry (no QMS/audit/CSV content).
+- REMOVE `people-leadership`: 4 entries (no direct people-management or change-leadership work; tag had been applied via vision-setting/influence vocabulary path that the design extension explicitly identified as a misclassification driver).
+
+Apply executed via `temp/_apply_specialty_retag_2026-05.py --apply` against `temp/specialty_retag_proposal_2026-05.md` (proposal file, with the training-rule refinement merged in mid-session). Both retained as evidence trail. Verification: post-apply counts match expected (33 entries with `data-science`, 38 with `operations-strategy`).
+
+Section 9 (PR entries) unchanged. PR-001/003/004/005 carry `ai-engineering` and `data-engineering` consistent with the build-mode work described.
+
+Resolves the work component of `specialty-axis-extension-data-science-operations-strategy-2026-05`'s "Inventory retag against the extended axis is the next session's work" carryover.
+
+Refs: `specialty-axis-extension-data-science-operations-strategy-2026-05`, `specialty-axis-tagging-by-work-nature`, `specialty-axis-training-as-specialty-work-2026-05`, `experience-inventory-existing-data-migration` (Section 8 retag complete).
 
 #### axes-file-schema
 Each axis carries a distinct file schema reflecting its purpose per `axes-composition-precedence`:
@@ -347,7 +387,7 @@ Removal driven by the `cv-targeted-retrieval-architecture-2026-05` decision: tag
 
 Strip executed via `temp/_strip_competency_field.py` (line count 3242 → 3045). Folder deletion via filesystem.
 
-Supersedes: `competency-field-and-registry`, `competency-registry-bottom-up-redesign-2026-05`, `competency-registry-activity-level-redesign-2026-05`, `competency-retagging-applied-2026-05`. Closes the work component of all four. Historical proposals retained at `temp/competency_extraction.md`, `temp/competency_clustering_proposal.md`, `temp/competency_retagging_proposal.md`, `temp/apply_competency_retagging.py` as evidence trail; their referenced data state no longer matches the inventory.
+Supersedes: `competency-field-and-registry`, `competency-registry-bottom-up-redesign-2026-05`, `competency-registry-activity-level-redesign-2026-05`, `competency-retagging-applied-2026-05`. Closes the work component of all four. Apply scripts `temp/apply_competency_retagging.py` and `temp/_strip_competency_field.py` retained as evidence trail per `working-files-deleted-after-apply`; proposal/extraction `.md` files deleted under that rule on 2026-05-06.
 
 Updates:
 - `inventory-entry-structure-applied`: field list shortened (Competency removed). EX/PR entries now carry: ID, Title-or-Project, Company, Industry, Specialty, Orientation, Level, Work-state, Added, Last Used, Description, Impact, Context.
@@ -562,6 +602,15 @@ Refs: `metadata-header-reconciliation-script`, `maintained-by-metadata-field` (d
 Knowledge documents and rule files hold data and metadata only. No procedural instructions. Procedural logic lives in skills, format specs, scripts.
 What belongs: data, metadata header, brief one-line purpose at top.
 What does not: Usage Notes sections, field-level conditional logic, layout/composition rules, self-referential meta-instructions.
+
+#### working-files-deleted-after-apply
+Working files in `temp/` (proposals, drafts, intermediate artifacts that describe a planned operation) are deleted once the operation they describe is applied. Durable artifacts after apply: the rule in `design_decisions.md`, the apply script (deterministic record of what changed), and the inventory's current state. Per-entry rationale, when needed beyond what's derivable from the rule plus entry description, lives as comments in the apply script's TARGETS dict (or equivalent), not in a separate document.
+
+Rationale: retaining proposal files alongside the closed design decision and the apply script creates three overlapping records of the same operation. Proposals can drift from the applied state during a session (a mid-session refinement reverses a removal, but the proposal file is not re-written). The drift creates conflicting statements across documents and breaks single-source-of-truth. The apply script is deterministic and self-contained; it does not drift. The closed decision narrates the rule and the summary. Together those two cover what's needed; the proposal file is redundant.
+
+Applied retroactively 2026-05-06. Files deleted under this rule: `temp/specialty_retag_proposal_2026-05.md`, `temp/competency_extraction.md`, `temp/competency_clustering_proposal.md`, `temp/competency_retagging_proposal.md`, `temp/inventory_tagging_proposals.md`, `temp/_inventory_backup_pre_tagging.md`. Apply scripts retained: `temp/_apply_specialty_retag_2026-05.py`, `temp/apply_competency_retagging.py`, `temp/_strip_competency_field.py`, `temp/_apply_role_rl_reference.py`.
+
+Refs: `data-only-discipline`, `component-documentation-discipline`, `document-metadata-header-discipline`, `competency-field-and-registry-removed-2026-05` (sentence about historical proposals updated to reference this rule), `specialty-retagging-applied-2026-05` (the operation that exposed the drift problem).
 
 ### Rule Refresh & Staleness
 
