@@ -108,7 +108,7 @@ Knock-on retags applied 2026-05 under this rule:
 - EX-188 (Excel Pivot table training): ADD `data-science`.
 - EX-189 (ELVIS regulatory compliance training): ADD `quality-compliance`.
 
-Refs: `specialty-axis-tagging-by-work-nature`, `specialty-axis-extension-data-science-operations-strategy-2026-05`, `rules/specialties/people-leadership.md`, `temp/specialty_retag_proposal_2026-05.md`, `specialty-retagging-applied-2026-05`.
+Refs: `specialty-axis-tagging-by-work-nature`, `specialty-axis-extension-data-science-operations-strategy-2026-05`, `rules/specialties/people-leadership.md`, `specialty-retagging-applied-2026-05`.
 
 #### specialty-retagging-applied-2026-05
 Re-tagged 78 EX inventory entries (`Specialty:` field) against the 7-term extended specialty axis (`specialty-axis-extension-data-science-operations-strategy-2026-05`) and the training-as-specialty-work clarification (`specialty-axis-training-as-specialty-work-2026-05`).
@@ -124,7 +124,7 @@ Net changes by tag:
 - REMOVE `quality-compliance`: 1 entry (no QMS/audit/CSV content).
 - REMOVE `people-leadership`: 4 entries (no direct people-management or change-leadership work; tag had been applied via vision-setting/influence vocabulary path that the design extension explicitly identified as a misclassification driver).
 
-Apply executed via `temp/_apply_specialty_retag_2026-05.py --apply` against `temp/specialty_retag_proposal_2026-05.md` (proposal file, with the training-rule refinement merged in mid-session). Both retained as evidence trail. Verification: post-apply counts match expected (33 entries with `data-science`, 38 with `operations-strategy`).
+Apply executed via `_apply_specialty_retag_2026-05.py` (validated via dry-run before write). Apply script and proposal file deleted later in the same session per `working-files-deleted-after-apply`; this decision is the durable record. Verification: post-apply counts match expected (33 entries with `data-science`, 38 with `operations-strategy`).
 
 Section 9 (PR entries) unchanged. PR-001/003/004/005 carry `ai-engineering` and `data-engineering` consistent with the build-mode work described.
 
@@ -314,12 +314,12 @@ Orientation values in `rules/orientations/`. Industry/Specialty registries: `rul
 
 #### initial-industry-pack-content-design
 Pharma industry pack (`rules/industries/pharma.md`) content-validated through manual research against current practitioner sources (FDA, ICH, ACRP, regulatory publications, hiring keyword surveys). Vocabulary, dialect, emphasis, adjacency captured. Future industry packs trigger `industry_builder` build at that time; pharma serves as the worked example.
-Refs: `temp/axis_research_notes.md`, `foundation-execution-order`, `five-orthogonal-axes`.
+Refs: `design/axis_research_notes.md`, `foundation-execution-order`, `five-orthogonal-axes`.
 
 #### initial-specialty-pack-content-design
 Five specialty packs (`rules/specialties/clinical-operations.md`, `data-engineering.md`, `ai-engineering.md`, `quality-compliance.md`, `people-leadership.md`) content-validated through manual research against current practitioner sources (industry frameworks, hiring keyword surveys, regulatory publications, framework authorities). Capability vocabulary, terminology, adjacency captured per specialty. Future refresh runs through `specialty_builder` if/when built.
 **Extended by `specialty-axis-extension-data-science-operations-strategy-2026-05`.** Two additional specialty packs (`data-science.md`, `operations-strategy.md`) added 2026-05 with research-validated capability vocabulary, terminology, and adjacency. Original 5 packs received bidirectional adjacency entries for the new specialties; people-leadership.md received a capability-vocabulary tightening on the "Organizational design" line to specify "from the people-management lens".
-Refs: `temp/axis_research_notes.md`, `foundation-execution-order`, `five-orthogonal-axes`, `tag-taxonomy`, `specialty-axis-extension-data-science-operations-strategy-2026-05`.
+Refs: `design/axis_research_notes.md`, `foundation-execution-order`, `five-orthogonal-axes`, `tag-taxonomy`, `specialty-axis-extension-data-science-operations-strategy-2026-05`.
 
 #### specialty-axis-extension-data-science-operations-strategy-2026-05
 Specialty axis extended from 5 to 7. Two new specialties added:
@@ -357,7 +357,7 @@ Replaced prior 16-term coarse Competency registry with a 31-term granular regist
 Refs: `competency-field-and-registry`, `competency-registry-activity-level-redesign-2026-05`.
 
 #### competency-retagging-applied-2026-05
-Re-tagged all 197 EX/PR inventory entries (`Competency:` field) against the 36-term activity-level Competency registry. JD-blind authoring; consistency-validated against a tagging-pattern reference (site-monitoring lifecycle → `operations-management` + `regulatory-compliance`; safety surveillance / SAE handling → `risk-management`; specifications → `standards-and-specification-development`; SOP / form authoring → `procedure-authoring`; etc.). Prior 16-term and 31-term Competency values fully replaced. All 36 slugs used at least once. Apply executed via `temp/apply_competency_retagging.py` against `temp/competency_retagging_proposal.md` (both retained as evidence trail).
+Re-tagged all 197 EX/PR inventory entries (`Competency:` field) against the 36-term activity-level Competency registry. JD-blind authoring; consistency-validated against a tagging-pattern reference (site-monitoring lifecycle → `operations-management` + `regulatory-compliance`; safety surveillance / SAE handling → `risk-management`; specifications → `standards-and-specification-development`; SOP / form authoring → `procedure-authoring`; etc.). Prior 16-term and 31-term Competency values fully replaced. All 36 slugs used at least once. Apply executed via `apply_competency_retagging.py` against per-EX-ID Competency mapping. Both deleted later in same session per `working-files-deleted-after-apply`.
 Resolves the work component of the prior `competency-retagging-step-5` deferral. Whether the registry remains in cv_targeted's runtime retrieval path is still pending prototype outcome (`competency-registry-runtime-value` open question); if semantic-only retrieval wins, the new Competency tags become informational rather than active retrieval signal but the labor is not wasted.
 Registry-gap candidates surfaced and resolved during user QC: `regulatory-document-authoring` (dropped — re-framed as `risk-management` + `cross-functional-collaboration`), `clinical-operations-execution` (dropped — entries won't surface in any CV), `vendor-management` ↔ `technology-evaluation` (split confirmed: service vendors → vendor-management; tool/platform vendors → technology-evaluation), audit-conducting (no separate slug — sponsor-SME audit support belongs under `audit-and-inspection-response`).
 **Superseded by `competency-field-and-registry-removed-2026-05`.** Prototype outcome was semantic-only wins; the retagging labor is not lost — it stress-tested the registry design and confirmed the orthogonality problem with Specialty. Field stripped from inventory.
@@ -372,9 +372,9 @@ Reconciliation produced two RL Title corrections (Section 7 was holding contract
 
 One compound EX Title (`Regional/Global Clinical Trial Manager`, Amgen-via-DOCS, 10 entries) split between RL-011 (Regional CTM) and RL-013 (Global CTM) per per-entry user assignment based on Description content. 7 → RL-011; 3 → RL-013 (EX-088, 089, 091).
 
-Mapping logic (in `temp/_apply_role_rl_reference.py`): explicit per-EX-ID overrides for the compound-title cluster, then exact (Title, Company) match, then whitespace+slash-normalized title match within company, then EX-title-as-substring of RL Title within company. Whitespace+slash normalization handled `Clinical Research Associate I/II` (EX) vs `Clinical Research Associate I / II` (RL-005, 19 entries).
+Mapping logic: explicit per-EX-ID overrides for the compound-title cluster, then exact (Title, Company) match, then whitespace+slash-normalized title match within company, then EX-title-as-substring of RL Title within company. Whitespace+slash normalization handled `Clinical Research Associate I/II` (EX) vs `Clinical Research Associate I / II` (RL-005, 19 entries).
 
-Apply executed via `temp/_apply_role_rl_reference.py --apply`. Line count 3045 → 2853 (delta -192). Script and dry-run output retained as evidence trail.
+Apply executed via `_apply_role_rl_reference.py`. Line count 3045 → 2853 (delta -192). Script deleted later per `working-files-deleted-after-apply`; this decision is the durable record.
 
 Closes the work component of `inventory-company-field-rl-reference` deferral and the Cluster C item in `experience-inventory-existing-data-migration`.
 
@@ -385,9 +385,9 @@ Inventory `Competency:` field removed from all 197 EX/PR entries. `rules/compete
 
 Removal driven by the `cv-targeted-retrieval-architecture-2026-05` decision: tags become composition-time data, not retrieval filter, and Industry/Specialty/Orientation/Level/Work-state already cover the framing and ranking signals cv_targeted needs. Competency added no orthogonal axis once the activity-level redesign was understood as overlapping with what Specialty already captures (specialty-pack capability vocabularies). The bottom-up and activity-level redesign attempts (16→31→36 terms) confirmed the registry could not stably partition the corpus without either over-fitting to inventory texture or duplicating Specialty content.
 
-Strip executed via `temp/_strip_competency_field.py` (line count 3242 → 3045). Folder deletion via filesystem.
+Strip executed via `_strip_competency_field.py` (line count 3242 → 3045). Folder deletion via filesystem.
 
-Supersedes: `competency-field-and-registry`, `competency-registry-bottom-up-redesign-2026-05`, `competency-registry-activity-level-redesign-2026-05`, `competency-retagging-applied-2026-05`. Closes the work component of all four. Apply scripts `temp/apply_competency_retagging.py` and `temp/_strip_competency_field.py` retained as evidence trail per `working-files-deleted-after-apply`; proposal/extraction `.md` files deleted under that rule on 2026-05-06.
+Supersedes: `competency-field-and-registry`, `competency-registry-bottom-up-redesign-2026-05`, `competency-registry-activity-level-redesign-2026-05`, `competency-retagging-applied-2026-05`. Closes the work component of all four. Per `working-files-deleted-after-apply`, the proposal/extraction `.md` files and the apply scripts (`apply_competency_retagging.py`, `_strip_competency_field.py`) were all deleted on 2026-05-06; this decision and `competency-retagging-applied-2026-05` are the durable record.
 
 Updates:
 - `inventory-entry-structure-applied`: field list shortened (Competency removed). EX/PR entries now carry: ID, Title-or-Project, Company, Industry, Specialty, Orientation, Level, Work-state, Added, Last Used, Description, Impact, Context.
@@ -399,7 +399,7 @@ Refs: `cv-targeted-retrieval-architecture-2026-05`, `inventory-entry-structure-a
 Replaced 31-term inventory-derived registry with 36-term top-down activity taxonomy. Each value names a unit of work that means the same thing across industries (e.g., `budget-management` is the same competency for a clinical PM and a small-business owner). Industry- and specialty-agnostic by design; industry/specialty context is captured by the dedicated axes.
 Rationale: the bottom-up approach over-fit to the user's inventory texture, producing artificial splits like `vendor-and-cro-operational-management` vs `vendor-and-cro-selection-and-partnership-design`. JDs do not distinguish at this granularity, and granular splits prevent transferable-skill surfacing (vendor-selection experience IS relevant to a vendor-oversight JD; programming-in-R IS relevant to a Python JD). The activity-level reframe asks: "could a hiring manager in any industry write 'looking for someone with __ experience' and have it sound like a real ask?" Tools and clinical-specific terms (TMF, RBM, CSM, CSV, site monitoring, investigator training) leave the registry; tools live in `Experience_Inventory.md` Section 5; clinical-specific work is captured at the underlying activity level (RBM strategy → `risk-management` or `quality-management`; TMF reconciliation → `procedure-authoring` or `regulatory-compliance`; site monitoring → `operations-management`).
 Format: lean. Each entry is `- **slug**: one-line scope phrase`. No `Aliases:` section in this iteration; JD-language → slug mapping deferred to cv_targeted matching layer (semantic vs alias-list approach undecided).
-Process: top-down draft of activity categories validated against `temp/competency_extraction.md` for coverage (the user's 197 inventory entries should all map cleanly into the new taxonomy via Step 5).
+Process: top-down draft of activity categories validated against extracted Competency phrasing for coverage (the user's 197 inventory entries should all map cleanly into the new taxonomy via Step 5).
 Status: registry written. Step 5 (re-tag 197 entries against new 36-term registry) and Step 6 (Section 8 sub-section reassignment) remain deferred.
 **Superseded by `competency-field-and-registry-removed-2026-05`.** Field and registry removed entirely.
 Refs: `competency-registry-bottom-up-redesign-2026-05` (superseded), `competency-field-and-registry`, `tag-taxonomy`, `inventory-entry-structure-applied`, `competency-retagging-step-5` (deferral), `inventory-section-8-subsection-reassignment` (deferral), `cv-targeted-content-rules-from-axes` (deferral — owns JD-to-slug matching mechanism), `competency-field-and-registry-removed-2026-05`.
@@ -415,7 +415,7 @@ Originally context-free interview question library; drifted to per-application q
 Refs: `questions-library-deletion` (deferral).
 
 #### knowledge-doc-update-mechanism-hand-edit
-Existing knowledge documents (User_Info, Experience_Inventory, Career_Narratives, Positioning) updated by hand-edit. Builder skills become refresh tools later, only if refresh demand recurs. Mechanical sub-tasks may use one-off scripts (e.g., `temp/migrate_inventory.py`). Resolves the open question `knowledge-doc-update-mechanism`.
+Existing knowledge documents (User_Info, Experience_Inventory, Career_Narratives, Positioning) updated by hand-edit. Builder skills become refresh tools later, only if refresh demand recurs. Mechanical sub-tasks may use one-off scripts (deleted after apply per `working-files-deleted-after-apply`). Resolves the open question `knowledge-doc-update-mechanism`.
 
 #### inventory-entry-structure-applied
 EX-NNN entries carry, in order: ID, Role, Industry, Specialty, Orientation, Level, Work-state, Added, Last Used, Description (`Description:` label, bold preserved on value), Impact, Context.
@@ -451,7 +451,7 @@ Keep in Context: prior state when it makes the outcome legible; constraint envel
 
 **Restructure license.** Status-reached outcomes mistakenly placed in Description (e.g., "Developed roadmaps that shaped functional priorities") should be moved to Impact. Activity verbs and methodology stay in Description; realized outcomes move to Impact.
 
-Refs: `outcome-folded-into-impact`, `inventory-entry-structure-applied`, `temp/inventory_builder_quality_checks.md`.
+Refs: `outcome-folded-into-impact`, `inventory-entry-structure-applied`, `design/inventory_builder_quality_checks.md`.
 
 #### industry-value-granularity
 Industry registry values: pharma, biotech, cro, med-device, eclinical, generics, diagnostics. Discrete rule files for pharma, biotech, cro, med-device (all research-validated 2026-04). eclinical = registry-only (single inventory entry; pharma adjacency handles translation). generics, diagnostics = file authoring deferred.
@@ -604,13 +604,15 @@ What belongs: data, metadata header, brief one-line purpose at top.
 What does not: Usage Notes sections, field-level conditional logic, layout/composition rules, self-referential meta-instructions.
 
 #### working-files-deleted-after-apply
-Working files in `temp/` (proposals, drafts, intermediate artifacts that describe a planned operation) are deleted once the operation they describe is applied. Durable artifacts after apply: the rule in `design_decisions.md`, the apply script (deterministic record of what changed), and the inventory's current state. Per-entry rationale, when needed beyond what's derivable from the rule plus entry description, lives as comments in the apply script's TARGETS dict (or equivalent), not in a separate document.
+Working files in `temp/` (proposals, drafts, intermediate artifacts, apply scripts) are deleted after the operation they describe is applied. The closed decision in `design/design_decisions.md` is the durable record of what was done, the rule that governed the operation, and the verification result. The inventory and other affected files reflect the applied state. Apply scripts may be retained locally at user discretion if there is a concrete future need to re-run them, but they are not committed evidence trail and the closed decision must be self-sufficient as the historical record.
 
-Rationale: retaining proposal files alongside the closed design decision and the apply script creates three overlapping records of the same operation. Proposals can drift from the applied state during a session (a mid-session refinement reverses a removal, but the proposal file is not re-written). The drift creates conflicting statements across documents and breaks single-source-of-truth. The apply script is deterministic and self-contained; it does not drift. The closed decision narrates the rule and the summary. Together those two cover what's needed; the proposal file is redundant.
+Rationale: retaining proposals or apply scripts alongside the closed decision creates overlapping records of the same operation. Proposals can drift from the applied state during a session (a mid-session refinement reverses a removal, but the proposal file is not re-written). Apply scripts can become orphaned when the data shape they operate on is later changed by subsequent decisions (e.g., the Competency apply script targeting a field that was later removed). Either creates conflicting statements across documents. The closed decision text is the only artifact that stays correct as the design evolves; the rule treats it as such and forces it to be complete.
 
-Applied retroactively 2026-05-06. Files deleted under this rule: `temp/specialty_retag_proposal_2026-05.md`, `temp/competency_extraction.md`, `temp/competency_clustering_proposal.md`, `temp/competency_retagging_proposal.md`, `temp/inventory_tagging_proposals.md`, `temp/_inventory_backup_pre_tagging.md`. Apply scripts retained: `temp/_apply_specialty_retag_2026-05.py`, `temp/apply_competency_retagging.py`, `temp/_strip_competency_field.py`, `temp/_apply_role_rl_reference.py`.
+Applied 2026-05-06. Files deleted under this rule include: proposal/extraction `.md` files (`specialty_retag_proposal_2026-05.md`, `competency_extraction.md`, `competency_clustering_proposal.md`, `competency_retagging_proposal.md`, `inventory_tagging_proposals.md`, `_inventory_backup_pre_tagging.md`) and the corresponding apply scripts (`_apply_specialty_retag_2026-05.py`, `apply_competency_retagging.py`, `_strip_competency_field.py`, `_apply_role_rl_reference.py`, `_apply_tagging.py`, `migrate_inventory.py`, `build_cv_*.py`). All affected closed decisions updated to remove "retained as evidence trail" language and reference this rule instead.
 
-Refs: `data-only-discipline`, `component-documentation-discipline`, `document-metadata-header-discipline`, `competency-field-and-registry-removed-2026-05` (sentence about historical proposals updated to reference this rule), `specialty-retagging-applied-2026-05` (the operation that exposed the drift problem).
+Subsumes the prior "apply script retained as evidence trail" pattern that ran across multiple closed decisions before this rule existed.
+
+Refs: `data-only-discipline`, `component-documentation-discipline`, `document-metadata-header-discipline`, `specialty-retagging-applied-2026-05` (operation that exposed the drift problem), `competency-field-and-registry-removed-2026-05` (decision whose orphaned scripts proved that retained scripts go stale).
 
 ### Rule Refresh & Staleness
 
@@ -642,7 +644,7 @@ Drop `registry_` prefix. Prior `org_maturity.md` plan superseded by Work-state a
 
 #### format-spec-cv-boundary
 Format spec = rendering config (fonts, margins, spacing, bullet chars, file-naming). Deliverable-specific, axis-agnostic.
-`temp/format_spec.md` transfers with two cleanups: (1) move embedded python-docx code (lines 95-123) to a script under `scripts/`; (2) parameterize hardcoded name in output filename (line 182), pull from `User_Info.md`.
+`design/format_spec.md` transfers with two cleanups: (1) move embedded python-docx code (lines 95-123) to a script under `scripts/`; (2) parameterize hardcoded name in output filename (line 182), pull from `User_Info.md`.
 
 #### interview-template-artifacts
 `interview_completion` and `interview_scratch` exist as blank skeletons (in `templates/`, copied per round) and as populated instances (in application folder).

@@ -35,10 +35,10 @@ Sweeps in-scope docs, parses metadata headers, cross-references against COMPONEN
 - Refs: `workflow-communication-conventions`.
 
 ### research-notes-disposition
-`temp/axis_research_notes.md` retained as historical record of pre-reconciliation research candidates. Disposition deferred until axis-builder skills are built — at that point either delete the notes or formalize them into a research-sources file (precedent from prior projects where research sources were maintained as permanent reference).
+`design/axis_research_notes.md` retained as historical record of pre-reconciliation research candidates. Disposition deferred until axis-builder skills are built — at that point either delete the notes or formalize them into a research-sources file (precedent from prior projects where research sources were maintained as permanent reference).
 - Trigger: axis-builder skills built (industry_builder, specialty_builder, orientation_builder, level_builder, work_state_builder).
 - Blocks: nothing currently.
-- Refs: `temp/axis_research_notes.md`, `builders-axis-parity`.
+- Refs: `design/axis_research_notes.md`, `builders-axis-parity`.
 
 ### inventory-builder-research-classification-sections-5-6
 experience_inventory builder skill needs a research component to classify Section 5 (Technical Experience) tools and Section 6 (Industry Exposure Profile) content against industry-pack and specialty-pack vocabularies. Drives downstream retrieval relevance and cv_targeted's ability to surface section content matched to JD industry/specialty signals.
@@ -47,10 +47,10 @@ experience_inventory builder skill needs a research component to classify Sectio
 - Refs: `experience-inventory-section-5-restructure`, `experience-inventory-section-6-rename`, `cv-targeted-content-rules-from-axes`.
 
 ### inventory-builder-quality-check-encoding
-experience_inventory builder must encode all quality checks accumulated across reconciliation passes, so future inventory creation/refresh does not require manual reconciliation. Specification consolidated in `temp/inventory_builder_quality_checks.md`; categories: structural integrity, content quality within entries, cross-entry quality, voice consistency, coverage, taxonomic notes. New checks surfaced during ongoing reconciliation get added to that file inline.
+experience_inventory builder must encode all quality checks accumulated across reconciliation passes, so future inventory creation/refresh does not require manual reconciliation. Specification consolidated in `design/inventory_builder_quality_checks.md`; categories: structural integrity, content quality within entries, cross-entry quality, voice consistency, coverage, taxonomic notes. New checks surfaced during ongoing reconciliation get added to that file inline.
 - Trigger: experience_inventory builder skill design.
 - Blocks: experience_inventory builder build.
-- Refs: `temp/inventory_builder_quality_checks.md`, `inventory-builder-research-classification-sections-5-6`.
+- Refs: `design/inventory_builder_quality_checks.md`, `inventory-builder-research-classification-sections-5-6`.
 
 ### registry-overlap-tracking
 Use `rules/industries/registry.md` (or an extension file) as a cross-reference of which terms appear in which industry files, so updates to shared regulatory/vocabulary terms (FDA guidance, ICH adoptions) can be propagated to all relevant files. Full-enumeration approach (`industry-files-full-enumeration`) duplicates shared terms across pharma/biotech/cro; redundancy is acceptable now but update-cost grows over time.
@@ -153,13 +153,13 @@ Procedural content stripped from axis rule files (`rules/orientations/*`, `rules
 - Compound tag query requirement for `platform-technology` orientation: single-tag queries on Technology Implementation are invalid; require Capability AND Capability or Capability AND Context combinations.
 - Core Competencies zoning for `data-analytics` orientation (3 zones: data strategy/governance, analytics capability/operating model, technical credibility) and `platform-technology` orientation (3 zones: technology strategy/platform governance, systems/domain knowledge, analytical/process credibility).
 - Selected Projects voice exception: leadership voice rules apply to Professional Experience entries only; project entries follow design/build voice without organizational framing.
-- Achievement framing patterns by orientation/level (problem → strategy → execution → outcome variants per orientation). Full set in `temp/Archetype_*.md`.
+- Achievement framing patterns by orientation/level (problem → strategy → execution → outcome variants per orientation).
 - Inventory coverage gap flagging: when fewer than two High priority compound queries return qualifying entries, flag before generating.
 - Adjacency translation behavior: entries tagged with adjacent industries/specialties/orientations/work-states get translated (not filtered out) per adjacency weight; non-adjacent entries get role-translation only (cross-cutting capabilities), not industry-translation.
 - Acronym expansion rule: spell out less-common acronyms on first use; common in-industry acronyms (e.g., FDA, GCP, ICH, IRB in pharma) need no expansion.
 - Trigger: cv_targeted skill design.
 - Blocks: cv_targeted build.
-- Refs: `rules/orientations/*`, `rules/levels/*`, `rules/industries/*`, `rules/specialties/*`, `rules/work-states/*`, `temp/Archetype_*.md`, `temp/content_rules_ic.md`, `temp/content_rules_leadership.md`.
+- Refs: `rules/orientations/*`, `rules/levels/*`, `rules/industries/*`, `rules/specialties/*`, `rules/work-states/*`.
 
 ### cv-format-spec-from-axes
 Bullet formatting, section order, item counts, and page targets stripped from axis rule files. Belongs in CV format spec, not rule files. Items to apply when authoring/refining CV format spec:
@@ -171,24 +171,24 @@ Bullet formatting, section order, item counts, and page targets stripped from ax
 - No unnecessary carriage returns; spacing handled by format spec.
 - Trigger: CV format spec authoring or refinement.
 - Blocks: CV format spec completion.
-- Refs: `temp/format_spec.md`, `temp/content_rules_ic.md`, `temp/content_rules_leadership.md`, `temp/Archetype_*.md`, `format-spec-cv-boundary`.
+- Refs: `design/format_spec.md`, `format-spec-cv-boundary`.
 
 ### role-evaluation-orientation-selection-from-axes
 Orientation selection logic and match criteria stripped from axis rule files. Belongs in role_evaluation, not rule files. Items to apply when designing role_evaluation:
-- Orientation match criteria split by IC vs leadership scope (e.g., transformation-strategy at leadership level requires enterprise-level organizational change; transformation-strategy at IC level requires execution within a transformation program). Full set in `temp/Archetype_*.md`.
+- Orientation match criteria split by IC vs leadership scope (e.g., transformation-strategy at leadership level requires enterprise-level organizational change; transformation-strategy at IC level requires execution within a transformation program).
 - Disambiguation logic ("verify against orientation N if..."): if the role centers on standardization or steady-state efficiency, verify against process-operations; if platform-focused, verify against platform-technology; if data-strategy-focused, verify against data-analytics; if enterprise organizational transformation, verify against transformation-strategy.
 - Dual-orientation detection: when a role legitimately maps to two orientations; primary/secondary asymmetric authority per `dual-orientation-asymmetric-authority`.
 - Orientation exclusion criteria (route-to-other-orientation logic): each orientation file's Identity section names exclusion conditions; role_evaluation enforces them during orientation selection.
 - Trigger: role_evaluation skill design.
 - Blocks: role_evaluation build.
-- Refs: `rules/orientations/*`, `temp/Archetype_*.md`, `dual-orientation-asymmetric-authority`.
+- Refs: `rules/orientations/*`, `dual-orientation-asymmetric-authority`.
 
 ## Migration Items
 
 All trigger on foundation execution; all block foundation completion. Apply the referenced design decisions to the existing files in `personal/knowledge/`.
 
 ### user-info-existing-data-migration
-Applied 2026-05-04. Migration complete. File renamed `Contact_Info.md` → `User_Info.md`; intro paragraph and Usage Notes dropped; `**Used by:** cv_targeted, cv_general` header added; field-value brackets cleaned. External references updated: `temp/content_rules_leadership.md`, `temp/support/knowledge_repo_scaffolding/{README.md, SETUP.md}`, scaffolding template renamed to `User_Info.md`. Deeper scaffolding-template content updates (metadata header, phase-based reference stripping, descriptive loading patterns) remain owned by `scaffolding-content-updates`.
+Applied 2026-05-04. Migration complete. File renamed `Contact_Info.md` → `User_Info.md`; intro paragraph and Usage Notes dropped; `**Used by:** cv_targeted, cv_general` header added; field-value brackets cleaned. External references updated: `temp/support/knowledge_repo_scaffolding/{README.md, SETUP.md}`, scaffolding template renamed to `User_Info.md`. Deeper scaffolding-template content updates (metadata header, phase-based reference stripping, descriptive loading patterns) remain owned by `scaffolding-content-updates`.
 
 ### career-narratives-existing-data-migration
 Apply `career-narratives-schema` to `Career_Narratives.md`.
@@ -247,7 +247,7 @@ Per-axis overrides on the 9-month threshold.
 - Refs: `rule-staleness-threshold`.
 
 ### adr-formalization-timing
-When to convert `temp/design_decisions.md` to numbered ADR files. Retroactive vs forward-only.
+When to convert `design/design_decisions.md` to numbered ADR files. Retroactive vs forward-only.
 - Trigger: project maturation; first need to reference an ADR by number.
 - Blocks: nothing currently.
 - Refs: `adr-naming`.
