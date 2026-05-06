@@ -208,3 +208,6 @@ __marimo__/
 
 # Personal (nested private repo with its own git history; never committed to the career repo)
 personal/
+
+# Working/transient artifacts; durable design state lives in design/, apply scripts to be relocated to scripts/
+temp/
