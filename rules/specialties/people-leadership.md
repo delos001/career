@@ -1,6 +1,6 @@
 ---
 specialty: people-leadership
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # People Leadership — CV Framing Rules
@@ -13,7 +13,7 @@ last_researched: 2026-04
 - Performance management (continuous feedback, calibration, ratings systems)
 - Career development and coaching
 - Succession planning and bench-strength development
-- Organizational design (Team Topologies for engineering; matrix, dotted-line, span-of-control)
+- Organizational design from the people-management lens (reporting lines, span of control, layers, matrix and dotted-line structures, Team Topologies for engineering)
 - Manager-of-managers leadership and skip-level engagement
 - Distributed, hybrid, and remote team leadership
 - Cross-functional influence and stakeholder management
@@ -45,4 +45,6 @@ last_researched: 2026-04
 
 ## Adjacency
 
-An entry tags people-leadership when people-leadership work was meaningfully present in the role; this commonly co-occurs with a technical specialty tag (e.g., data-engineering, clinical-operations) for roles combining people leadership with technical-specialty work. Unlike technical specialties, people-leadership has no similarity-translation rule to other specialties — people-leadership work does not carry across via similarity, only via dual-tagging when the role held both.
+An entry tags people-leadership when people-leadership work was meaningfully present in the role; this commonly co-occurs with a technical specialty tag (e.g., data-engineering, clinical-operations, operations-strategy) for roles combining people leadership with technical or domain-specialty work. Unlike technical specialties, people-leadership has no similarity-translation rule to other specialties. People-leadership work does not carry across via similarity, only via dual-tagging when the role held both.
+
+- **operations-strategy**: structural design of teams and capabilities (operations-strategy) often co-occurs with the people-management work of building, hiring, and managing those teams (people-leadership). Both can co-tag. Operations-strategy carries the capability-and-structure design layer; people-leadership carries the people-management lens (managing the people in the structure).

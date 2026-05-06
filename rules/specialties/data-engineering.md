@@ -1,6 +1,6 @@
 ---
 specialty: data-engineering
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # Data Engineering — CV Framing Rules
@@ -45,3 +45,6 @@ last_researched: 2026-04
 Translation signal for entries tagged with adjacent specialties:
 
 - **ai-engineering**: feature pipelines, MLOps infrastructure, vector-store ingestion, and model-data integration work translates directly. Where capabilities tagged in ai-engineering rest on the underlying data infrastructure, that infrastructure work reads as data-engineering depth.
+- **data-science**: when data infrastructure was extended with analytical methods (custom quality checks, anomaly detection layered into pipelines, statistical methods on top of warehouse-served data), the analytical layer reads as data-science depth and the infrastructure layer reads as data-engineering depth.
+- **operations-strategy**: when data platform decisions (vendor evaluation, build-vs-buy, architecture choices made strategically) preceded or accompanied the implementation, the strategy layer reads as operations-strategy depth and the build layer reads as data-engineering depth.
+- **quality-compliance**: when the data systems were subject to CSV/CSA validation, quality-compliance co-tags as the validation framing and data-engineering carries the build.

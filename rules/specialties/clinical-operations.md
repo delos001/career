@@ -1,6 +1,6 @@
 ---
 specialty: clinical-operations
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # Clinical Operations — CV Framing Rules
@@ -44,3 +44,5 @@ Sector-wide pharma terms (regulatory bodies, frameworks, submission docs, trial-
 Translation signal for entries tagged with adjacent specialties:
 
 - **quality-compliance**: GxP framing, audit and inspection work, CAPA management, and quality system experience translates directly. Capabilities tagged in quality-compliance read as reinforcement, not duplication, when the underlying work is clinical-trial-anchored.
+- **operations-strategy**: when an entry has both, the function- or portfolio-level structural design layer reads as operations-strategy depth and the per-study or trial-conduct execution layer reads as clinical-operations depth. Common co-tag for senior clinical leadership roles.
+- **data-science**: when statistical or analytical methods are applied to clinical or operational data (custom quality checks, anomaly detection, exploratory analysis, applied modeling), the analytical method reads as data-science depth and the clinical-domain anchoring reads as clinical-operations depth.

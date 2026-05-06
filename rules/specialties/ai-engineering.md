@@ -1,6 +1,6 @@
 ---
 specialty: ai-engineering
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # AI Engineering — CV Framing Rules
@@ -46,3 +46,5 @@ last_researched: 2026-04
 Translation signal for entries tagged with adjacent specialties:
 
 - **data-engineering**: feature pipelines, training-data curation, and ML infrastructure work translates directly. Where AI capabilities rest on data infrastructure built or operated by the candidate, the infrastructure work reads as data-engineering depth supporting AI delivery.
+- **data-science**: when applied modeling moved across the research-to-production boundary, the research/prototype layer reads as data-science depth and the production deployment layer reads as ai-engineering depth. Both often co-tag when the candidate carried the work across stages.
+- **operations-strategy**: when AI strategy and platform evaluation decisions preceded or accompanied implementation, the strategy layer reads as operations-strategy depth and the build layer reads as ai-engineering depth.

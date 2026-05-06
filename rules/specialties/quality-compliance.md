@@ -1,6 +1,6 @@
 ---
 specialty: quality-compliance
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # Quality & Compliance — CV Framing Rules
@@ -45,3 +45,6 @@ Sector-wide pharma frameworks (GxP family, 21 CFR Part 11, EU Annex 11) and bodi
 Translation signal for entries tagged with adjacent specialties:
 
 - **clinical-operations**: GCP audit work, vendor oversight, inspection response, and trial-related quality systems translate directly. Clinical-operations capabilities anchored in quality-systems work read as reinforcement; the quality-system mechanism is what carries.
+- **operations-strategy**: when QMS or compliance program design is part of broader operating-model construction, the operating-model layer reads as operations-strategy depth and the QMS-anchored governance reads as quality-compliance depth.
+- **data-engineering**: when validation work (CSV/CSA) or audit-trail review applies to data systems the candidate built or owned, data-engineering co-tags as the underlying technology layer.
+- **data-science**: when validation testing applies to analytical code, methods, or quality-check programming the candidate authored, data-science co-tags as the underlying analytical work.

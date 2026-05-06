@@ -44,7 +44,7 @@ Templates are physical carrier files (e.g., Word) that get filled in. Format spe
 #### five-orthogonal-axes
 - **Orientation** (renamed from prior Specialty / Archetype): governs deliverable structure. `rules/orientations/`. Values: transformation-strategy, data-analytics, process-operations, platform-technology.
 - **Industry**: sector. Vocabulary, dialect, regulatory framing. `rules/industries/`. Values: pharma authored; others as built.
-- **Specialty** (renamed from prior Skill): professional field of practice. Capability vocabulary and field-specific framing. `rules/specialties/`. Values: clinical-operations, data-engineering, ai-engineering, quality-compliance, people-leadership.
+- **Specialty** (renamed from prior Skill): professional field of practice. Capability vocabulary and field-specific framing. `rules/specialties/`. Values: clinical-operations, data-engineering, ai-engineering, quality-compliance, people-leadership, data-science, operations-strategy. Extended 2026-05 per `specialty-axis-extension-data-science-operations-strategy-2026-05`.
 - **Level**: IC vs leadership. Voice and scope framing. `rules/levels/`.
 - **Work-state**: operating state of the work environment. `rules/work-states/`. Values: greenfield, scaling, mature, turnaround, post-merger-integration, divestiture, pivot.
 
@@ -278,7 +278,27 @@ Refs: `temp/axis_research_notes.md`, `foundation-execution-order`, `five-orthogo
 
 #### initial-specialty-pack-content-design
 Five specialty packs (`rules/specialties/clinical-operations.md`, `data-engineering.md`, `ai-engineering.md`, `quality-compliance.md`, `people-leadership.md`) content-validated through manual research against current practitioner sources (industry frameworks, hiring keyword surveys, regulatory publications, framework authorities). Capability vocabulary, terminology, adjacency captured per specialty. Future refresh runs through `specialty_builder` if/when built.
-Refs: `temp/axis_research_notes.md`, `foundation-execution-order`, `five-orthogonal-axes`, `tag-taxonomy`.
+**Extended by `specialty-axis-extension-data-science-operations-strategy-2026-05`.** Two additional specialty packs (`data-science.md`, `operations-strategy.md`) added 2026-05 with research-validated capability vocabulary, terminology, and adjacency. Original 5 packs received bidirectional adjacency entries for the new specialties; people-leadership.md received a capability-vocabulary tightening on the "Organizational design" line to specify "from the people-management lens".
+Refs: `temp/axis_research_notes.md`, `foundation-execution-order`, `five-orthogonal-axes`, `tag-taxonomy`, `specialty-axis-extension-data-science-operations-strategy-2026-05`.
+
+#### specialty-axis-extension-data-science-operations-strategy-2026-05
+Specialty axis extended from 5 to 7. Two new specialties added:
+- `data-science`: statistical programming, statistical and quantitative methods, exploratory and applied analysis, analytic-application development carrying method, applied modeling in research/POC mode. File: `rules/specialties/data-science.md`.
+- `operations-strategy`: operating-model design, capability strategy and roadmapping, process architecture and improvement, technology and vendor strategy, transformation program design. File: `rules/specialties/operations-strategy.md`.
+
+Driven by recognition that the 5-specialty set forced misclassification of (a) statistical/analytical/programmatic work that was not engineering or production AI, and (b) function- or portfolio-level operating-model and capability-strategy work. Both clusters were defaulting to `clinical-operations` (as functional anchor) or `people-leadership` (via vision-setting / cross-functional-influence vocabulary), diluting both specialties.
+
+Practitioner-usage validation (search-confirmed 2026-05): "data-science" is the dominant cross-industry umbrella covering statistical programming, applied analytics, applied non-production ML; "Clinical Data Science" replaced "Clinical Data Management" in pharma. "Operations strategy" is the LinkedIn-volume term (85K+ postings); "Operating Model" is the McKinsey/EY/BCG canonical practice.
+
+Bidirectional Adjacency populated across all 7 specialty files. Capability vocabulary tightened on `people-leadership.md` ("Organizational design from the people-management lens") to disambiguate from operations-strategy's capability-lens org-design work. Registry description tightenings: `ai-engineering` qualified as "production... as deployed services"; `people-leadership` qualified as "from the people-management lens".
+
+Schema unchanged per `axes-file-schema`: Capability vocabulary + Terminology + Adjacency. A `## Boundary rules` section was prototyped during the session and removed; OUT-rules duplicated Adjacency content and did not scale beyond a small specialty count. Boundary qualifiers remain inline in Capability vocabulary.
+
+Inventory retag against the extended axis is the next session's work. All specialty files' `last_researched` updated to 2026-05.
+
+Resolves: `people-leadership-scope-or-new-strategy-specialty` (operations-strategy absorbs the strategy/influence work that was driving people-leadership's broader scope; people-leadership stays narrowed by the explicit "people-management lens" qualifier on org-design). Closes proactively: `regulated-industry-cross-specialty-adjacency` (bidirectional adjacency between quality-compliance and data-engineering / ai-engineering / data-science added in this session).
+
+Refs: `axes-file-schema`, `initial-specialty-pack-content-design` (extended here), `specialty-axis-tagging-by-work-nature`, `experience-inventory-domain-scoping`, `five-orthogonal-axes`.
 
 #### outcome-folded-into-impact
 `Outcome:` field removed from inventory entries. Closed-enum value (Capability Building, Risk Reduction, Quality Improvement, Efficiency Gain, Cost Savings, Scalability/Growth Enablement) folded into `Impact:` field as a colon-delimited prefix: `Impact: <value-type>: <prose>` when prose exists, `Impact: <value-type>` when prose was absent.
