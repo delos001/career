@@ -47,10 +47,16 @@ experience_inventory builder skill needs a research component to classify Sectio
 - Refs: `experience-inventory-section-5-restructure`, `experience-inventory-section-6-rename`, `cv-targeted-content-rules-from-axes`.
 
 ### inventory-builder-quality-check-encoding
-experience_inventory builder must encode all quality checks accumulated across reconciliation passes, so future inventory creation/refresh does not require manual reconciliation. Specification consolidated in `temp/inventory_builder_quality_checks.md`; categories: structural integrity, content quality within entries, cross-entry quality, voice consistency, coverage. New checks surfaced during ongoing reconciliation get added to that file inline.
+experience_inventory builder must encode all quality checks accumulated across reconciliation passes, so future inventory creation/refresh does not require manual reconciliation. Specification consolidated in `temp/inventory_builder_quality_checks.md`; categories: structural integrity, content quality within entries, cross-entry quality, voice consistency, coverage, taxonomic notes. New checks surfaced during ongoing reconciliation get added to that file inline.
 - Trigger: experience_inventory builder skill design.
 - Blocks: experience_inventory builder build.
 - Refs: `temp/inventory_builder_quality_checks.md`, `inventory-builder-research-classification-sections-5-6`.
+
+### people-leadership-scope-or-new-strategy-specialty
+Resolve whether the `people-leadership` specialty's broader scope (vision-setting, strategic communication, cross-functional influence, stakeholder management — explicit in `rules/specialties/people-leadership.md` capability vocabulary) should remain bundled, or whether organizational strategy / cross-functional influence work deserves a separate sixth specialty. Surfaced 2026-05-06 reconciliation when EX-150, EX-151, EX-170 (technology strategy advisory + cross-functional influence work, no DE/AI engineering vocabulary) were retagged from `data-engineering`/`ai-engineering` to `people-leadership` because that was the only specialty whose vocabulary covered the work. Decision affects all downstream skills consuming the specialty taxonomy (experience_inventory tag validation, cv_targeted retrieval, role_evaluation match logic).
+- Trigger: cv_targeted or role_evaluation skill design where the people-leadership scope ambiguity creates retrieval/matching friction; OR a role application where strategy/influence work needs to be retrieved without dragging direct-report-management framing.
+- Blocks: nothing currently. Builder uses people-leadership tag with broader scope per current `rules/specialties/people-leadership.md`.
+- Refs: `rules/specialties/people-leadership.md`, `temp/inventory_builder_quality_checks.md` (Section 6 Taxonomic Notes).
 
 ### registry-overlap-tracking
 Use `rules/industries/registry.md` (or an extension file) as a cross-reference of which terms appear in which industry files, so updates to shared regulatory/vocabulary terms (FDA guidance, ICH adoptions) can be propagated to all relevant files. Full-enumeration approach (`industry-files-full-enumeration`) duplicates shared terms across pharma/biotech/cro; redundancy is acceptable now but update-cost grows over time.
