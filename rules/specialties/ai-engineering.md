@@ -41,6 +41,10 @@ last_researched: 2026-05
 - Multi-modal: vision, audio, video, text-to-image, text-to-speech
 - Drift detection, concept drift, distribution shift, hallucination, factuality
 
+## Knowledge-transfer mode
+
+- Training delivery, curriculum design, and adoption coaching on this specialty's capabilities, methods, tools, or artifacts, when concurrently practicing the specialty in the role.
+
 ## Adjacency
 
 Translation signal for entries tagged with adjacent specialties:

@@ -39,6 +39,10 @@ Sector-wide pharma terms (regulatory bodies, frameworks, submission docs, trial-
 - FPI (first patient in), LPI (last patient in), LPO (last patient out), DBL (database lock) (study-conduct milestones)
 - Protocol deviation, important protocol deviation (per FDA Dec 2024 draft guidance), protocol amendment (deviation/amendment workflow)
 
+## Knowledge-transfer mode
+
+- Training delivery, curriculum design, and adoption coaching on this specialty's capabilities, methods, tools, or artifacts, when concurrently practicing the specialty in the role.
+
 ## Adjacency
 
 Translation signal for entries tagged with adjacent specialties:

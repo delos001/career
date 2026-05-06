@@ -40,6 +40,10 @@ Sector-wide pharma frameworks (GxP family, 21 CFR Part 11, EU Annex 11) and bodi
 - Roles: QA, QC, compliance officer, quality lead, qualified person (QP, EU)
 - Change control, document control, knowledge management
 
+## Knowledge-transfer mode
+
+- Training delivery, curriculum design, and adoption coaching on this specialty's capabilities, methods, tools, or artifacts, when concurrently practicing the specialty in the role.
+
 ## Adjacency
 
 Translation signal for entries tagged with adjacent specialties:

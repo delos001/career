@@ -42,6 +42,10 @@ last_researched: 2026-05
 - Benchmarking: external benchmarking, peer-group analysis, maturity model assessment
 - Project artifacts: project charter, scope statement, business case, requirements document, evaluation criteria matrix
 
+## Knowledge-transfer mode
+
+- Training delivery, curriculum design, and adoption coaching on this specialty's capabilities, methods, tools, or artifacts, when concurrently practicing the specialty in the role.
+
 ## Adjacency
 
 Translation signal for entries tagged with adjacent specialties:

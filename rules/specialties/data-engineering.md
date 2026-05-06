@@ -40,6 +40,10 @@ last_researched: 2026-05
 - Lineage, data catalog (Atlan, Collibra, Unity Catalog), data contracts, data products
 - DAG, orchestration, idempotency; exactly-once vs at-least-once delivery; watermarking
 
+## Knowledge-transfer mode
+
+- Training delivery, curriculum design, and adoption coaching on this specialty's capabilities, methods, tools, or artifacts, when concurrently practicing the specialty in the role.
+
 ## Adjacency
 
 Translation signal for entries tagged with adjacent specialties:

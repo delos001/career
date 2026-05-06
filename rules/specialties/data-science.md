@@ -40,6 +40,10 @@ Cross-domain practice terminology below. Sector-specific terms for clinical-oper
 - Notebook and reproducibility: Jupyter, RMarkdown, Quarto; Git for analytical code
 - Validation and reproducibility: validation test scripts, peer code review, reproducible reporting
 
+## Knowledge-transfer mode
+
+- Training delivery, curriculum design, and adoption coaching on this specialty's capabilities, methods, tools, or artifacts, when concurrently practicing the specialty in the role.
+
 ## Adjacency
 
 Translation signal for entries tagged with adjacent specialties:

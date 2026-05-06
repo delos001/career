@@ -43,6 +43,10 @@ last_researched: 2026-05
 - Compensation bands, equity refresh, promotion cycle
 - Distributed/hybrid: async communication, asynchronous documentation, time-zone overlap, in-person cadence
 
+## Knowledge-transfer mode
+
+- Training delivery, curriculum design, and adoption coaching on this specialty's capabilities, methods, tools, or artifacts, when concurrently practicing the specialty in the role.
+
 ## Adjacency
 
 An entry tags people-leadership when people-leadership work was meaningfully present in the role; this commonly co-occurs with a technical specialty tag (e.g., data-engineering, clinical-operations, operations-strategy) for roles combining people leadership with technical or domain-specialty work. Unlike technical specialties, people-leadership has no similarity-translation rule to other specialties. People-leadership work does not carry across via similarity, only via dual-tagging when the role held both.

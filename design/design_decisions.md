@@ -132,11 +132,47 @@ Resolves the work component of `specialty-axis-extension-data-science-operations
 
 Refs: `specialty-axis-extension-data-science-operations-strategy-2026-05`, `specialty-axis-tagging-by-work-nature`, `specialty-axis-training-as-specialty-work-2026-05`, `experience-inventory-existing-data-migration` (Section 8 retag complete).
 
+#### specialty-knowledge-transfer-section-applied-2026-05
+Added `## Knowledge-transfer mode` section to all 7 specialty files (ai-engineering, data-engineering, data-science, quality-compliance, operations-strategy, clinical-operations, people-leadership), placed between `## Terminology` and `## Adjacency`. Section content identical across all 7 files:
+
+> - Training delivery, curriculum design, and adoption coaching on this specialty's capabilities, methods, tools, or artifacts, when concurrently practicing the specialty in the role.
+
+`axes-file-schema` amended in parallel: specialty body sections list updated to "Capability vocabulary, Terminology, Knowledge-transfer mode, Adjacency."
+
+Driven by audit gap: `specialty-axis-training-as-specialty-work-2026-05` codified the substantiation rule but specialty rule files lacked corresponding file-level vocabulary. Taggers had no rule-file evidence to substantiate against when tagging training entries; future inventory builder runs would have no rule signal to apply the rule programmatically.
+
+Wording chosen generically: references "this specialty's capabilities, methods, tools, or artifacts" rather than enumerating specific items. Auto-tracks future Capability vocabulary and Terminology refreshes; specific enumerations would drift out of sync over the 9-month staleness cycle (`rule-staleness-threshold`).
+
+Placement chosen as separate section over appended bullet inside Capability vocabulary: (1) honors the conceptual mode distinction codified in the original rule (knowledge-transfer mode vs doing-work mode), (2) discoverability via dedicated heading rather than trailing bullet in a long list, (3) forward-compatibility: section absorbs future knowledge-transfer-mode additions (e.g., documentation authoring on specialty content) without restructuring.
+
+Schema variation rationale: rule applies only to specialty axis. Industries are sector context (no trainable knowledge corpus), Levels and Work-states are framing (no trainable content), Orientations are operational posture (not knowledge bodies). Adding parallel sections to other axis files would be empty-section bloat. Per-axis schema variation is principled when an axis-specific rule requires it.
+
+Refs: `specialty-axis-training-as-specialty-work-2026-05`, `axes-file-schema` (amended in this decision), `rule-staleness-threshold`, `specialty-axis-tagging-by-work-nature`.
+
+#### specialty-training-entries-catch-all-cleanup-2026-05
+Retagged 7 EX inventory entries to remove `clinical-operations` parent-domain catch-all from training and platform-advocacy entries where the trained content (or non-training work product) belonged to a narrower specialty. Applied the user's clarification of `specialty-axis-training-as-specialty-work-2026-05`: specialty tag reflects the content trained on, not the role's parent domain. Role context is captured by the Industry and Orientation axes; the Specialty axis must not be inflated by parent-domain framing.
+
+| ID | Description summary | Before | After |
+|---|---|---|---|
+| EX-183 | Led GitHub adoption training (12-15 team members) | `clinical-operations \| data-engineering` | `data-engineering \| people-leadership` |
+| EX-185 | Created/delivered Infosario Analytics platform training | `clinical-operations \| people-leadership` | `data-science \| people-leadership` |
+| EX-188 | Excel Pivot table curriculum + training | `clinical-operations \| data-science` | `data-science` |
+| EX-189 | New hire ELVIS regulatory compliance training | `clinical-operations \| quality-compliance` | `quality-compliance` |
+| EX-199 | Trained users on Infosario self-serve resources | `clinical-operations \| people-leadership` | `data-science \| people-leadership` |
+| EX-200 | Surfaced platform at meetings (advocacy, not training) | `clinical-operations \| people-leadership` | `people-leadership` |
+| EX-201 | Fed structured input to platform business owners | `clinical-operations \| people-leadership` | `operations-strategy \| people-leadership` |
+
+Three training entries audited and unchanged: EX-016, EX-030, EX-184. Trained content in those entries IS clinical-operations content (protocols, investigator responsibilities, CSM as a clinical risk-monitoring concept), so the tag was substantiated rather than catch-all.
+
+EX-183 specifically: `data-engineering` retained per user confirmation that the broader repo-build and CI/CD work (for which GitHub adoption was the team-rollout layer) is captured in a separate inventory entry. EX-200 specifically: single-tag `people-leadership` accepted as honest framing for pure influence/advocacy work without trainable specialty content.
+
+Refs: `specialty-axis-training-as-specialty-work-2026-05`, `specialty-knowledge-transfer-section-applied-2026-05`, `specialty-axis-tagging-by-work-nature`, `specialty-retagging-applied-2026-05`.
+
 #### axes-file-schema
 Each axis carries a distinct file schema reflecting its purpose per `axes-composition-precedence`:
 
 - **Industries** (`rules/industries/<value>.md`): frontmatter (industry, last_researched) + body sections: Vocabulary, Dialect, Emphasis, Adjacency.
-- **Specialties** (`rules/specialties/<value>.md`): frontmatter (specialty, last_researched) + body sections: Capability vocabulary, Terminology, Adjacency.
+- **Specialties** (`rules/specialties/<value>.md`): frontmatter (specialty, last_researched) + body sections: Capability vocabulary, Terminology, Knowledge-transfer mode, Adjacency.
 - **Orientations** (`rules/orientations/<value>.md`): frontmatter (orientation, last_researched) + body sections: Identity, Summary lead, Section emphasis, Adjacency.
 - **Levels** (`rules/levels/<value>.md`): frontmatter (level, last_researched) + body sections: Identity, Voice, Verb vocabulary, Scope signals, Adjacency.
 - **Work-states** (`rules/work-states/<value>.md`): frontmatter (work-state, last_researched) + body sections: Identity, Achievement framing, Adjacency.
@@ -220,18 +256,26 @@ Tolerant-parser principle applies file-wide and to other knowledge documents whe
 Refs: `user-info-existing-data-migration` (deferral).
 
 #### career-narratives-schema
-- IDs: `ST-NNN` for stories (10 currently), `DC-NNN` for decisions (6 currently). First line of metadata block.
-- Field renames: `Tags` → `Capability`; `Archetype` → `Orientation`.
-- New fields: `Industry` (multi), `Specialty` (multi), `Role Level`, `Purpose` (optional). `Era` retained as company-specific.
-- Final metadata block: ID, Capability, Industry, Specialty, Orientation, Role Level, Purpose, Framework, Linked Inventory (optional), Era, Added, Last Used.
-- Orientation and Work-state per-entry fields pending `retrieval-method-for-discrete-elements` resolution.
+Schema (revised 2026-05-06 after retrieval-anchor reframe; supersedes prior schema that proposed Tags→Capability rename plus four new axis fields).
+
+Career_Narratives is interview-prep primary; cv_targeted / role_evaluation consume it secondarily for bullet-framing depth via inventory linkage. Narratives are not a primary CV retrieval anchor.
+
+- IDs: `ST-NNN` for stories (10), `DC-NNN` for decisions (5; design doc previously said 6, file holds 5; reconciled to 5 pending user confirmation).
+- Per-entry fields: ID, Era, Framework, Linked Inventory (required, multi-value), Purpose (optional), Added, Last Used.
+- **Tags field dropped.** Same overlap problem inventory had with Capability/Competency: Tags values mix Specialty, Orientation, Role Level, and leadership soft-skill signals. Removing Tags reduces schema and eliminates drift risk against the axes.
+- **Per-entry Industry/Specialty/Orientation/Role Level fields not added.** Narrative axes inherit from Linked Inventory at consumption time (walk linked EX/PR IDs, union their axes). Authoring per-narrative axis tags duplicates work and creates drift when the linked inventory entry's tags change.
+- `Linked Inventory:` is **required**, multi-value, and becomes the retrieval anchor:
+  - cv_targeted / role_evaluation: select inventory entries by axis match; pass list to narratives lookup; intersecting narratives surface for bullet framing or decision context.
+  - interview_prep: retrieves narratives via semantic body match plus inventory-axis-inheritance ranking via Linked Inventory.
+- **Asymmetric linkage (narrative to inventory only).** Reverse direction (inventory to narrative) rejected: 197 inventory entries vs ~15 narratives; back-references on inventory would mean hundreds of inventory edits per narrative authoring event and most inventory entries would carry an empty field. Authoring burden stays on the smaller doc.
+- Framework: stories use `story_personal` (10); decisions use `decision_adr` (5).
+- Migration body operations: fold "Who Pushed Back" into Context; drop "What I'd Own Differently" subsections; empty subsections retained with `Not applicable` placeholder.
+- APPENDIX removed; framework defs live in `rules/narratives/`. Tag Taxonomy section removed.
 - Header: `**Used by:** cv_targeted, cv_general, interview_prep, role_evaluation, positioning, career_brief`. `**Stamps:** Last Used (YYYY-MM)`.
-- Tag Taxonomy section removed.
-- Framework field: stories → `story_personal` (all 10); decisions → `decision_adr` (all 6). Migration: fold "Who Pushed Back" into Context; drop "What I'd Own Differently" subsections.
-- APPENDIX removed; framework defs live in `rules/narratives/`.
-- Empty subsections retained with `Not applicable` placeholder.
-- `Linked Inventory:` field: multi-value, optional. Narrative → inventory only (asymmetric).
-Refs: `career-narratives-existing-data-migration`, `career-narratives-cleanup-script`, `maintained-by-metadata-field` (deferrals).
+
+Stale-link mitigation: validator script (deferred to skill build) grep-checks Linked Inventory IDs against actual EX/PR IDs in inventory.
+
+Refs: `career-narratives-existing-data-migration`, `career-narratives-cleanup-script`, `maintained-by-metadata-field` (deferrals); `competency-field-and-registry-removed-2026-05`, `cv-targeted-retrieval-architecture-2026-05`.
 
 #### positioning-schema
 - Cut: Competencies (~30 bullets), Role-Targeted Accomplishments (~30 bullets). CV and role evaluation pull from Experience_Inventory directly.
@@ -613,6 +657,17 @@ Applied 2026-05-06. Files deleted under this rule include: proposal/extraction `
 Subsumes the prior "apply script retained as evidence trail" pattern that ran across multiple closed decisions before this rule existed.
 
 Refs: `data-only-discipline`, `component-documentation-discipline`, `document-metadata-header-discipline`, `specialty-retagging-applied-2026-05` (operation that exposed the drift problem), `competency-field-and-registry-removed-2026-05` (decision whose orphaned scripts proved that retained scripts go stale).
+
+#### memory-vs-project-files-discipline
+Operating rule for where information lives:
+
+- **Memory (`~/.claude/.../memory/feedback_*.md`):** cross-cutting behavioral feedback to Claude that applies across projects and sessions (pacing, asking-too-much, audit-before-applying, communication style). Project-agnostic.
+- **`design/design_decisions.md`:** all project-specific closed decisions, including design principles applied within this project (schema rules, parser conventions, file organization, retrieval architecture).
+- **Topical files in `design/` (e.g., `inventory_builder_quality_checks.md`):** used only when a decision area outgrows an inline block in `design_decisions.md` and needs a dedicated file referenced from there.
+
+Established 2026-05-06 after audit found 5 project-specific feedback memories misplaced in memory (cv_role_completeness, atomic_inventory, impact rules, context_trim_narrative). Content was either already in `inventory_builder_quality_checks.md` or folded in during the audit; memory entries deleted.
+
+When in doubt: if the rule applies only when working in the career repo, it goes to `design/`. If the rule applies whenever Claude is working with the user regardless of project, it goes to memory.
 
 ### Rule Refresh & Staleness
 
