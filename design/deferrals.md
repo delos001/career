@@ -52,6 +52,12 @@ experience_inventory builder must encode all quality checks accumulated across r
 - Blocks: experience_inventory builder build.
 - Refs: `design/inventory_builder_quality_checks.md`, `inventory-builder-research-classification-sections-5-6`.
 
+### inventory-qc-findings-decision-log
+A decision log for QC findings on the experience_inventory that could not be fully closed by updating the source document (e.g., user-reviewed findings resolved as "no change needed; reviewed YYYY-MM-DD with reason"). Goal: prevent re-flagging the same findings on subsequent QC rounds and avoid wasted review cycles on settled questions. Expected scope minimal: primary resolution path should always remain source-document updates that make the finding self-evidently inapplicable on the next pass; the decision log captures only the residual cases where source-update doesn't dispel the finding (e.g., a tag that looks ambiguous on its face but has a documented justification). Format, storage location, and entry schema TBD.
+- Trigger: experience_inventory builder skill design.
+- Blocks: nothing currently (manual audits proceed with the user's mental model of "no-change-needed").
+- Refs: `inventory-builder-quality-check-encoding`, `design/inventory_builder_quality_checks.md`.
+
 ### inventory-prior-cluster-force-picks-multi-orientation-reaudit
 Re-audit of inventory entries that were force-picked single-orientation during Phase 3 Check #17 Clusters 1-3 (and parts of Cluster 4) before the multi-value Orientation schema was introduced 2026-05-07. Candidates identified during Cluster 4 close: EX-126, EX-159, EX-128, EX-049, EX-065; full re-audit may surface more. User deferred to separate session per pacing.
 - Trigger: separate session at user direction.
