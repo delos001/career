@@ -52,12 +52,6 @@ experience_inventory builder must encode all quality checks accumulated across r
 - Blocks: experience_inventory builder build.
 - Refs: `design/inventory_builder_quality_checks.md`, `inventory-builder-research-classification-sections-5-6`.
 
-### inventory-broader-catch-all-audit
-The 7 EX entries retagged in `specialty-training-entries-catch-all-cleanup-2026-05` did not exhaust the catch-all defect surface. Other entries with `clinical-operations` (or other parent-domain) co-tags were not audited under the no-catch-all rule. The QC `no parent-domain catch-all on Specialty tags` added to `inventory_builder_quality_checks.md` will fire on every future build/refresh and surface remaining defects programmatically.
-- Trigger: experience_inventory builder skill design (builder catches these on first refresh); OR earlier if user wants a clean inventory before next foundation step.
-- Blocks: nothing currently.
-- Refs: `specialty-training-entries-catch-all-cleanup-2026-05`, `inventory-builder-quality-check-encoding`.
-
 ### registry-overlap-tracking
 Use `rules/industries/registry.md` (or an extension file) as a cross-reference of which terms appear in which industry files, so updates to shared regulatory/vocabulary terms (FDA guidance, ICH adoptions) can be propagated to all relevant files. Full-enumeration approach (`industry-files-full-enumeration`) duplicates shared terms across pharma/biotech/cro; redundancy is acceptable now but update-cost grows over time.
 - Trigger: first shared-term update where propagation cost surfaces as friction; or earlier if foundation tooling investment is warranted.

@@ -168,6 +168,45 @@ EX-183 specifically: `data-engineering` retained per user confirmation that the 
 
 Refs: `specialty-axis-training-as-specialty-work-2026-05`, `specialty-knowledge-transfer-section-applied-2026-05`, `specialty-axis-tagging-by-work-nature`, `specialty-retagging-applied-2026-05`.
 
+#### experience-inventory-final-audit-phases-1-2-and-3p-applied-2026-05
+Final audit of `personal/knowledge/Experience_Inventory.md` against the cumulative QC checks in `design/inventory_builder_quality_checks.md`. Audit design (six phases ordered cheap-noise-first; Phase 1 programmatic, Phase 2 judgment-required pattern-search, Phase 3 tag substantiation, Phases 4-6 cross-entry/coverage/taxonomic) executed through Phase 3 Check #16. Phase 3 Check #17 + Phases 4-6 deferred for next session.
+
+Phase 1 (programmatic, 11 named checks + Phase 1.5 SGE sweep) outcomes:
+- 38 missing-Impact entries received drafted bodies; 9 bare-tag Impact lines updated; 47 total Impact-line changes applied across user-provided activity-outcome notes.
+- 19 remaining bare-tag Impact lines substantiated to prose bodies in a second pass.
+- 14 entries augmented with `Scalability/Growth Enablement` value-type prefix (work-state vs value-type axis distinction surfaced as new QC check).
+- 10 en-dashes (–) normalized to hyphens (-) file-wide for stylistic consistency on number/year ranges.
+- RL-004 Start Date corrected `2006-01` → `2007-01` (resolved 8-month phantom overlap with RL-003); Background Roles year range updated.
+- Stale resume note count (209 EX + 4 PR) corrected to actual (198 EX + 4 PR pre-deletion; 197 EX + 4 PR post-deletion).
+- Verified clean: empty optional fields rendered cleared, Type field controlled vocabulary, PR Industry uses `independent`, Bold on Description only, no first-person, no em-dashes in prose, lead-verb past tense uniform, RL Concurrent flag bilateral, per-RL completeness with Background Roles exception.
+
+Phase 2 (judgment-required pattern-search, 4 checks) outcomes:
+- EX-137 Description forward-looking phrase ("aligned to future AI-enabled automation goals") moved to Impact as realized-outcome framing; new Specialty/SGE prefix added.
+- EX-199 outcome-bleed participle clauses ("building user self-sufficiency... reducing ongoing dependency") trimmed from Description; existing Impact already carried the outcomes.
+- EX-034 purpose-clause stripped from Description.
+- EX-045 full reframe: Description scope was too narrow (only captured risk-escalation sub-activity); rewritten to capture full at-the-time work (influence + ongoing assessment + gap communication); Impact rewritten to capture partial wins and surfaced gaps without hindsight bleed.
+- 4 fluff-phrasing cleanups: EX-120 (claim-strong "Pioneered" substantiated via full rewrite + new Context with QA-approved process deviation framing), EX-172 ("high-impact" stripped), EX-132 ("comprehensive"/"significantly"/"materially" ×2 stripped), EX-127 ("materially" stripped).
+- 6 leadership lead-verb agency restructures: EX-048 (→ "Reviewed, assessed, advised"), EX-085 (→ "Conducted gap analysis"), EX-067 (→ "Advised"), EX-093 (→ "Led regional + contributed to study-level"), EX-182 (→ "Influenced"), EX-174 (→ "Conducted interviews and evaluated").
+
+Phase 3 Check #16 (closes deferral `inventory-broader-catch-all-audit`):
+- ~70 multi-specialty entries reviewed across 9 co-tag clusters.
+- 21 retag actions applied: 16 dropped clinical-operations as parent-domain catch-all where work content didn't substantiate (EX-046, EX-047, EX-074, EX-104, EX-106, EX-108, EX-109, EX-111, EX-145, EX-146, EX-148, EX-159, EX-161, EX-166, EX-171, EX-174, EX-191, EX-192); 3 added missing tags (EX-162 + quality-compliance, EX-176 + quality-compliance, EX-146 + people-leadership); 2 entries got Description scope expansion (EX-055 surfacing protocol/SOW/blinding work; per the new "Description scope completeness" rule).
+- 1 entry deleted (EX-112: ambiguous R-script-templates entry not load-bearing).
+- clinical-operations tag count went 170→151.
+
+New QC checks/clarifications added inline to `inventory_builder_quality_checks.md` during the audit:
+- "Every entry has an Impact line" (structural; missing-Impact-line as defect distinct from "two Impact lines")
+- En-dash normalization to hyphen file-wide for stylistic consistency (extends em-dash rule)
+- Strict overlap definition (≥2 months, not boundary-month transitions) for Concurrent flag bilateral check
+- Background Roles exception to per-RL completeness rule
+- "Description scope completeness — opposite of atomic decomposition" (multi-faceted work needs full-scope Description)
+- "Value-type accuracy review at audit time" (work-state vs value-type axis distinction; SGE undercounting common gap)
+- "Distinguishing substantiated co-tag from parent-domain catch-all" (clinical-operations specifically: substantiates via study lifecycle activity / clinical-trial-specific frameworks / clinical-research data domain; doesn't substantiate via mere role-context).
+
+Inventory state at session close: 197 EX + 4 PR. Specialty distribution: clinical-operations 151, quality-compliance 53, operations-strategy 39, data-engineering 37, data-science 34, people-leadership 19, ai-engineering 3.
+
+Refs: `inventory-builder-quality-check-encoding`, `specialty-training-entries-catch-all-cleanup-2026-05`, `impact-field-semantics-2026-05`, `specialty-axis-tagging-by-work-nature`, `design/inventory_builder_quality_checks.md`.
+
 #### axes-file-schema
 Each axis carries a distinct file schema reflecting its purpose per `axes-composition-precedence`:
 
