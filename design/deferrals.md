@@ -52,6 +52,12 @@ experience_inventory builder must encode all quality checks accumulated across r
 - Blocks: experience_inventory builder build.
 - Refs: `design/inventory_builder_quality_checks.md`, `inventory-builder-research-classification-sections-5-6`.
 
+### inventory-prior-cluster-force-picks-multi-orientation-reaudit
+Re-audit of inventory entries that were force-picked single-orientation during Phase 3 Check #17 Clusters 1-3 (and parts of Cluster 4) before the multi-value Orientation schema was introduced 2026-05-07. Candidates identified during Cluster 4 close: EX-126, EX-159, EX-128, EX-049, EX-065; full re-audit may surface more. User deferred to separate session per pacing.
+- Trigger: separate session at user direction.
+- Blocks: nothing currently.
+- Refs: `inventory-entry-multi-value-orientation-2026-05`.
+
 ### registry-overlap-tracking
 Use `rules/industries/registry.md` (or an extension file) as a cross-reference of which terms appear in which industry files, so updates to shared regulatory/vocabulary terms (FDA guidance, ICH adoptions) can be propagated to all relevant files. Full-enumeration approach (`industry-files-full-enumeration`) duplicates shared terms across pharma/biotech/cro; redundancy is acceptable now but update-cost grows over time.
 - Trigger: first shared-term update where propagation cost surfaces as friction; or earlier if foundation tooling investment is warranted.

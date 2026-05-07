@@ -56,6 +56,14 @@ A role may map to two orientations. Primary governs most surfaces; secondary get
 - Other deliverables: per-deliverable composition rule as needed.
 Existing CV dual-orientation rule transfers to `rules/orientations/cv_dual_orientation_composition.md`.
 
+#### inventory-entry-multi-value-orientation-2026-05
+Orientation on EX/PR inventory entries supports multi-value primary/secondary via pipe-delimited convention (`Orientation: <primary> | <secondary>`), extending `dual-orientation-asymmetric-authority` from CV-level to inventory-level.
+- First-position = primary; second = secondary. Same asymmetric-authority semantics propagate to downstream CV composition.
+- Each tag independently substantiates per `rules/orientations/<value>.md` vocabulary; un-substantiated values get dropped rather than force-fit.
+- Use only when work substantively carries both shapes; not a hedge against tag ambiguity.
+- Retrieval: each tag is an independent supplemental tag-pull trigger per `cv-targeted-retrieval-architecture-2026-05`. Single-tagging dual-shape work creates retrieval false negatives, blast radius amplified for thin work histories or thin topic coverage.
+Refs: `dual-orientation-asymmetric-authority`, `cv-targeted-retrieval-architecture-2026-05`, `cv-targeted-hybrid-retrieval`.
+
 #### level-axis-two-buckets
 IC and leadership only today. Expansion via `level_builder`. Level files are deliverable-agnostic; deliverable-specific concerns belong in the deliverable's format spec.
 Refs: `level-axis-finer-grained-files`, `level-builder-design` (deferrals).
