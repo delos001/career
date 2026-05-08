@@ -215,6 +215,38 @@ Inventory state at session close: 197 EX + 4 PR. Specialty distribution: clinica
 
 Refs: `inventory-builder-quality-check-encoding`, `specialty-training-entries-catch-all-cleanup-2026-05`, `impact-field-semantics-2026-05`, `specialty-axis-tagging-by-work-nature`, `design/inventory_builder_quality_checks.md`.
 
+#### experience-inventory-final-audit-phase-5-applied-2026-05
+Phase 5 of the final audit (coverage; 4 checks) executed across the 198-entry inventory.
+
+Check #1 (per-RL entry density): introduced allocation-adjusted FTE-month math (`effective FTE-months = tenure-months × Allocation/100`). RL-011 surfaced as a regression — 9 leadership-coverage entries (EX-202 through EX-210 at commit `24def9d`) had been deleted at commit `c2b6d96` ("cleaned up redudantn and overlapping EX entries") despite being non-redundant against retained 8 entries on every covered dimension. All 9 restored from `24def9d` with bounded-qualitative Impact bodies user-approved; 3 IDs renumbered to EX-211/212/213 to avoid collisions with live RL-020 entries (the cleanup commit had recycled the deleted IDs). RL-008 (20%), RL-012 (20%), RL-016 (10%) PASS-as-explained on allocation-adjusted math after Allocation field was added (see `rl-allocation-field-schema-2026-05`). RL-003 PASS-as-explained on recall-horizon (>15 years; repetitive-technician-work concentration legitimate).
+
+Check #2 (atomic decomposition of bundled umbrellas): 19 candidates evaluated against new tighten-vs-decompose decision tree. 5 tightened (EX-080, EX-172, EX-184, EX-121, EX-137 — workflow/lifecycle umbrellas; mechanism narrative moved to Context). 1 decomposed (EX-132 → EX-214/215/216 separable-deliverables: library content, accountability model, downstream integration mapping). 12 PASS (1 integration-framework: EX-157; 10 false-positive scope/format detail: EX-001, EX-033, EX-050, EX-055, EX-060, EX-061, EX-088, EX-090, EX-097, EX-185; 1 already-reconciled). 1 collaborative user-revise (EX-099 root-cause investigation: Description tightened, scope-and-findings list moved to Context).
+
+Check #3 (leadership coverage prompts): RL-013 +2 entries (EX-217 escalation handling, EX-218 approval/review work); RL-018 +2 entries (EX-219 matrix programming/DB-build oversight, EX-220 escalation handling) and EX-176 updated with team size 7 (3 US + 4 offshore) and operational-lead clarification; RL-019 +1 entry (EX-221 escalation handling) and dimension (a) PASS-as-strategic (no direct reports — strategic-AD scope; internships covered by EX-172); RL-020 +1 entry (EX-222 routine escalation handling beyond Inozyme/attrition events). RL-011 already covered via Check #1 regression recovery; RL-012 PASS-as-explained via 20% allocation; RL-010/RL-015 not leadership-tagged.
+
+Check #4 (pattern-of-work entries explicit framing): EX-117 Context added with explicit pattern-of-work declaration (was missing despite session-resume note classification as RL-014 EDA pattern). EX-097, EX-123, EX-164 verified compliant.
+
+New QC checks/clarifications added inline to `inventory_builder_quality_checks.md` during Phase 5:
+- §1: Allocation field is required on every RL record (semantics defined; defaults; cross-employer non-summing).
+- §3: Coverage entries protected from redundancy collapse (cleanup passes must verify coverage dimension preservation before deleting; distinguishes genuine redundancy from coverage overlap).
+- §3: ID immutability — deleted IDs retire, not recycle (prevents git-history-based recovery collisions).
+- §5: Allocation-adjusted density math (per-RL outlier detection uses `effective FTE-months` denominator).
+- §5: Recall-horizon discount (roles >15 years old; repetitive-technician-work concentration legitimate).
+- §5: Tighten-vs-decompose decision tree for umbrella candidates (workflow/lifecycle → tighten; integration-framework → pass; separable-deliverables → decompose; scope/format detail → pass false-positive).
+
+Inventory state at session close: 211 EX + 4 PR = 215 total.
+
+Refs: `inventory-builder-quality-check-encoding`, `experience-inventory-final-audit-phases-1-2-and-3p-applied-2026-05`, `rl-allocation-field-schema-2026-05`, `design/inventory_builder_quality_checks.md`.
+
+#### rl-allocation-field-schema-2026-05
+Section 7 RL records carry a required `Allocation: <percentage>%` field capturing fraction of one FTE on the role at its most current (steady-state) value. Defaults to `100%` for full-time roles. Partial roles carry user-provided values: RL-008 (20%, Infosario Business Champion concurrent within Quintiles primary), RL-012 (20%, CSM Deployment Lead concurrent within Amgen primary), RL-013 (80%, Global CTM concurrent), RL-016 (10%, RBM Software Consultant freelance side-engagement). Cross-employer overlapping roles are not constrained to sum to 100% (freelance time is additive on top of primary). Stacked same-employer roles (concurrent layered titles at the same company, e.g., RL-018/019/020 at BioMarin) report each role's allocation just before transition or end, not the historical split during overlap. Required on Background Roles for schema consistency.
+
+Rationale: prior per-RL density math used raw tenure-months as denominator, producing false-sparse signals on partial-allocation roles. Allocation field makes the density rule operable across real-world tenure variations (concurrent partial-time assignments, freelance overlaps, stacked-title transitions). Enables `effective FTE-months = tenure-months × Allocation/100` formula in QC §5.
+
+Applied to all 20 RL records; partial-allocation roles validated via subsequent density check.
+
+Refs: `experience-inventory-final-audit-phase-5-applied-2026-05`, `experience-inventory-section-7-flat-records`, `design/inventory_builder_quality_checks.md`.
+
 #### axes-file-schema
 Each axis carries a distinct file schema reflecting its purpose per `axes-composition-precedence`:
 
