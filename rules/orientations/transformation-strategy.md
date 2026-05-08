@@ -1,6 +1,6 @@
 ---
 orientation: transformation-strategy
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # Transformation & Strategy — CV Framing Rules
@@ -9,9 +9,9 @@ last_researched: 2026-04
 
 ## Identity
 
-The CV is framed as the delivery of organizational capability or structural change. Headline deliverables read as: enterprise-scope capability built, operating model redesigned and adopted, change program led at scale, turnaround executed by rebuilding rather than optimizing.
+The CV is framed as the delivery of organizational capability or structural change. Headline deliverables read as: capability built, operating model redesigned and adopted, change program led at scale, turnaround executed by rebuilding rather than optimizing.
 
-Select this orientation when the target role's primary deliverable is organizational capability or structural change at enterprise scope. Do not select when the headline deliverable is standardization or steady-state optimization (use process-operations), a platform or system (use platform-technology), analytical or data-strategic work (use data-analytics), or when incremental improvements would have to be reframed as transformation.
+Select this orientation when the target role's primary deliverable is organizational capability or structural change. Do not select when the headline deliverable is standardization or steady-state optimization (use process-operations), a platform or system (use platform-technology), analytical or data-strategic work (use data-analytics), or when incremental improvements would have to be reframed as transformation.
 
 ## Summary lead
 
