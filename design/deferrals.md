@@ -64,6 +64,12 @@ A decision log for QC findings on the experience_inventory that could not be ful
 - Blocks: nothing currently (manual audits proceed with the user's mental model of "no-change-needed").
 - Refs: `inventory-builder-quality-check-encoding`, `design/inventory_builder_quality_checks.md`.
 
+### design-decisions-audit-closure-bloat-cleanup
+Three prior audit closure records in `design_decisions.md` contain phase-by-phase audit logs that are not genuine design decisions: `experience-inventory-final-audit-phases-1-2-and-3p-applied-2026-05` (line 179), `experience-inventory-final-audit-phase-5-applied-2026-05` (line 218), `experience-inventory-final-audit-step-0-and-phases-6-7-applied-2026-05` (line 241). They bloat the file and consume context at every session start. Extract genuine design changes (rule updates, schema changes, new memory feedback) into their own slugs; remove audit-log content. The 2026-05-11 corrected-order audit closure was deliberately NOT added to `design_decisions.md` per this rule.
+- Trigger: next maintenance session; or before next inventory QC audit (to avoid adding another bloated closure).
+- Blocks: nothing currently; `design_decisions.md` remains usable.
+- Refs: `design/design_decisions.md`.
+
 ### registry-overlap-tracking
 Use `rules/industries/registry.md` (or an extension file) as a cross-reference of which terms appear in which industry files, so updates to shared regulatory/vocabulary terms (FDA guidance, ICH adoptions) can be propagated to all relevant files. Full-enumeration approach (`industry-files-full-enumeration`) duplicates shared terms across pharma/biotech/cro; redundancy is acceptable now but update-cost grows over time.
 - Trigger: first shared-term update where propagation cost surfaces as friction; or earlier if foundation tooling investment is warranted.
