@@ -356,12 +356,14 @@ Tolerant-parser principle applies file-wide and to other knowledge documents whe
 Refs: `user-info-existing-data-migration` (deferral).
 
 #### career-narratives-schema
-Schema (revised 2026-05-06 after retrieval-anchor reframe; supersedes prior schema that proposed Tags→Capability rename plus four new axis fields).
+Schema (revised 2026-05-12: Era replaced with `Role: RL-NNN` for inventory-schema alignment; Purpose field dropped as phantom. Prior revision 2026-05-06 after retrieval-anchor reframe; supersedes original schema that proposed Tags→Capability rename plus four new axis fields).
 
 Career_Narratives is interview-prep primary; cv_targeted / role_evaluation consume it secondarily for bullet-framing depth via inventory linkage. Narratives are not a primary CV retrieval anchor.
 
 - IDs: `ST-NNN` for stories (10), `DC-NNN` for decisions (5; design doc previously said 6, file holds 5; reconciled to 5 pending user confirmation).
-- Per-entry fields: ID, Era, Framework, Linked Inventory (required, multi-value), Purpose (optional), Added, Last Used.
+- Per-entry fields: ID, Role (RL-NNN reference, multi-value; matches inventory `Role:` field; rebrand-resilient), Framework, Linked Inventory (required, multi-value), Added, Last Used.
+- **Era field replaced with `Role: RL-NNN`.** Original Era field used uncontrolled free-text employer strings, drift-prone and inconsistent with inventory's canonical Role reference. RL records hold authoritative title + company; narratives can carry multiple RLs since a single narrative may span multiple roles within an employer.
+- **Purpose field dropped.** Phantom field: no defined content scope, no controlled vocabulary, no consumer. Schema parsimony preferred over speculative optionality.
 - **Tags field dropped.** Same overlap problem inventory had with Capability/Competency: Tags values mix Specialty, Orientation, Role Level, and leadership soft-skill signals. Removing Tags reduces schema and eliminates drift risk against the axes.
 - **Per-entry Industry/Specialty/Orientation/Role Level fields not added.** Narrative axes inherit from Linked Inventory at consumption time (walk linked EX/PR IDs, union their axes). Authoring per-narrative axis tags duplicates work and creates drift when the linked inventory entry's tags change.
 - `Linked Inventory:` is **required**, multi-value, and becomes the retrieval anchor:
@@ -369,7 +371,7 @@ Career_Narratives is interview-prep primary; cv_targeted / role_evaluation consu
   - interview_prep: retrieves narratives via semantic body match plus inventory-axis-inheritance ranking via Linked Inventory.
 - **Asymmetric linkage (narrative to inventory only).** Reverse direction (inventory to narrative) rejected: 197 inventory entries vs ~15 narratives; back-references on inventory would mean hundreds of inventory edits per narrative authoring event and most inventory entries would carry an empty field. Authoring burden stays on the smaller doc.
 - Framework: stories use `story_personal` (10); decisions use `decision_adr` (5).
-- Migration body operations: fold "Who Pushed Back" into Context; drop "What I'd Own Differently" subsections; empty subsections retained with `Not applicable` placeholder.
+- Migration body operations: rename "Who Pushed Back" → "Resistance" (keep as standalone section; scope expanded to non-person resistance including time, skill, and technology constraints); drop "What I'd Own Differently" subsections (purely reflective content; no replacement); empty subsections retained with `Not applicable` placeholder.
 - APPENDIX removed; framework defs live in `rules/narratives/`. Tag Taxonomy section removed.
 - Header: `**Used by:** cv_targeted, cv_general, interview_prep, role_evaluation, positioning, career_brief`. `**Stamps:** Last Used (YYYY-MM)`.
 
