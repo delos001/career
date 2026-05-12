@@ -324,6 +324,29 @@ Refs: `cv-targeted-retrieval-architecture-2026-05`, `career-narratives-schema`, 
 Level lives only on EX/PR entries (effective level). Captures the pattern of doing higher-than-title-level work within a titled role.
 Prior version had Level on both RL-NNN role records (titled level) and EX/PR entries (effective level), with EX/PR defaulting from RL when missing. Removed RL Level after per-entry Level became fully populated on all 197 EX/PR entries: cv_targeted matches JD Level against entry effective level directly; RL Level was never read in retrieval and added no signal. If a future builder skill needs role-level defaulting for new EX entries, the field can be reintroduced.
 
+#### cv-section-structure-professional-vs-earlier-roles
+CV experience uses two sections: **Professional Experience** and **Earlier Professional Roles**.
+
+**Professional Experience inclusion rules:**
+1. Any role currently active or with an end date within the last 10 years (threshold: current year minus 10).
+2. Any older role that directly closes a gap between the candidate's experience and a specific JD competency cluster — but only when that gap would otherwise be unaddressed.
+3. If a newer role is included solely to prevent a perceived timeline gap (not for content), it earns 1-2 lines summarizing scope and responsibilities — not detailed bullets.
+4. Any role newer than an older rule-2 inclusion must also appear in Professional Experience to avoid a perceived gap between the two sections.
+
+**Professional Experience treatment:**
+- Roles with strong JD alignment: full arc-level bullet treatment per role scope.
+- Roles included only for timeline continuity (rule 3 above): 1-2 line breadth summary only.
+- For transformation-strategy or process-operations oriented applications: operational roles (project management, clinical monitoring, site management) that predate the transformation work belong in Professional Experience if within threshold. They establish operational foundation that validates the transformation arc. Their 1-2 line summary should reflect operational breadth, not JD-cluster matching.
+
+**Earlier Professional Roles:**
+All roles outside the threshold that do not meet rule-2. Format: Company | Title | Dates only. No bullets, no descriptions.
+
+**Gap prevention principle:** Readers notice unexplained gaps. Every period of professional activity should be accounted for across the two sections. Concurrent roles (multiple employers simultaneously) should be noted as concurrent; low-allocation side engagements can appear as brief notes. A gap during a documented period (e.g., COVID, full-time study) is preferable to artificially filling it with a role that doesn't belong.
+
+**Traceability constraint:** Every claim in a Professional Experience entry must trace to a specific EX inventory entry or RL role record. Level-elevation language (reframing IC work as director-level framing) is valid only when the inventory entry itself supports the elevated framing — not as a general elevation pass. Claims that cannot be defended in interview are liabilities, not assets.
+
+Refs: `arc-composition-for-high-impact-roles`, `cv-targeted-retrieval-architecture-2026-05`.
+
 ### Knowledge Documents (Schemas)
 
 #### knowledge-document-roster
