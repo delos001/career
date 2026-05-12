@@ -34,6 +34,12 @@ Sweeps in-scope docs, parses metadata headers, cross-references against COMPONEN
 - Blocks: full-introduction pattern in classified skills.
 - Refs: `workflow-communication-conventions`.
 
+### inventory-filter-tool
+A CLI or UI utility that filters `Experience_Inventory.md` EX/PR entries by Role (RL-NNN), Industry, Specialty, Orientation, Level, Work-state, or other tag axes. Surfaces matching entries with ID + Description for human review. Needed for narrative authoring (selecting Linked Inventory anchors), CV bullet sourcing, and inventory navigation generally. The flat-file structure of the inventory makes manual lookup impractical at 216-entry scale. Surfaced 2026-05-12 during Phase D of `career-narratives-existing-data-migration`, where user could not browse the inventory by role to choose Linked Inventory anchors.
+- Trigger: next narrative authoring or refresh task, or when CV bullet sourcing becomes a recurring workflow.
+- Blocks: nothing currently (Phase D was completed by Claude acting as the filter interactively).
+- Refs: `career-narratives-schema`, `career-narratives-existing-data-migration`.
+
 ### research-notes-disposition
 `design/axis_research_notes.md` retained as historical record of pre-reconciliation research candidates. Disposition deferred until axis-builder skills are built — at that point either delete the notes or formalize them into a research-sources file (precedent from prior projects where research sources were maintained as permanent reference).
 - Trigger: axis-builder skills built (industry_builder, specialty_builder, orientation_builder, level_builder, work_state_builder).

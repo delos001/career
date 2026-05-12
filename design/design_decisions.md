@@ -307,6 +307,19 @@ Supplemental tag selection is dynamic, not static — driven by role_evaluation'
 
 Refs: `competency-registry-runtime-value` (resolved here), `cv-targeted-hybrid-retrieval` (deferral, reshaped), `role-evaluation-axis-matching-protocol`, `axes-composition-precedence`, `cv-targeted-content-rules-from-axes` (deferral).
 
+#### arc-composition-for-high-impact-roles
+Atomic inventory entry structure enables broad JD matching and retrieval recall. Roles requiring high-level, enterprise-scope proof points need the composition layer to synthesize related entries into unified achievement arcs rather than treating each as an independent bullet.
+
+Mechanism: Career_Narratives (ST-NNN entries with Linked Inventory fields) are the primary composition unit when a role's scope requires arc-level proof points. Atomic EX entries surface as supporting detail beneath the arc claim, not as parallel top-level bullets.
+
+cv_targeted trigger: when role_evaluation identifies that the JD's primary deliverable language is at enterprise or cross-functional program scope (e.g., "led enterprise initiative," "built and scaled a capability"), the composition pass checks Career_Narratives for arcs linking the relevant EX entries before composing individual bullets. An arc claim anchors the achievement; the atomic entries (individual process improvements, governance artifacts, training activities) provide the evidence layer underneath.
+
+role_evaluation trigger: when producing gap analysis, evaluate coverage at arc level first, not entry level. A cluster of related atomic entries that together constitute a high-impact story should be surfaced as a unified arc gap or strength, not as a list of individual entry matches.
+
+Rationale: without this rule, cv_targeted composes atomic bullets that individually undersell scope and collective impact. The hiring panel reads a list of process improvements rather than a transformation story. The inventory is structured atomically for retrieval; the CV must be structured architecturally for persuasion.
+
+Refs: `cv-targeted-retrieval-architecture-2026-05`, `career-narratives-schema`, `role-evaluation-and-cv-targeted-separate`.
+
 #### level-on-entries-effective-level
 Level lives only on EX/PR entries (effective level). Captures the pattern of doing higher-than-title-level work within a titled role.
 Prior version had Level on both RL-NNN role records (titled level) and EX/PR entries (effective level), with EX/PR defaulting from RL when missing. Removed RL Level after per-entry Level became fully populated on all 197 EX/PR entries: cv_targeted matches JD Level against entry effective level directly; RL Level was never read in retrieval and added no signal. If a future builder skill needs role-level defaulting for new EX entries, the field can be reintroduced.
@@ -442,6 +455,8 @@ Refs: `feedback_design_for_generalization`.
 #### experience-inventory-section-7-flat-records
 Flat records, each role self-contained, company as a field. Stable ID `RL-NNN`.
 EX entries reference Section 7 via `Role: RL-NNN` field per `inventory-role-rl-reference-applied-2026-05`. RL Title and Company are canonical; EX entries do not carry duplicate Title/Company fields. Resolves the rebrand-resilience problem that motivated the original "Title | Company" coexistence design.
+
+`Type:` enum: `Direct | Contract | Freelance | Military | Independent`. `Independent` added 2026-05-12 to support self-directed work periods with no external employer (distinct from `Freelance`, which is paid work for an external client). Independent RLs use `Company: Independent` uniformly; Title carries the discrimination between different independent focuses (parallels how a single company holds multiple RL records with different titles for different focuses).
 
 #### experience-inventory-section-ordering
 Sections 9 and 10 swap. Independent & Volunteer Projects → 9. Academic Coursework Detail → 10. Education stays at top.
@@ -858,7 +873,18 @@ Empty. Stage-specific items populate as builder skills surface them at build tim
 
 ## Application Workflow Stage
 
-Empty. role_evaluation, cv_targeted, interview_prep, interview_capture, interview_followup designed at their build time.
+### role_evaluation
+
+#### gap-analysis-cluster-derivation
+Gap analysis clusters are distinct competency domains, where a domain is a coherent area of professional capability the JD is independently evaluating. Two JD requirements belong in the same cluster when a hiring panel would assess them as part of the same underlying skill set. Cluster count emerges from this grouping; no target range is prescribed.
+
+Prior rule specified "identify the main 3-5 clusters." That was an arbitrary constraint that under-served packed JDs where the competency landscape genuinely spans more domains. A JD with 8 distinct competency domains requires 8 clusters; forcing consolidation to 5 either loses a domain or creates artificially bundled clusters that obscure gaps.
+
+Practical guard: if the analysis produces more than 9-10 clusters, some are likely too granular and should be consolidated. Fewer than 3 clusters suggests the JD has not been read with sufficient granularity.
+
+Derivation process: read the JD; identify distinct competency domains; group related requirements under each domain. The grouping should reflect how a hiring panel thinks about the role's requirements, not the JD's section headings.
+
+Refs: `role-evaluation-and-cv-targeted-separate`, `arc-composition-for-high-impact-roles`.
 
 ## Career Workflow Stage
 
