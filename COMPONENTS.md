@@ -108,7 +108,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - company_research, role_research, industry_research, axis_classifier, qc_role_intake
 
 **Planned** (from `design/design_decisions.md`):
-- organization_research, specialty_research, orientation_research, level_research, work_state_research (axis-builder and interview-prep research agents)
+- specialty_research, orientation_research, level_research, work_state_research (axis-builder research agents)
 - qc_cv_format, qc_cv_structural, qc_cv_content, qc_gap_analysis_completeness, qc_interview_prep_coverage
 - (additional QC agents as new targets and aspects emerge)
 

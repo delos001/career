@@ -709,7 +709,8 @@ Refs: `research-output-location-and-format` (deferral).
 
 #### qc-organization
 Specs in `rules/quality_control/`. Executors as sub-agents in `.claude/agents/`. Skills call QC; sub-agents execute in isolated context.
-Naming: `qc_<scope>_<aspect>.md` for both specs and executors. Examples: `qc_cv_format`, `qc_cv_structural`, `qc_gap_analysis_completeness`. `qc_` prefix kept on both sides.
+Naming: `qc-<scope>-<aspect>.md` for both specs and executors, fully kebab per `file-and-folder-naming`. Examples: `qc-cv-format`, `qc-cv-structural`, `qc-gap-analysis-completeness`. The `qc-` prefix is kept on both sides.
+Amended 2026-05-14: was `qc_<scope>_<aspect>` with underscores; changed to all-kebab so QC agent and spec filenames match the general naming rule and the rest of the agent roster.
 
 #### skill-authoring-template-library
 Location: `engops/cheatsheets/skill-templates/`. First template: `human-gated-workflow.md`. Authored alongside the first skill that uses it. Conventions recorded here in the interim.
