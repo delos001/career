@@ -229,7 +229,7 @@ All clusters closed. Migration complete.
 
 Closed:
 - Cluster C (Company → `Role: RL-NNN` reference): closed 2026-05-04 by `inventory-role-rl-reference-applied-2026-05`. Title field also dropped from EX entries; two RL Title corrections during reconciliation; one compound-title cluster split per-entry between RL-011 and RL-013.
-- Step 5 (Competency re-tagging) and Step 6 (Section 8 sub-section reassignment) both rendered moot by `competency-field-and-registry-removed-2026-05`. Field stripped 2026-05-01.
+- Step 5 (Competency re-tagging) and Step 6 (Section 8 sub-section reassignment) both rendered moot by `competency-field-and-registry-removed-2026-05`. Field stripped 2026-05-01. Section 8 structure subsequently resolved by `inventory-section-8-rl-grouping-2026-05` (RL-grouped `### RL-NNN` sub-headings replace the topical scheme).
 
 Done 2026-05-01:
 - Sections 1-4 restructured with structured-field schemas (Education, Certifications, Affiliations, Training); year-only or YYYY-MM date granularity per section.

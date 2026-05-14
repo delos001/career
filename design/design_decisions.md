@@ -488,6 +488,21 @@ Sections 9 and 10 swap. Independent & Volunteer Projects → 9. Academic Coursew
 Reference sections addressable at sub-section level via heading anchors. Per-item tagging not added.
 Refs: `experience-inventory-existing-data-migration` (deferral).
 
+#### inventory-section-8-rl-grouping-2026-05
+Section 8 renamed "All Tasks Performed" → "Experience Entries" (the `EX-` prefix denotes experience units, not to-do tasks). The ten hand-curated topical sub-headings are replaced with one `### RL-NNN` sub-heading per role; heading text is the RL ID only, preserving the rebrand resilience of `inventory-role-rl-reference-applied-2026-05`.
+
+Structure: RL sub-headings ordered to match Section 7 (reverse-chronological by Start Date). Within each RL, entries sort by primary Orientation value, then primary Specialty value, then EX-ID ascending. "Primary value" is the value before the pipe in a multi-value field per `inventory-entry-multi-value-orientation-2026-05`.
+
+Rationale: the topical sub-headings had no assignment rule and no naming rule, and did not map to any tag axis (one heading spanned 12 Specialty combinations across 3 Orientations). The Specialty/Orientation/Industry/Level/Work-state tags already carry the classification, and cv_targeted retrieval (`cv-targeted-retrieval-architecture-2026-05`) reads tags from entry fields, not document position — so the sub-heading scheme had no retrieval role. RL grouping is deterministic and self-maintaining: every entry's `Role:` field assigns it unambiguously.
+
+ID-matching convention: `### RL-NNN` adds a third occurrence pattern for an RL ID alongside `ID: RL-NNN` (Section 7 record) and `Role: RL-NNN` (Section 8 reference). RL/EX/PR ID matching uses anchored line patterns (`^ID:`, `^Role:`, `^### `, `^Linked Inventory:`), never bare substring.
+
+Background Roles: the `Background Roles (Not Tagged)` block formerly after Section 8 is removed — its three roles already exist as full Section 7 records (RL-001, RL-002, RL-004), so the block was redundant. The QC-exemption function it served is now carried by an `Experience Entries: None` field on those three RL records, machine-checkable per-record. This implements the "Background Roles exception to per-RL completeness rule" noted in `experience-inventory-final-audit-step-0-and-phases-6-7-applied-2026-05`.
+
+Closes `inventory-section-8-subsection-reassignment` (the deferred Step 6 sub-section remap, already moot since `competency-field-and-registry-removed-2026-05`; the structural question is now resolved by this decision). Apply executed via `scripts/_reorg_section8.py` against 212 EX entries; per `working-files-deleted-after-apply` the script is deletable, this decision is the durable record.
+
+Refs: `inventory-role-rl-reference-applied-2026-05`, `inventory-entry-multi-value-orientation-2026-05`, `cv-targeted-retrieval-architecture-2026-05`, `competency-field-and-registry-removed-2026-05`, `experience-inventory-section-7-flat-records`, `inventory-section-8-subsection-reassignment` (deferral, closed), `design/inventory_builder_quality_checks.md` (parallel-construction scope + §5 background-role exemption updated), `design/narratives_builder_quality_checks.md` (anchored-matching note added).
+
 #### narratives-placement
 `rules/narratives/` with five files: `decision_adr`, `decision_personal`, `story_atola`, `story_star`, `story_personal`.
 
