@@ -3,15 +3,15 @@ level: leadership
 last_researched: 2026-04
 ---
 
-# Leadership — CV Framing Rules
+# Leadership - CV Framing Rules
 
-**Used by:** cv_targeted, role_evaluation
+**Used by:** cv_targeted, axis_classifier
 
 ## Identity
 
 The CV is framed as organizational leadership and the building or governance of capabilities, teams, and functions. Headline content reads as: cross-functional or portfolio ownership, organizational decision-making, capability-building, governance frameworks, multi-function influence, headcount and budget responsibility.
 
-Select this level when the target role carries direct people-management authority, organizational scope, or multi-function leadership — manager, director, associate director, VP, C-suite. Do not select when the role is individual technical execution without management authority, even at senior IC scope (Staff, Principal, Architect) (use ic).
+Select this level when the target role carries direct people-management authority, organizational scope, or multi-function leadership - manager, director, associate director, VP, C-suite. Do not select when the role is individual technical execution without management authority, even at senior IC scope (Staff, Principal, Architect) (use ic).
 
 ## Voice
 

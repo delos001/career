@@ -3,9 +3,9 @@ work-state: post-merger-integration
 last_researched: 2026-04
 ---
 
-# Post-Merger Integration — CV Framing Rules
+# Post-Merger Integration - CV Framing Rules
 
-**Used by:** cv_targeted, role_evaluation
+**Used by:** cv_targeted, axis_classifier
 
 ## Identity
 

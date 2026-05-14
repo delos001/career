@@ -3,15 +3,15 @@ level: ic
 last_researched: 2026-04
 ---
 
-# Individual Contributor — CV Framing Rules
+# Individual Contributor - CV Framing Rules
 
-**Used by:** cv_targeted, role_evaluation
+**Used by:** cv_targeted, axis_classifier
 
 ## Identity
 
 The CV is framed as individual technical execution and depth in a domain or discipline. Headline content reads as: technical delivery, project or system ownership, architecture or design decisions, depth of expertise, technical influence within or across teams.
 
-Select this level when the target role is an individual contributor without direct people-management authority — engineer, analyst, scientist, lead (without management scope), Staff/Principal/Architect, specialist. Do not select when the role carries direct people-management authority, headcount or budget responsibility, or multi-function organizational governance (use leadership).
+Select this level when the target role is an individual contributor without direct people-management authority - engineer, analyst, scientist, lead (without management scope), Staff/Principal/Architect, specialist. Do not select when the role carries direct people-management authority, headcount or budget responsibility, or multi-function organizational governance (use leadership).
 
 ## Voice
 

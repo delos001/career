@@ -4,12 +4,6 @@ When a deferral's trigger fires, promote to `open_questions.md`. Protocol in mem
 
 ## Build-Time Tasks
 
-### application-id-script-implementation
-Script: prompts for company slug at first encounter, stores slug + name in `rules/organizations/company-slugs.yaml`, increments counter, returns compound ID.
-- Trigger: first skill needing application ID (role_evaluation).
-- Blocks: role_evaluation skill build.
-- Refs: `application-id-format`, `company-slug-registry`.
-
 ### session-log-parser-tests
 Tests verifying latest-wins per topic (decision entries) and per phase (phase_complete entries).
 - Trigger: parser implementation lands.
@@ -27,12 +21,6 @@ Sweeps in-scope docs, parses metadata headers, cross-references against COMPONEN
 - Trigger: first metadata header in place AND at least one consuming skill.
 - Blocks: drift detection (not a hard blocker).
 - Refs: `document-metadata-header-discipline`, `component-documentation-discipline`.
-
-### introduce-py-implementation
-`scripts/display/introduce.py` and `scripts/display/introductions.yaml` content.
-- Trigger: first long-arc skill built.
-- Blocks: full-introduction pattern in classified skills.
-- Refs: `workflow-communication-conventions`.
 
 ### inventory-filter-tool
 A CLI or UI utility that filters `inventory.md` EX/PR entries by Role (RL-NNN), Industry, Specialty, Orientation, Level, Work-state, or other tag axes. Surfaces matching entries with ID + Description for human review. Needed for narrative authoring (selecting Linked Inventory anchors), CV bullet sourcing, and inventory navigation generally. The flat-file structure of the inventory makes manual lookup impractical at 216-entry scale. Surfaced 2026-05-12 during Phase D of `career-narratives-existing-data-migration`, where user could not browse the inventory by role to choose Linked Inventory anchors.
@@ -91,29 +79,11 @@ Audit all axes (industries, specialties, orientations, levels, work-states) to v
 
 ## Per-Skill Design Items
 
-### session-log-body-schema
-Entry format, granularity, field set, ordering, timestamp precision, state-transition triggers, first-write contents.
-- Trigger: each consuming skill at design time.
-- Blocks: any skill writing to session log.
-- Refs: `session-log-frontmatter-schema`.
-
-### state-detection-logic-and-location
-Form and location: standalone rule file, per-skill, or hybrid.
-- Trigger: first skill needing resume-point determination (role_evaluation).
-- Blocks: role_evaluation skill build.
-- Refs: `state-detection`.
-
 ### gap-analysis-schema
 Output schema for the role_evaluation gap analysis artifact: which axis values to capture from JD, JD emphasis signals (must-haves vs nice-to-haves), detected vocabulary, and application-specific framing notes that cv_targeted will consume. Format depends on axis structure (now stable post-axis-cleanup) and on the matching protocol per `role-evaluation-axis-matching-protocol`.
 - Trigger: role_evaluation skill design.
 - Blocks: role_evaluation build; cv_targeted consumes this format and depends on it.
 - Refs: `role-evaluation-and-cv-targeted-separate`, `role-evaluation-axis-matching-protocol`, `cv-targeted-weighted-matching`.
-
-### research-output-location-and-format
-Where research sub-agent outputs land and what format.
-- Trigger: first skill invoking a research sub-agent.
-- Blocks: any skill calling research.
-- Refs: `research-sub-agents-roster`.
 
 ### introduction-roster-ambiguous-skills
 Introduction classification for `interview_capture`, `interview_followup`, `cv_general`, `inventory`, `narratives`.

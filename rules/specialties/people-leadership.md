@@ -3,9 +3,9 @@ specialty: people-leadership
 last_researched: 2026-05
 ---
 
-# People Leadership — CV Framing Rules
+# People Leadership - CV Framing Rules
 
-**Used by:** cv_targeted, role_evaluation
+**Used by:** cv_targeted, axis_classifier
 
 ## Capability vocabulary
 

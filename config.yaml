@@ -1,0 +1,29 @@
+# Repo-structure config for the career repo.
+#
+# Holds the folder names, filenames, and ID scheme that the scripts in scripts/
+# depend on, so a repo reorganization is a config edit rather than a code change.
+# Scripts resolve the repo root from their own location (never an absolute path);
+# every path below is relative to that root.
+
+# Folders, relative to the repo root.
+paths:
+  applications: personal/applications    # one folder per evaluated job
+  sessions: personal/sessions            # session logs
+  templates: templates                   # artifact templates
+
+# Filenames.
+filenames:
+  research_file: research.md                   # written into each application folder
+  session_log_template: session_log.md         # in the templates/ folder
+  research_file_template: research_file.md      # in the templates/ folder
+  introductions: introductions.yaml            # next to scripts/display/introduce.py
+
+# Naming patterns.
+naming:
+  # <stem> identifies one evaluated job. Tokens: {slug} {app_id} {ym}.
+  # Used as the application folder name and as the base of the session-log filename.
+  application_stem: "{slug}_{app_id}_{ym}"
+  session_log_filename: "{stem}_SessionLog.md"
+  # Application ID: a global counter, e.g. APP-004.
+  app_id_prefix: "APP-"
+  app_id_digits: 3

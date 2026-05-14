@@ -3,9 +3,9 @@ specialty: operations-strategy
 last_researched: 2026-05
 ---
 
-# Operations Strategy — CV Framing Rules
+# Operations Strategy - CV Framing Rules
 
-**Used by:** cv_targeted, role_evaluation
+**Used by:** cv_targeted, axis_classifier
 
 ## Capability vocabulary
 

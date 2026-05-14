@@ -41,7 +41,7 @@ career/
 │   │   └── qc_cv_content.md                       # qc agents grow as identified
 │   └── settings.json                              # optional
 ├── rules/
-│   ├── global_rules.md                            # three rules only
+│   ├── global-rules.md                            # three rules only
 │   ├── tags.yaml                                  # globals: Role Level, Purpose
 │   ├── orientations/
 │   │   ├── transformation-strategy.md

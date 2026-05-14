@@ -3,9 +3,9 @@ orientation: platform-technology
 last_researched: 2026-04
 ---
 
-# Platform & Technology — CV Framing Rules
+# Platform & Technology - CV Framing Rules
 
-**Used by:** cv_targeted, role_evaluation
+**Used by:** cv_targeted, axis_classifier
 
 ## Identity
 

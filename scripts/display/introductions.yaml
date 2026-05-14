@@ -1,0 +1,26 @@
+# User-facing skill introductions, printed at phase 0 by introduce.py.
+# Add one entry per skill, keyed by the skill's folder name.
+
+role-intake: |
+  # role-intake - understand the job
+
+  Builds the foundational understanding of a job opportunity. It does not write a
+  CV or a gap analysis (later skills do). It produces two artifacts for downstream
+  use: a session log and a research file.
+
+  Steps:
+    1. Ingest the job description - paste it, or give a .txt / .docx / .pdf path
+       or a URL.
+    2. Pull in any role communications (e.g. a recruiter email): place them in the
+       same folder as the JD and they are read in too.
+    3. Confirm role title and company (you are prompted if absent from the JD).
+    4. Research the company, role, and industry - scoped to what the skill needs,
+       not exhaustive dossiers.
+    5. Classify the job against the five axes. An axis with no rule file yet is
+       flagged and deferred, not blocked.
+    6. Write the session log and research file, then QC them.
+
+  Have ready: the job description, and any recruiter / hiring-manager messages.
+
+  Operates under rules/global-rules.md - halts and asks for direction on any
+  failure or ambiguity rather than guessing.

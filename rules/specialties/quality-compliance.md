@@ -3,9 +3,9 @@ specialty: quality-compliance
 last_researched: 2026-05
 ---
 
-# Quality & Compliance — CV Framing Rules
+# Quality & Compliance - CV Framing Rules
 
-**Used by:** cv_targeted, role_evaluation
+**Used by:** cv_targeted, axis_classifier
 
 ## Capability vocabulary
 

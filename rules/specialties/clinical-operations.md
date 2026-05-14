@@ -3,9 +3,9 @@ specialty: clinical-operations
 last_researched: 2026-05
 ---
 
-# Clinical Operations — CV Framing Rules
+# Clinical Operations - CV Framing Rules
 
-**Used by:** cv_targeted, role_evaluation
+**Used by:** cv_targeted, axis_classifier
 
 ## Capability vocabulary
 

@@ -888,7 +888,11 @@ Mixed by content shape. Structured lookup (Python script) for structured documen
 Skills are markdown. Deterministic logic = Python scripts via Bash. LLM-judgment in skill or LLM sub-agents. Build scripts alongside the skill that uses them. Never use an LLM where a script can verify deterministically.
 
 #### configuration-file
-`personal/config.yaml` in nested private repo. Holds key paths, output destinations, future tracker placeholder. YAML. The `name` field is removed (lives in `user-info.md`).
+Two-tier:
+- **Repo-structure config** at the career-repo root (`config.yaml`, version-controlled): the repo-structure constants scripts depend on - relative folder paths, filename patterns, the APP-NNN scheme. Identical for every clone; not edited on clone. Scripts resolve the repo root from `__file__` (never an absolute literal) and read these from `config.yaml`. Section-heading strings stay inline in scripts (config indirection for those is overkill). It grows by adding semantically-named keys in the appropriate section (e.g. a CV naming convention as a new `naming` key); never numbered-suffix keys (`foo2`), and nest into a named sub-map only when a genuine second variant of one concept appears.
+- **Personal config** (`personal/config.yaml`, nested private repo): reserved for genuinely user-specific values - output destinations outside the repo, future tracker placeholder. Created only when a script actually needs one. The `name` field is in neither (lives in `user-info.md`).
+
+Amended 2026-05-14: the original single-`personal/config.yaml` decision assumed the config would hold personal/absolute paths. With `__file__`-resolved root and relative paths, repo-structure config carries nothing clone-specific and belongs in the version-controlled career repo. See memory `feedback_no_hardcoded_repo_values`.
 
 ### Operational Discipline
 
@@ -909,7 +913,7 @@ Refs: `initial-industry-pack-content-design`, `initial-specialty-pack-content-de
 Order: value, friction, scalability, learning tiebreaker. Scope creep and gold plating route to "enhancements" list, not inline.
 
 #### global-rules-minimized
-`rules/global_rules.md` as single file. Three rules: never fabricate content; failure handling protocol; never proceed with partial content.
+`rules/global-rules.md` as single file. Three rules: never fabricate content; failure handling protocol; never proceed with partial content.
 
 #### pacing-consolidation
 User-level CLAUDE.md holds general response-shape pacing. Skill approval-gating lives in skill authoring template as Presentation Phase convention.
@@ -921,6 +925,34 @@ User-level CLAUDE.md holds general response-shape pacing. Skill approval-gating 
 Empty. Stage-specific items populate as builder skills surface them at build time.
 
 ## Application Workflow Stage
+
+### role-intake
+
+The first skill. Ingests a job description, researches it, classifies it against the five axes, and produces a session log + a research file for the downstream gap-analysis skill. Supersedes the old `role_evaluation` design — that skill's scattered pre-build specs are reference only, not spec. Gap analysis is a separate later skill.
+
+#### role-intake-architecture
+Plain Claude Code skill: `career/.claude/skills/role-intake/SKILL.md` orchestrates ten separable phases (0-9), each with an explicit input/output contract so a LangGraph orchestrator could wrap the system later without rewriting work units. No LangGraph now. Deterministic work in scripts, web research and QC in subagents, to keep the main session context light.
+- Scripts: `scripts/ingest/jd_extract.py` (JD/comms → text), `scripts/app_id.py` (next global APP-NNN), `scripts/display/introduce.py` + `introductions.yaml` (phase-0 user guidance), `scripts/assemble.py` (deterministic artifact writing; see role-intake-artifacts).
+- Subagents: `company_research`, `role_research`, `industry_research` (Phase 4, parallel), `qc_role_intake` (Phase 8).
+Resolves deferrals: `application-id-script-implementation`, `introduce-py-implementation`.
+
+#### role-intake-research-scope
+Research is three parallel subagents (company / role / industry), each in isolated context returning a fixed `Summary / Key facts / Sources` block. Scoped to only the information that supports the skill's own decisions (title/company/level confirmation, axis classification, first-pass context) — not exhaustive dossiers. Subagents return structured markdown to the caller; the caller owns persistence. Resolves deferral: `research-output-location-and-format`.
+
+#### role-intake-axis-classification
+Phase 6 dispatches the `axis_classifier` subagent, which classifies the job against the five axes (primary + secondary where applicable) in isolated context — keeping axis files out of the main session, consistent with research and QC. It is registry-first for every axis: read the axis registry, pick candidate value(s) from the one-line identities, read only the candidate value file(s), then confirm each pick against the value file's Identity / selection criteria before recording it. A pick that does not confirm is re-picked; if no registry value confirms, an axis gap is flagged (recorded in both artifacts, not blocked, not routed to the unbuilt builder skills). Three registries were created so this is consistent across all five axes — `rules/orientations/registry.md`, `rules/levels/registry.md`, `rules/work-states/registry.md` — matching the pre-existing `rules/industries/registry.md` and `rules/specialties/registry.md`.
+
+#### role-intake-artifacts
+- Session log → `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`: Metadata (APP-NNN, company, role, role level, session-start + research-completed dates), Axis Classification, Axis Gaps.
+- Research file → `personal/applications/<SLUG>_APP-NNN_YYYY-MM/research.md`: the three research blocks. A current-state document; re-running research overwrites stale sections, it does not accumulate history.
+- APP-NNN is a global sequential counter derived from existing `personal/applications/` folders. No registry or slug-counter machinery.
+- Canonical schemas live in `templates/session_log.md` and `templates/research_file.md`. Skills reference the templates rather than inlining the schema, so it stays single-source across role-intake and downstream skills.
+- `scripts/assemble.py` performs all deterministic file-writing (folder creation, initial session log, research file, session log finalization) by rendering the templates, rather than the skill's LLM hand-writing artifacts. Every write is section-scoped: it replaces only role-intake's own sections, so re-runs and any sections added by downstream skills are not clobbered.
+- The session log and research file are shared multi-skill artifacts: each writing skill owns its own sections and its own portion of the template/spec. Downstream skills (e.g. interview-prep) append their own sections rather than editing role-intake's templates or `assemble.py`. interview-prep's deeper, less-structured research is where the deterministic-script + LLM-free-text hybrid earns its place.
+Resolves deferral: `session-log-body-schema`.
+
+#### role-intake-control-flow
+The skill operates under `rules/global-rules.md` (loaded in Phase 0): halt and ask on failure/ambiguity, never fabricate, never proceed on partial content. Resume support: if a job's `research.md` already exists, re-invocation resumes at Phase 6 instead of re-ingesting/re-researching. QC failure (Phase 8) is not terminal — QC names the owning phase per finding (metadata→2, research→4/5, axes→6, session-log→7) and the skill re-runs forward from there after user direction. Resolves deferral: `state-detection-logic-and-location`.
 
 ### role_evaluation
 

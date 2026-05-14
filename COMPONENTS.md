@@ -58,7 +58,7 @@ Schema discipline and reconciliation script details live in `temp/design_decisio
 
 ### Roster (planned, from `temp/design_decisions.md`)
 
-- role_evaluation
+- role-intake
 - cv_targeted
 - cv_general
 - interview_prep
@@ -76,7 +76,27 @@ Schema discipline and reconciliation script details live in `temp/design_decisio
 
 ### Detailed Entries
 
-(None yet. Detailed entries appear here as each skill is designed and authored.)
+#### role-intake
+
+- **Purpose**: Understand a job opportunity — ingest a JD, research company/role/industry, classify against the five axes, and produce a session log plus a research file for downstream gap analysis.
+- **Status**: Designed
+- **Inputs**:
+  - Rules: `rules/global-rules.md`. (Axis registries and value files are read by `axis_classifier`, not by the skill directly.)
+  - Agents: `company_research`, `role_research`, `industry_research`, `axis_classifier`, `qc_role_intake`.
+  - Scripts: `scripts/display/introduce.py`, `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/assemble.py`.
+  - Templates: `templates/session_log.md`, `templates/research_file.md`.
+  - User input: job description (paste / file / URL), role communications (optional), company slug, title/company when absent from the JD.
+- **Outputs**:
+  - Files: `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`; `personal/applications/<SLUG>_APP-NNN_YYYY-MM/research.md`.
+  - Skills: hands off to the gap-analysis skill (not yet built).
+  - Side effects: consumes the next APP-NNN.
+- **Triggers**:
+  - User invocation: `/role-intake` when starting evaluation of a new role; also resumes an interrupted run (resume checkpoint = research file filed).
+- **Update Triggers**:
+  - When the five-axis rule files or their registries change (axis classification logic).
+  - When `rules/global-rules.md` changes.
+  - When any of its four subagents or three scripts change.
+  - When the downstream gap-analysis skill is built (handoff contract).
 
 ---
 
@@ -99,7 +119,50 @@ Schema discipline and reconciliation script details live in `temp/design_decisio
 
 ### Detailed Entries
 
-(None yet.)
+#### company_research
+
+- **Purpose**: Research a hiring company — what it is, scale, ownership/funding stage, recent strategic shifts — scoped to what role-intake needs to classify and contextualize a job.
+- **Status**: Designed
+- **Inputs**: Skill-passed (by `role-intake`): company name, role title, JD text. Tools: WebSearch, WebFetch.
+- **Outputs**: Structured findings block (`## Company` — Summary / Key facts / Sources) returned to the caller.
+- **Triggers**: Invoked by `role-intake` Phase 4, in parallel with `role_research` and `industry_research`.
+- **Update Triggers**: When the work-state or industry axis definitions change (the classifications it supports).
+
+#### role_research
+
+- **Purpose**: Research what a job title/role typically means in its sector — scope, responsibilities, seniority calibration, common variants — scoped to decision-supporting facts.
+- **Status**: Designed
+- **Inputs**: Skill-passed (by `role-intake`): role title, company name, JD text. Tools: WebSearch, WebFetch.
+- **Outputs**: Structured findings block (`## Role` — Summary / Key facts / Sources) returned to the caller.
+- **Triggers**: Invoked by `role-intake` Phase 4, in parallel with `company_research` and `industry_research`.
+- **Update Triggers**: When the level, orientation, or specialty axis definitions change.
+
+#### industry_research
+
+- **Purpose**: Research an industry at a high level — what it is, key trends and dynamics — scoped to decision-supporting context, deliberately shallow.
+- **Status**: Designed
+- **Inputs**: Skill-passed (by `role-intake`): candidate industry, company name, JD text. Tools: WebSearch, WebFetch.
+- **Outputs**: Structured findings block (`## Industry` — Summary / Key facts / Sources) returned to the caller.
+- **Triggers**: Invoked by `role-intake` Phase 4, in parallel with `company_research` and `role_research`.
+- **Update Triggers**: When the industry axis registry or value files change.
+
+#### axis_classifier
+
+- **Purpose**: Classify a job against the five axes (orientation, industry, specialty, level, work-state), registry-first, confirming each pick against the value file and flagging an axis gap where no registry value confirms. Keeps axis files out of the main session context.
+- **Status**: Designed
+- **Inputs**: Skill-passed (by `role-intake`): JD text, research findings. Rules: the five axis registries (`rules/<axis>/registry.md`) and the candidate value files only. Tools: Read.
+- **Outputs**: The five-axis classification (primary/secondary per axis) + a list of axis gaps, returned to the caller.
+- **Triggers**: Invoked by `role-intake` Phase 6.
+- **Update Triggers**: When an axis registry or its value files change; when the five-axis model changes.
+
+#### qc_role_intake
+
+- **Purpose**: Quality-check the role-intake artifacts (session log + research file) for completeness, internal consistency, and global-rules adherence; return findings tagged with route-back phases.
+- **Status**: Designed
+- **Inputs**: Skill-passed (by `role-intake`): session log path, research file path, activity record. Tools: Read, Grep.
+- **Outputs**: QC verdict (PASS / FINDINGS) with a route-back phase per finding.
+- **Triggers**: Invoked by `role-intake` Phase 8.
+- **Update Triggers**: When the role-intake session log or research file schema changes; when the skill's phase structure changes (route-back map).
 
 ---
 
@@ -123,7 +186,41 @@ Schema discipline and reconciliation script details live in `temp/design_decisio
 
 ### Detailed Entries
 
-(None yet.)
+#### scripts/ingest/jd_extract.py
+
+- **Purpose**: Extract job-description or role-communication text from a .txt/.md/.docx/.pdf file or an http(s) URL; emit plain text to stdout.
+- **Status**: Designed
+- **Inputs**: User input (path or URL). Deps: python-docx, pypdf, requests, beautifulsoup4.
+- **Outputs**: Extracted text to stdout; errors to stderr with exit 1 (fails loudly on empty extraction).
+- **Triggers**: Invoked by `role-intake` Phase 1.
+- **Update Triggers**: When a new source type must be supported.
+
+#### scripts/app_id.py
+
+- **Purpose**: Return the next global application ID (APP-NNN) by scanning existing `personal/applications/` folders.
+- **Status**: Designed
+- **Inputs**: Config: `config.yaml` (applications path, APP-NNN scheme) via `scripts/_config.py`. Filesystem: the configured applications folder.
+- **Outputs**: Next APP-NNN to stdout.
+- **Triggers**: Invoked by `role-intake` Phase 3.
+- **Update Triggers**: When the application folder naming convention changes.
+
+#### scripts/display/introduce.py
+
+- **Purpose**: Print user-facing phase-0 guidance for a skill, read from `scripts/display/introductions.yaml`.
+- **Status**: Designed
+- **Inputs**: Skill name (arg); the introductions file (filename from config, sits next to the script). Config: `config.yaml` via `scripts/_config.py`. Deps: pyyaml.
+- **Outputs**: Guidance text to stdout; errors to stderr with exit 1.
+- **Triggers**: Invoked at Phase 0 of any skill with a yaml entry (currently `role-intake`).
+- **Update Triggers**: When a new skill needs an intro (add a yaml entry).
+
+#### scripts/assemble.py
+
+- **Purpose**: Write role-intake's two artifacts (session log, research file) deterministically by rendering the templates, rather than having the skill hand-write files. Subcommands: `init` (Phase 3), `research` (Phase 5), `finalize` (Phase 7). Every write is section-scoped.
+- **Status**: Designed
+- **Inputs**: Skill-passed args (slug, APP-NNN, company, role, dates, paths) and, for `research`/`finalize`, temp files holding subagent output. Config: `config.yaml` (paths, filenames, naming patterns) via `scripts/_config.py`. Templates: `session_log.md`, `research_file.md` (read as the structure source).
+- **Outputs**: `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`, the `personal/applications/<SLUG>_APP-NNN_YYYY-MM/` folder, and `<folder>/research.md`. Paths echoed to stdout.
+- **Triggers**: Invoked by `role-intake` Phases 3, 5, and 7.
+- **Update Triggers**: When `templates/session_log.md` or `templates/research_file.md` change shape; when the role-intake phase structure changes.
 
 ---
 

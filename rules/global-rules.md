@@ -14,7 +14,7 @@ Applies to CVs, career briefs, interview preparation, follow-up letters, role ev
 
 ## Failure Handling
 
-On any failure — QC failure, document load failure, validation failure, unexpected state, ambiguous input — do not proceed and do not invent a resolution.
+On any failure - QC failure, document load failure, validation failure, unexpected state, ambiguous input - do not proceed and do not invent a resolution.
 
 1. State the specific failure in one or two sentences: what failed, at what step, with what error if known.
 2. Present the user with explicit options (re-run the prior step, accept the gap with acknowledgment, stop the session).
