@@ -212,7 +212,7 @@ Orientation selection logic and match criteria stripped from axis rule files. Be
 All trigger on foundation execution; all block foundation completion. Apply the referenced design decisions to the existing files in `personal/profile/`.
 
 ### user-info-existing-data-migration
-Applied 2026-05-04. Migration complete. File renamed `Contact_Info.md` → `user_info.md`; intro paragraph and Usage Notes dropped; `**Used by:** cv_targeted, cv_general` header added; field-value brackets cleaned. External references updated: `temp/support/profile_repo_scaffolding/{README.md, SETUP.md}`, scaffolding template renamed to `user_info.md`. Deeper scaffolding-template content updates (metadata header, phase-based reference stripping, descriptive loading patterns) remain owned by `scaffolding-content-updates`.
+Applied 2026-05-04. Migration complete. File renamed `Contact_Info.md` → `user-info.md`; intro paragraph and Usage Notes dropped; `**Used by:** cv_targeted, cv_general` header added; field-value brackets cleaned. External references updated: `temp/support/profile_repo_scaffolding/{README.md, SETUP.md}`, scaffolding template renamed to `user-info.md`. Deeper scaffolding-template content updates (metadata header, phase-based reference stripping, descriptive loading patterns) remain owned by `scaffolding-content-updates`.
 
 ### career-narratives-existing-data-migration
 Apply `career-narratives-schema` to `narratives.md`.
@@ -251,7 +251,7 @@ Folder name, sub-folder layout, file naming for `support/`.
 - Refs: `knowledge-document-scaffolding`.
 
 ### scaffolding-content-updates
-Strip phase-based references; describe loading patterns descriptively; update skill names; add metadata header to `user_info.md` template.
+Strip phase-based references; describe loading patterns descriptively; update skill names; add metadata header to `user-info.md` template.
 - Trigger: scaffolding migration.
 - Blocks: scaffolding migration.
 - Refs: `knowledge-document-scaffolding`, `document-metadata-header-discipline`.

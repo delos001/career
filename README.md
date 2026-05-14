@@ -99,13 +99,13 @@ career/
 ├── outputs/                                       # temporary holding for deliverables
 ├── support/                                       # scaffolding for fresh user setup
 │   └── profile_repo_scaffolding/                  # final folder layout deferred
-│       ├── user_info.md
+│       ├── user-info.md
 │       ├── README.md
 │       ├── SETUP.md
 │       └── .gitignore
 ├── personal/                                      # nested private repo; not shared
 │   ├── profile/
-│   │   ├── user_info.md
+│   │   ├── user-info.md
 │   │   ├── inventory.md
 │   │   ├── narratives.md
 │   │   └── positioning.md
