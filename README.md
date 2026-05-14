@@ -12,57 +12,45 @@ Human-gated AI workflow built on Claude Code. Moderate complexity and nuance wit
 career/
 ├── .claude/
 │   ├── skills/                                    # Pattern A, auto-discovered. Kebab folder names.
-│   │   ├── role-evaluation/SKILL.md
-│   │   ├── cv-targeted/SKILL.md
-│   │   ├── cv-general/SKILL.md
-│   │   ├── interview-prep/SKILL.md
-│   │   ├── interview-capture/SKILL.md
-│   │   ├── interview-followup/SKILL.md
-│   │   ├── career-brief/SKILL.md
-│   │   ├── inventory/SKILL.md
-│   │   ├── narratives/SKILL.md
-│   │   ├── positioning/SKILL.md
-│   │   ├── profile-update/SKILL.md                # mode parameter (adhoc / inline)
-│   │   ├── orientation-builder/SKILL.md
-│   │   ├── industry-builder/SKILL.md
-│   │   ├── specialty-builder/SKILL.md
-│   │   ├── level-builder/SKILL.md
-│   │   └── work-state-builder/SKILL.md
-│   ├── agents/                                    # flat
+│   │   └── role-intake/SKILL.md                   # first skill built; more planned (see COMPONENTS.md)
+│   ├── agents/                                    # flat; more added as skills are built
+│   │   ├── company_research.md
 │   │   ├── role_research.md
-│   │   ├── organization_research.md
 │   │   ├── industry_research.md
-│   │   ├── specialty_research.md
-│   │   ├── orientation_research.md
-│   │   ├── level_research.md
-│   │   ├── work_state_research.md
-│   │   ├── qc_cv_format.md
-│   │   ├── qc_cv_structural.md
-│   │   └── qc_cv_content.md                       # qc agents grow as identified
-│   └── settings.json                              # optional
+│   │   ├── axis_classifier.md
+│   │   └── qc_role_intake.md
+│   └── settings.local.json
+├── config.yaml                                    # repo-structure constants read by the scripts
 ├── rules/
 │   ├── global-rules.md                            # three rules only
 │   ├── tags.yaml                                  # globals: Role Level, Purpose
-│   ├── orientations/
+│   ├── orientations/                              # registry.md + one file per value
+│   │   ├── registry.md
 │   │   ├── transformation-strategy.md
 │   │   ├── data-analytics.md
 │   │   ├── process-operations.md
-│   │   ├── platform-technology.md
-│   │   └── cv_dual_orientation_composition.md
+│   │   └── platform-technology.md
 │   ├── industries/
 │   │   ├── registry.md
-│   │   └── pharma.md                              # plus others as built
+│   │   ├── pharma.md
+│   │   ├── biotech.md
+│   │   ├── cro.md
+│   │   └── med-device.md
 │   ├── specialties/
 │   │   ├── registry.md
 │   │   ├── clinical-operations.md
+│   │   ├── quality-compliance.md
 │   │   ├── data-engineering.md
 │   │   ├── ai-engineering.md
-│   │   ├── quality-compliance.md
+│   │   ├── data-science.md
+│   │   ├── operations-strategy.md
 │   │   └── people-leadership.md
 │   ├── levels/
+│   │   ├── registry.md
 │   │   ├── ic.md
 │   │   └── leadership.md
 │   ├── work-states/
+│   │   ├── registry.md
 │   │   ├── greenfield.md
 │   │   ├── scaling.md
 │   │   ├── mature.md
@@ -70,58 +58,29 @@ career/
 │   │   ├── post-merger-integration.md
 │   │   ├── divestiture.md
 │   │   └── pivot.md
-│   ├── organizations/
-│   │   ├── org_industry.md
-│   │   └── company-slugs.yaml
-│   ├── narratives/
-│   │   ├── decision_adr.md
-│   │   ├── decision_personal.md
-│   │   ├── story_atola.md
-│   │   ├── story_star.md
-│   │   └── story_personal.md
-│   ├── format_specs/
-│   │   └── cv.md
-│   └── quality_control/                           # qc_<scope>_<aspect>
-│       ├── qc_cv_format.md
-│       ├── qc_cv_structural.md
-│       └── qc_cv_content.md
+│   ├── organizations/                             # planned
+│   ├── narratives/                                # planned
+│   ├── format_specs/                              # planned
+│   └── quality_control/                           # planned; qc_<scope>_<aspect>
 ├── templates/
-│   ├── interview_completion.md
-│   ├── interview_scratch.md
-│   └── recruiter_pitch_template.md
+│   ├── session_log.md
+│   └── research_file.md
 ├── scripts/
-│   ├── retrieval/
-│   ├── resolvers/
-│   ├── format/
-│   ├── registry/
-│   ├── migration/
+│   ├── _config.py                                 # shared: resolves repo root, loads config.yaml
+│   ├── app_id.py                                  # next global APP-NNN
+│   ├── assemble.py                                # writes role-intake's artifacts from templates
+│   ├── cv_to_docx.py
+│   ├── ingest/                                    # jd_extract.py
 │   └── display/                                   # introduce.py + introductions.yaml
 ├── outputs/                                       # temporary holding for deliverables
-├── support/                                       # scaffolding for fresh user setup
-│   └── profile_repo_scaffolding/                  # final folder layout deferred
-│       ├── user-info.md
-│       ├── README.md
-│       ├── SETUP.md
-│       └── .gitignore
+├── support/                                       # scaffolding for fresh user setup (layout planned)
 ├── personal/                                      # nested private repo; not shared
-│   ├── profile/
-│   │   ├── user-info.md
-│   │   ├── inventory.md
-│   │   ├── narratives.md
-│   │   └── positioning.md
-│   ├── sessions/
-│   │   └── <slug>-NNN_session-log.md
-│   ├── applications/
-│   │   └── <slug>-NNN-<role-slug>-<yyyy-mm>/
-│   │       ├── gap-analysis_<slug>-NNN.md
-│   │       ├── cv_<slug>-NNN.docx
-│   │       ├── interview-prep_<slug>-NNN.md
-│   │       ├── interview-completion_<slug>-NNN.md
-│   │       ├── interview-scratch_<slug>-NNN.md
-│   │       └── interview-followup_r<N>_<slug>-NNN.md
+│   ├── profile/                                   # user-info, inventory, narratives, positioning
+│   ├── sessions/                                  # <SLUG>_APP-NNN_YYYY-MM_SessionLog.md
+│   ├── applications/                              # <SLUG>_APP-NNN_YYYY-MM/ (research.md, gap analysis, cv, ...)
 │   ├── do-not-pursue/
-│   └── config.yaml
-├── temp/                                          # live design state during pre-build
+│   └── config.yaml                                # reserved for user-specific config; created when first needed
+├── design/                                        # live design state
 │   ├── design_decisions.md
 │   ├── deferrals.md
 │   └── open_questions.md
@@ -138,19 +97,19 @@ career/
 ## Key Concepts
 
 - **Five orthogonal axes.** Orientation, Industry, Specialty, Level, Work-state govern deliverable content and voice. Each axis is a discrete categorical dimension; partial-match scoring runs through adjacency maps in each value's frontmatter.
-- **Application ID.** Compound `<company-slug>-NNN`. User-entered slug, per-company counter. Example: `pfizer-001`.
-- **Session Log.** `personal/sessions/<slug>-NNN_session-log.md`. Written regardless of apply decision; enables resume.
+- **Application ID.** Global counter `APP-NNN` (e.g. `APP-004`), embedded in the per-job stem `<SLUG>_APP-NNN_YYYY-MM`. `SLUG` is a short user-entered company tag.
+- **Session Log.** `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`. Created by `role-intake`; the resume checkpoint is the research file being filed.
 - **Personal nested repo.** `personal/` holds PII and profile documents.
 - **COMPONENTS.md.** Single registry for every skill, sub-agent, and standalone script: inputs, outputs, triggers, update triggers.
 
 ## Status
 
-Pre-build. Foundation block (profile documents creatable + five-axis builders working) is the next execution target. Per-skill detail design happens at each skill's build time.
+First skill (`role-intake`) built: JD ingestion, company/role/industry research, five-axis classification, and a session log + research file for downstream gap analysis. Next: axis builder skills, then end-to-end verification of `role-intake`. Per-skill detail design happens at each skill's build time.
 
 ## References
 
-- `temp/design_decisions.md` — closed design decisions
-- `temp/deferrals.md` — deferred items
-- `temp/open_questions.md` — items blocking specific work
+- `design/design_decisions.md` — closed design decisions
+- `design/deferrals.md` — deferred items
+- `design/open_questions.md` — items blocking specific work
 - `engops/runbooks/claude-code.md` — Claude Code setup reference
 - `engops/cheatsheets/claude-code.md` — Claude Code day-to-day reference

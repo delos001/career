@@ -50,29 +50,29 @@ Apply minimally: only include fields that apply to the doc. Authors do not pad w
 
 Out of scope for this header pattern: skills, sub-agents (framework YAML frontmatter + their own COMPONENTS.md entries), meta docs, outputs, scripts (Python docstrings).
 
-Schema discipline and reconciliation script details live in `temp/design_decisions.md` under "Document Metadata Header Discipline."
+Schema discipline and reconciliation script details live in `design/design_decisions.md` under "Document Metadata Header Discipline."
 
 ---
 
 ## Skills
 
-### Roster (planned, from `temp/design_decisions.md`)
+### Roster
 
+**Built** (detailed entry below):
 - role-intake
+
+**Planned** (from `design/design_decisions.md`):
 - cv_targeted
 - cv_general
 - interview_prep
 - interview_capture
 - interview_followup
 - career_brief
-- profile_update (with mode parameter: adhoc / inline)
+- profile_update (mode parameter: adhoc / inline)
 - positioning
 - inventory (profile-builder)
 - narratives (profile-builder)
-- specialty_builder (create / refresh modes)
-- industry_builder (create / refresh modes)
-- skill_builder (create / refresh modes)
-- level_builder (create / refresh modes)
+- orientation_builder, industry_builder, specialty_builder, level_builder, work_state_builder (one per axis; create / refresh modes)
 
 ### Detailed Entries
 
@@ -102,20 +102,15 @@ Schema discipline and reconciliation script details live in `temp/design_decisio
 
 ## Sub-Agents
 
-### Roster (planned, from `temp/design_decisions.md`)
+### Roster
 
-- role_research
-- organization_research
-- industry_research
-- skill_research
-- specialty_research
-- level_research
-- qc_cv_format
-- qc_cv_structural
-- qc_cv_content
-- qc_gap_analysis_completeness
-- qc_interview_prep_coverage
-- (additional QC agents to be added as new targets and aspects emerge)
+**Built** (detailed entries below):
+- company_research, role_research, industry_research, axis_classifier, qc_role_intake
+
+**Planned** (from `design/design_decisions.md`):
+- organization_research, specialty_research, orientation_research, level_research, work_state_research (axis-builder and interview-prep research agents)
+- qc_cv_format, qc_cv_structural, qc_cv_content, qc_gap_analysis_completeness, qc_interview_prep_coverage
+- (additional QC agents as new targets and aspects emerge)
 
 ### Detailed Entries
 
@@ -168,17 +163,23 @@ Schema discipline and reconciliation script details live in `temp/design_decisio
 
 ## Scripts and Standalone Operations
 
-### Roster (planned / referenced in design)
+### Roster
 
+**Built** (detailed entries below unless noted):
+- `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/display/introduce.py`, `scripts/assemble.py`
+- `scripts/_config.py` (shared config loader; a helper module, not a standalone script, so no separate entry)
+- `scripts/cv_to_docx.py` (pre-existing; detailed entry pending)
+
+**Planned / referenced in design:**
 - `scripts/display/orient.py` (with `scripts/display/orientations.yaml` catalog)
 - `scripts/inventory/rename_role.py` (atomic Section 7 + Section 8 rename, per Inventory Entry Types decision)
 - `scripts/registry/generate_vocabularies.py` (reads tag and registry sources across `rules/`, generates `VOCABULARIES.md` at repo root as a single read-only reference for human browsing; regenerated on demand after tag-source changes)
 - Document metadata header reconciliation script (sweeps in-scope docs, parses headers, cross-references against COMPONENTS.md and skill code; logged to Pending Follow-on Work)
-- Application ID assignment script (Pending Follow-on Work in design_decisions.md)
 - Inventory validation script (validates Capability, Industry, Skill, Role, Purpose, Role Level, Org Context against tag/registry sources)
 - Retrieval scripts (slice-based lookup for `inventory`, `narratives`, `positioning`, registries; per Stack section)
-- Format conversion scripts (python-docx CV rendering, per `format_spec.md` transfer note)
+- Format conversion scripts (python-docx CV rendering, per `format_spec.md` transfer note); partially built as `scripts/cv_to_docx.py`
 - Resolver scripts (rule lookup by category/slug, per Skill Stability via Loose Coupling)
+- Application ID assignment is now built as `scripts/app_id.py` (moved to Built above)
 
 ### Generated Artifacts (outputs of scripts above, not standalone components)
 
@@ -229,4 +230,4 @@ Schema discipline and reconciliation script details live in `temp/design_decisio
 - When a new skill, agent, or script is designed, add a detailed entry under the appropriate section. Move its name out of the Roster (or annotate Roster with a checkmark).
 - When a component is modified, update its entry in the same change. Out-of-date entries are worse than missing entries.
 - When a rule, profile doc, or registry changes, consult the Update Triggers field of every component entry to identify what may need revisiting.
-- The discipline lives in `temp/design_decisions.md` under "Component Documentation Discipline."
+- The discipline lives in `design/design_decisions.md` under "Component Documentation Discipline."
