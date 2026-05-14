@@ -19,10 +19,10 @@ career/
 │   │   ├── interview-capture/SKILL.md
 │   │   ├── interview-followup/SKILL.md
 │   │   ├── career-brief/SKILL.md
-│   │   ├── experience-inventory/SKILL.md
-│   │   ├── career-narratives/SKILL.md
+│   │   ├── inventory/SKILL.md
+│   │   ├── narratives/SKILL.md
 │   │   ├── positioning/SKILL.md
-│   │   ├── knowledge-update/SKILL.md              # mode parameter (adhoc / inline)
+│   │   ├── profile-update/SKILL.md                # mode parameter (adhoc / inline)
 │   │   ├── orientation-builder/SKILL.md
 │   │   ├── industry-builder/SKILL.md
 │   │   ├── specialty-builder/SKILL.md
@@ -98,17 +98,17 @@ career/
 │   └── display/                                   # introduce.py + introductions.yaml
 ├── outputs/                                       # temporary holding for deliverables
 ├── support/                                       # scaffolding for fresh user setup
-│   └── knowledge_repo_scaffolding/                # final folder layout deferred
-│       ├── User_Info.md
+│   └── profile_repo_scaffolding/                  # final folder layout deferred
+│       ├── user_info.md
 │       ├── README.md
 │       ├── SETUP.md
 │       └── .gitignore
 ├── personal/                                      # nested private repo; not shared
-│   ├── knowledge/
-│   │   ├── User_Info.md
-│   │   ├── Experience_Inventory.md
-│   │   ├── Career_Narratives.md
-│   │   └── Positioning.md
+│   ├── profile/
+│   │   ├── user_info.md
+│   │   ├── inventory.md
+│   │   ├── narratives.md
+│   │   └── positioning.md
 │   ├── sessions/
 │   │   └── <slug>-NNN_session-log.md
 │   ├── applications/
@@ -140,12 +140,12 @@ career/
 - **Five orthogonal axes.** Orientation, Industry, Specialty, Level, Work-state govern deliverable content and voice. Each axis is a discrete categorical dimension; partial-match scoring runs through adjacency maps in each value's frontmatter.
 - **Application ID.** Compound `<company-slug>-NNN`. User-entered slug, per-company counter. Example: `pfizer-001`.
 - **Session Log.** `personal/sessions/<slug>-NNN_session-log.md`. Written regardless of apply decision; enables resume.
-- **Personal nested repo.** `personal/` holds PII and knowledge documents.
+- **Personal nested repo.** `personal/` holds PII and profile documents.
 - **COMPONENTS.md.** Single registry for every skill, sub-agent, and standalone script: inputs, outputs, triggers, update triggers.
 
 ## Status
 
-Pre-build. Foundation block (knowledge documents creatable + five-axis builders working) is the next execution target. Per-skill detail design happens at each skill's build time.
+Pre-build. Foundation block (profile documents creatable + five-axis builders working) is the next execution target. Per-skill detail design happens at each skill's build time.
 
 ## References
 

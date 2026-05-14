@@ -1,6 +1,6 @@
-# Experience Inventory Builder — Quality Checks
+# Inventory Builder — Quality Checks
 
-Cumulative quality checks from manual reconciliation passes of `personal/knowledge/Experience_Inventory.md`. The `experience_inventory` builder skill must encode these so future creation and refresh do not require manual reconciliation. Each check is a defect class observed during review; checks new to this file should be added inline as future reconciliation surfaces them.
+Cumulative quality checks from manual reconciliation passes of `personal/profile/inventory.md`. The `inventory` builder skill must encode these so future creation and refresh do not require manual reconciliation. Each check is a defect class observed during review; checks new to this file should be added inline as future reconciliation surfaces them.
 
 ## Finding Resolution Protocol
 

@@ -4,7 +4,7 @@ last_researched: 2026-04
 
 # Industry Registry
 
-**Used by:** cv_targeted, role_evaluation, experience_inventory, career_narratives
+**Used by:** cv_targeted, role_evaluation, inventory, narratives
 
 Industry values for axis validation. Per-value framing rules in same-folder files where present.
 

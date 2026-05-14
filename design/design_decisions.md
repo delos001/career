@@ -177,7 +177,7 @@ EX-183 specifically: `data-engineering` retained per user confirmation that the 
 Refs: `specialty-axis-training-as-specialty-work-2026-05`, `specialty-knowledge-transfer-section-applied-2026-05`, `specialty-axis-tagging-by-work-nature`, `specialty-retagging-applied-2026-05`.
 
 #### experience-inventory-final-audit-phases-1-2-and-3p-applied-2026-05
-Final audit of `personal/knowledge/Experience_Inventory.md` against the cumulative QC checks in `design/inventory_builder_quality_checks.md`. Audit design (six phases ordered cheap-noise-first; Phase 1 programmatic, Phase 2 judgment-required pattern-search, Phase 3 tag substantiation, Phases 4-6 cross-entry/coverage/taxonomic) executed through Phase 3 Check #16. Phase 3 Check #17 + Phases 4-6 deferred for next session.
+Final audit of `personal/profile/inventory.md` against the cumulative QC checks in `design/inventory_builder_quality_checks.md`. Audit design (six phases ordered cheap-noise-first; Phase 1 programmatic, Phase 2 judgment-required pattern-search, Phase 3 tag substantiation, Phases 4-6 cross-entry/coverage/taxonomic) executed through Phase 3 Check #16. Phase 3 Check #17 + Phases 4-6 deferred for next session.
 
 Phase 1 (programmatic, 11 named checks + Phase 1.5 SGE sweep) outcomes:
 - 38 missing-Impact entries received drafted bodies; 9 bare-tag Impact lines updated; 47 total Impact-line changes applied across user-provided activity-outcome notes.
@@ -310,9 +310,9 @@ Refs: `competency-registry-runtime-value` (resolved here), `cv-targeted-hybrid-r
 #### arc-composition-for-high-impact-roles
 Atomic inventory entry structure enables broad JD matching and retrieval recall. Roles requiring high-level, enterprise-scope proof points need the composition layer to synthesize related entries into unified achievement arcs rather than treating each as an independent bullet.
 
-Mechanism: Career_Narratives (ST-NNN entries with Linked Inventory fields) are the primary composition unit when a role's scope requires arc-level proof points. Atomic EX entries surface as supporting detail beneath the arc claim, not as parallel top-level bullets.
+Mechanism: narratives (ST-NNN entries with Linked Inventory fields) are the primary composition unit when a role's scope requires arc-level proof points. Atomic EX entries surface as supporting detail beneath the arc claim, not as parallel top-level bullets.
 
-cv_targeted trigger: when role_evaluation identifies that the JD's primary deliverable language is at enterprise or cross-functional program scope (e.g., "led enterprise initiative," "built and scaled a capability"), the composition pass checks Career_Narratives for arcs linking the relevant EX entries before composing individual bullets. An arc claim anchors the achievement; the atomic entries (individual process improvements, governance artifacts, training activities) provide the evidence layer underneath.
+cv_targeted trigger: when role_evaluation identifies that the JD's primary deliverable language is at enterprise or cross-functional program scope (e.g., "led enterprise initiative," "built and scaled a capability"), the composition pass checks narratives for arcs linking the relevant EX entries before composing individual bullets. An arc claim anchors the achievement; the atomic entries (individual process improvements, governance artifacts, training activities) provide the evidence layer underneath.
 
 role_evaluation trigger: when producing gap analysis, evaluate coverage at arc level first, not entry level. A cluster of related atomic entries that together constitute a high-impact story should be surfaced as a unified arc gap or strength, not as a list of individual entry matches.
 
@@ -347,20 +347,31 @@ All roles outside the threshold that do not meet rule-2. Format: Company | Title
 
 Refs: `arc-composition-for-high-impact-roles`, `cv-targeted-retrieval-architecture-2026-05`.
 
-### Knowledge Documents (Schemas)
+### Profile Documents (Schemas)
 
 #### knowledge-document-roster
-Four documents: `User_Info`, `Experience_Inventory`, `Career_Narratives`, `Positioning`. `Questions_Library` eliminated.
+Four documents: `user_info`, `inventory`, `narratives`, `positioning`. `Questions_Library` eliminated.
+
+#### knowledge-to-profile-rename-2026-05
+`personal/knowledge/` folder renamed to `personal/profile/`. The four documents renamed to one-word lowercase: `Experience_Inventory.md` → `inventory.md`, `Career_Narratives.md` → `narratives.md`, `Positioning.md` → `positioning.md`, `User_Info.md` → `user_info.md`. The collective term "knowledge documents" becomes "profile documents". Builder skills renamed to match: `experience_inventory` → `inventory`, `career_narratives` → `narratives`, `knowledge_update` → `profile_update`; the `knowledge-builder` type → `profile-builder`. Scaffolding folder `support/knowledge_repo_scaffolding/` → `support/profile_repo_scaffolding/`.
+
+Rationale: three issues converged. (1) Renaming inventory Section 8 to "Experience Entries" (per `inventory-section-8-rl-grouping-2026-05`) made "Experience_Inventory" collide semantically — the file has ten numbered sections, not just experience. (2) The four documents violated the lowercase rule in `file-and-folder-naming`; they were Title_Case. (3) "knowledge" was a non-descriptive legacy folder name that could not justify one-word filenames; `profile/` describes the content (the four documents collectively are the user's professional profile). One-word lowercase with the folder path providing context follows the same principle as `adr-naming` (drop deliverable prefix). `user_info` is retained as a compound document-type token per `file-and-folder-naming`.
+
+Scope boundaries: decision slugs containing "knowledge" (`knowledge-document-roster`, `knowledge-document-scaffolding`, `knowledge-doc-update-mechanism-hand-edit`, `knowledge-update-collapse`) left unchanged as immutable identifiers — only their bodies and the section header updated. The suggested GitHub repo name `career_development_knowledge` left unchanged (repo name, not folder). "Knowledge-transfer mode", "knowledge management", "domain knowledge" are unrelated term uses, untouched.
+
+Apply: folder/file renames via `git mv` (personal repo) and `mv` (gitignored scaffolding); reference updates across 16 files via `scripts/_rename_refs.py` (ordered explicit patterns), plus manual edits to `README.md` and `.claude/settings.local.json`. Per `working-files-deleted-after-apply` the script is deleted; this decision is the durable record.
+
+Refs: `inventory-section-8-rl-grouping-2026-05`, `file-and-folder-naming`, `adr-naming`, `knowledge-document-roster`.
 
 #### user-info-rename-and-schema
-Rename `Contact_Info.md` to `User_Info.md`.
-- Name field source of truth: `User_Info.md`. Removed from `personal/config.yaml`. Format_spec rendering script reads name from `User_Info.md`.
+Rename `Contact_Info.md` to `user_info.md`.
+- Name field source of truth: `user_info.md`. Removed from `personal/config.yaml`. Format_spec rendering script reads name from `user_info.md`.
 - Drop "Usage Notes" section per data-only-discipline.
 - Metadata header: `**Used by:**` per document-metadata-header-discipline. No Stamps or Generated by.
 - Placeholder values in scaffolding template like `[Your Name]`.
 
 Schema (revised 2026-05-04 after two generalization audits; original was single-value-only and lacked Location, profile extensibility, and any fields needed by role_evaluation / interview_prep / interview_followup):
-- **Used by:** cv_targeted, cv_general, role_evaluation, interview_prep, interview_followup. User_Info holds durable personal data; per-application overrides (situational salary negotiation, role-specific items) live in application files.
+- **Used by:** cv_targeted, cv_general, role_evaluation, interview_prep, interview_followup. user_info holds durable personal data; per-application overrides (situational salary negotiation, role-specific items) live in application files.
 - **Identity** section: Name (required), Preferred Name (optional), Pronouns (optional), Name Pronunciation (optional, useful for interview_prep).
 - **Location** section: City, State / Region, Country, Time Zone. Split into fields; CV format spec renders the line. Time zone consumed by interview_prep / interview_followup for scheduling and send-timing.
 - **Contact** section: Email and Phone as multi-value sub-bulleted lists, each entry labeled (Primary, Work, Mobile, etc.). Schema uniform whether one or many entries.
@@ -369,7 +380,7 @@ Schema (revised 2026-05-04 after two generalization audits; original was single-
 - **Work Authorization** section: Status, Sponsorship Required (Y/N). Consumed by role_evaluation as filter against role's sponsorship policy.
 - **Geographic Preferences** section: Modality Preference (Remote/Hybrid/Onsite/Open), Willing to Relocate. Consumed by role_evaluation as fit signal. Travel Willingness intentionally excluded — case-by-case per role, not a static preference.
 - **Exclusions** section: Industries / Company Types not under consideration. Consumed by role_evaluation as hard filter.
-- Sections intentionally excluded: Availability (notice period, start date) and Compensation (target range, floor) — both change too often and are evaluated case-by-case at application time. They live in per-application files (gap_analysis or equivalent), not User_Info.
+- Sections intentionally excluded: Availability (notice period, start date) and Compensation (target range, floor) — both change too often and are evaluated case-by-case at application time. They live in per-application files (gap_analysis or equivalent), not user_info.
 - All multi-value fields use bullet sub-list pattern; consumers iterate and select by label.
 - Sensitive fields (compensation, authorization) acceptable in this file because `personal/` is gitignored.
 
@@ -387,14 +398,14 @@ Parser conventions (markdown is the storage format; structure is regular enough 
 - Scaffolding placeholders: `[bracketed]` form (e.g., `[Your Name]`, `[Yes / No]`). Parser treats any `[...]`-enclosed content as unfilled and emits warnings if encountered at consumption time.
 - Multi-value field with no entries: single bullet `- none` or any tolerated empty marker.
 
-Tolerant-parser principle applies file-wide and to other knowledge documents where format conventions exist. Move cognitive burden off the human (every edit) onto the parser implementation (once).
+Tolerant-parser principle applies file-wide and to other profile documents where format conventions exist. Move cognitive burden off the human (every edit) onto the parser implementation (once).
 
 Refs: `user-info-existing-data-migration` (deferral).
 
 #### career-narratives-schema
 Schema (revised 2026-05-12: Era replaced with `Role: RL-NNN` for inventory-schema alignment; Purpose field dropped as phantom. Prior revision 2026-05-06 after retrieval-anchor reframe; supersedes original schema that proposed Tags→Capability rename plus four new axis fields).
 
-Career_Narratives is interview-prep primary; cv_targeted / role_evaluation consume it secondarily for bullet-framing depth via inventory linkage. Narratives are not a primary CV retrieval anchor.
+narratives is interview-prep primary; cv_targeted / role_evaluation consume it secondarily for bullet-framing depth via inventory linkage. Narratives are not a primary CV retrieval anchor.
 
 - IDs: `ST-NNN` for stories (10), `DC-NNN` for decisions (5; design doc previously said 6, file holds 5; reconciled to 5 pending user confirmation).
 - Per-entry fields: ID, Role (RL-NNN reference, multi-value; matches inventory `Role:` field; rebrand-resilient), Framework, Linked Inventory (required, multi-value), Added, Last Used.
@@ -416,7 +427,7 @@ Stale-link mitigation: validator script (deferred to skill build) grep-checks Li
 Refs: `career-narratives-existing-data-migration`, `career-narratives-cleanup-script`, `maintained-by-metadata-field` (deferrals); `competency-field-and-registry-removed-2026-05`, `cv-targeted-retrieval-architecture-2026-05`.
 
 #### positioning-schema
-- Cut: Competencies (~30 bullets), Role-Targeted Accomplishments (~30 bullets). CV and role evaluation pull from Experience_Inventory directly.
+- Cut: Competencies (~30 bullets), Role-Targeted Accomplishments (~30 bullets). CV and role evaluation pull from inventory directly.
 - Retain: Positioning Statement + Focus Bullets, Core Philosophy, What Makes Me Unique (renamed from "What Makes This Different"), Industry Trajectory, Signature Themes, Elevator Statement, LinkedIn About Me, Why I Chose to Leave BioMarin.
 - Reorder: Signature Themes follows Core Philosophy.
 - IDs: `TH-NNN` on themes.
@@ -596,7 +607,7 @@ Refs: `cv-targeted-retrieval-architecture-2026-05`, `inventory-entry-structure-a
 
 #### competency-registry-activity-level-redesign-2026-05
 Replaced 31-term inventory-derived registry with 36-term top-down activity taxonomy. Each value names a unit of work that means the same thing across industries (e.g., `budget-management` is the same competency for a clinical PM and a small-business owner). Industry- and specialty-agnostic by design; industry/specialty context is captured by the dedicated axes.
-Rationale: the bottom-up approach over-fit to the user's inventory texture, producing artificial splits like `vendor-and-cro-operational-management` vs `vendor-and-cro-selection-and-partnership-design`. JDs do not distinguish at this granularity, and granular splits prevent transferable-skill surfacing (vendor-selection experience IS relevant to a vendor-oversight JD; programming-in-R IS relevant to a Python JD). The activity-level reframe asks: "could a hiring manager in any industry write 'looking for someone with __ experience' and have it sound like a real ask?" Tools and clinical-specific terms (TMF, RBM, CSM, CSV, site monitoring, investigator training) leave the registry; tools live in `Experience_Inventory.md` Section 5; clinical-specific work is captured at the underlying activity level (RBM strategy → `risk-management` or `quality-management`; TMF reconciliation → `procedure-authoring` or `regulatory-compliance`; site monitoring → `operations-management`).
+Rationale: the bottom-up approach over-fit to the user's inventory texture, producing artificial splits like `vendor-and-cro-operational-management` vs `vendor-and-cro-selection-and-partnership-design`. JDs do not distinguish at this granularity, and granular splits prevent transferable-skill surfacing (vendor-selection experience IS relevant to a vendor-oversight JD; programming-in-R IS relevant to a Python JD). The activity-level reframe asks: "could a hiring manager in any industry write 'looking for someone with __ experience' and have it sound like a real ask?" Tools and clinical-specific terms (TMF, RBM, CSM, CSV, site monitoring, investigator training) leave the registry; tools live in `inventory.md` Section 5; clinical-specific work is captured at the underlying activity level (RBM strategy → `risk-management` or `quality-management`; TMF reconciliation → `procedure-authoring` or `regulatory-compliance`; site monitoring → `operations-management`).
 Format: lean. Each entry is `- **slug**: one-line scope phrase`. No `Aliases:` section in this iteration; JD-language → slug mapping deferred to cv_targeted matching layer (semantic vs alias-list approach undecided).
 Process: top-down draft of activity categories validated against extracted Competency phrasing for coverage (the user's 197 inventory entries should all map cleanly into the new taxonomy via Step 5).
 Status: registry written. Step 5 (re-tag 197 entries against new 36-term registry) and Step 6 (Section 8 sub-section reassignment) remain deferred.
@@ -605,8 +616,8 @@ Refs: `competency-registry-bottom-up-redesign-2026-05` (superseded), `competency
 
 #### knowledge-document-scaffolding
 `support/` folder at repo root holds scaffolding files; user copies into private personal repo on first clone. Career repo never holds user's personal data.
-- Scaffolded: `User_Info.md` (placeholder), `README.md`, `SETUP.md`, `.gitignore` for personal repo.
-- Not scaffolded (built by skills): `Experience_Inventory.md`, `Career_Narratives.md`, `Positioning.md`.
+- Scaffolded: `user_info.md` (placeholder), `README.md`, `SETUP.md`, `.gitignore` for personal repo.
+- Not scaffolded (built by skills): `inventory.md`, `narratives.md`, `positioning.md`.
 Refs: `scaffolding-folder-layout`, `scaffolding-content-updates` (deferrals).
 
 #### questions-library-eliminated
@@ -614,7 +625,7 @@ Originally context-free interview question library; drifted to per-application q
 Refs: `questions-library-deletion` (deferral).
 
 #### knowledge-doc-update-mechanism-hand-edit
-Existing knowledge documents (User_Info, Experience_Inventory, Career_Narratives, Positioning) updated by hand-edit. Builder skills become refresh tools later, only if refresh demand recurs. Mechanical sub-tasks may use one-off scripts (deleted after apply per `working-files-deleted-after-apply`). Resolves the open question `knowledge-doc-update-mechanism`.
+Existing profile documents (user_info, inventory, narratives, positioning) updated by hand-edit. Builder skills become refresh tools later, only if refresh demand recurs. Mechanical sub-tasks may use one-off scripts (deleted after apply per `working-files-deleted-after-apply`). Resolves the open question `knowledge-doc-update-mechanism`.
 
 #### inventory-entry-structure-applied
 EX-NNN entries carry, in order: ID, Role, Industry, Specialty, Orientation, Level, Work-state, Added, Last Used, Description (`Description:` label, bold preserved on value), Impact, Context.
@@ -670,7 +681,7 @@ Pattern A removes custom `skill_registry` and `control.md`. Framework discovery 
 Kept distinct. Shared inputs resolved by retrieval scripts (slice-level lookup). GapAnalysis is the handoff artifact and a stopping point. "Application" is a data-model concept (folder name), not a skill name.
 
 #### knowledge-update-collapse
-One skill with mode parameter, replacing `knowledge_update_adhoc` and `knowledge_update_inline`. Retrieval script fetches relevant slice at read time.
+One skill with mode parameter, replacing `profile_update_adhoc` and `profile_update_inline`. Retrieval script fetches relevant slice at read time.
 
 #### rule-builder-skills-inline-procedure
 Builder skills (`orientation_builder`, `industry_builder`, `specialty_builder`, `level_builder`, `work_state_builder`) hold construction procedure inline in SKILL.md. No `rules/builders/` folder.
@@ -710,7 +721,7 @@ Three communication points in skills.
 - Full: multi-activity skills. Invokes `python scripts/display/introduce.py <skill_name>`. Reads from `scripts/display/introductions.yaml`. Ends with "Ready?" consent gate.
 - Brief inline: single-activity skills. One-sentence declaration in SKILL.md.
 Heuristic: name conveys arc → brief; otherwise → full.
-Roster: full = role_evaluation, cv_targeted, interview_prep. Brief = career_brief, industry_builder, specialty_builder, orientation_builder, level_builder, work_state_builder, knowledge_update, positioning. Ambiguous (deferred): interview_capture, interview_followup, cv_general, experience_inventory, career_narratives.
+Roster: full = role_evaluation, cv_targeted, interview_prep. Brief = career_brief, industry_builder, specialty_builder, orientation_builder, level_builder, work_state_builder, profile_update, positioning. Ambiguous (deferred): interview_capture, interview_followup, cv_general, inventory, narratives.
 
 **Mid-flight narration:** before tool calls > a few seconds, narrate What/Why (one clause)/Duration (optional). Skip for fast operations. On return, brief acknowledgment.
 
@@ -769,7 +780,7 @@ Refs: `session-log-body-schema`, `session-log-parser-tests` (deferrals).
 Per file-and-folder-naming. Compound application ID embedded. Examples: `gap-analysis_pfizer-001.md`, `cv_pfizer-001.docx`.
 
 #### last-used-stamping
-Skills stamping accepted outputs add `Last Used: YYYY-MM` to cited entries in `Experience_Inventory` and `Career_Narratives`.
+Skills stamping accepted outputs add `Last Used: YYYY-MM` to cited entries in `inventory` and `narratives`.
 
 #### state-detection
 Ordered checks combine file existence and session log entries.
@@ -787,7 +798,7 @@ Repo `CLAUDE.md` references `COMPONENTS.md`.
 
 #### document-metadata-header-discipline
 Every doc programmatically consumed by skills/sub-agents/scripts carries a metadata header below the title.
-Scope in: knowledge documents, rule files, templates.
+Scope in: profile documents, rule files, templates.
 Scope out: skills/sub-agents (have YAML frontmatter and COMPONENTS.md entries), meta docs, outputs, scripts.
 Format: plain markdown lines, `**Field:** value`, multi-value comma-separated. Selected over YAML frontmatter (renders invisibly in VS Code preview).
 Fields v1, applied minimally:
@@ -854,7 +865,7 @@ Drop `registry_` prefix. Prior `org_maturity.md` plan superseded by Work-state a
 
 #### format-spec-cv-boundary
 Format spec = rendering config (fonts, margins, spacing, bullet chars, file-naming). Deliverable-specific, axis-agnostic.
-`design/format_spec.md` transfers with two cleanups: (1) move embedded python-docx code (lines 95-123) to a script under `scripts/`; (2) parameterize hardcoded name in output filename (line 182), pull from `User_Info.md`.
+`design/format_spec.md` transfers with two cleanups: (1) move embedded python-docx code (lines 95-123) to a script under `scripts/`; (2) parameterize hardcoded name in output filename (line 182), pull from `user_info.md`.
 
 #### interview-template-artifacts
 `interview_completion` and `interview_scratch` exist as blank skeletons (in `templates/`, copied per round) and as populated instances (in application folder).
@@ -877,7 +888,7 @@ Mixed by content shape. Structured lookup (Python script) for structured documen
 Skills are markdown. Deterministic logic = Python scripts via Bash. LLM-judgment in skill or LLM sub-agents. Build scripts alongside the skill that uses them. Never use an LLM where a script can verify deterministically.
 
 #### configuration-file
-`personal/config.yaml` in nested private repo. Holds key paths, output destinations, future tracker placeholder. YAML. The `name` field is removed (lives in `User_Info.md`).
+`personal/config.yaml` in nested private repo. Holds key paths, output destinations, future tracker placeholder. YAML. The `name` field is removed (lives in `user_info.md`).
 
 ### Operational Discipline
 
@@ -891,7 +902,7 @@ Foundation-up order:
 Qualified by `feedback_build_incrementally.md`: per-skill detail at skill build time, not in advance.
 
 #### foundation-execution-order
-Hand-edit axis rule files first → finalize knowledge documents next → build axis_builder skills later, only if refresh demand recurs. Builder skills become refresh tools, not validation gates that block progress. Decision driven by avoiding the planning-paralysis pattern that killed the prior build (deferring real work because a hypothetical future skill might do it differently).
+Hand-edit axis rule files first → finalize profile documents next → build axis_builder skills later, only if refresh demand recurs. Builder skills become refresh tools, not validation gates that block progress. Decision driven by avoiding the planning-paralysis pattern that killed the prior build (deferring real work because a hypothetical future skill might do it differently).
 Refs: `initial-industry-pack-content-design`, `initial-specialty-pack-content-design`, `cross-axis-reconciliation` (deferral), `approach-foundation-first`, `builders-axis-parity`.
 
 #### decision-filter
@@ -926,4 +937,4 @@ Refs: `role-evaluation-and-cv-targeted-separate`, `arc-composition-for-high-impa
 
 ## Career Workflow Stage
 
-Empty. career_brief, cv_general, knowledge_update, positioning skill designed at their build time.
+Empty. career_brief, cv_general, profile_update, positioning skill designed at their build time.

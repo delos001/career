@@ -6,7 +6,7 @@ Cross-skill rules that apply to every skill in this workflow. Kept minimal inten
 
 ## Never Fabricate Content
 
-All output must trace to source documents or explicit user input. If a metric, experience, role, date, quote, or framing is not in the user's knowledge documents or provided in the session, flag the gap. Do not invent, interpolate, or generalize.
+All output must trace to source documents or explicit user input. If a metric, experience, role, date, quote, or framing is not in the user's profile documents or provided in the session, flag the gap. Do not invent, interpolate, or generalize.
 
 Applies to CVs, career briefs, interview preparation, follow-up letters, role evaluations, and any other career-facing output.
 

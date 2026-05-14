@@ -35,7 +35,7 @@ Sweeps in-scope docs, parses metadata headers, cross-references against COMPONEN
 - Refs: `workflow-communication-conventions`.
 
 ### inventory-filter-tool
-A CLI or UI utility that filters `Experience_Inventory.md` EX/PR entries by Role (RL-NNN), Industry, Specialty, Orientation, Level, Work-state, or other tag axes. Surfaces matching entries with ID + Description for human review. Needed for narrative authoring (selecting Linked Inventory anchors), CV bullet sourcing, and inventory navigation generally. The flat-file structure of the inventory makes manual lookup impractical at 216-entry scale. Surfaced 2026-05-12 during Phase D of `career-narratives-existing-data-migration`, where user could not browse the inventory by role to choose Linked Inventory anchors.
+A CLI or UI utility that filters `inventory.md` EX/PR entries by Role (RL-NNN), Industry, Specialty, Orientation, Level, Work-state, or other tag axes. Surfaces matching entries with ID + Description for human review. Needed for narrative authoring (selecting Linked Inventory anchors), CV bullet sourcing, and inventory navigation generally. The flat-file structure of the inventory makes manual lookup impractical at 216-entry scale. Surfaced 2026-05-12 during Phase D of `career-narratives-existing-data-migration`, where user could not browse the inventory by role to choose Linked Inventory anchors.
 - Trigger: next narrative authoring or refresh task, or when CV bullet sourcing becomes a recurring workflow.
 - Blocks: nothing currently (Phase D was completed by Claude acting as the filter interactively).
 - Refs: `career-narratives-schema`, `career-narratives-existing-data-migration`.
@@ -47,15 +47,15 @@ A CLI or UI utility that filters `Experience_Inventory.md` EX/PR entries by Role
 - Refs: `design/axis_research_notes.md`, `builders-axis-parity`.
 
 ### inventory-builder-research-classification-sections-5-6
-experience_inventory builder skill needs a research component to classify Section 5 (Technical Experience) tools and Section 6 (Industry Exposure Profile) content against industry-pack and specialty-pack vocabularies. Drives downstream retrieval relevance and cv_targeted's ability to surface section content matched to JD industry/specialty signals.
-- Trigger: experience_inventory builder skill design.
-- Blocks: experience_inventory builder build; cv_targeted's section-5/section-6 consumption pattern.
+inventory builder skill needs a research component to classify Section 5 (Technical Experience) tools and Section 6 (Industry Exposure Profile) content against industry-pack and specialty-pack vocabularies. Drives downstream retrieval relevance and cv_targeted's ability to surface section content matched to JD industry/specialty signals.
+- Trigger: inventory builder skill design.
+- Blocks: inventory builder build; cv_targeted's section-5/section-6 consumption pattern.
 - Refs: `experience-inventory-section-5-restructure`, `experience-inventory-section-6-rename`, `cv-targeted-content-rules-from-axes`.
 
 ### inventory-builder-quality-check-encoding
-experience_inventory builder must encode all quality checks accumulated across reconciliation passes, so future inventory creation/refresh does not require manual reconciliation. Specification consolidated in `design/inventory_builder_quality_checks.md`; categories: structural integrity, content quality within entries, cross-entry quality, voice consistency, coverage, taxonomic notes. New checks surfaced during ongoing reconciliation get added to that file inline.
-- Trigger: experience_inventory builder skill design.
-- Blocks: experience_inventory builder build.
+inventory builder must encode all quality checks accumulated across reconciliation passes, so future inventory creation/refresh does not require manual reconciliation. Specification consolidated in `design/inventory_builder_quality_checks.md`; categories: structural integrity, content quality within entries, cross-entry quality, voice consistency, coverage, taxonomic notes. New checks surfaced during ongoing reconciliation get added to that file inline.
+- Trigger: inventory builder skill design.
+- Blocks: inventory builder build.
 - Refs: `design/inventory_builder_quality_checks.md`, `inventory-builder-research-classification-sections-5-6`.
 
 ### qc-rules-execution-mode-tagging
@@ -65,8 +65,8 @@ Re-tag each rule in `design/inventory_builder_quality_checks.md` with an executi
 - Refs: `design/inventory_builder_quality_checks.md`, audit-phase-ordering rule (in same file).
 
 ### inventory-qc-findings-decision-log
-A decision log for QC findings on the experience_inventory that could not be fully closed by updating the source document (e.g., user-reviewed findings resolved as "no change needed; reviewed YYYY-MM-DD with reason"). Goal: prevent re-flagging the same findings on subsequent QC rounds and avoid wasted review cycles on settled questions. Expected scope minimal: primary resolution path should always remain source-document updates that make the finding self-evidently inapplicable on the next pass; the decision log captures only the residual cases where source-update doesn't dispel the finding (e.g., a tag that looks ambiguous on its face but has a documented justification). Format, storage location, and entry schema TBD.
-- Trigger: experience_inventory builder skill design.
+A decision log for QC findings on the inventory that could not be fully closed by updating the source document (e.g., user-reviewed findings resolved as "no change needed; reviewed YYYY-MM-DD with reason"). Goal: prevent re-flagging the same findings on subsequent QC rounds and avoid wasted review cycles on settled questions. Expected scope minimal: primary resolution path should always remain source-document updates that make the finding self-evidently inapplicable on the next pass; the decision log captures only the residual cases where source-update doesn't dispel the finding (e.g., a tag that looks ambiguous on its face but has a documented justification). Format, storage location, and entry schema TBD.
+- Trigger: inventory builder skill design.
 - Blocks: nothing currently (manual audits proceed with the user's mental model of "no-change-needed").
 - Refs: `inventory-builder-quality-check-encoding`, `design/inventory_builder_quality_checks.md`.
 
@@ -116,7 +116,7 @@ Where research sub-agent outputs land and what format.
 - Refs: `research-sub-agents-roster`.
 
 ### introduction-roster-ambiguous-skills
-Introduction classification for `interview_capture`, `interview_followup`, `cv_general`, `experience_inventory`, `career_narratives`.
+Introduction classification for `interview_capture`, `interview_followup`, `cv_general`, `inventory`, `narratives`.
 - Trigger: each skill at its design time.
 - Blocks: those skill builds.
 - Refs: `workflow-communication-conventions`.
@@ -209,20 +209,20 @@ Orientation selection logic and match criteria stripped from axis rule files. Be
 
 ## Migration Items
 
-All trigger on foundation execution; all block foundation completion. Apply the referenced design decisions to the existing files in `personal/knowledge/`.
+All trigger on foundation execution; all block foundation completion. Apply the referenced design decisions to the existing files in `personal/profile/`.
 
 ### user-info-existing-data-migration
-Applied 2026-05-04. Migration complete. File renamed `Contact_Info.md` → `User_Info.md`; intro paragraph and Usage Notes dropped; `**Used by:** cv_targeted, cv_general` header added; field-value brackets cleaned. External references updated: `temp/support/knowledge_repo_scaffolding/{README.md, SETUP.md}`, scaffolding template renamed to `User_Info.md`. Deeper scaffolding-template content updates (metadata header, phase-based reference stripping, descriptive loading patterns) remain owned by `scaffolding-content-updates`.
+Applied 2026-05-04. Migration complete. File renamed `Contact_Info.md` → `user_info.md`; intro paragraph and Usage Notes dropped; `**Used by:** cv_targeted, cv_general` header added; field-value brackets cleaned. External references updated: `temp/support/profile_repo_scaffolding/{README.md, SETUP.md}`, scaffolding template renamed to `user_info.md`. Deeper scaffolding-template content updates (metadata header, phase-based reference stripping, descriptive loading patterns) remain owned by `scaffolding-content-updates`.
 
 ### career-narratives-existing-data-migration
-Apply `career-narratives-schema` to `Career_Narratives.md`.
+Apply `career-narratives-schema` to `narratives.md`.
 
 ### career-narratives-cleanup-script
 One-time script: strip Pandoc underline syntax; remove HTML comment blocks. Mechanical.
 - Refs: `career-narratives-schema`.
 
 ### positioning-existing-data-migration
-Apply `positioning-schema` to `Positioning.md`. Migration surfaces existing inaccuracies: "Story 7 (Direct Report Accountability)" is misclassified (it's DC-003); appendix lists Stories 1-9 but 10 exist (ST-010 may need addition).
+Apply `positioning-schema` to `positioning.md`. Migration surfaces existing inaccuracies: "Story 7 (Direct Report Accountability)" is misclassified (it's DC-003); appendix lists Stories 1-9 but 10 exist (ST-010 may need addition).
 
 ### experience-inventory-existing-data-migration
 All clusters closed. Migration complete.
@@ -241,7 +241,7 @@ Done 2026-04-30:
 - Section 4/5/6/7 initial restructures per their decisions; per-entry Industry/Specialty/Orientation/Level/Work-state tagging across 197 entries; Capability→Competency rename + initial 16-term registry; Outcome→Impact fold; sub-section reorganization (9 moves); 5 PR Work-state Independent→greenfield; Level removed from RL records; field-drift cleanup. Background Roles encoding-artifact cleanup cleared as no-op (bytes are correct UTF-8; appearance was terminal-rendering artifact).
 
 ### questions-library-deletion
-Delete `personal/knowledge/Questions_Library.md` after manual content extraction if any.
+Delete `personal/profile/Questions_Library.md` after manual content extraction if any.
 - Refs: `questions-library-eliminated`.
 
 ### scaffolding-folder-layout
@@ -251,7 +251,7 @@ Folder name, sub-folder layout, file naming for `support/`.
 - Refs: `knowledge-document-scaffolding`.
 
 ### scaffolding-content-updates
-Strip phase-based references; describe loading patterns descriptively; update skill names; add metadata header to `User_Info.md` template.
+Strip phase-based references; describe loading patterns descriptively; update skill names; add metadata header to `user_info.md` template.
 - Trigger: scaffolding migration.
 - Blocks: scaffolding migration.
 - Refs: `knowledge-document-scaffolding`, `document-metadata-header-discipline`.

@@ -17,7 +17,7 @@ Every component entry follows a fixed schema:
   - Agents (sub-agents it dispatches)
   - Rules (axis files, format specs, registries, taxonomies)
   - Templates (template files it copies or fills)
-  - Knowledge docs (knowledge documents it reads slices from)
+  - Profile docs (profile documents it reads slices from)
   - Scripts (standalone scripts it invokes)
   - User input (prompts, parameters)
 - **Outputs**: every artifact the component creates, modifies, or hands off.
@@ -29,7 +29,7 @@ Every component entry follows a fixed schema:
   - Invoked by another component (which, when)
 - **Update Triggers**: external changes that should prompt revision of this component.
   - When dependent rules change (which rules)
-  - When dependent knowledge docs change (which docs)
+  - When dependent profile docs change (which docs)
   - When dependent agents are modified
   - When upstream or downstream skills are modified
   - Periodic refresh windows (per Rule Refresh and Staleness, where relevant)
@@ -38,7 +38,7 @@ Every component entry follows a fixed schema:
 
 ## Document Metadata Header Schema
 
-Documents in scope (knowledge documents, rule files, templates) carry a structured metadata header below their title using `**Field:** value` lines. Available fields:
+Documents in scope (profile documents, rule files, templates) carry a structured metadata header below their title using `**Field:** value` lines. Available fields:
 
 - **Used by:** named components that load or copy this doc. Required when consumed.
 - **Stamps:** what consumers modify on this doc (e.g., `Last Used (YYYY-MM)`). Optional; only where stamping happens. Describe the modification pattern in minimal form; do not list specific stamped IDs.
@@ -65,10 +65,10 @@ Schema discipline and reconciliation script details live in `temp/design_decisio
 - interview_capture
 - interview_followup
 - career_brief
-- knowledge_update (with mode parameter: adhoc / inline)
+- profile_update (with mode parameter: adhoc / inline)
 - positioning
-- experience_inventory (knowledge-builder)
-- career_narratives (knowledge-builder)
+- inventory (profile-builder)
+- narratives (profile-builder)
 - specialty_builder (create / refresh modes)
 - industry_builder (create / refresh modes)
 - skill_builder (create / refresh modes)
@@ -113,7 +113,7 @@ Schema discipline and reconciliation script details live in `temp/design_decisio
 - Document metadata header reconciliation script (sweeps in-scope docs, parses headers, cross-references against COMPONENTS.md and skill code; logged to Pending Follow-on Work)
 - Application ID assignment script (Pending Follow-on Work in design_decisions.md)
 - Inventory validation script (validates Capability, Industry, Skill, Role, Purpose, Role Level, Org Context against tag/registry sources)
-- Retrieval scripts (slice-based lookup for `Experience_Inventory`, `Career_Narratives`, `Positioning`, registries; per Stack section)
+- Retrieval scripts (slice-based lookup for `inventory`, `narratives`, `positioning`, registries; per Stack section)
 - Format conversion scripts (python-docx CV rendering, per `format_spec.md` transfer note)
 - Resolver scripts (rule lookup by category/slug, per Skill Stability via Loose Coupling)
 
@@ -131,5 +131,5 @@ Schema discipline and reconciliation script details live in `temp/design_decisio
 
 - When a new skill, agent, or script is designed, add a detailed entry under the appropriate section. Move its name out of the Roster (or annotate Roster with a checkmark).
 - When a component is modified, update its entry in the same change. Out-of-date entries are worse than missing entries.
-- When a rule, knowledge doc, or registry changes, consult the Update Triggers field of every component entry to identify what may need revisiting.
+- When a rule, profile doc, or registry changes, consult the Update Triggers field of every component entry to identify what may need revisiting.
 - The discipline lives in `temp/design_decisions.md` under "Component Documentation Discipline."
