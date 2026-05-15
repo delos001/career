@@ -85,13 +85,13 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - Agents: `company_research`, `role_research`, `industry_research`, `axis_classifier`, `qc_role_intake`.
   - Scripts: `scripts/display/introduce.py`, `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/assemble.py`.
   - Templates: `templates/session_log.md`, `templates/research_file.md`.
-  - User input: job description (paste / file / URL), role communications (optional), company slug, title/company when absent from the JD.
+  - User input: job description (paste / file / URL), role communications (optional), company slug, metadata confirmations (title/company/level/industry) at Phase 2.
 - **Outputs**:
   - Files: `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`; `personal/applications/<SLUG>_APP-NNN_YYYY-MM/research.md`.
   - Skills: hands off to the gap-analysis skill (not yet built).
   - Side effects: consumes the next APP-NNN.
 - **Triggers**:
-  - User invocation: `/role-intake` when starting evaluation of a new role; also resumes an interrupted run (resume checkpoint = research file filed).
+  - User invocation: `/role-intake` when starting evaluation of a new role; also resumes an interrupted run (user supplies APP-NNN; the skill probes artifacts and lands at the appropriate phase per its resume ladder).
 - **Update Triggers**:
   - When the five-axis rule files or their registries change (axis classification logic).
   - When `rules/global-rules.md` changes.
@@ -136,7 +136,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 - **Purpose**: Research an industry at a high level — what it is, key trends and dynamics — scoped to decision-supporting context, deliberately shallow.
 - **Status**: Designed
-- **Inputs**: Skill-passed (by `role-intake`): candidate industry, company name, JD text. Tools: WebSearch, WebFetch.
+- **Inputs**: Skill-passed (by `role-intake`): role industry, company name, JD text. Tools: WebSearch, WebFetch.
 - **Outputs**: Structured findings block (`## Industry` — Summary / Key facts / Sources) returned to the caller.
 - **Triggers**: Invoked by `role-intake` Phase 4, in parallel with `company_research` and `role_research`.
 - **Update Triggers**: When the industry axis registry or value files change.

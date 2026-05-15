@@ -12,13 +12,13 @@ shallow - what the industry is and its general dynamics, not a market analysis.
 
 ## Inputs
 
-The dispatching skill gives you: the candidate industry (inferred from the company
+The dispatching skill gives you: the role industry (inferred from the company
 and JD), the company name, and the job description text.
 
 ## What to find (scoped)
 
 - What the industry is and its boundaries - enough to confirm or correct the
-  candidate industry classification.
+  role industry classification.
 - Key current trends and dynamics shaping it.
 - Sub-sector placement if relevant (e.g. within healthcare: pharma vs biotech vs
   CRO vs med-device).

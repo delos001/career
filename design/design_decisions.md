@@ -726,7 +726,7 @@ Roster: full = role_evaluation, cv_targeted, interview_prep. Brief = career_brie
 
 **Mid-flight narration:** before tool calls > a few seconds, narrate What/Why (one clause)/Duration (optional). Skip for fast operations. On return, brief acknowledgment.
 
-**Presentation (phase boundaries):** existing convention.
+**Phase lead lines:** each phase opens with a one-line present-tense active-voice announce, specified verbatim in the skill's SKILL.md. Renders identically on new runs and resumes. Guide, not requirement — skills may diverge where different UX needs apply. First applied 2026-05 in role-intake.
 
 Folder: `scripts/display/`.
 Refs: `introduce-py-implementation`, `introduction-roster-ambiguous-skills` (deferrals).
@@ -953,7 +953,66 @@ Phase 6 dispatches the `axis_classifier` subagent, which classifies the job agai
 Resolves deferral: `session-log-body-schema`.
 
 #### role-intake-control-flow
-The skill operates under `rules/global-rules.md` (loaded in Phase 0): halt and ask on failure/ambiguity, never fabricate, never proceed on partial content. Resume support: if a job's `research.md` already exists, re-invocation resumes at Phase 6 instead of re-ingesting/re-researching. QC failure (Phase 8) is not terminal — QC names the owning phase per finding (metadata→2, research→4/5, axes→6, session-log→7) and the skill re-runs forward from there after user direction. Resolves deferral: `state-detection-logic-and-location`.
+The skill operates under `rules/global-rules.md` (loaded in Phase 0): halt and ask on failure/ambiguity, never fabricate, never proceed on partial content. Resume rule superseded 2026-05 by `role-intake-resume-ladder-2026-05`. QC failure (Phase 8) and user approval rejection (Phase 9) both route per `role-intake-phase-routing-standalone-2026-05`. Resolves deferral: `state-detection-logic-and-location`.
+Refs: `role-intake-resume-ladder-2026-05`, `role-intake-phase-routing-standalone-2026-05`, `role-intake-user-approval-gate-2026-05`.
+
+#### role-intake-resume-ladder-2026-05
+On re-invocation the user is asked new or resume, then supplies the APP-NNN. The skill probes artifacts in the application folder and lands at the right phase via a ladder (first match wins):
+1. Folder missing → halt, ask user (likely wrong APP-NNN).
+2. `research.md` missing → Phase 4.
+3. Axis classification section still `_(pending)_` in the session log → Phase 6.
+4. All filled → Phase 8 (re-QC).
+
+One-line announce, auto-proceed, no interactive confirm. The probe relies on Phase 3 atomicity (folder + `jd.md` + session log written together per `role-intake-jd-persistence-2026-05`). Phase 6 → Phase 7 split deliberately not introduced — re-running axis_classifier is a cheap recovery from interruption in that narrow window, and avoids splitting `assemble.py finalize`.
+Supersedes resume rule in `role-intake-control-flow`.
+Refs: `role-intake-jd-persistence-2026-05`.
+
+#### role-intake-metadata-confirmation-gate-2026-05
+Phase 2 infers title, company, level, and industry from the JD; prompts the user for any value that couldn't be inferred; presents the full set for explicit confirmation before Phase 3 persistence:
+
+```
+Confirm role metadata:
+  Title:    <inferred or supplied>
+  Company:  <inferred or supplied>
+  Level:    <inferred or supplied>
+  Industry: <inferred or supplied>
+Reply with corrections or "confirmed".
+```
+
+Universal gate — every value, not just conflicts. Reason: extraction can be wrong silently (multi-title JDs, ambiguous parent-vs-subsidiary names) and Phase 3 persists the values; better to confirm before persistence. Industry is confirmed here so Phase 4 `industry_research` runs against a user-approved target — a wrong industry inference wastes a parallel research pass.
+
+#### role-intake-jd-persistence-2026-05
+Phase 3 writes the JD into the application folder as `jd.md`. If the user supplied role communications in Phase 1, those are written as `comms.md`. Both files plus the initial session log are written atomically by `scripts/assemble.py init` — when the folder exists, all three exist.
+
+Session log metadata block gains four fields:
+- `JD file:` — `jd.md`
+- `JD source:` — URL, original file path, or `"pasted"`
+- `Comms file:` — `comms.md` (or blank if no comms)
+- `Comms source:` — URL, original file path, `"pasted"`, or blank
+
+Resume relies on this atomicity per `role-intake-resume-ladder-2026-05`. Source fields preserve traceability when the original file location is later cleared.
+
+#### role-intake-user-approval-gate-2026-05
+Phase 9 grows from bare handoff into user-approval-and-handoff, running after Phase 8 PASS. Surfaces:
+- Metadata: title, company, level, industry
+- Per-axis primary/secondary classification
+- Axis gaps
+- Paths to session log and research file
+
+User approves or raises issues. For each issue the skill assesses impact and recommends a path:
+- **Could alter conclusions or outcomes** (e.g., level shift affecting axis, industry shift invalidating industry research) → recommend re-run, route back per `role-intake-phase-routing-standalone-2026-05`.
+- **No downstream impact** (typo, capitalization, swap primary/secondary between already-confirmed values) → recommend direct edit to the session log, then re-QC.
+
+User chooses path. Apply, re-QC, re-present the approval block. Loop until approval. Separation rationale: QC validates structure and consistency mechanically; user validates content judgment; both gate handoff.
+
+#### role-intake-phase-routing-standalone-2026-05
+The route-back table sits as a standalone section after Phase 9 in SKILL.md, consumed by both Phase 8 (QC failures) and Phase 9 (user approval rejections). Renamed from "QC failure routing" to reflect dual use. Maps finding type to owning phase:
+- Metadata wrong → Phase 2
+- Research incomplete or wrong → Phase 4
+- Axis classification wrong, or gap recorded incorrectly → Phase 6
+- Session log field missing → Phase 7
+
+Re-run forward from the routed phase, re-QC, then (Phase 9 path) re-present the approval block.
 
 ### role_evaluation
 

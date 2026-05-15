@@ -22,7 +22,7 @@ re-runs and sections added by downstream skills are not clobbered.
 Author    : Jason Delosh
 Created   : 2026-05-14
 Project   : career
-Usage     : python scripts/assemble.py init     --slug ... --app-id ... --ym ... --company ... --role ... [--level ...] --start-date ...
+Usage     : python scripts/assemble.py init     --slug ... --app-id ... --ym ... --company ... --role ... [--level ...] --industry ... --start-date ... --jd-text-file ... --jd-source ... [--comms-text-file ... --comms-source ...]
             python scripts/assemble.py research --folder ... --app-id ... --company ... --role ... --date ... --company-file ... --role-file ... --industry-file ...
             python scripts/assemble.py finalize --session-log ... --date ... --axis-file ...
 Depends   : pyyaml (via _config)
@@ -134,6 +134,25 @@ def cmd_init(args, repo_root, cfg):
 
     os.makedirs(app_folder, exist_ok=True)
 
+    # Persist the JD into the application folder so it survives across sessions;
+    # resume detection relies on jd.md being present.
+    jd_file_name = cfg['filenames']['jd_file']
+    jd_path = os.path.join(app_folder, jd_file_name)
+    _write(jd_path, _read(args.jd_text_file))
+
+    # Comms is optional; persist only when supplied. Blank session-log fields
+    # carry through when no comms were ingested.
+    comms_file_name = cfg['filenames']['comms_file']
+    if args.comms_text_file:
+        comms_path = os.path.join(app_folder, comms_file_name)
+        _write(comms_path, _read(args.comms_text_file))
+        comms_file_value = comms_file_name
+        comms_source_value = args.comms_source or ''
+    else:
+        comms_path = None
+        comms_file_value = ''
+        comms_source_value = ''
+
     templates_dir = os.path.join(repo_root, cfg['paths']['templates'])
     skeleton = _skeleton(templates_dir, cfg['filenames']['session_log_template'])
     body = _fill(skeleton, {
@@ -142,16 +161,24 @@ def cmd_init(args, repo_root, cfg):
         'ym': args.ym,
         'app_id': args.app_id,
         'role_level': args.level or '_(not stated)_',
+        'industry': args.industry,
         'start_date': args.start_date,
+        'jd_file': jd_file_name,
+        'jd_source': args.jd_source,
+        'comms_file': comms_file_value,
+        'comms_source': comms_source_value,
         # Not known yet; finalize (Phase 7) fills these in.
         'research_completed_date': '_(pending)_',
         'axis_classification': '## Axis Classification\n\n_(pending)_',
         'axis_gaps': '## Axis Gaps\n\n_(pending)_',
     })
     _write(session_log, body)
-    # Print both paths so the calling skill knows where things landed.
+    # Print all written paths so the calling skill knows where things landed.
     print(app_folder)
     print(session_log)
+    print(jd_path)
+    if comms_path is not None:
+        print(comms_path)
 
 
 # ---------------------------------------------------------------------------
@@ -233,14 +260,23 @@ def main():
     parser = argparse.ArgumentParser(description='role-intake artifact assembler')
     sub = parser.add_subparsers(dest='command', required=True)
 
-    p_init = sub.add_parser('init', help='Phase 3: folder + initial session log')
+    p_init = sub.add_parser('init', help='Phase 3: folder + JD + comms + initial session log')
     p_init.add_argument('--slug', required=True)
     p_init.add_argument('--app-id', required=True)
     p_init.add_argument('--ym', required=True, help='year-month, e.g. 2026-05')
     p_init.add_argument('--company', required=True)
     p_init.add_argument('--role', required=True)
     p_init.add_argument('--level', default=None)
+    p_init.add_argument('--industry', required=True)
     p_init.add_argument('--start-date', required=True, help='YYYY-MM-DD')
+    p_init.add_argument('--jd-text-file', required=True,
+                        help='path to a file holding the extracted JD text')
+    p_init.add_argument('--jd-source', required=True,
+                        help='URL, original file path, or "pasted"')
+    p_init.add_argument('--comms-text-file', default=None,
+                        help='path to a file holding the extracted comms text (optional)')
+    p_init.add_argument('--comms-source', default=None,
+                        help='URL, original file path, or "pasted" (optional)')
     p_init.set_defaults(func=cmd_init)
 
     p_res = sub.add_parser('research', help='Phase 5: write research.md')

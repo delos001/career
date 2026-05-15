@@ -25,10 +25,12 @@ Read both files in full before checking.
    sections all present; each has Summary, Key facts, and Sources; no placeholder
    or empty content where content is expected; Sources are real URLs.
    Route-back: phase 4/5.
-2. **Session log completeness** - every required field present: company, role,
-   role level, axes (primary/secondary per axis), axis gaps, APP-NNN, key dates
-   including date research completed.
-   Route-back: phase 7.
+2. **Session log completeness** - every required field present: APP-NNN,
+   company, role, role level, industry, session-start and research-completed
+   dates, JD file + source, comms file + source (blank if no comms), axes
+   (primary/secondary per axis), axis gaps.
+   Route-back: phase 7 if axis or date fields are missing; phase 3 if JD/comms
+   file or source fields are missing; phase 2 if industry is missing.
 3. **Cross-file consistency** - company and role match between the session log and
    the research file; the axis classification in the session log is consistent
    with what the research file supports.

@@ -11,127 +11,175 @@ file**. It does not write a CV or a gap analysis.
 
 ## Operating rules
 
-- **Global rules.** Read `rules/global-rules.md` at the start and operate under it
-  for the whole run.
-- **Separable phases.** Each phase below has a defined input and output. Run them
-  in order. A phase consumes only its declared input and produces only its
-  declared output.
-- **One non-linear loop.** Phase 8 (QC) may route back to an earlier phase; see
-  *QC failure routing* at the end.
+- Read `rules/global-rules.md` first; operate under it throughout.
+- Phases below run in order; each has a declared input and output.
+- Each phase opens with the **bold lead line** under its heading - speak it
+  verbatim before running the phase.
+- Phase 8 (QC) and Phase 9 (approval) loop back per *Phase routing on failure*.
 
-## Resume check - run before Phase 1
+## Resume check - run before Phase 0
 
-Ask the user: new role, or resuming an interrupted one?
-- **Resuming:** ask which (APP-NNN or folder name). Confirm
-  `personal/applications/<folder>/research.md` exists. If it does, read the
-  existing session log and `research.md`, then jump to **Phase 6**. If it does
-  not, the run was interrupted before the resume checkpoint - start at Phase 1.
+Ask: new role or resume?
+
 - **New:** proceed to Phase 0.
+- **Resume:** ask the APP-NNN; locate the matching folder under
+  `personal/applications/`. Probe and land per the ladder (first match wins):
+  1. Folder missing - halt; APP-NNN likely wrong.
+  2. `research.md` missing - resume at **Phase 4**.
+  3. Axis classification still `_(pending)_` in the session log - **Phase 6**.
+  4. All filled - **Phase 8** (re-QC).
 
-## Phase 0 - Intro
+  Announce ("Resuming APP-NNN at Phase N.") and proceed without prompting.
+
+## Phase 0 - Intro (new runs only)
+
+**Introducing the role-intake skill.**
 
 - Input: invocation.
 - Run `python scripts/display/introduce.py role-intake` and show the output.
-- Output: user oriented; ready to proceed.
+- Output: user oriented.
 
 ## Phase 1 - JD + comms ingestion
 
-- Input: paste text, or a source path/URL.
-- If the JD is a file path or URL, run `python scripts/ingest/jd_extract.py
-  <source>` and capture stdout as the JD text. If the script exits non-zero, halt
-  per global rules.
-- Ask the user whether there are any role communications (e.g. a recruiter
-  email). If yes: if the JD is a file, ask them to place the comms in the same
-  folder and ingest each via `jd_extract.py`; if the JD was pasted, accept pasted
-  comms or a path.
-- Output: JD text + any supplementary comms text.
+**Ingesting the JD and any role communications.**
 
-## Phase 2 - Metadata extraction
+- Input: paste text, or a source path/URL.
+- For a file path or URL, run `python scripts/ingest/jd_extract.py <source>`;
+  capture stdout. Non-zero exit = halt per global rules.
+- Ask the user about role communications (e.g. recruiter email). Ingest via
+  `jd_extract.py` if file/URL; accept pasted text otherwise.
+- Output: JD text + source; comms text + source if any. ("Source" = URL,
+  original file path, or `"pasted"`.)
+
+## Phase 2 - Metadata extraction + confirmation
+
+**Extracting role title, company, level, and industry from the JD.**
 
 - Input: JD text + comms.
-- Extract the role title, company, and role level (if stated).
-- If title or company is absent, prompt the user for it (ambiguous input - ask).
-- Output: `{title, company, role-level?}`.
+- Infer title, company, level, industry. Infer level (it may appear in the
+  title, body, or be implicit from scope) rather than leaving blank.
+- Prompt the user for any value that cannot be inferred.
+- Present for explicit confirmation:
+
+  ```
+  Confirm role metadata:
+    Title:    <value>
+    Company:  <value>
+    Level:    <value>
+    Industry: <value>
+  Reply with corrections or "confirmed".
+  ```
+
+- Re-present on corrections until confirmed.
+- Output: user-confirmed {title, company, role-level, industry}.
 
 ## Phase 3 - Session init
 
-- Input: company, role.
-- Run `python scripts/app_id.py` to get the next APP-NNN.
-- Ask the user for a short company slug for filenames (e.g. `PFM` for Precision
-  for Medicine). Determine the current `YYYY-MM`.
-- Run `python scripts/assemble.py init` with the slug, APP-NNN, year-month,
-  company, role, role level (if known), and session start date. It creates the
-  application folder, writes the initial session log per
-  `templates/session_log.md`, and prints both paths.
-- Output: APP-NNN, application folder path, session log path.
+**Creating the application folder and starting the session log.**
+
+- Input: title, company, level, industry; JD text + source; comms text + source
+  (if any).
+- Run `python scripts/app_id.py` for the next APP-NNN. Ask the user for a short
+  company slug. Determine the current `YYYY-MM`.
+- Write JD (and comms if present) to temp files.
+- Run `python scripts/assemble.py init` with the slug, APP-NNN, YM, metadata
+  (company, role, level, industry), start date, JD temp-file + source, and (if
+  comms) comms temp-file + source. It creates the folder, writes `jd.md` and
+  optionally `comms.md`, writes the initial session log, and prints all paths.
+- Output: paths printed by `assemble.py`.
 
 ## Phase 4 - Research
 
-- Input: JD text, company, role, candidate industry (inferred from JD + company).
-- Dispatch three subagents **in parallel**: `company_research`, `role_research`,
-  `industry_research`. Give each the JD text, company, role, and (for
-  `industry_research`) the candidate industry.
+**Researching the company, role, and industry in parallel.**
+
+- Input: JD text, company, role, role industry (per Phase 2 confirmation).
+- Dispatch three subagents **in parallel** - `company_research`,
+  `role_research`, `industry_research` - giving each the JD text, company, role,
+  and (for `industry_research`) the role industry.
 - Each returns a fixed block (`## Company` / `## Role` / `## Industry`, with
-  Summary / Key facts / Sources). Research is scoped to what this skill needs to
-  classify and characterize the job - not exhaustive dossiers.
+  Summary / Key facts / Sources). Scoped to what this skill needs to classify
+  and characterize - not exhaustive dossiers.
 - Output: three structured findings blocks.
 
 ## Phase 5 - Research file assembly
 
+**Assembling the research findings into the research file.**
+
 - Input: three findings blocks.
-- Write each research subagent's output block to its own temp file, then run
-  `python scripts/assemble.py research` with the application folder, APP-NNN,
-  company, role, date, and the three temp file paths. It writes `research.md` per
-  `templates/research_file.md` (on a re-run it section-replaces only role-intake's
-  own sections, so nothing else is clobbered).
-- Output: `research.md` written. **This is the resume checkpoint.**
+- Write each block to its own temp file, then run `python scripts/assemble.py
+  research` with the application folder, APP-NNN, company, role, date, and the
+  three temp-file paths. It section-replaces only role-intake's own sections so
+  nothing else is clobbered.
+- Output: `research.md` written.
 
 ## Phase 6 - Axis classification
 
+**Classifying the role against the five axes.**
+
 - Input: JD text, research findings.
-- Dispatch the `axis_classifier` subagent with the JD text and the research
-  findings. It works registry-first for every axis - reads each axis registry,
-  picks candidate value(s), reads only the candidate value files, and confirms
-  each pick against the value file before recording it. Where no registry value
-  confirms, it flags an axis gap (not blocked, not routed to a builder skill).
-- Output: per-axis primary/secondary values + a list of axis gaps.
+- Dispatch `axis_classifier` with the JD text and the research findings. It
+  works registry-first per axis: read the registry, pick candidate value(s),
+  read only the candidate value files, confirm each pick. Where no registry
+  value confirms, flag an axis gap (not blocked, not routed to a builder).
+- Output: per-axis primary/secondary + a list of axis gaps.
 
 ## Phase 7 - Session log finalization
 
+**Finalizing the session log with the classification results.**
+
 - Input: session log path, `axis_classifier` output, research-completed date.
-- Write the `axis_classifier` output to a temp file, then run
-  `python scripts/assemble.py finalize` with the session log path, the
-  research-completed date, and that temp file. It fills the research-completed
-  date and replaces the pending axis sections.
+- Write the `axis_classifier` output to a temp file. Run
+  `python scripts/assemble.py finalize` with the session log path, the date,
+  and the temp file. It fills the date and replaces the pending axis sections.
 - Output: session log complete.
 
 ## Phase 8 - QC
 
-- Input: session log path, research file path, a brief activity record (which
-  phases ran).
-- Dispatch the `qc_role_intake` subagent with those inputs.
-- **This phase is a loop.** If the verdict is **FINDINGS**: present them to the
-  user per global rules, route back to the phase each finding names, re-run
-  forward from there - and return to Phase 8 to QC the changes. Repeat until the
-  verdict is **PASS**.
-- The skill leaves Phase 8 only on a **PASS**. No artifact is changed after the
-  passing QC - Phase 9 makes no edits - so every change is itself QC'd.
+**Running QC on the session log and research file.**
+
+- Input: session log path, research file path, brief activity record.
+- Dispatch `qc_role_intake`. **Loops on FINDINGS:** present findings, route back
+  per *Phase routing on failure*, re-run forward, return to Phase 8. Exit on
+  **PASS** only.
 - Output: PASS verdict.
 
-## Phase 9 - Handoff
+## Phase 9 - User approval and handoff
 
-- State completion. The session log and research file are ready for the
-  gap-analysis skill.
+**Reviewing key outputs with you and handing off to the gap-analysis skill.**
 
-## QC failure routing
+- Input: QC-passed session log and research file.
+- Present the approval block:
 
-Each QC finding names the phase that owns the deficiency. Route back, fix, and
-re-run forward - **including Phase 8 again**, so the changes are themselves QC'd.
-The skill leaves Phase 8 only on a PASS.
+  ```
+  Title / Company / Level / Industry: <values>
+  Axis classification - per axis (Orientation, Industry, Specialty, Level,
+    Work-state): <primary> / <secondary>
+  Axis gaps: <listed, or "none">
+  Session log + Research file: <paths>
+
+  Reply with corrections, or "approved" to hand off.
+  ```
+
+- **Loops on rejection.** For each issue, assess whether it could alter
+  downstream conclusions or outcomes:
+  - Yes (level shifts axis, industry invalidates research, etc.) - recommend
+    re-run; route back per *Phase routing on failure*.
+  - No (typo, capitalization, swap primary/secondary between value-file-
+    confirmed values) - recommend direct edit to the session log or research
+    file.
+
+  User chooses. Apply, re-QC, return to Phase 9.
+- On approval: state completion. Artifacts are ready for the gap-analysis skill.
+
+## Phase routing on failure
+
+Consumed by Phase 8 (QC failures) and Phase 9 (approval rejections). Route back,
+fix, re-run forward (Phase 8 always re-runs); for an approval-path rejection,
+return to Phase 9 to re-present the block.
 
 | Finding type | Route back to |
 |---|---|
-| Company/role metadata wrong | Phase 2 |
-| Research file incomplete/insufficient | Phase 4 (re-research) then 5 |
+| Metadata wrong (title, company, level, industry) | Phase 2 |
+| Research incomplete or wrong | Phase 4 then 5 |
 | Axis classification wrong, or gap not recorded in both files | Phase 6 |
 | Session log field missing | Phase 7 |

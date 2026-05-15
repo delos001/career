@@ -14,6 +14,8 @@ paths:
 # Filenames.
 filenames:
   research_file: research.md                   # written into each application folder
+  jd_file: jd.md                               # JD persisted into each application folder
+  comms_file: comms.md                         # role communications persisted into each application folder
   session_log_template: session_log.md         # in the templates/ folder
   research_file_template: research_file.md      # in the templates/ folder
   introductions: introductions.yaml            # next to scripts/display/introduce.py
