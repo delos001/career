@@ -773,6 +773,18 @@ Refs: `builders-axis-parity`, `builder-adjacency-back-edge-handling`.
 SKILL Phase 3 (drafter) produces two artifacts in create mode: the value file content AND the one-line registry-entry text (`- **<value>** - <scope description>. File: <value>.md.`). Phase 5 fix routing for E1, G1, G2 returns to Phase 3 for redraft (the reconciler does not produce these artifacts and routing them there wastes loop iterations). For a value currently `File deferred`, the existing registry description may be reused if it still fits the drafted scope; otherwise the drafter rewrites from the value file's content.
 Refs: `builders-axis-parity`, `builder-refresh-qc-with-auto-fix-2026-05`.
 
+#### builder-required-inputs-fail-loud-2026-05
+`scripts/axis_builder.py qc` raises an invocation error when a mode-required input is missing, rather than silently skipping the corresponding check. Refresh mode requires `--changes`; create mode requires `--sibling-edits` and `--registry-entry`. The script previously skipped the relevant check (I3, E4, G1) when its input flag was absent and reported the run as clean, indistinguishable from genuinely passing. General rule for the builder family: mode-required inputs are part of the invocation contract; an absent input is itself the bug, not a license to skip the check.
+Refs: `builders-axis-parity`, `builder-refresh-qc-with-auto-fix-2026-05`.
+
+#### builder-apply-step-structural-invariants-2026-05
+`scripts/axis_builder.py apply-create` re-runs structural-coherence checks at the apply step, after the QC loop, even when the loop has hit its 3-iteration cap and shipped a provisional draft. Today this enforces G1 (the registry-entry's `File:` pointer must name the value file the script will write); a mismatch refuses the apply rather than commit corruption. Rationale: the provisional path is for content-imperfect drafts (a weak source, an unresolved citation) that a human can triage from `design/build_issues.md`. A wrong `File:` pointer is structural corruption, not a triage candidate: every downstream consumer that resolves the registry entry would follow the pointer to a missing file. General rule for the builder family: structural-coherence invariants run at the apply step too, not only inside the QC loop that can give up.
+Refs: `builders-axis-parity`, `builder-refresh-qc-with-auto-fix-2026-05`, `builder-phase-3-registry-entry-output-2026-05`.
+
+#### builder-script-owns-registry-parsing-2026-05
+`scripts/axis_builder.py` exposes a `list <axis>` subcommand that emits every registry entry as `{value, state, value_file_path}` JSON. SKILL Phase 1 consumes that output rather than parsing `rules/<axis>/registry.md` itself. The script already owns the registry-format parser (`_BULLET_RE`, `_classify_bullet`); two parsers for the same format means two places that drift if the registry format ever changes, and the skill's natural-language parsing has already produced a documentation mismatch once. General rule for the builder family: where the script owns a format, the calling skill consumes parsed output via subcommand, never by re-parsing the file. Carries to specialty-builder, orientation-builder, level-builder, work-state-builder as the pattern is replicated.
+Refs: `builders-axis-parity`.
+
 ### Lineage & Traceability
 
 Application lineage only. Knowledge-doc version history handled by git.

@@ -87,6 +87,14 @@ substantive area the drafted value file covers. A description that names a
 sub-domain the file does not address, or omits the primary domain the file
 does address, fails G2.
 
+### H1 - em dashes in body prose
+The drafted value file contains no em dashes (`—`) in body prose.
+Frontmatter fences (`---`) and structural separators are exempt. For
+each em dash found, report H1 with the full offending sentence. Do not
+propose a rewrite in the finding; the drafter rewrites in Phase 3.
+Removing the em dash alone is not the fix - the sentence must be
+rewritten to read naturally without it.
+
 ### H2 - acronym list reconciles with body usage
 The drafted file's Dialect section lists acronyms recognized without
 expansion. Every acronym used in the body (any all-caps token 2-6 letters)

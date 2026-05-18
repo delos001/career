@@ -21,10 +21,11 @@ any particular value.
 The dispatching skill gives you:
 - `axis`: always `industries` (passed for parity with other builder research agents).
 - `value`: the registry key being built (e.g. `generics`, `diagnostics`).
-- `siblings`: the file-backed sibling values currently in `rules/industries/`
-  (e.g. `pharma`, `biotech`, `cro`, `med-device`). You use these for the
-  Adjacency section: research how the target value's work translates to and
-  from each sibling.
+- `siblings`: every non-self entry in `rules/industries/registry.md`, as
+  value names. May include file-backed, file-deferred, or registry-only
+  entries (you do not need to know which is which). Research how the
+  target value's work translates to and from each sibling so the
+  Adjacency section can cover all of them.
 
 ## What to find (scoped)
 
@@ -67,9 +68,9 @@ For each sibling value supplied in `siblings`:
 - What does not carry (industry-specific concepts that do not translate).
 - The bridging framing the candidate would use to translate work.
 
-If a sibling value's file does not yet exist (file-deferred siblings), note
-the adjacency reasoning anyway so the builder can stage it for when the
-sibling is built.
+Cover every sibling regardless of whether its value file exists yet; the
+builder uses your output to populate the Adjacency section, which must
+reference all non-self registry entries.
 
 ## Rules
 

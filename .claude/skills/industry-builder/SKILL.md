@@ -36,22 +36,25 @@ invoking it after flagging an axis gap.
 - Ask the user for any missing argument:
   - Target value (registry key, e.g. `generics`).
   - Mode: `create` (greenfield value file) or `refresh` (re-research existing file).
-- Run `python scripts/axis_builder.py lookup industries <value>`. It returns the
-  registry state: `not-in-registry`, `file-deferred`, `registry-only`,
-  `file-backed`, plus the value-file path if any.
+- Run `python scripts/axis_builder.py list industries`. It returns
+  `{"entries": [{value, state, value_file_path}, ...]}` with every
+  registry entry. Each `state` is `file-backed`, `file-deferred`, or
+  `registry-only`; `value_file_path` is set for file-backed entries and
+  null otherwise. Do not parse the registry by hand; the script owns the
+  parser.
+- Find the target value's entry in `entries`. If absent, treat as
+  `not-in-registry`.
 - Validate mode against state:
   - `create` valid when state is `not-in-registry` or `file-deferred`.
   - `refresh` valid when state is `file-backed`.
   - `registry-only` (by-design entries like `eclinical`): refuse; this value is
     intentionally registry-only and no file should be built.
   - Any other mismatch: halt and ask.
-- Read `rules/industries/registry.md` and build the siblings list:
-  every non-self registry entry as `{value, state, path}` where `state` is
-  `file-backed`, `file-deferred`, or `registry-only` and `path` is the
-  absolute value-file path (file-backed entries only; null otherwise).
-  Carried through Phases 2, 4, and 5; computed once here. Consumers filter
-  by state: Phase 2 research passes all; Phase 4 reconciler passes only
-  file-backed (the other states have no file to read or edit).
+- Build the siblings list as every non-self entry from the `list` output,
+  preserving its `{value, state, value_file_path}` shape. Carried through
+  Phases 2, 4, and 5; computed once here. Consumers filter by state:
+  Phase 2 research passes all; Phase 4 reconciler passes only file-backed
+  (the other states have no file to read or edit).
 - Output: `{value, mode, state, value_file_path or null, siblings}`.
 
 ## Phase 2 - Research
@@ -156,12 +159,15 @@ invoking it after flagging an axis gap.
   Re-read the (now possibly mutated) value-file temp before dispatching the
   subagent so the subagent sees the auto-fixed text.
 
-  **Subagent half - judgment checks.** Dispatch `qc-industry-builder` with the
-  (post-script) drafted file, the sibling edits or change list, the
-  research findings, and (create mode) the sibling file paths plus the
-  registry entry text. The subagent returns
+  **Subagent half - judgment checks.** Dispatch `qc-industry-builder` with
+  the (post-script) drafted file, the research findings, the file-backed
+  sibling file paths (for the D1 cross-sibling-content check, which runs
+  in both modes), and (create mode only) the sibling edits plus the
+  registry entry text. The reconciler's refresh change list is not
+  passed - no judgment check uses it; it is the script's I3 input only.
+  The subagent returns
   `{"findings": [{"check": "...", "detail": "..."}]}` covering only the
-  judgment-owned checks (C1-C3, D1-D2, E3, F1, G2, H2).
+  judgment-owned checks (C1-C3, D1-D2, E3, F1, G2, H1, H2).
 
 - Aggregate failures from both halves:
   - Script half: any `passed: false` from the script's `checks` array.
@@ -169,6 +175,7 @@ invoking it after flagging an axis gap.
 
 - For each aggregated failure, route to the phase that produced the
   failing artifact, then re-enter Phase 5 from the script half:
+  - **A4** (title exists but suffix wrong) -> Phase 3 redraft of the title line.
   - **B1, B3** (missing or extra sections) -> Phase 3 redraft.
   - **E1** (new file's Adjacency missing a sibling) -> Phase 3 redraft of
     the Adjacency section. The reconciler does not touch this section.
@@ -181,6 +188,7 @@ invoking it after flagging an axis gap.
   - **C1-C3, F1** (citation traceability, source authority) -> Phase 2
     re-research.
   - **D1, D2, H2** (cross-file boundaries, acronym list) -> Phase 3 redraft.
+  - **H1** (em dash in body prose) -> Phase 3 redraft of the offending sentence.
   - **E3** (sibling-voice phrasing) -> Phase 4 reconciler re-run.
 
 - Loop up to 3 iterations. After 3 iterations, accept the best draft as-is

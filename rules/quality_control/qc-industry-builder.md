@@ -55,10 +55,10 @@ subagent (judgment-only set), then aggregates both result lists.
 - **A4** *(script)*: A top-level title line is present and ends with
   `- CV Framing Rules` (case-insensitive on the suffix). The display form
   of the value (e.g. CRO vs Cro) is the drafter's responsibility; the
-  script does not enforce capitalization, since most casing decisions are
-  judgment calls (initialisms, acronyms, brand forms).
-  - Fix on fail: insert a default title when missing; report (no auto-fix)
-    when the title exists but lacks the suffix.
+  script neither enforces nor seeds capitalization, since most casing
+  decisions are judgment calls (initialisms, acronyms, brand forms).
+  - Fix on fail: report; Phase 5 routes the failure to Phase 3 for the
+    drafter to write or correct the title line.
 - **A5** *(script)*: `**Used by:** <consumers>` header present on the
   line immediately under the title (after a blank line).
   - Fix on fail: insert the standard header listing `cv_targeted,
@@ -151,6 +151,13 @@ subagent (judgment-only set), then aggregates both result lists.
 
 ### H - Voice and style
 
+- **H1** *(subagent)*: Em dashes do not appear in body prose. Frontmatter
+  fences (`---`) and structural separators are exempt. On finding an em
+  dash in body text, the check fails with the offending sentence quoted;
+  the fix is to **rewrite the sentence** so it reads naturally without
+  the em dash (period, semicolon, conjunction, or restructure). The check
+  does not delete characters or sub-clauses.
+  - Fix on fail: re-enter Phase 3 to redraft the offending sentence.
 - **H2** *(subagent)*: Where the file defines an acronym list under
   `## Dialect`, acronyms used in the body but not in the list are added to
   the list; acronyms listed but unused in the body are removed.
