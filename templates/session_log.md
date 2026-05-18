@@ -39,7 +39,7 @@ All other fields are populated at `init`.
   user-confirmed in Phase 2. Distinct from the Level-axis value recorded in the
   axis classification section.
 - **{{industry}}** - the role's industry, inferred from the JD and user-confirmed
-  in Phase 2; consumed by `industry_research` in Phase 4.
+  in Phase 2; consumed by `industry-research` in Phase 4.
 - **{{jd_file}}** / **{{comms_file}}** - filenames within the application folder.
   `jd.md` always present after Phase 3; `comms.md` present only when role
   communications were ingested.
@@ -48,5 +48,5 @@ All other fields are populated at `init`.
 - **Dates** - `YYYY-MM-DD`. `{{start_date}}` is set at creation;
   `{{research_completed_date}}` is `_(pending)_` until finalization.
 - **{{axis_classification}}** / **{{axis_gaps}}** - `_(pending)_` markers at `init`;
-  replaced at `finalize` with the `axis_classifier` subagent's output, which carries
+  replaced at `finalize` with the `axis-classifier` subagent's output, which carries
   the `## Axis Classification` and `## Axis Gaps` headings and the per-axis lines.

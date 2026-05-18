@@ -11,7 +11,7 @@ sections; it does not accumulate a history of everything ever found.
 
 `scripts/assemble.py` renders the skeleton below: tokens in `{{double braces}}` are
 substituted. The `{{*_block}}` tokens are filled with the verbatim output of the
-`company_research`, `role_research`, and `industry_research` subagents - each block
+`company-research`, `role-research`, and `industry-research` subagents - each block
 carries its own `## Company` / `## Role` / `## Industry` heading and a
 Summary / Key facts / Sources body.
 

@@ -81,8 +81,8 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Purpose**: Understand a job opportunity — ingest a JD, research company/role/industry, classify against the five axes, and produce a session log plus a research file for downstream gap analysis.
 - **Status**: Designed
 - **Inputs**:
-  - Rules: `rules/global-rules.md`. (Axis registries and value files are read by `axis_classifier`, not by the skill directly.)
-  - Agents: `company_research`, `role_research`, `industry_research`, `axis_classifier`, `qc_role_intake`.
+  - Rules: `rules/global-rules.md`. (Axis registries and value files are read by `axis-classifier`, not by the skill directly.)
+  - Agents: `company-research`, `role-research`, `industry-research`, `axis-classifier`, `qc-role-intake`.
   - Scripts: `scripts/display/introduce.py`, `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/assemble.py`.
   - Templates: `templates/session_log.md`, `templates/research_file.md`.
   - User input: job description (paste / file / URL), role communications (optional), company slug, metadata confirmations (title/company/level/industry) at Phase 2.
@@ -105,7 +105,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 ### Roster
 
 **Built** (detailed entries below):
-- company_research, role_research, industry_research, axis_classifier, qc_role_intake
+- company-research, role-research, industry-research, axis-classifier, qc-role-intake
 
 **Planned** (from `design/design_decisions.md`):
 - specialty_research, orientation_research, level_research, work_state_research (axis-builder research agents)
@@ -114,43 +114,43 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 ### Detailed Entries
 
-#### company_research
+#### company-research
 
 - **Purpose**: Research a hiring company — what it is, scale, ownership/funding stage, recent strategic shifts — scoped to what role-intake needs to classify and contextualize a job.
 - **Status**: Designed
 - **Inputs**: Skill-passed (by `role-intake`): company name, role title, JD text. Tools: WebSearch, WebFetch.
 - **Outputs**: Structured findings block (`## Company` — Summary / Key facts / Sources) returned to the caller.
-- **Triggers**: Invoked by `role-intake` Phase 4, in parallel with `role_research` and `industry_research`.
+- **Triggers**: Invoked by `role-intake` Phase 4, in parallel with `role-research` and `industry-research`.
 - **Update Triggers**: When the work-state or industry axis definitions change (the classifications it supports).
 
-#### role_research
+#### role-research
 
 - **Purpose**: Research what a job title/role typically means in its sector — scope, responsibilities, seniority calibration, common variants — scoped to decision-supporting facts.
 - **Status**: Designed
 - **Inputs**: Skill-passed (by `role-intake`): role title, company name, JD text. Tools: WebSearch, WebFetch.
 - **Outputs**: Structured findings block (`## Role` — Summary / Key facts / Sources) returned to the caller.
-- **Triggers**: Invoked by `role-intake` Phase 4, in parallel with `company_research` and `industry_research`.
+- **Triggers**: Invoked by `role-intake` Phase 4, in parallel with `company-research` and `industry-research`.
 - **Update Triggers**: When the level, orientation, or specialty axis definitions change.
 
-#### industry_research
+#### industry-research
 
 - **Purpose**: Research an industry at a high level — what it is, key trends and dynamics — scoped to decision-supporting context, deliberately shallow.
 - **Status**: Designed
 - **Inputs**: Skill-passed (by `role-intake`): role industry, company name, JD text. Tools: WebSearch, WebFetch.
 - **Outputs**: Structured findings block (`## Industry` — Summary / Key facts / Sources) returned to the caller.
-- **Triggers**: Invoked by `role-intake` Phase 4, in parallel with `company_research` and `role_research`.
+- **Triggers**: Invoked by `role-intake` Phase 4, in parallel with `company-research` and `role-research`.
 - **Update Triggers**: When the industry axis registry or value files change.
 
-#### axis_classifier
+#### axis-classifier
 
-- **Purpose**: Classify a job against the five axes (orientation, industry, specialty, level, work-state), registry-first, confirming each pick against the value file and flagging an axis gap where no registry value confirms. Keeps axis files out of the main session context.
+- **Purpose**: Classify a job against the five axes (orientation, industry, specialty, level, work-state), registry-first, confirming each pick against the value file (or the registry one-line where the file is registry-only or deferred); flag an axis gap where no value confirms or a matched value's file is not yet authored. Keeps axis files out of the main session context.
 - **Status**: Designed
 - **Inputs**: Skill-passed (by `role-intake`): JD text, research findings. Rules: the five axis registries (`rules/<axis>/registry.md`) and the candidate value files only. Tools: Read.
 - **Outputs**: The five-axis classification (primary/secondary per axis) + a list of axis gaps, returned to the caller.
 - **Triggers**: Invoked by `role-intake` Phase 6.
 - **Update Triggers**: When an axis registry or its value files change; when the five-axis model changes.
 
-#### qc_role_intake
+#### qc-role-intake
 
 - **Purpose**: Quality-check the role-intake artifacts (session log + research file) for completeness, internal consistency, and global-rules adherence; return findings tagged with route-back phases.
 - **Status**: Designed

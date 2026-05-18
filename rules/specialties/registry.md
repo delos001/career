@@ -4,7 +4,7 @@ last_researched: 2026-05
 
 # Specialty Registry
 
-**Used by:** cv_targeted, axis_classifier, inventory, narratives
+**Used by:** cv_targeted, axis-classifier, inventory, narratives
 
 Specialty values for axis validation per `experience-inventory-domain-scoping`. Per-value framing rules in same-folder files. Tagging by work nature per `specialty-axis-tagging-by-work-nature` (an entry tags every specialty whose work was meaningfully present, regardless of role title).
 

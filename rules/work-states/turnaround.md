@@ -5,7 +5,7 @@ last_researched: 2026-04
 
 # Turnaround - CV Framing Rules
 
-**Used by:** cv_targeted, axis_classifier
+**Used by:** cv_targeted, axis-classifier
 
 ## Identity
 

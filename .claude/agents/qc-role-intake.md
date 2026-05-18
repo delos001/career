@@ -1,5 +1,5 @@
 ---
-name: qc_role_intake
+name: qc-role-intake
 description: Quality-checks the two artifacts produced by the role-intake skill - the session log and the research file - for completeness, internal consistency, and global-rules adherence. Returns structured findings, each tagged with the phase to route back to. Read-only.
 tools: Read, Grep
 ---

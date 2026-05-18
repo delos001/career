@@ -4,7 +4,7 @@ last_researched: 2026-04
 
 # Industry Registry
 
-**Used by:** cv_targeted, axis_classifier, inventory, narratives
+**Used by:** cv_targeted, axis-classifier, inventory, narratives
 
 Industry values for axis validation. Per-value framing rules in same-folder files where present.
 

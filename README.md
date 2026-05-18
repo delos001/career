@@ -14,11 +14,11 @@ career/
 │   ├── skills/                                    # Pattern A, auto-discovered. Kebab folder names.
 │   │   └── role-intake/SKILL.md                   # first skill built; more planned (see COMPONENTS.md)
 │   ├── agents/                                    # flat; more added as skills are built
-│   │   ├── company_research.md
-│   │   ├── role_research.md
-│   │   ├── industry_research.md
-│   │   ├── axis_classifier.md
-│   │   └── qc_role_intake.md
+│   │   ├── company-research.md
+│   │   ├── role-research.md
+│   │   ├── industry-research.md
+│   │   ├── axis-classifier.md
+│   │   └── qc-role-intake.md
 │   └── settings.local.json
 ├── config.yaml                                    # repo-structure constants read by the scripts
 ├── rules/

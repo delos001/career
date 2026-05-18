@@ -11,7 +11,7 @@ tool instead of by hand. Three subcommands, one per write point in the skill:
   research  Phase 5 - write (or, on a re-run, refresh) research.md from the three
             research subagents' output blocks.
   finalize  Phase 7 - complete the session log: fill the research-completed date
-            and replace the pending axis sections with the axis_classifier output.
+            and replace the pending axis sections with the axis-classifier output.
 
 Nothing repo-dependent is hardcoded here. Folder locations, filenames, and naming
 patterns come from config.yaml (via _config); the artifact structures come from
@@ -223,7 +223,7 @@ def cmd_research(args, repo_root, cfg):
 # ---------------------------------------------------------------------------
 # Subcommand: finalize  (role-intake Phase 7)
 # Completes the session log: fills the research-completed date and replaces the
-# pending axis sections with the axis_classifier subagent's output.
+# pending axis sections with the axis-classifier subagent's output.
 # ---------------------------------------------------------------------------
 
 def cmd_finalize(args, repo_root, cfg):

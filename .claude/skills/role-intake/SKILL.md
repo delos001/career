@@ -93,9 +93,9 @@ Ask: new role or resume?
 **Researching the company, role, and industry in parallel.**
 
 - Input: JD text, company, role, role industry (per Phase 2 confirmation).
-- Dispatch three subagents **in parallel** - `company_research`,
-  `role_research`, `industry_research` - giving each the JD text, company, role,
-  and (for `industry_research`) the role industry.
+- Dispatch three subagents **in parallel** - `company-research`,
+  `role-research`, `industry-research` - giving each the JD text, company, role,
+  and (for `industry-research`) the role industry.
 - Each returns a fixed block (`## Company` / `## Role` / `## Industry`, with
   Summary / Key facts / Sources). Scoped to what this skill needs to classify
   and characterize - not exhaustive dossiers.
@@ -117,7 +117,7 @@ Ask: new role or resume?
 **Classifying the role against the five axes.**
 
 - Input: JD text, research findings.
-- Dispatch `axis_classifier` with the JD text and the research findings. It
+- Dispatch `axis-classifier` with the JD text and the research findings. It
   works registry-first per axis: read the registry, pick candidate value(s),
   read only the candidate value files, confirm each pick. Where no registry
   value confirms, flag an axis gap (not blocked, not routed to a builder).
@@ -127,8 +127,8 @@ Ask: new role or resume?
 
 **Finalizing the session log with the classification results.**
 
-- Input: session log path, `axis_classifier` output, research-completed date.
-- Write the `axis_classifier` output to a temp file. Run
+- Input: session log path, `axis-classifier` output, research-completed date.
+- Write the `axis-classifier` output to a temp file. Run
   `python scripts/assemble.py finalize` with the session log path, the date,
   and the temp file. It fills the date and replaces the pending axis sections.
 - Output: session log complete.
@@ -138,7 +138,7 @@ Ask: new role or resume?
 **Running QC on the session log and research file.**
 
 - Input: session log path, research file path, brief activity record.
-- Dispatch `qc_role_intake`. **Loops on FINDINGS:** present findings, route back
+- Dispatch `qc-role-intake`. **Loops on FINDINGS:** present findings, route back
   per *Phase routing on failure*, re-run forward, return to Phase 8. Exit on
   **PASS** only.
 - Output: PASS verdict.

@@ -1,5 +1,5 @@
 ---
-name: role_research
+name: role-research
 description: Researches what a job title/role typically means in its sector for the role-intake skill - scope, responsibilities, seniority calibration, common variants. Scoped to decision-supporting facts. Returns a fixed summary / key facts / sources structure.
 tools: WebSearch, WebFetch
 ---

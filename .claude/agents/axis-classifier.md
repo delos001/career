@@ -1,5 +1,5 @@
 ---
-name: axis_classifier
+name: axis-classifier
 description: Classifies a job against the five axes (orientation, industry, specialty, level, work-state) for the role-intake skill. Registry-first - reads each axis registry, picks candidates, reads only the candidate value files, and confirms each pick before recording it. Flags an axis gap where no registry value confirms. Read-only.
 tools: Read
 ---
@@ -30,13 +30,24 @@ For each of the five axes:
 2. **Pick candidate value(s)** from the one-line identities, using the JD and the
    research. Pick a primary; pick a secondary as well only where the job
    legitimately spans two values on that axis (e.g. a dual orientation).
-3. **Read the candidate value file(s)** - only those, never the whole folder.
-4. **Confirm.** Check each candidate's value file (its Identity and any
-   selection / exclusion criteria) against the JD and research. Does the file's
-   content actually confirm the match?
+3. **Branch on the registry one-line for each candidate.** The line declares
+   one of three dispositions; act accordingly:
+   - **`File: <name>.md.`** → read that value file (only that one, never the
+     whole folder); proceed to step 4.
+   - **`Registry-only`** (value valid; no file by design) → confirm against the
+     registry one-line alone. If it matches the JD/research, record the value.
+     If not, return to step 2 and pick a different candidate. Skip step 4.
+   - **`File deferred`** (value valid; file not yet authored) → confirm against
+     the registry one-line. If it matches, record the value AND record an axis
+     gap: `<axis>: '<name>' matched but value file not yet authored - framing
+     rules missing`. If it does not match, return to step 2. Skip step 4.
+4. **Confirm (file-having candidates only).** Check the candidate's value file
+   (its Identity and any selection / exclusion criteria) against the JD and
+   research. Does the file's content actually confirm the match?
    - **Confirmed** → record it (primary, and secondary if applicable).
    - **Not confirmed** → return to step 2, pick a different candidate, and repeat.
-   - **No registry value confirms** → record an axis gap: name the axis and
+   - **No registry value confirms** (all candidates exhausted across step 3 and
+     step 4 with no confirmation) → record an axis gap: name the axis and
      describe, in one line, what the job needs that no existing value covers. Do
      not block and do not invent a value - just flag it.
 
@@ -62,6 +73,6 @@ Return exactly this structure:
 - Work-state: <value>
 
 ## Axis Gaps
-- <axis>: <what the job needs that no registry value covers>
+- <axis>: <one-line description (no value covers, or value matched but file not authored)>
 (or: None)
 ```

@@ -1,5 +1,5 @@
 ---
-name: industry_research
+name: industry-research
 description: Researches an industry at a high level for the role-intake skill - what the industry is, its key trends and dynamics. Scoped to decision-supporting context, deliberately shallow. Returns a fixed summary / key facts / sources structure.
 tools: WebSearch, WebFetch
 ---

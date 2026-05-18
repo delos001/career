@@ -697,9 +697,9 @@ Refs: `builder-refresh-mechanics` (deferral).
 
 #### research-sub-agents-roster
 Seven sub-agents in `.claude/agents/`:
-- `role_research` (used by role_evaluation)
+- `role-research` (used by role_evaluation)
 - `organization_research` (used by interview_prep)
-- `industry_research` (used by industry_builder)
+- `industry-research` (used by industry_builder)
 - `specialty_research` (used by specialty_builder)
 - `orientation_research` (used by orientation_builder)
 - `level_research` (used by level_builder)
@@ -934,14 +934,14 @@ The first skill. Ingests a job description, researches it, classifies it against
 #### role-intake-architecture
 Plain Claude Code skill: `career/.claude/skills/role-intake/SKILL.md` orchestrates ten separable phases (0-9), each with an explicit input/output contract so a LangGraph orchestrator could wrap the system later without rewriting work units. No LangGraph now. Deterministic work in scripts, web research and QC in subagents, to keep the main session context light.
 - Scripts: `scripts/ingest/jd_extract.py` (JD/comms → text), `scripts/app_id.py` (next global APP-NNN), `scripts/display/introduce.py` + `introductions.yaml` (phase-0 user guidance), `scripts/assemble.py` (deterministic artifact writing; see role-intake-artifacts).
-- Subagents: `company_research`, `role_research`, `industry_research` (Phase 4, parallel), `qc_role_intake` (Phase 8).
+- Subagents: `company-research`, `role-research`, `industry-research` (Phase 4, parallel), `qc-role-intake` (Phase 8).
 Resolves deferrals: `application-id-script-implementation`, `introduce-py-implementation`.
 
 #### role-intake-research-scope
 Research is three parallel subagents (company / role / industry), each in isolated context returning a fixed `Summary / Key facts / Sources` block. Scoped to only the information that supports the skill's own decisions (title/company/level confirmation, axis classification, first-pass context) — not exhaustive dossiers. Subagents return structured markdown to the caller; the caller owns persistence. Resolves deferral: `research-output-location-and-format`.
 
 #### role-intake-axis-classification
-Phase 6 dispatches the `axis_classifier` subagent, which classifies the job against the five axes (primary + secondary where applicable) in isolated context — keeping axis files out of the main session, consistent with research and QC. It is registry-first for every axis: read the axis registry, pick candidate value(s) from the one-line identities, read only the candidate value file(s), then confirm each pick against the value file's Identity / selection criteria before recording it. A pick that does not confirm is re-picked; if no registry value confirms, an axis gap is flagged (recorded in both artifacts, not blocked, not routed to the unbuilt builder skills). Three registries were created so this is consistent across all five axes — `rules/orientations/registry.md`, `rules/levels/registry.md`, `rules/work-states/registry.md` — matching the pre-existing `rules/industries/registry.md` and `rules/specialties/registry.md`.
+Phase 6 dispatches the `axis-classifier` subagent, which classifies the job against the five axes (primary + secondary where applicable) in isolated context — keeping axis files out of the main session, consistent with research and QC. It is registry-first for every axis: read the axis registry, pick candidate value(s) from the one-line identities, read only the candidate value file(s), then confirm each pick against the value file's Identity / selection criteria before recording it. A pick that does not confirm is re-picked; if no registry value confirms, an axis gap is flagged (recorded in both artifacts, not blocked, not routed to the unbuilt builder skills). Three registries were created so this is consistent across all five axes — `rules/orientations/registry.md`, `rules/levels/registry.md`, `rules/work-states/registry.md` — matching the pre-existing `rules/industries/registry.md` and `rules/specialties/registry.md`.
 
 #### role-intake-artifacts
 - Session log → `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`: Metadata (APP-NNN, company, role, role level, session-start + research-completed dates), Axis Classification, Axis Gaps.
@@ -963,7 +963,7 @@ On re-invocation the user is asked new or resume, then supplies the APP-NNN. The
 3. Axis classification section still `_(pending)_` in the session log → Phase 6.
 4. All filled → Phase 8 (re-QC).
 
-One-line announce, auto-proceed, no interactive confirm. The probe relies on Phase 3 atomicity (folder + `jd.md` + session log written together per `role-intake-jd-persistence-2026-05`). Phase 6 → Phase 7 split deliberately not introduced — re-running axis_classifier is a cheap recovery from interruption in that narrow window, and avoids splitting `assemble.py finalize`.
+One-line announce, auto-proceed, no interactive confirm. The probe relies on Phase 3 atomicity (folder + `jd.md` + session log written together per `role-intake-jd-persistence-2026-05`). Phase 6 → Phase 7 split deliberately not introduced — re-running axis-classifier is a cheap recovery from interruption in that narrow window, and avoids splitting `assemble.py finalize`.
 Supersedes resume rule in `role-intake-control-flow`.
 Refs: `role-intake-jd-persistence-2026-05`.
 
@@ -979,7 +979,7 @@ Confirm role metadata:
 Reply with corrections or "confirmed".
 ```
 
-Universal gate — every value, not just conflicts. Reason: extraction can be wrong silently (multi-title JDs, ambiguous parent-vs-subsidiary names) and Phase 3 persists the values; better to confirm before persistence. Industry is confirmed here so Phase 4 `industry_research` runs against a user-approved target — a wrong industry inference wastes a parallel research pass.
+Universal gate — every value, not just conflicts. Reason: extraction can be wrong silently (multi-title JDs, ambiguous parent-vs-subsidiary names) and Phase 3 persists the values; better to confirm before persistence. Industry is confirmed here so Phase 4 `industry-research` runs against a user-approved target — a wrong industry inference wastes a parallel research pass.
 
 #### role-intake-jd-persistence-2026-05
 Phase 3 writes the JD into the application folder as `jd.md`. If the user supplied role communications in Phase 1, those are written as `comms.md`. Both files plus the initial session log are written atomically by `scripts/assemble.py init` — when the folder exists, all three exist.

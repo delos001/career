@@ -1,5 +1,5 @@
 ---
-name: company_research
+name: company-research
 description: Researches a hiring company for the role-intake skill - what it is, its scale, ownership/funding stage, and recent leadership / M&A / strategic shifts that bear on a job's context. Scoped to decision-supporting facts, not an exhaustive dossier. Returns a fixed summary / key facts / sources structure.
 tools: WebSearch, WebFetch
 ---

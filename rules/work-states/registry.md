@@ -4,7 +4,7 @@ last_researched: 2026-04
 
 # Work-state Registry
 
-**Used by:** cv_targeted, axis_classifier, inventory, narratives
+**Used by:** cv_targeted, axis-classifier, inventory, narratives
 
 Work-state values for axis classification and validation. Per-value framing rules in the same-folder files.
 
