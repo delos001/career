@@ -5,10 +5,6 @@ description: Build or refresh an industry value file in rules/industries/. Resea
 
 # industry-builder - build or refresh an industries axis value file
 
-Builds (or refreshes) a value file in `rules/industries/` per the per-axis schema:
-frontmatter (`industry: <value>`, `last_researched: YYYY-MM`), `Used by:` header,
-and the four sections Vocabulary, Dialect, Emphasis, Adjacency.
-
 User-invoked. Not called from role-intake; role-intake's Phase 6 may recommend
 invoking it after flagging an axis gap.
 
@@ -51,10 +47,7 @@ invoking it after flagging an axis gap.
     intentionally registry-only and no file should be built.
   - Any other mismatch: halt and ask.
 - Build the siblings list as every non-self entry from the `list` output,
-  preserving its `{value, state, value_file_path}` shape. Carried through
-  Phases 2, 4, and 5; computed once here. Consumers filter by state:
-  Phase 2 research passes all; Phase 4 reconciler passes only file-backed
-  (the other states have no file to read or edit).
+  preserving its `{value, state, value_file_path}` shape.
 - Output: `{value, mode, state, value_file_path or null, siblings}`.
 
 ## Phase 2 - Research
@@ -70,11 +63,9 @@ invoking it after flagging an axis gap.
     the value names. The agent researches adjacency considerations for
     each; file-deferred and registry-only siblings are included so the
     drafter has source material for the Adjacency bullets E1 requires.
-- The agent returns a fixed block scoped to what this skill needs to draft
-  the four sections: regulatory landscape, terminology and acronyms,
-  hiring-panel emphasis signals, and adjacency considerations vs. sibling
-  industries.
-- Output: research findings block.
+- Output: research findings block per the agent's return schema
+  (regulatory landscape, terminology and acronyms, hiring-panel emphasis,
+  adjacency considerations per sibling).
 
 ## Phase 3 - Draft value file (and registry entry, create mode)
 
@@ -152,11 +143,9 @@ invoking it after flagging an axis gap.
     [--changes <temp>]         # refresh mode
   ```
 
-  The script auto-fixes script-owned issues in place (frontmatter keys, title
-  line, `Used by:` header, section order, Adjacency self-reference) and
-  prints a JSON report:
+  The script auto-fixes script-owned issues in place and prints
   `{"checks": [{"id": "...", "passed": bool, "fixed": bool, "detail": "..."}]}`.
-  Re-read the (now possibly mutated) value-file temp before dispatching the
+  Re-read the (possibly mutated) value-file temp before dispatching the
   subagent so the subagent sees the auto-fixed text.
 
   **Subagent half - judgment checks.** Dispatch `qc-industry-builder` with
@@ -220,15 +209,15 @@ invoking it after flagging an axis gap.
     [--provisional --issues <temp>]
   ```
 
-  The script writes the value file, applies sibling Adjacency edits, replaces
-  the registry entry, and (if `--provisional`) adds `provisional: true` plus
-  the unresolved-issues list to the value file's frontmatter and appends a
-  record to `design/build_issues.md`.
+  Side effects: value file written, sibling Adjacency sections edited,
+  registry entry replaced. With `--provisional`, the value-file frontmatter
+  is marked and `design/build_issues.md` is appended.
 
 ### Refresh path
 
-- The post-QC drafted file (the `--value-file` temp from Phase 5, with any
-  script auto-fixes already applied in place) is the source of truth. Run:
+- The post-QC `--value-file` temp (with script auto-fixes already in it) is
+  the source of truth; the reconciler's change list is informational, not
+  the apply mechanism, so Phase 5 auto-fixes always carry through. Run:
 
   ```
   python scripts/axis_builder.py apply-refresh industries <value> \
@@ -236,11 +225,9 @@ invoking it after flagging an axis gap.
     [--provisional --issues <temp>]
   ```
 
-  The script overwrites `rules/industries/<value>.md` with the drafted text,
-  bumps `last_researched`, and (if `--provisional`) marks the file and logs
-  to `design/build_issues.md`. The reconciler's change list from Phase 4 is
-  informational (used by QC's I3 check to detect a no-op refresh); it is
-  not the apply mechanism, so Phase 5 auto-fixes always carry through.
+  Side effects: `rules/industries/<value>.md` overwritten, `last_researched`
+  bumped. With `--provisional`, the file is marked and
+  `design/build_issues.md` is appended.
 
 - Output: paths printed by the script.
 
