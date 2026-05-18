@@ -76,6 +76,25 @@ def _load_json(path):
         return json.load(f)
 
 
+def _unwrap_list(parsed, key):
+    """Return the inner list regardless of which contract shape the caller used.
+
+    The reconciler subagent emits self-describing objects
+    ({'mode': 'create', 'sibling_edits': [...]} or
+    {'mode': 'refresh', 'changes': [...]}); legacy callers and tests pass the
+    bare list. Both shapes are accepted so a contract mismatch between the
+    agent and the script cannot surface as a Python traceback in front of
+    the end user (see deferral 'builder-contract-drift-guardrails').
+    """
+    if isinstance(parsed, dict) and isinstance(parsed.get(key), list):
+        return parsed[key]
+    if isinstance(parsed, list):
+        return parsed
+    raise ValueError(
+        f'expected a JSON list or {{"{key}": [...]}}; got {type(parsed).__name__}'
+    )
+
+
 def _axis_dir(repo_root, cfg, axis):
     """Return the absolute path to rules/<axis>/."""
     return os.path.join(repo_root, cfg['paths']['rules'], axis)
@@ -389,6 +408,38 @@ def cmd_list(args, repo_root, cfg):
             'value_file_path': value_file_path,
         })
     print(json.dumps({'entries': entries}))
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: slice
+# Return the body of a named '## Section' from a file-backed axis value file.
+# Used by the industry-builder skill's Phase 4 to give the reconciler subagent
+# just the Adjacency section content of each sibling, rather than the full
+# file. Keeps the reconciler's context cost bounded regardless of how many
+# siblings an axis registry contains.
+# ---------------------------------------------------------------------------
+
+def cmd_slice(args, repo_root, cfg):
+    """Print the body text of '## <section>' from a file-backed value's file.
+
+    Requires the value to be file-backed (otherwise there is no file to
+    slice). Output is the raw section body on stdout, no JSON wrapper, so
+    the caller can splice it directly into a subagent prompt.
+    """
+    registry_path = _registry_path(repo_root, cfg, args.axis)
+    if not os.path.exists(registry_path):
+        raise FileNotFoundError(f'registry not found: {registry_path}')
+    text = _read(registry_path)
+    _, state, value_filename = _find_registry_entry(text, args.value)
+    if state != 'file-backed' or not value_filename:
+        raise ValueError(
+            f'slice requires a file-backed value; {args.value} is {state}')
+    value_path = _value_file_path(repo_root, cfg, args.axis, value_filename)
+    if not os.path.exists(value_path):
+        raise FileNotFoundError(f'value file missing: {value_path}')
+    body = _read(value_path)
+    start, end = _find_section_bounds(body, args.section)
+    sys.stdout.write(body[start:end])
 
 
 # ---------------------------------------------------------------------------
@@ -795,7 +846,7 @@ def cmd_qc(args, repo_root, cfg):
                 'create mode requires --sibling-edits; '
                 'refusing to skip the sibling-edits-target check silently'
             )
-        sibling_edits = _load_json(args.sibling_edits)
+        sibling_edits = _unwrap_list(_load_json(args.sibling_edits), 'sibling_edits')
         checks.append(_check_e4_sibling_edits_targeting(sibling_edits))
         if not args.registry_entry:
             raise ValueError(
@@ -814,7 +865,7 @@ def cmd_qc(args, repo_root, cfg):
                 'refresh mode requires --changes (the reconciler change list); '
                 'refusing to skip the no-op-refresh check silently'
             )
-        changes = _load_json(args.changes)
+        changes = _unwrap_list(_load_json(args.changes), 'changes')
         checks.append(_check_i3_refresh_has_changes(changes))
 
     # --- Persist the (possibly fixed) value-file text and emit the report ---
@@ -831,7 +882,10 @@ def cmd_qc(args, repo_root, cfg):
 #   --value-file       full Markdown text of the new value file.
 #   --sibling-edits    JSON list of {"sibling_file": "<name>.md",
 #                                    "section": "Adjacency",
-#                                    "bullet": "- **<value>**: <translation>."}
+#                                    "bullet": "- **<value>**: <translation>."},
+#                      OR the reconciler's self-describing wrapper
+#                      {"mode": "create", "sibling_edits": [...]}.
+#                      Either is accepted (see _unwrap_list).
 #   --registry-entry   one-line Markdown bullet for the registry entry, e.g.
 #                      "- **generics** - generic and 505(b)(2) ... File: generics.md."
 #   --issues           JSON list of {"check": "...", "detail": "...",
@@ -876,7 +930,7 @@ def cmd_apply_create(args, repo_root, cfg):
 
     # --- Read all inputs upfront ---
     value_text = _read(args.value_file)
-    sibling_edits = _load_json(args.sibling_edits)
+    sibling_edits = _unwrap_list(_load_json(args.sibling_edits), 'sibling_edits')
     registry_entry_line = _read(args.registry_entry).strip()
     issues = _load_json(args.issues) if args.provisional else None
 
@@ -1059,6 +1113,19 @@ def main():
     p_list = sub.add_parser('list', help='Phase 1: list every registry entry for an axis')
     p_list.add_argument('axis', help='axis folder name under rules/ (e.g. industries)')
     p_list.set_defaults(func=cmd_list)
+
+    # --- Subparser: slice ---
+    p_slice = sub.add_parser(
+        'slice',
+        help='Phase 4: print the body of one section from a file-backed value file',
+    )
+    p_slice.add_argument('axis', help='axis folder name under rules/ (e.g. industries)')
+    p_slice.add_argument('value', help='registry key of the file-backed value to slice')
+    p_slice.add_argument(
+        '--section', required=True,
+        help='heading (without ## prefix) of the section to extract, e.g. Adjacency',
+    )
+    p_slice.set_defaults(func=cmd_slice)
 
     # --- Subparser: qc ---
     p_qc = sub.add_parser('qc', help='Phase 5: run mechanical QC + auto-fix on the drafted value file')

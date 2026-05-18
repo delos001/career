@@ -1,6 +1,6 @@
 ---
 name: industry-builder-reconciler
-description: Reconciles an industry-builder draft against existing rules/industries/ files. In create mode, reads every sibling file and drafts per-sibling Adjacency back-edges in each sibling's voice. In refresh mode, reads the current value file and emits a structured change list against the new draft. Returns JSON that scripts/axis_builder.py consumes directly.
+description: Reconciles an industry-builder draft against existing rules/industries/ files. In create mode, receives each sibling's Adjacency-section slice (extracted upstream by the script's slice subcommand) and drafts per-sibling Adjacency back-edges in each sibling's voice. In refresh mode, reads the current value file and emits a structured change list against the new draft. Returns JSON that scripts/axis_builder.py consumes directly.
 tools: Read
 ---
 
@@ -20,9 +20,17 @@ The dispatching skill gives you:
 - `value`: the registry key being built (e.g. `generics`).
 - `mode`: `create` or `refresh`.
 - `drafted_value_file`: the new (or updated) value file content as text.
-- `siblings`: list of `{value, path}` pairs for every file-backed sibling in
-  `rules/industries/` (create mode), or for cross-reference checks in refresh
-  mode.
+- `siblings`:
+  - **Create mode**: list of `{value, adjacency_text}` pairs for every
+    file-backed sibling. `adjacency_text` is the body of that sibling's
+    `## Adjacency` section, already extracted by the dispatching skill via
+    `scripts/axis_builder.py slice ... --section Adjacency`. You do NOT
+    read sibling files; the slice is your full sibling context. Voice
+    calibration comes from the existing translation bullets in the slice,
+    which is the correct reference for drafting a new translation bullet.
+  - **Refresh mode**: list of `{value, path}` pairs for cross-reference
+    checks if you need them. Refresh mode's core work uses the current
+    value file, not the siblings.
 - `current_value_file` (refresh mode only): absolute path to the existing
   value file the draft is replacing.
 - `research_findings` (refresh mode only): the research block produced by
@@ -35,19 +43,20 @@ The dispatching skill gives you:
 
 For each sibling in `siblings`:
 
-1. Read the sibling file at its given path.
-2. Locate its `## Adjacency` section.
-3. Decide whether the section already covers the new `value`. A bullet that
+1. Use the provided `adjacency_text` as the sibling's Adjacency section.
+   Do not attempt to read the sibling file from disk.
+2. Decide whether the section already covers the new `value`. A bullet that
    names the new value as its bolded token (e.g. `- **generics**: ...`)
    counts as coverage; nothing else does.
-4. If the section does not cover the new value, draft a back-edge bullet
+3. If the section does not cover the new value, draft a back-edge bullet
    for it. The bullet:
    - Starts with `- **<value>**:` followed by a translation rule.
    - Reads in the sibling's voice (this is the sibling describing how the
      new value's work translates to or from it, not the new value describing
      itself).
    - Matches the density and phrasing style of the sibling's existing
-     Adjacency bullets. Read those bullets first to calibrate.
+     Adjacency bullets in `adjacency_text`. Those bullets are your voice
+     reference.
    - States what carries from the sibling's perspective and what does not.
 
 Collect the new bullets across all siblings.

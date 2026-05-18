@@ -16,6 +16,12 @@ invoking it after flagging an axis gap.
   before running the phase.
 - Halt on any failure or ambiguity outside the QC auto-fix loop; never proceed
   on partial content; never fabricate.
+- User-facing status uses plain English. No internal check IDs (A1, B2, E4,
+  G1, H2, etc.), no implementation jargon (subagent, iteration, script half,
+  judgment half, JSON, regex). Translate every phase summary, loop status, and
+  error message to what the user needs to know to wait, decide, or act.
+  Reserve technical detail for explicit dev-triage contexts (the
+  `build_issues.md` log, deferral entries, this SKILL file).
 
 ## Phase 0 - Intro
 
@@ -28,10 +34,11 @@ invoking it after flagging an axis gap.
 
 **Resolving the target industry value and mode.**
 
-- Input: invocation arguments (may include `<value>` and/or `create`/`refresh`).
-- Ask the user for any missing argument:
-  - Target value (registry key, e.g. `generics`).
-  - Mode: `create` (greenfield value file) or `refresh` (re-research existing file).
+- Input: invocation arguments (may include `<value>`). Mode is NOT a
+  user-supplied argument; the registry state determines the only valid
+  mode. Ignore any `create`/`refresh` token the user may have passed.
+- Ask the user for the target value if it is not in the arguments. Do
+  not ask for mode.
 - Run `python scripts/axis_builder.py list industries`. It returns
   `{"entries": [{value, state, value_file_path}, ...]}` with every
   registry entry. Each `state` is `file-backed`, `file-deferred`, or
@@ -40,12 +47,19 @@ invoking it after flagging an axis gap.
   parser.
 - Find the target value's entry in `entries`. If absent, treat as
   `not-in-registry`.
-- Validate mode against state:
-  - `create` valid when state is `not-in-registry` or `file-deferred`.
-  - `refresh` valid when state is `file-backed`.
-  - `registry-only` (by-design entries like `eclinical`): refuse; this value is
-    intentionally registry-only and no file should be built.
-  - Any other mismatch: halt and ask.
+- Derive mode from state and ask the user a yes/no continuation. Do not
+  present a multiple-choice mode picker; for any given state only one
+  mode is valid.
+  - `not-in-registry` or `file-deferred` → mode is `create`. Tell the
+    user "No file exists yet for `<value>`. Want me to create one now?"
+    and wait for yes/no. If no, halt cleanly.
+  - `file-backed` → mode is `refresh`. Read the value file's
+    `last_researched` from its frontmatter and tell the user
+    "`<value>` already has a file (last researched `<YYYY-MM>`).
+    Refresh it?" and wait for yes/no. If no, halt cleanly.
+  - `registry-only` (by-design entries like `eclinical`) → refuse. Tell
+    the user "`<value>` is intentionally registry-only - no file should
+    be built. Stopping." Do not offer to create.
 - Build the siblings list as every non-self entry from the `list` output,
   preserving its `{value, state, value_file_path}` shape.
 - Output: `{value, mode, state, value_file_path or null, siblings}`.
@@ -95,23 +109,38 @@ invoking it after flagging an axis gap.
 
 - Input: drafted value file content, mode, siblings list (from Phase 1),
   value file path (refresh only), research findings (refresh only).
+- **Create mode pre-step (extract sibling Adjacency slices).** For each
+  file-backed sibling from Phase 1's siblings list, run:
+
+  ```
+  python scripts/axis_builder.py slice industries <sibling_value> \
+    --section Adjacency
+  ```
+
+  Capture the stdout as `adjacency_text` for that sibling. This gives the
+  reconciler the exact context it needs (existing translation bullets in
+  the sibling's voice) without dumping full sibling files into its context
+  window. Bounded cost regardless of how many siblings the axis has.
 - Dispatch the `industry-builder-reconciler` subagent with the inputs it
   declares in `.claude/agents/industry-builder-reconciler.md`:
   - `axis`: `industries`
   - `value`: the target value
   - `mode`: `create` or `refresh`
   - `drafted_value_file`: the Phase 3 drafted text
-  - `siblings`: only the file-backed entries from Phase 1's siblings list,
-    as `{value, path}` pairs (file-deferred and registry-only entries have
-    no file to read or edit)
+  - `siblings`:
+    - Create mode: `{value, adjacency_text}` pairs for every file-backed
+      sibling, using the slices captured in the pre-step.
+    - Refresh mode: `{value, path}` pairs for cross-reference checks.
+    File-deferred and registry-only entries have no file to slice or read
+    and are excluded.
   - `current_value_file` (refresh only): the existing value-file path
   - `research_findings` (refresh only): the Phase 2 research block, so
     refresh-mode change records can cite their source
 
-  **Create mode**: the agent reads each sibling file, identifies which
-  siblings' Adjacency sections do not yet cover the new value, drafts a
-  back-edge bullet for each in that sibling's voice, and returns the
-  per-sibling edits.
+  **Create mode**: the agent reads each sibling's Adjacency slice,
+  identifies which already cover the new value, drafts a back-edge bullet
+  for each one that does not (in that sibling's voice, matching the slice's
+  existing-bullet style), and returns the per-sibling edits.
 
   **Refresh mode**: the agent reads the current value file, compares
   against the new draft section-by-section, and returns a structured
