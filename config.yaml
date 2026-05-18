@@ -10,6 +10,8 @@ paths:
   applications: personal/applications    # one folder per evaluated job
   sessions: personal/sessions            # session logs
   templates: templates                   # artifact templates
+  rules: rules                           # axis rule files (one folder per axis)
+  design: design                         # design state and build issue logs
 
 # Filenames.
 filenames:
@@ -19,6 +21,34 @@ filenames:
   session_log_template: session_log.md         # in the templates/ folder
   research_file_template: research_file.md      # in the templates/ folder
   introductions: introductions.yaml            # next to scripts/display/introduce.py
+  axis_registry: registry.md                   # in each rules/<axis>/ folder
+  build_issues_log: build_issues.md            # in the design/ folder; appended to on provisional builds
+
+# Per-axis schema. Consumed by scripts/builder.py qc and by the axis-builder
+# skills. Each entry defines the value-file frontmatter key, the required
+# section headings (in canonical order), and the standard "Used by:" consumers
+# line. Keys match the folder names under rules/.
+axes:
+  industries:
+    frontmatter_key: industry
+    required_sections: [Vocabulary, Dialect, Emphasis, Adjacency]
+    used_by: cv_targeted, axis-classifier
+  specialties:
+    frontmatter_key: specialty
+    required_sections: [Capability vocabulary, Terminology, Knowledge-transfer mode, Adjacency]
+    used_by: cv_targeted, axis-classifier
+  orientations:
+    frontmatter_key: orientation
+    required_sections: [Identity, Summary lead, Section emphasis, Adjacency]
+    used_by: cv_targeted, axis-classifier
+  levels:
+    frontmatter_key: level
+    required_sections: [Identity, Voice, Verb vocabulary, Scope signals, Adjacency]
+    used_by: cv_targeted, axis-classifier
+  work-states:
+    frontmatter_key: work-state
+    required_sections: [Identity, Achievement framing, Adjacency]
+    used_by: cv_targeted, axis-classifier
 
 # Naming patterns.
 naming:

@@ -64,6 +64,12 @@ Three prior audit closure records in `design_decisions.md` contain phase-by-phas
 - Blocks: nothing currently; `design_decisions.md` remains usable.
 - Refs: `design/design_decisions.md`.
 
+### vacuous-design-decisions-cleanup
+Delete `rule-builder-skills-inline-procedure` from `design_decisions.md` — the decision rules out a path (skill procedure under `rules/builders/`) that was never a coherent option (skills live in `.claude/skills/`, rules content lives in `rules/`). The entry adds bloat without recording a real choice. Other vacuous entries surfaced during ongoing review should be added here.
+- Trigger: next maintenance session on `design_decisions.md`.
+- Blocks: nothing.
+- Refs: `design/design_decisions.md`, `design-decisions-audit-closure-bloat-cleanup` (parallel cleanup deferral).
+
 ### registry-overlap-tracking
 Use `rules/industries/registry.md` (or an extension file) as a cross-reference of which terms appear in which industry files, so updates to shared regulatory/vocabulary terms (FDA guidance, ICH adoptions) can be propagated to all relevant files. Full-enumeration approach (`industry-files-full-enumeration`) duplicates shared terms across pharma/biotech/cro; redundancy is acceptable now but update-cost grows over time.
 - Trigger: first shared-term update where propagation cost surfaces as friction; or earlier if foundation tooling investment is warranted.

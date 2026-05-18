@@ -6,8 +6,8 @@ description: Understand a job opportunity - ingest a job description, research t
 # role-intake - understand the job
 
 Builds the foundational understanding of a job opportunity. It produces two
-artifacts a later gap-analysis skill consumes: a **session log** and a **research
-file**. It does not write a CV or a gap analysis.
+artifacts that later skills will consume: a **session log** and a **research
+file**.
 
 ## Operating rules
 
@@ -19,15 +19,15 @@ file**. It does not write a CV or a gap analysis.
 
 ## Resume check - run before Phase 0
 
-Ask: new role or resume?
+Ask if this session is for a new role or to resume a previous one?
 
 - **New:** proceed to Phase 0.
 - **Resume:** ask the APP-NNN; locate the matching folder under
   `personal/applications/`. Probe and land per the ladder (first match wins):
-  1. Folder missing - halt; APP-NNN likely wrong.
-  2. `research.md` missing - resume at **Phase 4**.
-  3. Axis classification still `_(pending)_` in the session log - **Phase 6**.
-  4. All filled - **Phase 8** (re-QC).
+  1. Folder missing - halt; APP-NNN likely wrong.  Ask for APP-NNN again.
+  2. `research.md` missing - resume at start of **Phase 4**.
+  3. Axis classification still `_(pending)_` in the session log - resume at start of **Phase 6**.
+  4. All filled - resume at start of**Phase 8** (re-QC).
 
   Announce ("Resuming APP-NNN at Phase N.") and proceed without prompting.
 
@@ -41,9 +41,9 @@ Ask: new role or resume?
 
 ## Phase 1 - JD + comms ingestion
 
-**Ingesting the JD and any role communications.**
+**Ingesting the Job Description and any role communications.**
 
-- Input: paste text, or a source path/URL.
+- Input: paste text, or a source path/URL for the JD.
 - For a file path or URL, run `python scripts/ingest/jd_extract.py <source>`;
   capture stdout. Non-zero exit = halt per global rules.
 - Ask the user about role communications (e.g. recruiter email). Ingest via

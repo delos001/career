@@ -731,6 +731,26 @@ Roster: full = role_evaluation, cv_targeted, interview_prep. Brief = career_brie
 Folder: `scripts/display/`.
 Refs: `introduce-py-implementation`, `introduction-roster-ambiguous-skills` (deferrals).
 
+#### builder-research-agent-naming
+The five builder research agents are named `<axis>-builder-research`: `industry-builder-research`, `specialty-builder-research`, `orientation-builder-research`, `level-builder-research`, `work-state-builder-research`. Separate from role-intake's research agents (`industry-research`, `company-research`, `role-research`), which serve role-intake's lighter classification needs. Selected over `<axis>-axis-research` and `<axis>-rule-research` for naming explicitness about the caller and parallelism with the existing `<purpose>-research` convention.
+Refs: `builders-axis-parity`, `research-sub-agents-roster`.
+
+#### builder-adjacency-back-edge-handling
+When a builder creates a new value file, it also drafts back-edge bullets for the new value into each sibling file's Adjacency section, using the same research, presents all proposed sibling edits in one batch for user approval, then writes them. Builder takes responsibility for back-edges; user does not hand-author them.
+Refs: `builders-axis-parity`.
+
+#### builder-refresh-diff-presentation
+Refresh mode presents changes one at a time in a fixed structure: change number, file, section, type (add/remove/modify), Current (exact text or `(none — new entry)`), Proposed (exact text), Reasoning (one sentence from research). User reply required: `approve`, `reject`, `modify: <edit>`, or `defer: <reason>`. No batching, no "approve all", non-answers do not advance.
+Refs: `builder-mode-parameter`, `builder-refresh-mechanics` (deferral).
+
+#### builder-research-value-agnostic
+Each builder research agent operates value-agnostically within its axis. Given `(axis, value)`, the agent produces appropriate research output without value-specific hardcoding, so registry additions (e.g., a new `senior-leadership` level value) work without agent rework.
+Refs: `builder-research-agent-naming`.
+
+#### builder-sequencing-industry-first
+`industry-builder` is built end-to-end first and validated by authoring `generics.md` and `diagnostics.md` (the two `File deferred` values in `rules/industries/registry.md`). Pattern replicated to the other four builders once industry-builder's flow is proven.
+Refs: `builders-axis-parity`.
+
 ### Lineage & Traceability
 
 Application lineage only. Knowledge-doc version history handled by git.
@@ -1013,6 +1033,14 @@ The route-back table sits as a standalone section after Phase 9 in SKILL.md, con
 - Session log field missing → Phase 7
 
 Re-run forward from the routed phase, re-QC, then (Phase 9 path) re-present the approval block.
+
+#### role-intake-phase-6-gap-recommendation-2026-05
+When Phase 6 flags an axis gap, the skill surfaces it at Phase 6 (not Phase 9) with a brief explanation and a choice per gap:
+- (a) halt and invoke `<axis>-builder` to author a new value file; re-invoke role-intake afterward (resume ladder returns to Phase 6).
+- (b) record the gap in the session log and proceed to Phase 7.
+
+Placement at Phase 6, not Phase 9, avoids running Phases 7-8 on a known-incomplete classification.
+Refs: `role-intake-axis-classification`, `builder-sequencing-industry-first`.
 
 ### role_evaluation
 
