@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-builder.py - axis-builder skill artifact assembler
+axis_builder.py - axis-builder skill artifact assembler
 
 Mechanical file operations for the per-axis builder skills (industry-builder,
 specialty-builder, orientation-builder, level-builder, work-state-builder).
@@ -19,22 +19,22 @@ Four subcommands:
                  per-sibling Adjacency back-edges, and update the registry
                  entry. Optional --provisional marks the file and logs unresolved
                  QC issues to design/build_issues.md.
-  apply-refresh  Phase 6 (refresh path) - apply an approved change list to an
-                 existing value file and bump last_researched. Optional
-                 --provisional behaves identically to apply-create.
+  apply-refresh  Phase 6 (refresh path) - overwrite an existing value file
+                 with the post-QC drafted text and bump last_researched.
+                 Optional --provisional behaves identically to apply-create.
 
 Nothing repo-dependent is hardcoded here. Folder locations and filenames come
-from config.yaml (via _config). All writes are scoped: section-replace for
-refresh, targeted bullet insertion for sibling back-edges, single-line swap
-for the registry entry.
+from config.yaml (via _config). All writes are scoped: whole-file overwrite
+for refresh, targeted bullet insertion for sibling back-edges, single-line
+swap for the registry entry.
 
 Author    : Jason Delosh
 Created   : 2026-05-18
 Project   : career
-Usage     : python scripts/builder.py lookup <axis> <value>
-            python scripts/builder.py qc <axis> <value> --mode create|refresh --value-file ... [--sibling-edits ... --registry-entry ...]
-            python scripts/builder.py apply-create <axis> <value> --value-file ... --sibling-edits ... --registry-entry ... [--provisional --issues ...]
-            python scripts/builder.py apply-refresh <axis> <value> --changes ... [--provisional --issues ...]
+Usage     : python scripts/axis_builder.py lookup <axis> <value>
+            python scripts/axis_builder.py qc <axis> <value> --mode create|refresh --value-file ... [--sibling-edits ... --registry-entry ... --changes ...]
+            python scripts/axis_builder.py apply-create <axis> <value> --value-file ... --sibling-edits ... --registry-entry ... [--provisional --issues ...]
+            python scripts/axis_builder.py apply-refresh <axis> <value> --value-file ... [--provisional --issues ...]
 Depends   : pyyaml (via _config)
 """
 
@@ -150,9 +150,10 @@ def _find_registry_entry(registry_text, value):
 
 # ---------------------------------------------------------------------------
 # Section locating and editing
-# Axis value files use '## <Heading>' sections. Sibling back-edges are
-# inserted at the end of the target file's '## Adjacency' section. Refresh
-# changes are applied within named sections.
+# Axis value files use '## <Heading>' sections. Sibling back-edges (create
+# mode) are inserted at the end of the target file's '## Adjacency' section.
+# Refresh mode overwrites the whole file from the drafted text, so no
+# in-section modify/remove helpers are needed here.
 # ---------------------------------------------------------------------------
 
 def _find_section_bounds(text, heading):
@@ -163,7 +164,7 @@ def _find_section_bounds(text, heading):
     or the end of file. Raises ValueError if the heading is absent.
     """
     pattern = re.compile(
-        r'^##[ ]' + re.escape(heading) + r'[ \t]*\n',
+        r'^##[ ]+' + re.escape(heading) + r'[ \t]*\n',
         re.MULTILINE,
     )
     m = pattern.search(text)
@@ -187,44 +188,6 @@ def _insert_bullet_in_section(text, heading, bullet_text):
     # Strip trailing whitespace/newlines from the body, append the bullet, then
     # add one trailing blank line so section separation is preserved.
     new_body = body.rstrip() + '\n' + bullet_text.rstrip() + '\n\n'
-    return text[:body_start] + new_body + text[body_end:]
-
-
-def _replace_in_section(text, heading, current_text, proposed_text):
-    """Replace one occurrence of current_text within a named section.
-
-    Used by refresh-mode 'modify' changes. Raises if the current text is not
-    found in the section (the QC loop should not produce a modify pointing at
-    text that does not exist).
-    """
-    body_start, body_end = _find_section_bounds(text, heading)
-    body = text[body_start:body_end]
-    if current_text not in body:
-        raise ValueError(
-            f"refresh 'modify' current text not found in section ## {heading}")
-    new_body = body.replace(current_text, proposed_text, 1)
-    return text[:body_start] + new_body + text[body_end:]
-
-
-def _remove_in_section(text, heading, current_text):
-    """Remove one occurrence of current_text within a named section."""
-    body_start, body_end = _find_section_bounds(text, heading)
-    body = text[body_start:body_end]
-    if current_text not in body:
-        raise ValueError(
-            f"refresh 'remove' current text not found in section ## {heading}")
-    new_body = body.replace(current_text, '', 1)
-    return text[:body_start] + new_body + text[body_end:]
-
-
-def _add_to_section(text, heading, proposed_text):
-    """Append proposed_text to the end of a named section.
-
-    Used by refresh-mode 'add' changes that are not bullet-form back-edges.
-    """
-    body_start, body_end = _find_section_bounds(text, heading)
-    body = text[body_start:body_end]
-    new_body = body.rstrip() + '\n\n' + proposed_text.rstrip() + '\n\n'
     return text[:body_start] + new_body + text[body_end:]
 
 
@@ -252,23 +215,6 @@ def _split_frontmatter(text):
         return None, text
     end = 4 + m.end()
     return text[:end], text[end:]
-
-
-def _set_frontmatter_field(frontmatter, key, value):
-    """Set a single key: value line in a frontmatter block.
-
-    If the key exists, replace its line; otherwise insert before the closing
-    fence. Preserves all other lines.
-    """
-    pattern = re.compile(r'(?m)^' + re.escape(key) + r':[ \t].*$')
-    new_line = f'{key}: {value}'
-    if pattern.search(frontmatter):
-        return pattern.sub(new_line, frontmatter)
-    # Insert just before the closing '---' fence.
-    return frontmatter.replace('---\n', new_line + '\n---\n', 1).replace(
-        # That replaces the *first* fence; undo by replacing the opening fence
-        # back. Cleaner approach: split, append, rejoin.
-        new_line + '\n---\n', '---\n', 1)
 
 
 def _apply_provisional(text, issues):
@@ -374,6 +320,12 @@ def _append_build_issues(repo_root, cfg, axis, value, mode, issues):
 # ---------------------------------------------------------------------------
 
 def cmd_lookup(args, repo_root, cfg):
+    """Inspect a registry entry and print {value, state, value_file_path} as JSON.
+
+    State is one of 'not-in-registry', 'file-deferred', 'registry-only',
+    'file-backed'. The calling skill uses this to decide create vs refresh
+    and to refuse incoherent invocations (e.g. refresh on a missing file).
+    """
     registry_path = _registry_path(repo_root, cfg, args.axis)
     if not os.path.exists(registry_path):
         raise FileNotFoundError(f'registry not found: {registry_path}')
@@ -402,11 +354,12 @@ def cmd_lookup(args, repo_root, cfg):
 # Subcommand: qc
 # Mechanical QC per rules/quality_control/qc-<axis>-builder.md. Runs the
 # checks the script can verify deterministically and applies auto-fixes
-# in place where the fix is purely textual (em dashes, frontmatter keys,
-# title line, section order, Adjacency self-reference). Checks that need
-# LLM judgment to fix (missing section content, missing adjacency bullets,
-# misdirected sibling edits, registry-filename mismatch) are reported but
-# not fixed - the calling skill loops by re-entering the earlier phase.
+# in place where the fix is purely textual (frontmatter shell + keys,
+# title insertion when missing, Used-by header, section order, Adjacency
+# self-reference). Checks that need LLM judgment to fix (missing section
+# content, missing adjacency bullets, misdirected sibling edits,
+# registry-filename mismatch, em-dash rewrites) are reported but not
+# fixed - the calling skill loops by re-entering the earlier phase.
 #
 # Output: a JSON object on stdout with per-check entries:
 #   { "checks": [ { "id": "A1", "passed": bool, "fixed": bool,
@@ -414,11 +367,6 @@ def cmd_lookup(args, repo_root, cfg):
 # The calling skill aggregates with the judgment-check subagent's output
 # to build the final unresolved-issues list passed to apply-* --issues.
 # ---------------------------------------------------------------------------
-
-# Regex: em dash detection. U+2014 is the literal character; double-hyphen ('--')
-# is conventionally rendered as an em dash and is also caught.
-_EM_DASH_RE = re.compile(r'—|--')
-
 
 def _axis_schema(cfg, axis):
     """Return the per-axis schema block from config (or raise if unknown)."""
@@ -447,13 +395,18 @@ def _record(check_id, passed, fixed, detail):
 # ---------------------------------------------------------------------------
 
 def _check_a1_frontmatter_present(text):
-    """A1: frontmatter present and bounded by --- fences at top."""
+    """A1: frontmatter present and bounded by --- fences at top.
+
+    Auto-fix when missing: insert an empty '---\\n---\\n' shell. A2 and A3 then
+    populate the required keys via their normal insert-before-closing-fence
+    path, so the end state is a fully populated frontmatter and every check
+    in the A group reports honestly.
+    """
     fm, _ = _split_frontmatter(text)
     if fm is not None:
         return text, _record('A1', True, False, 'frontmatter present')
-    # Auto-fix: cannot synthesize frontmatter without knowing all required keys;
-    # leave to A2/A3 to populate keys after the missing frontmatter is reported.
-    return text, _record('A1', False, False, 'frontmatter block missing')
+    new_text = '---\n---\n' + text
+    return new_text, _record('A1', True, True, 'inserted empty frontmatter shell')
 
 
 def _check_a2_frontmatter_key(text, axis_key, value):
@@ -471,7 +424,8 @@ def _check_a2_frontmatter_key(text, axis_key, value):
     if m:
         new_fm = pattern.sub(new_line, fm)
     else:
-        new_fm = fm.replace('---\n', new_line + '\n', 1).replace(new_line + '\n', '---\n' + new_line + '\n', 1)
+        # Insert before the closing fence (same idiom A3 uses).
+        new_fm = re.sub(r'(---\n)$', new_line + '\n' + r'\1', fm, count=1)
     return new_fm + body, _record('A2', True, True, f'corrected {axis_key} to {value}')
 
 
@@ -495,25 +449,32 @@ def _check_a3_last_researched(text):
 
 
 def _check_a4_title(text, value):
-    """A4: title line is '# <Value> - CV Framing Rules'."""
+    """A4: a top-level title exists and ends with '- CV Framing Rules'.
+
+    Case-insensitive on the trailing fixed phrase. The display form of the
+    value (CRO vs Cro vs cro) is the drafter's responsibility; the script
+    does not try to compute or enforce it, since most casing decisions are
+    judgment calls (initialisms, acronyms, brand forms).
+    """
     _, body = _split_frontmatter(text)
     # Title is the first '# ' line in the body.
-    pattern = re.compile(r'(?m)^#[ ]+(.+)$')
-    m = pattern.search(body)
-    # Display name: convert value (kebab-case) to title case (med-device -> Med-Device).
-    display = '-'.join(part.capitalize() for part in value.split('-'))
-    expected = f'# {display} - CV Framing Rules'
-    if m and m.group(0).strip() == expected:
-        return text, _record('A4', True, False, 'title matches expected format')
-    # Auto-fix: replace the first '# ...' line, or insert one if missing.
+    title_pattern = re.compile(r'(?m)^#[ ]+(.+)$')
+    m = title_pattern.search(body)
+    suffix_pattern = re.compile(r'-[ \t]+CV Framing Rules[ \t]*$', re.IGNORECASE)
+    if m and suffix_pattern.search(m.group(1)):
+        return text, _record('A4', True, False, 'title present with expected suffix')
+    # Auto-fix only the missing-title case. If a title exists but lacks the
+    # suffix, report as a fail so the drafter rewrites the line (the title
+    # text itself is judgment).
+    if m:
+        return text, _record('A4', False, False,
+                             "title present but does not end with '- CV Framing Rules'")
     fm, body2 = _split_frontmatter(text)
     fm = fm or ''
-    if m:
-        new_body = body2[:m.start()] + expected + body2[m.end():]
-    else:
-        # Insert title at the top of body with a trailing blank line.
-        new_body = expected + '\n\n' + body2.lstrip()
-    return fm + new_body, _record('A4', True, True, f'wrote title: {expected}')
+    seed_display = '-'.join(part.capitalize() for part in value.split('-'))
+    inserted = f'# {seed_display} - CV Framing Rules'
+    new_body = inserted + '\n\n' + body2.lstrip()
+    return fm + new_body, _record('A4', True, True, f'inserted title: {inserted}')
 
 
 def _check_a5_used_by(text, used_by_line):
@@ -629,14 +590,20 @@ def _check_b3_no_extra_sections(text, required_sections):
 # phrasing) is judgment-only and lives in the qc-industry-builder subagent.
 # ---------------------------------------------------------------------------
 
-def _check_e1_adjacency_complete(text, axis_dir, value, registry_path):
-    """E1: Adjacency has one bullet per file-backed sibling."""
+def _check_e1_adjacency_complete(text, value, registry_path):
+    """E1: Adjacency has one bullet per non-self registry entry.
+
+    Includes file-backed, file-deferred, and registry-only siblings - the
+    Adjacency section enumerates every other axis value so a candidate can
+    translate between any pair. The reconciler still drafts back-edges only
+    into file-backed siblings (the other states have no file to edit); E1
+    just enforces completeness of the new file's own Adjacency.
+    """
     try:
         body_start, body_end = _find_section_bounds(text, 'Adjacency')
     except ValueError:
         return text, _record('E1', False, False, 'no Adjacency section')
     adjacency_body = text[body_start:body_end]
-    # Collect siblings: every file-backed entry in the registry except self.
     if not os.path.exists(registry_path):
         return text, _record('E1', False, False, f'registry missing: {registry_path}')
     registry_text = _read(registry_path)
@@ -645,9 +612,7 @@ def _check_e1_adjacency_complete(text, axis_dir, value, registry_path):
         sibling_value = m.group('value').strip()
         if sibling_value == value:
             continue
-        state, value_filename = _classify_bullet(m.group('rest'))
-        if state == 'file-backed':
-            siblings.append(sibling_value)
+        siblings.append(sibling_value)
     missing = []
     for sibling in siblings:
         # A bullet referencing the sibling has '- **<sibling>**' near its start.
@@ -656,7 +621,7 @@ def _check_e1_adjacency_complete(text, axis_dir, value, registry_path):
     if missing:
         return text, _record('E1', False, False,
                              f'Adjacency missing sibling(s): {", ".join(missing)}')
-    return text, _record('E1', True, False, 'Adjacency covers all file-backed siblings')
+    return text, _record('E1', True, False, 'Adjacency covers all non-self registry entries')
 
 
 def _check_e2_no_self_reference(text, value):
@@ -702,19 +667,12 @@ def _check_g1_registry_entry_filename(registry_entry_text, expected_filename):
 
 
 # ---------------------------------------------------------------------------
-# Check group H - Voice and style (mechanical only)
-# H1 strips em dashes per the em_dash_scope rule (axis files are products, not
-# design docs). H2 (acronym list reconciliation) is left to the subagent
-# because reliable acronym detection in prose requires context-sensitive
-# disambiguation that the script cannot do well.
+# Check group H - Voice and style
+# H1 (em dashes) is intentionally not a script check. Removing an em dash
+# usually requires rewriting the surrounding sentence, which is judgment, not
+# substitution; left to the qc-industry-builder subagent and the drafting
+# loop. H2 (acronym list reconciliation) is also subagent-owned.
 # ---------------------------------------------------------------------------
-
-def _check_h1_no_em_dashes(text):
-    """H1: no em dashes (U+2014 or '--') in the file body. Auto-fix to hyphen."""
-    if not _EM_DASH_RE.search(text):
-        return text, _record('H1', True, False, 'no em dashes')
-    new_text = _EM_DASH_RE.sub('-', text)
-    return new_text, _record('H1', True, True, 'replaced em dashes with hyphens')
 
 
 # ---------------------------------------------------------------------------
@@ -751,7 +709,22 @@ def _check_i3_refresh_has_changes(changes):
     return _record('I3', False, False, 'no changes in refresh run')
 
 
+# ---------------------------------------------------------------------------
+# QC orchestrator
+# Runs each check group in order against the drafted value-file text. Auto-fix
+# checks return mutated text; report-only checks return the text unchanged.
+# Mode-specific checks (E4, G1, I1, I2, I3) run only when the matching inputs
+# are present. The (possibly mutated) text is written back to --value-file so
+# the calling skill picks up the auto-fixed draft for the next phase.
+# ---------------------------------------------------------------------------
+
 def cmd_qc(args, repo_root, cfg):
+    """Run mechanical QC checks against --value-file and print a per-check JSON report.
+
+    Auto-fix-capable checks mutate the file in place; report-only checks
+    leave the file unchanged. Mode-specific checks (E4, G1, I1, I2, I3) run
+    only when their matching inputs are present.
+    """
     schema = _axis_schema(cfg, args.axis)
     axis_key = schema['frontmatter_key']
     required_sections = schema['required_sections']
@@ -760,25 +733,24 @@ def cmd_qc(args, repo_root, cfg):
     text = _read(args.value_file)
     checks = []
 
-    # Run frontmatter and title/header checks with auto-fix.
+    # --- Group A: frontmatter and metadata (auto-fix) ---
     text, rec = _check_a1_frontmatter_present(text); checks.append(rec)
     text, rec = _check_a2_frontmatter_key(text, axis_key, args.value); checks.append(rec)
     text, rec = _check_a3_last_researched(text); checks.append(rec)
     text, rec = _check_a4_title(text, args.value); checks.append(rec)
     text, rec = _check_a5_used_by(text, used_by_line); checks.append(rec)
 
-    # Structural checks.
+    # --- Group B: structural schema (B2 auto-fix; B1/B3 report) ---
     text, rec = _check_b1_sections_present(text, required_sections); checks.append(rec)
     text, rec = _check_b2_section_order(text, required_sections); checks.append(rec)
     text, rec = _check_b3_no_extra_sections(text, required_sections); checks.append(rec)
 
-    # Adjacency mechanical checks.
+    # --- Group E (mechanical): Adjacency completeness and self-reference ---
     registry_path = _registry_path(repo_root, cfg, args.axis)
-    axis_dir = _axis_dir(repo_root, cfg, args.axis)
-    text, rec = _check_e1_adjacency_complete(text, axis_dir, args.value, registry_path); checks.append(rec)
+    text, rec = _check_e1_adjacency_complete(text, args.value, registry_path); checks.append(rec)
     text, rec = _check_e2_no_self_reference(text, args.value); checks.append(rec)
 
-    # Mode-specific.
+    # --- Mode-specific: create runs E4 + G1 + I1; refresh runs I2 + I3 ---
     value_path = _value_file_path(repo_root, cfg, args.axis, f'{args.value}.md')
     if args.mode == 'create':
         checks.append(_check_i1_create_invariant(value_path))
@@ -794,10 +766,7 @@ def cmd_qc(args, repo_root, cfg):
             changes = _load_json(args.changes)
             checks.append(_check_i3_refresh_has_changes(changes))
 
-    # Style auto-fix.
-    text, rec = _check_h1_no_em_dashes(text); checks.append(rec)
-
-    # Write back the (possibly fixed) value-file text.
+    # --- Persist the (possibly fixed) value-file text and emit the report ---
     _write(args.value_file, text)
     print(json.dumps({'checks': checks}))
 
@@ -819,40 +788,45 @@ def cmd_qc(args, repo_root, cfg):
 # ---------------------------------------------------------------------------
 
 def cmd_apply_create(args, repo_root, cfg):
+    """Write a new value file, apply sibling Adjacency back-edges, update the registry.
+
+    Refuses if the value file already exists. With --provisional, marks the
+    file's frontmatter and appends a record to design/build_issues.md after
+    the main writes succeed. All overwrite writes are staged in memory first
+    and only applied after every transformation succeeds, so a missing
+    sibling file or absent Adjacency section cannot leave the repo
+    half-modified. Prints every path touched, one per line.
+    """
     axis = args.axis
     value = args.value
-    axis_dir = _axis_dir(repo_root, cfg, axis)
     registry_path = _registry_path(repo_root, cfg, axis)
 
-    # Determine the value file's filename. Convention: <value>.md. The registry
-    # entry must point to the same file. If a custom filename is ever needed,
-    # introduce a --filename arg rather than parsing the registry-entry string
-    # here.
+    # --- Resolve target paths and refuse if the value file already exists ---
+    # Filename convention: <value>.md. If a custom filename is ever needed, add
+    # a --filename arg rather than parsing it out of the registry-entry text.
     value_filename = f'{value}.md'
     value_path = _value_file_path(repo_root, cfg, axis, value_filename)
-
     if os.path.exists(value_path):
         raise FileExistsError(
             f'value file already exists: {value_path}. Use refresh, not create.')
 
-    # Read inputs.
+    # --- Read all inputs upfront ---
     value_text = _read(args.value_file)
     sibling_edits = _load_json(args.sibling_edits)
     registry_entry_line = _read(args.registry_entry).strip()
+    issues = _load_json(args.issues) if args.provisional else None
 
-    # Apply provisional marking before writing if requested.
-    written_paths = []
+    # --- Provisional marking on the value text (in-memory only) ---
     if args.provisional:
-        issues = _load_json(args.issues)
         value_text = _apply_provisional(value_text, issues)
-        log_path = _append_build_issues(repo_root, cfg, axis, value, 'create', issues)
-        written_paths.append(log_path)
 
-    # Write the new value file.
-    _write(value_path, value_text)
-    written_paths.append(value_path)
+    # --- Stage all overwrite writes ---
+    # Build a list of (path, text) pairs. Nothing is written to disk yet.
+    # If any transformation below raises (missing sibling file, missing
+    # Adjacency section, malformed input), the repo is unchanged.
+    staged = [(value_path, value_text)]
 
-    # Apply sibling Adjacency edits.
+    # Sibling Adjacency back-edges.
     for edit in sibling_edits:
         sibling_path = _value_file_path(repo_root, cfg, axis, edit['sibling_file'])
         if not os.path.exists(sibling_path):
@@ -860,10 +834,9 @@ def cmd_apply_create(args, repo_root, cfg):
         sibling_text = _read(sibling_path)
         sibling_text = _insert_bullet_in_section(
             sibling_text, edit.get('section', 'Adjacency'), edit['bullet'])
-        _write(sibling_path, sibling_text)
-        written_paths.append(sibling_path)
+        staged.append((sibling_path, sibling_text))
 
-    # Update the registry: replace existing entry if present, append otherwise.
+    # Registry: replace existing bullet or append new one.
     registry_text = _read(registry_path)
     existing, _, _ = _find_registry_entry(registry_text, value)
     if existing:
@@ -879,58 +852,63 @@ def cmd_apply_create(args, repo_root, cfg):
         if not registry_text.endswith('\n'):
             registry_text += '\n'
         registry_text += registry_entry_line + '\n'
-    _write(registry_path, registry_text)
-    written_paths.append(registry_path)
+    staged.append((registry_path, registry_text))
 
-    # Print every path written so the calling skill can confirm.
+    # --- Apply all staged writes ---
+    written_paths = []
+    for path, text in staged:
+        _write(path, text)
+        written_paths.append(path)
+
+    # --- Provisional: append to build-issues log (last; append-only) ---
+    if args.provisional:
+        log_path = _append_build_issues(repo_root, cfg, axis, value, 'create', issues)
+        written_paths.append(log_path)
+
+    # --- Emit every path written so the calling skill can confirm ---
     for p in written_paths:
         print(p)
 
 
 # ---------------------------------------------------------------------------
 # Subcommand: apply-refresh
-# Apply an approved change list to an existing value file, bump
+# Overwrite an existing value file with the post-QC drafted text, bump
 # last_researched, and (optionally) mark provisional + log issues.
 #
-# Input file shape:
-#   --changes  JSON list of {"section": "<heading>",
-#                            "type": "add" | "remove" | "modify",
-#                            "current": "<existing text>" (remove/modify only),
-#                            "proposed": "<new text>" (add/modify only)}
-#   --issues   JSON list of {"check": "...", "detail": "...",
-#                            "attempted": "..."} (provisional only)
+# Input file shapes:
+#   --value-file  full Markdown text of the refreshed value file (the same
+#                 temp file qc was run against, with any auto-fixes carried
+#                 through). The reconciler's change list is informational
+#                 for QC only; the apply step writes the drafted file
+#                 wholesale so Phase 5 auto-fixes are preserved.
+#   --issues      JSON list of {"check": "...", "detail": "...",
+#                               "attempted": "..."} (provisional only)
 # ---------------------------------------------------------------------------
 
 def cmd_apply_refresh(args, repo_root, cfg):
+    """Overwrite an existing value file with the drafted text and bump last_researched.
+
+    Refuses if the value file is missing. With --provisional, marks the
+    file's frontmatter and appends a record to design/build_issues.md.
+    Prints every path touched, one per line.
+    """
     axis = args.axis
     value = args.value
     value_filename = f'{value}.md'
     value_path = _value_file_path(repo_root, cfg, axis, value_filename)
 
+    # --- Refuse if the value file does not already exist ---
     if not os.path.exists(value_path):
         raise FileNotFoundError(
             f'value file missing: {value_path}. Use create, not refresh.')
 
-    text = _read(value_path)
-    changes = _load_json(args.changes)
+    # --- Load drafted text (the post-QC --value-file temp) ---
+    text = _read(args.value_file)
 
-    # Apply each change in declared order. Order matters for adjacent edits;
-    # the caller is responsible for sequencing.
-    for ch in changes:
-        section = ch['section']
-        change_type = ch['type']
-        if change_type == 'add':
-            text = _add_to_section(text, section, ch['proposed'])
-        elif change_type == 'remove':
-            text = _remove_in_section(text, section, ch['current'])
-        elif change_type == 'modify':
-            text = _replace_in_section(text, section, ch['current'], ch['proposed'])
-        else:
-            raise ValueError(f'unknown change type: {change_type}')
-
-    # Bump last_researched even on a no-op refresh; the run happened.
+    # --- Bump last_researched (always; the research run happened) ---
     text = _bump_last_researched(text, _today_ym())
 
+    # --- Provisional marking (frontmatter flag + design/build_issues.md) ---
     written_paths = []
     if args.provisional:
         issues = _load_json(args.issues)
@@ -938,9 +916,9 @@ def cmd_apply_refresh(args, repo_root, cfg):
         log_path = _append_build_issues(repo_root, cfg, axis, value, 'refresh', issues)
         written_paths.append(log_path)
 
+    # --- Write back and emit paths ---
     _write(value_path, text)
     written_paths.append(value_path)
-
     for p in written_paths:
         print(p)
 
@@ -953,14 +931,21 @@ def cmd_apply_refresh(args, repo_root, cfg):
 # ---------------------------------------------------------------------------
 
 def main():
+    """Parse argv, load config, dispatch to the selected subcommand.
+
+    Exits 1 with a one-line stderr message on any uncaught exception so the
+    calling skill halts per global-rules.md.
+    """
     parser = argparse.ArgumentParser(description='axis-builder artifact assembler')
     sub = parser.add_subparsers(dest='command', required=True)
 
+    # --- Subparser: lookup ---
     p_look = sub.add_parser('lookup', help='Phase 1: inspect a registry entry')
     p_look.add_argument('axis', help='axis folder name under rules/ (e.g. industries)')
     p_look.add_argument('value', help='registry key (e.g. generics)')
     p_look.set_defaults(func=cmd_lookup)
 
+    # --- Subparser: qc ---
     p_qc = sub.add_parser('qc', help='Phase 5: run mechanical QC + auto-fix on the drafted value file')
     p_qc.add_argument('axis')
     p_qc.add_argument('value')
@@ -975,6 +960,7 @@ def main():
                       help='path to the approved change list JSON (refresh mode)')
     p_qc.set_defaults(func=cmd_qc)
 
+    # --- Subparser: apply-create ---
     p_cre = sub.add_parser('apply-create', help='Phase 6 create: write value file + back-edges + registry')
     p_cre.add_argument('axis')
     p_cre.add_argument('value')
@@ -990,23 +976,24 @@ def main():
                        help='path to a JSON file of unresolved QC issues (required with --provisional)')
     p_cre.set_defaults(func=cmd_apply_create)
 
-    p_ref = sub.add_parser('apply-refresh', help='Phase 6 refresh: apply approved changes + bump last_researched')
+    # --- Subparser: apply-refresh ---
+    p_ref = sub.add_parser('apply-refresh', help='Phase 6 refresh: overwrite value file with drafted text + bump last_researched')
     p_ref.add_argument('axis')
     p_ref.add_argument('value')
-    p_ref.add_argument('--changes', required=True,
-                       help='path to a JSON file of approved change records')
+    p_ref.add_argument('--value-file', required=True,
+                       help='path to the drafted (post-QC) value-file Markdown to write')
     p_ref.add_argument('--provisional', action='store_true',
                        help='mark the value file provisional and log unresolved QC issues')
     p_ref.add_argument('--issues', default=None,
                        help='path to a JSON file of unresolved QC issues (required with --provisional)')
     p_ref.set_defaults(func=cmd_apply_refresh)
 
+    # --- Cross-cutting validation argparse cannot express natively ---
     args = parser.parse_args()
-    # --provisional requires --issues; argparse cannot express this conditional
-    # natively, so validate after parsing.
     if getattr(args, 'provisional', False) and not args.issues:
         parser.error('--provisional requires --issues')
 
+    # --- Dispatch to the selected subcommand ---
     try:
         sys.stdout.reconfigure(encoding='utf-8')
         repo_root, cfg = _config.load()

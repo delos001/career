@@ -36,7 +36,7 @@ invoking it after flagging an axis gap.
 - Ask the user for any missing argument:
   - Target value (registry key, e.g. `generics`).
   - Mode: `create` (greenfield value file) or `refresh` (re-research existing file).
-- Run `python scripts/builder.py lookup industries <value>`. It returns the
+- Run `python scripts/axis_builder.py lookup industries <value>`. It returns the
   registry state: `not-in-registry`, `file-deferred`, `registry-only`,
   `file-backed`, plus the value-file path if any.
 - Validate mode against state:
@@ -45,20 +45,35 @@ invoking it after flagging an axis gap.
   - `registry-only` (by-design entries like `eclinical`): refuse; this value is
     intentionally registry-only and no file should be built.
   - Any other mismatch: halt and ask.
-- Output: `{value, mode, state, value_file_path or null}`.
+- Read `rules/industries/registry.md` and build the siblings list:
+  every non-self registry entry as `{value, state, path}` where `state` is
+  `file-backed`, `file-deferred`, or `registry-only` and `path` is the
+  absolute value-file path (file-backed entries only; null otherwise).
+  Carried through Phases 2, 4, and 5; computed once here. Consumers filter
+  by state: Phase 2 research passes all; Phase 4 reconciler passes only
+  file-backed (the other states have no file to read or edit).
+- Output: `{value, mode, state, value_file_path or null, siblings}`.
 
 ## Phase 2 - Research
 
 **Researching the target industry.**
 
-- Input: target value.
-- Dispatch the `industry-builder-research` subagent with the target value. It
-  returns a fixed block scoped to what this skill needs to draft the four
-  sections: regulatory landscape, terminology and acronyms, hiring-panel
-  emphasis signals, and adjacency considerations vs. sibling industries.
+- Input: target value, siblings list (from Phase 1).
+- Dispatch the `industry-builder-research` subagent with the inputs it
+  declares in `.claude/agents/industry-builder-research.md`:
+  - `axis`: `industries`
+  - `value`: the target value
+  - `siblings`: every non-self entry from Phase 1's siblings list, as just
+    the value names. The agent researches adjacency considerations for
+    each; file-deferred and registry-only siblings are included so the
+    drafter has source material for the Adjacency bullets E1 requires.
+- The agent returns a fixed block scoped to what this skill needs to draft
+  the four sections: regulatory landscape, terminology and acronyms,
+  hiring-panel emphasis signals, and adjacency considerations vs. sibling
+  industries.
 - Output: research findings block.
 
-## Phase 3 - Draft value file
+## Phase 3 - Draft value file (and registry entry, create mode)
 
 **Drafting the new (or updated) value file from the research findings.**
 
@@ -68,24 +83,46 @@ invoking it after flagging an axis gap.
   header, then Vocabulary, Dialect, Emphasis, Adjacency.
 - Match the voice and density of existing files in `rules/industries/`.
   `pharma.md` is the canonical reference.
-- Output: drafted value file content as text.
+- **Create mode only**: also draft the one-line registry-entry bullet that
+  Phase 6 will splice into `rules/industries/registry.md`. Format:
+  `- **<value>** - <short scope description>. File: <value>.md.`
+  The description must summarize the same substantive area the drafted
+  value file covers (so G2 holds), and the filename must match the value
+  (so G1 holds). For a value currently in the registry as `File deferred`,
+  reuse the existing description if it still fits; otherwise rewrite it
+  from the drafted value file's scope.
+- Output:
+  - Refresh: drafted value file content as text.
+  - Create: drafted value file content as text + registry-entry line as text.
 
 ## Phase 4 - Reconcile against existing files
 
 **Reconciling the draft against the rest of the rules/industries/ folder.**
 
-- Input: drafted value file content, mode, value file path (refresh only).
-- Dispatch the `industry-builder-reconciler` subagent in the relevant mode:
+- Input: drafted value file content, mode, siblings list (from Phase 1),
+  value file path (refresh only), research findings (refresh only).
+- Dispatch the `industry-builder-reconciler` subagent with the inputs it
+  declares in `.claude/agents/industry-builder-reconciler.md`:
+  - `axis`: `industries`
+  - `value`: the target value
+  - `mode`: `create` or `refresh`
+  - `drafted_value_file`: the Phase 3 drafted text
+  - `siblings`: only the file-backed entries from Phase 1's siblings list,
+    as `{value, path}` pairs (file-deferred and registry-only entries have
+    no file to read or edit)
+  - `current_value_file` (refresh only): the existing value-file path
+  - `research_findings` (refresh only): the Phase 2 research block, so
+    refresh-mode change records can cite their source
 
-  **Create mode**: subagent reads every sibling file in `rules/industries/`
-  (excluding the registry and any "File deferred" entries without a file),
-  identifies which siblings' Adjacency sections do not yet cover the new value,
-  drafts a back-edge bullet for each in that sibling's voice, and returns the
+  **Create mode**: the agent reads each sibling file, identifies which
+  siblings' Adjacency sections do not yet cover the new value, drafts a
+  back-edge bullet for each in that sibling's voice, and returns the
   per-sibling edits.
 
-  **Refresh mode**: subagent reads the current value file, compares against the
-  new draft section-by-section, and returns a structured change list (per
-  change: section, type [add/remove/modify], current, proposed).
+  **Refresh mode**: the agent reads the current value file, compares
+  against the new draft section-by-section, and returns a structured
+  change list (per change: section, type [add/remove/modify], current,
+  proposed, reasoning citing a research finding).
 
 - Output:
   - Create: drafted value file + per-sibling back-edge edits.
@@ -104,7 +141,7 @@ invoking it after flagging an axis gap.
   to a temp file. Run:
 
   ```
-  python scripts/builder.py qc industries <value> \
+  python scripts/axis_builder.py qc industries <value> \
     --mode <create|refresh> \
     --value-file <temp> \
     [--sibling-edits <temp>]   # create mode
@@ -113,8 +150,8 @@ invoking it after flagging an axis gap.
   ```
 
   The script auto-fixes script-owned issues in place (frontmatter keys, title
-  line, `Used by:` header, section order, Adjacency self-reference, em dashes)
-  and prints a JSON report:
+  line, `Used by:` header, section order, Adjacency self-reference) and
+  prints a JSON report:
   `{"checks": [{"id": "...", "passed": bool, "fixed": bool, "detail": "..."}]}`.
   Re-read the (now possibly mutated) value-file temp before dispatching the
   subagent so the subagent sees the auto-fixed text.
@@ -130,17 +167,21 @@ invoking it after flagging an axis gap.
   - Script half: any `passed: false` from the script's `checks` array.
   - Subagent half: every entry in the `findings` array.
 
-- For each aggregated failure, attempt to fix:
-  - **Script-owned that the script could not auto-fix** (missing section
-    content per B1; extra sections per B3; missing adjacency bullets per E1;
-    misdirected sibling edits per E4; filename mismatch per G1; mode
-    invariant violations per I1-I3): route back to the appropriate phase
-    (Phase 3 redraft for B1/B3; Phase 4 reconciler re-run for E1/E4; Phase 4
-    re-emit for G1; halt and surface for I1-I3 - these are invocation errors).
-  - **Subagent-owned**: route back per the check (Phase 2 re-research for
-    C1-C3 or F1; Phase 3 redraft for D1-D2 or H2; Phase 4 reconciler re-run
-    for E3; Phase 4 re-emit for G2).
-  After routing forward, re-enter Phase 5 from the script half.
+- For each aggregated failure, route to the phase that produced the
+  failing artifact, then re-enter Phase 5 from the script half:
+  - **B1, B3** (missing or extra sections) -> Phase 3 redraft.
+  - **E1** (new file's Adjacency missing a sibling) -> Phase 3 redraft of
+    the Adjacency section. The reconciler does not touch this section.
+  - **E4** (sibling edits target non-Adjacency section) -> Phase 4
+    reconciler re-run.
+  - **G1, G2** (registry-entry filename or description wrong) -> Phase 3
+    redraft of the registry-entry line.
+  - **I1-I3** (mode invariants) -> halt and surface; these are invocation
+    errors, not content errors.
+  - **C1-C3, F1** (citation traceability, source authority) -> Phase 2
+    re-research.
+  - **D1, D2, H2** (cross-file boundaries, acronym list) -> Phase 3 redraft.
+  - **E3** (sibling-voice phrasing) -> Phase 4 reconciler re-run.
 
 - Loop up to 3 iterations. After 3 iterations, accept the best draft as-is
   and treat the still-unresolved failures as the provisional-issues list.
@@ -164,7 +205,7 @@ invoking it after flagging an axis gap.
   temp files. Run:
 
   ```
-  python scripts/builder.py apply-create industries <value> \
+  python scripts/axis_builder.py apply-create industries <value> \
     --value-file <temp> \
     --sibling-edits <temp> \
     --registry-entry <temp> \
@@ -178,16 +219,20 @@ invoking it after flagging an axis gap.
 
 ### Refresh path
 
-- Write the approved change set to a temp file. Run:
+- The post-QC drafted file (the `--value-file` temp from Phase 5, with any
+  script auto-fixes already applied in place) is the source of truth. Run:
 
   ```
-  python scripts/builder.py apply-refresh industries <value> \
-    --changes <temp> \
+  python scripts/axis_builder.py apply-refresh industries <value> \
+    --value-file <temp> \
     [--provisional --issues <temp>]
   ```
 
-  The script applies the changes section-by-section, updates `last_researched`,
-  and (if `--provisional`) marks the file and logs to `design/build_issues.md`.
+  The script overwrites `rules/industries/<value>.md` with the drafted text,
+  bumps `last_researched`, and (if `--provisional`) marks the file and logs
+  to `design/build_issues.md`. The reconciler's change list from Phase 4 is
+  informational (used by QC's I3 check to detect a no-op refresh); it is
+  not the apply mechanism, so Phase 5 auto-fixes always carry through.
 
 - Output: paths printed by the script.
 

@@ -5,7 +5,7 @@ last_updated: 2026-05
 
 # QC - industry-builder
 
-**Used by:** qc-industry-builder, industry-builder, scripts/builder.py
+**Used by:** qc-industry-builder, industry-builder, scripts/axis_builder.py
 
 Quality checks the `qc-industry-builder` subagent runs against a drafted
 industry value file plus the per-sibling Adjacency edits (create mode) or
@@ -20,7 +20,7 @@ caps at **3 iterations**. On the final iteration:
 - All checks pass: build proceeds clean.
 - One or more checks still fail: build proceeds with the latest draft as
   provisional. Unresolved findings are emitted to `--issues` for
-  `scripts/builder.py` to attach to the file's frontmatter and append to
+  `scripts/axis_builder.py` to attach to the file's frontmatter and append to
   `design/build_issues.md`.
 
 ## Checks
@@ -30,7 +30,7 @@ check), and the fix the build attempts on failure.
 
 Two owners:
 
-- **`script`** - `scripts/builder.py qc` runs the check and, where the fix is
+- **`script`** - `scripts/axis_builder.py qc` runs the check and, where the fix is
   purely textual, auto-fixes the value file in place. Reports the result in
   the qc subcommand's JSON output.
 - **`subagent`** - `qc-industry-builder` subagent runs the check in isolated
@@ -52,9 +52,13 @@ subagent (judgment-only set), then aggregates both result lists.
 - **A3** *(script)*: `last_researched: YYYY-MM` key present and equals
   the current year-month of the build.
   - Fix on fail: insert or correct the line.
-- **A4** *(script)*: Title is `# <Value Name> - CV Framing Rules`
-  (display capitalization of the value, hyphen rather than em dash).
-  - Fix on fail: rewrite the title line.
+- **A4** *(script)*: A top-level title line is present and ends with
+  `- CV Framing Rules` (case-insensitive on the suffix). The display form
+  of the value (e.g. CRO vs Cro) is the drafter's responsibility; the
+  script does not enforce capitalization, since most casing decisions are
+  judgment calls (initialisms, acronyms, brand forms).
+  - Fix on fail: insert a default title when missing; report (no auto-fix)
+    when the title exists but lacks the suffix.
 - **A5** *(script)*: `**Used by:** <consumers>` header present on the
   line immediately under the title (after a blank line).
   - Fix on fail: insert the standard header listing `cv_targeted,
@@ -107,11 +111,12 @@ subagent (judgment-only set), then aggregates both result lists.
 ### E - Adjacency completeness
 
 - **E1** *(script)*: The drafted file's `## Adjacency` section contains
-  one bullet per file-backed sibling in `rules/industries/` (excluding the
-  registry and the value being built; including any file-deferred siblings
-  marked appropriately).
-  - Fix on fail: add the missing bullet(s); the QC subagent supplies the
-    placeholder text based on research, then re-runs to verify.
+  one bullet per non-self entry in `rules/industries/registry.md`
+  (file-backed, file-deferred, and registry-only). The reconciler still
+  drafts back-edges only into file-backed siblings; E1 just enforces the
+  new file's Adjacency completeness.
+  - Fix on fail: re-enter Phase 3 to add the missing bullet(s) based on
+    the research findings.
 - **E2** *(script)*: The drafted file's `## Adjacency` section does not
   reference itself.
   - Fix on fail: remove the self-reference.
@@ -139,19 +144,14 @@ subagent (judgment-only set), then aggregates both result lists.
   the existing registry entry (refresh) lists the same filename as the value
   file being written (`File: <value>.md` matches the actual filename).
   - Fix on fail: rewrite the registry entry text to match.
-- **G2** *(script)*: The registry entry's one-line description summarizes
+- **G2** *(subagent)*: The registry entry's one-line description summarizes
   the file's scope (description and file content agree on the substantive area).
-  - Fix on fail *(subagent)*: rewrite the registry description from the
-    drafted file's content.
+  - Fix on fail: re-enter Phase 3 to redraft the registry-entry line from
+    the drafted value file's content.
 
-### H - Voice and style (mechanical only)
+### H - Voice and style
 
-- **H1** *(script)*: No em dashes (`—` U+2014 or `--` rendered as em dash)
-  anywhere in the file body. Axis files are products per the `em_dash_scope`
-  rule.
-  - Fix on fail: replace each em dash with a hyphen, period, or rewrite per
-    context; default to a comma when ambiguous.
-- **H2** *(script)*: Where the file defines an acronym list under
+- **H2** *(subagent)*: Where the file defines an acronym list under
   `## Dialect`, acronyms used in the body but not in the list are added to
   the list; acronyms listed but unused in the body are removed.
   - Fix on fail: reconcile the list to actual body usage.
@@ -173,7 +173,7 @@ subagent (judgment-only set), then aggregates both result lists.
 ## Unresolved-finding output format
 
 When the loop exits with unresolved findings, the QC subagent emits a JSON
-list to the `--issues` temp file passed to `scripts/builder.py
+list to the `--issues` temp file passed to `scripts/axis_builder.py
 apply-create` or `apply-refresh`. Each entry:
 
 ```json

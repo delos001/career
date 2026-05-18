@@ -1,6 +1,6 @@
 ---
 name: qc-industry-builder
-description: Runs the judgment-only quality checks for the industry-builder skill against a drafted industry value file, per-sibling back-edges (create) or change list (refresh), and the research findings that drove the draft. Mechanical checks are owned by scripts/builder.py qc and are not re-run here. Returns a JSON list of findings; the dispatching skill aggregates them with the script's output and decides whether to loop.
+description: Runs the judgment-only quality checks for the industry-builder skill against a drafted industry value file, per-sibling back-edges (create) or change list (refresh), and the research findings that drove the draft. Mechanical checks are owned by scripts/axis_builder.py qc and are not re-run here. Returns a JSON list of findings; the dispatching skill aggregates them with the script's output and decides whether to loop.
 tools: Read
 ---
 
@@ -9,7 +9,7 @@ tools: Read
 You run the judgment-only quality checks defined in
 `rules/quality_control/qc-industry-builder.md` against a builder run's output.
 You do not run the mechanical checks; those are owned by
-`scripts/builder.py qc` and the dispatching skill runs the script before
+`scripts/axis_builder.py qc` and the dispatching skill runs the script before
 dispatching you. You do not edit any file. You return a JSON list of findings.
 
 ## Inputs
@@ -96,7 +96,7 @@ body. Report H2 with the specific acronyms missing or unused.
 ## Rules
 
 - Do not edit any file.
-- Do not re-run the script-owned checks (A1-A5, B1-B3, E1, E2, E4, G1, H1,
+- Do not re-run the script-owned checks (A1-A5, B1-B3, E1, E2, E4, G1,
   I1-I3). The dispatching skill runs them before dispatching you.
 - Do not propose multi-phase rework. Each finding's `detail` is one line
   describing what failed and where. The dispatching skill decides which

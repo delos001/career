@@ -24,7 +24,7 @@ filenames:
   axis_registry: registry.md                   # in each rules/<axis>/ folder
   build_issues_log: build_issues.md            # in the design/ folder; appended to on provisional builds
 
-# Per-axis schema. Consumed by scripts/builder.py qc and by the axis-builder
+# Per-axis schema. Consumed by scripts/axis_builder.py qc and by the axis-builder
 # skills. Each entry defines the value-file frontmatter key, the required
 # section headings (in canonical order), and the standard "Used by:" consumers
 # line. Keys match the folder names under rules/.
