@@ -740,8 +740,9 @@ When a builder creates a new value file, it also drafts back-edge bullets for th
 Refs: `builders-axis-parity`.
 
 #### builder-refresh-diff-presentation
-Refresh mode presents changes one at a time in a fixed structure: change number, file, section, type (add/remove/modify), Current (exact text or `(none — new entry)`), Proposed (exact text), Reasoning (one sentence from research). User reply required: `approve`, `reject`, `modify: <edit>`, or `defer: <reason>`. No batching, no "approve all", non-answers do not advance.
-Refs: `builder-mode-parameter`, `builder-refresh-mechanics` (deferral).
+**Superseded by `builder-refresh-qc-with-auto-fix-2026-05`.** The per-change interactive user-approval flow described here was replaced by the QC-with-auto-fix loop (no per-change approval; loop ships clean or provisional with unresolved findings logged). Subsequent audit (2026-05-18) further removed the change list from the apply mechanism entirely.
+Original body retained for history: Refresh mode presents changes one at a time in a fixed structure: change number, file, section, type (add/remove/modify), Current (exact text or `(none - new entry)`), Proposed (exact text), Reasoning (one sentence from research). User reply required: `approve`, `reject`, `modify: <edit>`, or `defer: <reason>`. No batching, no "approve all", non-answers do not advance.
+Refs: `builder-mode-parameter`, `builder-refresh-mechanics` (deferral), `builder-refresh-qc-with-auto-fix-2026-05`.
 
 #### builder-research-value-agnostic
 Each builder research agent operates value-agnostically within its axis. Given `(axis, value)`, the agent produces appropriate research output without value-specific hardcoding, so registry additions (e.g., a new `senior-leadership` level value) work without agent rework.
@@ -750,6 +751,27 @@ Refs: `builder-research-agent-naming`.
 #### builder-sequencing-industry-first
 `industry-builder` is built end-to-end first and validated by authoring `generics.md` and `diagnostics.md` (the two `File deferred` values in `rules/industries/registry.md`). Pattern replicated to the other four builders once industry-builder's flow is proven.
 Refs: `builders-axis-parity`.
+
+#### builder-refresh-qc-with-auto-fix-2026-05
+Refresh runs through QC with auto-fix: Phase 5 mechanical checks correct script-fixable issues in place on a temp drafted file; the QC subagent runs judgment checks; the skill loops up to 3 iterations; ship clean or provisional with unresolved findings logged to `design/build_issues.md`. No user-approval-per-change gate. Phase 6 `apply-refresh` overwrites the existing value file wholesale from the post-QC drafted text (`--value-file`); the reconciler's change list survives only as informational input to QC's I3 no-op-detection check, not as the apply mechanism. This ensures Phase 5 auto-fixes always reach disk.
+Supersedes `builder-refresh-diff-presentation`.
+Refs: `builder-mode-parameter`, `builders-axis-parity`.
+
+#### builder-em-dash-judgment-not-regex-2026-05
+Em-dash removal in axis value files is owned by the qc-industry-builder subagent (judgment), not `scripts/axis_builder.py` (regex substitution). Removing an em dash usually requires rewriting the surrounding sentence; mechanical replacement leaves the sentence broken, and a naive `--` regex would also corrupt `---` frontmatter fences and horizontal rules. General rule for the builder family: judgment-grade text edits belong in the QC subagent, not the script.
+Refs: `builders-axis-parity`.
+
+#### builder-case-sensitivity-scope-2026-05
+`scripts/axis_builder.py` does not enforce display capitalization for axis values. A4 (title check) verifies only the structural suffix `- CV Framing Rules` (case-insensitive on the suffix); the display form (e.g. `CRO` vs `Cro`, `IVD` vs `Ivd`) is the drafter's responsibility. General rule: case-sensitive structural checks should only fire when case itself carries meaning. Initialisms, acronyms, and brand forms cannot be derived deterministically from kebab-case registry keys.
+Refs: `builders-axis-parity`.
+
+#### builder-e1-all-non-self-2026-05
+E1 (script) requires the new value file's `## Adjacency` section to contain one bullet per non-self entry in the axis registry: file-backed, file-deferred, AND registry-only. The reconciler still drafts back-edges only into file-backed siblings (the other states have no file to edit); E1 enforces the new file's own Adjacency completeness, not the back-edge fan-out. SKILL Phase 1 carries the siblings list as `{value, state, path}` for every non-self entry so Phase 2 research can cover adjacency reasoning for all states (drafter needs source material for the bullets E1 requires).
+Refs: `builders-axis-parity`, `builder-adjacency-back-edge-handling`.
+
+#### builder-phase-3-registry-entry-output-2026-05
+SKILL Phase 3 (drafter) produces two artifacts in create mode: the value file content AND the one-line registry-entry text (`- **<value>** - <scope description>. File: <value>.md.`). Phase 5 fix routing for E1, G1, G2 returns to Phase 3 for redraft (the reconciler does not produce these artifacts and routing them there wastes loop iterations). For a value currently `File deferred`, the existing registry description may be reused if it still fits the drafted scope; otherwise the drafter rewrites from the value file's content.
+Refs: `builders-axis-parity`, `builder-refresh-qc-with-auto-fix-2026-05`.
 
 ### Lineage & Traceability
 
