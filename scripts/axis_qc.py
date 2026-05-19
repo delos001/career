@@ -96,10 +96,21 @@ def _apply_provisional(text, issues):
         # output, but fail loud rather than silently skip.
         raise ValueError('cannot mark provisional: file has no frontmatter')
     # Build the issues YAML block. One issue per line under the key.
+    # Sanitize each field so the resulting YAML is parseable regardless of
+    # what the subagent emitted: collapse any whitespace run (incl. literal
+    # newlines and tabs) to a single space, escape backslashes, and convert
+    # double-quotes to single-quotes so the surrounding "..." delimiters
+    # always close on the same line.
+    def _sanitize(s):
+        s = s.replace('\\', '\\\\')
+        s = re.sub(r'\s+', ' ', s).strip()
+        s = s.replace('"', "'")
+        return s
+
     issue_lines = []
     for issue in issues:
-        check = issue.get('check', 'unknown')
-        detail = issue.get('detail', '').replace('"', "'")
+        check = _sanitize(issue.get('check', 'unknown'))
+        detail = _sanitize(issue.get('detail', ''))
         issue_lines.append(f'  - check: "{check}"')
         issue_lines.append(f'    detail: "{detail}"')
 
@@ -181,21 +192,26 @@ def _append_build_issues(repo_root, cfg, axis, value, mode, issues):
 def _check_a1_frontmatter_present(text):
     """A1: frontmatter present and bounded by --- fences at top.
 
-    Auto-fix when missing: insert an empty '---\\n---\\n' shell. A2 and A3 then
-    populate the required keys via their normal insert-before-closing-fence
-    path, so the end state is a fully populated frontmatter and every check
-    in the A group reports honestly.
+    Report-only. A previous implementation auto-fixed by prepending an empty
+    '---\\n---\\n' shell, but if the drafter wrote keys at the top of the file
+    without fences, those keys ended up in the body and A2/A3 then inserted
+    fresh copies into the new shell, leaving the file with duplicated keys.
+    A redraft is cheaper than a safe migrator; Phase 5 routes A1 failures to
+    Phase 3 the same way it routes B1/B3.
     """
     fm, _ = axis_utils.split_frontmatter(text)
     if fm is not None:
         return text, _record('A1', True, False, 'frontmatter present')
-    new_text = '---\n---\n' + text
-    return new_text, _record('A1', True, True, 'inserted empty frontmatter shell')
+    return text, _record('A1', False, False,
+                         'no --- frontmatter fences at top of file')
 
 
 def _check_a2_frontmatter_key(text, axis_key, value):
-    """A2: frontmatter has '<axis_key>: <value>'. A1 guarantees fm exists."""
+    """A2: frontmatter has '<axis_key>: <value>'. Reports if A1 has already failed."""
     fm, body = axis_utils.split_frontmatter(text)
+    if fm is None:
+        return text, _record('A2', False, False,
+                             'frontmatter absent; resolve A1 before A2')
     pattern = re.compile(r'(?m)^' + re.escape(axis_key) + r':[ \t]+(.+)$')
     m = pattern.search(fm)
     if m and m.group(1).strip() == value:
@@ -210,8 +226,11 @@ def _check_a2_frontmatter_key(text, axis_key, value):
 
 
 def _check_a3_last_researched(text):
-    """A3: last_researched is the current YYYY-MM. A1 guarantees fm exists."""
+    """A3: last_researched is the current YYYY-MM. Reports if A1 has already failed."""
     fm, body = axis_utils.split_frontmatter(text)
+    if fm is None:
+        return text, _record('A3', False, False,
+                             'frontmatter absent; resolve A1 before A3')
     current = _util.today_ym()
     pattern = re.compile(r'(?m)^last_researched:[ \t]+(.+)$')
     m = pattern.search(fm)
@@ -250,26 +269,51 @@ def _check_a4_title(text, value):
 
 
 def _check_a5_used_by(text, used_by_line):
-    """A5: '**Used by:** <consumers>' present right after the title."""
+    """A5: '**Used by:** <consumers>' on the first non-blank line after the title.
+
+    Position-checked, not just presence-checked. Three auto-fix cases:
+    header on the correct line with matching content (pass), header on the
+    correct line with wrong content (rewrite in place), header absent
+    entirely (insert). A header that exists but is buried elsewhere in
+    the body fails report-only: removing the stray is a judgment call
+    (the buried text may be different content the drafter intended) and
+    is routed to Phase 3 redraft.
+    """
     fm, body = axis_utils.split_frontmatter(text)
     fm = fm or ''
     expected = f'**Used by:** {used_by_line}'
-    pattern = re.compile(r'(?m)^\*\*Used by:\*\*[ \t]+(.+)$')
-    m = pattern.search(body)
-    if m and m.group(1).strip() == used_by_line:
-        return text, _record('A5', True, False, 'Used by header matches')
-    if m:
-        new_body = body[:m.start()] + expected + body[m.end():]
-        return fm + new_body, _record('A5', True, True, f'corrected Used by to: {used_by_line}')
-    # Insert after the title line. Normalize the surrounding whitespace so
-    # the result is always 'title\n\n**Used by:** ...\n\n<rest>', regardless
-    # of whether the original had a blank line after the title or not.
+    used_by_re = re.compile(r'(?m)^\*\*Used by:\*\*[ \t]+(.+)$')
+
     title_match = re.search(r'(?m)^#[ ]+.+$', body)
     if not title_match:
-        return text, _record('A5', False, False, 'cannot insert Used by: no title found')
-    insert_at = title_match.end()
-    following = body[insert_at:].lstrip('\n')
-    new_body = body[:insert_at] + '\n\n' + expected + '\n\n' + following
+        return text, _record('A5', False, False, 'cannot evaluate Used by: no title found')
+
+    # Resolve the first non-blank line after the title. Skip any leading
+    # blank lines so 'title\n\n**Used by:** ...' and 'title\n**Used by:** ...'
+    # both qualify as in-position.
+    after_title = body[title_match.end():]
+    blanks_len = len(after_title) - len(after_title.lstrip('\n'))
+    rest_start = title_match.end() + blanks_len
+    next_newline = body.find('\n', rest_start)
+    first_line_end = next_newline if next_newline != -1 else len(body)
+    first_line = body[rest_start:first_line_end]
+
+    in_position = used_by_re.match(first_line)
+    if in_position:
+        if in_position.group(1).strip() == used_by_line:
+            return text, _record('A5', True, False, 'Used by header in correct position')
+        # Right position, wrong content - rewrite in place.
+        new_body = body[:rest_start] + expected + body[first_line_end:]
+        return fm + new_body, _record('A5', True, True,
+                                       f'corrected Used by content to: {used_by_line}')
+
+    # Header not on the first non-blank line. If it lives somewhere else in
+    # the body, report and route to Phase 3 (judgment call to remove the
+    # stray). Otherwise auto-insert in the correct position.
+    if used_by_re.search(body):
+        return text, _record('A5', False, False,
+                             'Used by header is not on the first non-blank line after the title')
+    new_body = body[:title_match.end()] + '\n\n' + expected + '\n\n' + body[rest_start:]
     return fm + new_body, _record('A5', True, True, f'inserted Used by: {used_by_line}')
 
 
@@ -283,8 +327,22 @@ def _check_a5_used_by(text, used_by_line):
 # ---------------------------------------------------------------------------
 
 def _check_b1_sections_present(text, required_sections):
-    """B1: every required section heading is present and has non-blank content."""
+    """B1: every required section heading is present, unique, and non-empty.
+
+    Three failure modes, checked in order. Duplicates are checked before
+    B2 runs because B2's reorder logic uses a dict keyed by heading and
+    would silently overwrite earlier copies of a duplicated heading,
+    destroying the first copy's content with no warning.
+    """
     headings = _all_section_headings(text)
+    # Duplicates of required headings.
+    duplicates = [
+        s for s in required_sections if headings.count(s) > 1
+    ]
+    if duplicates:
+        return text, _record('B1', False, False,
+                             f'duplicate section heading(s): {", ".join(duplicates)}')
+    # Missing required headings.
     missing = [s for s in required_sections if s not in headings]
     if missing:
         return text, _record('B1', False, False,
@@ -305,8 +363,18 @@ def _check_b1_sections_present(text, required_sections):
 
 
 def _check_b2_section_order(text, required_sections):
-    """B2: required sections appear in canonical order. Auto-fix by reordering."""
+    """B2: required sections appear in canonical order. Auto-fix by reordering.
+
+    Refuses to auto-fix when a required heading appears more than once;
+    the reorder builds a dict keyed by heading and would silently drop
+    one copy of the content. B1 flags duplicates separately, so B2's
+    refusal here is a guard, not the primary surface.
+    """
     headings = _all_section_headings(text)
+    duplicates = [s for s in required_sections if headings.count(s) > 1]
+    if duplicates:
+        return text, _record('B2', False, False,
+                             'cannot reorder: duplicate section heading(s) present (see B1)')
     present_required = [h for h in headings if h in required_sections]
     expected_order = [s for s in required_sections if s in headings]
     if present_required == expected_order:
@@ -535,12 +603,15 @@ def _check_h2_acronym_reconciliation(text):
         return text, _record('H2', True, False, 'no Dialect section to check')
     dialect_body = text[dialect_start:dialect_end]
 
-    # The Dialect catalog is the content after the first ':' in the section
-    # body (matching the established pattern: optional prose intro, then
-    # 'Acronyms recognized without expansion in <industry> hiring contexts: <list>').
-    # When no colon exists, treat the whole section as the catalog.
-    colon_idx = dialect_body.find(':')
-    catalog_text = dialect_body[colon_idx + 1:] if colon_idx != -1 else dialect_body
+    # The Dialect catalog is the content after the canonical anchor phrase
+    # 'Acronyms recognized [...]:' (case-insensitive). Established convention
+    # across every industry file. Anchoring on the phrase rather than the
+    # first colon in the section keeps prose intros ('Style:', 'Cadence:')
+    # from bleeding into the catalog window and inflating the listed set.
+    # When the anchor is absent, fall back to the whole section body so
+    # acronyms are not silently missed.
+    catalog_match = re.search(r'(?i)Acronyms recognized[^:\n]*:', dialect_body)
+    catalog_text = dialect_body[catalog_match.end():] if catalog_match else dialect_body
     listed = _extract_acronyms(catalog_text)
 
     # Body scope: concatenate Vocabulary, Emphasis, Adjacency bodies. Each
@@ -666,6 +737,11 @@ def run_qc(args, repo_root, cfg):
             )
         sibling_edits = axis_utils.unwrap_list(
             _util.load_json(args.sibling_edits), 'sibling_edits')
+        axis_utils.validate_list_of_dicts(
+            sibling_edits,
+            input_name='sibling_edits',
+            shape=axis_utils.SIBLING_EDIT_SHAPE,
+        )
         checks.append(_check_e4_sibling_edits_targeting(sibling_edits))
         if not args.registry_entry:
             raise ValueError(
@@ -685,6 +761,11 @@ def run_qc(args, repo_root, cfg):
                 'refusing to skip the no-op-refresh check silently'
             )
         changes = axis_utils.unwrap_list(_util.load_json(args.changes), 'changes')
+        axis_utils.validate_list_of_dicts(
+            changes,
+            input_name='changes',
+            shape=axis_utils.CHANGE_SHAPE,
+        )
         checks.append(_check_i3_refresh_has_changes(changes))
 
     # --- Persist the (possibly fixed) value-file text and emit the report ---
@@ -734,10 +815,16 @@ def main():
     args = parser.parse_args()
 
     # --- Dispatch ---
+    # ContractError gets its own categorized exit code so the dispatching
+    # SKILL can translate "subagent emitted an unexpected shape" into a
+    # user-facing message distinct from generic build failures.
     try:
         sys.stdout.reconfigure(encoding='utf-8')
         repo_root, cfg = _config.load()
         run_qc(args, repo_root, cfg)
+    except axis_utils.ContractError as e:
+        print(f'ContractError: {e}', file=sys.stderr)
+        sys.exit(2)
     except Exception as e:
         print(f'Error: {e}', file=sys.stderr)
         sys.exit(1)

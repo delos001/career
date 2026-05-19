@@ -22,6 +22,23 @@ invoking it after flagging an axis gap.
   error message to what the user needs to know to wait, decide, or act.
   Reserve technical detail for explicit dev-triage contexts (the
   `build_issues.md` log, deferral entries, this SKILL file).
+- **Script failure categorization.** Every `scripts/axis_*.py` invocation
+  follows the same exit contract:
+  - Exit 0: success. Parse stdout per the subcommand's documented output.
+  - Exit 2 with `ContractError:` stderr prefix: a subagent's JSON output
+    did not match the declared shape (wrong top-level type, missing or
+    unexpected key, wrong field type, bad enum value). The build cannot
+    continue. Halt and tell the user verbatim:
+    "The build couldn't continue because one of the helper outputs didn't
+    match the expected shape. Details logged for dev triage."
+    Then append a section to `design/build_issues.md` (header
+    `## <YYYY-MM-DD> - <axis>-builder <mode> - <value> (contract failure)`),
+    with one bullet containing the full stderr text and one bullet naming
+    which subagent produced the offending output. Do not retry; this is a
+    code-level mismatch, not a content issue the loop can resolve.
+  - Exit 1 with `Error:` stderr prefix: any other failure (file missing,
+    registry malformed, mode invariant violated). Translate the stderr
+    text to plain English using the situation context; halt.
 
 ## Phase 0 - Intro
 
@@ -193,7 +210,13 @@ invoking it after flagging an axis gap.
 
 - For each aggregated failure, route to the phase that produced the
   failing artifact, then re-enter Phase 5 from the script half:
+  - **A1** (frontmatter fences missing) -> Phase 3 redraft of the whole
+    frontmatter block. Do not auto-wrap with empty fences; that path
+    duplicates any orphan keys already at the top of the file.
   - **A4** (title exists but suffix wrong) -> Phase 3 redraft of the title line.
+  - **A5** (Used by header buried elsewhere in the body) -> Phase 3 redraft;
+    drafter removes the stray and lets the script reinsert in the correct
+    position on the next QC pass.
   - **B1, B3** (missing or extra sections) -> Phase 3 redraft.
   - **E1** (new file's Adjacency missing a sibling) -> Phase 3 redraft of
     the Adjacency section. The reconciler does not touch this section.
@@ -201,8 +224,11 @@ invoking it after flagging an axis gap.
     reconciler re-run.
   - **G1, G2** (registry-entry filename or description wrong) -> Phase 3
     redraft of the registry-entry line.
-  - **I1-I3** (mode invariants) -> halt and surface; these are invocation
+  - **I1, I2** (mode invariants) -> halt and surface; these are invocation
     errors, not content errors.
+  - **I3** (refresh produced no meaningful changes) -> Phase 2 re-research
+    with broader scope. If a second pass still produces no changes, exit
+    clean and tell the user the file is already current; do not halt.
   - **C1-C3, F1** (citation traceability, source authority) -> Phase 2
     re-research.
   - **D1, D2, H2** (cross-file boundaries, acronym list) -> Phase 3 redraft.

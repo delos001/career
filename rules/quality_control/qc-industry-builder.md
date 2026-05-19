@@ -45,7 +45,11 @@ subagent (judgment-only set), then aggregates both result lists.
 
 - **A1** *(script)*: Frontmatter present and bounded by `---` fences at
   the top of the value file.
-  - Fix on fail: rebuild the frontmatter block from required keys.
+  - Fix on fail: report; Phase 5 routes the failure to Phase 3 for the
+    drafter to add the fences. Not auto-fixed because prepending empty
+    fences to a file whose drafter wrote keys at the top without fences
+    would push those orphan keys into the body and let A2/A3 insert
+    duplicate copies into the new shell.
 - **A2** *(script)*: `industry: <value>` key present and matches the
   value being built.
   - Fix on fail: insert or correct the line.
@@ -66,9 +70,12 @@ subagent (judgment-only set), then aggregates both result lists.
 
 ### B - Structural schema
 
-- **B1** *(script)*: All four required sections present and non-empty:
-  `## Vocabulary`, `## Dialect`, `## Emphasis`, `## Adjacency`.
-  - Fix on fail: re-enter Phase 3 to draft the missing section from research.
+- **B1** *(script)*: All four required sections present, unique, and
+  non-empty: `## Vocabulary`, `## Dialect`, `## Emphasis`, `## Adjacency`.
+  Duplicate headings fail B1 too; the section-order auto-fix in B2 would
+  otherwise silently collapse them and lose one copy's content.
+  - Fix on fail: re-enter Phase 3 to draft the missing or merge the
+    duplicated section from research.
 - **B2** *(script)*: Section order matches the schema (Vocabulary,
   Dialect, Emphasis, Adjacency).
   - Fix on fail: reorder sections.

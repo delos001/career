@@ -61,7 +61,11 @@ def _classify_bullet(rest_of_line):
     """Decide registry state from the text after the bolded value token.
 
     Returns (state, value_filename_or_None). State is one of
-    'file-backed', 'file-deferred', 'registry-only'.
+    'file-backed', 'file-deferred', 'registry-only'. Raises ValueError on
+    an unrecognised bullet so the user sees a typo in the registry rather
+    than a downstream "refuse to build" with no explanation. Comparisons
+    are exact; near-misses ('Files deferred', 'Registry only' without the
+    hyphen, lowercase 'file deferred') all fail.
     """
     # File-backed entries name the file explicitly: 'File: <name>.md'.
     m = re.search(r'File:\s+`?([\w\-.]+\.md)`?', rest_of_line)
@@ -71,9 +75,11 @@ def _classify_bullet(rest_of_line):
         return 'file-deferred', None
     if re.search(r'Registry-only', rest_of_line):
         return 'registry-only', None
-    # Anything else is an unrecognised state; treat as registry-only with no
-    # file so the caller halts rather than guessing.
-    return 'registry-only', None
+    raise ValueError(
+        'registry bullet does not match any of the three accepted shapes '
+        "('File: <name>.md', 'File deferred', 'Registry-only'); "
+        f'bullet rest-of-line: {rest_of_line.strip()!r}'
+    )
 
 
 def _find_registry_entry(registry_text, value):
@@ -244,10 +250,17 @@ def main():
     args = parser.parse_args()
 
     # --- Dispatch ---
+    # ContractError exit categorization is consistent across the axis-builder
+    # script family even though axis_registry does not currently consume
+    # subagent JSON; future subcommands or composition uses might, and
+    # the dispatching SKILL relies on a uniform exit-code contract.
     try:
         sys.stdout.reconfigure(encoding='utf-8')
         repo_root, cfg = _config.load()
         args.func(args, repo_root, cfg)
+    except axis_utils.ContractError as e:
+        print(f'ContractError: {e}', file=sys.stderr)
+        sys.exit(2)
     except Exception as e:
         print(f'Error: {e}', file=sys.stderr)
         sys.exit(1)

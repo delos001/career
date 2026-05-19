@@ -136,11 +136,28 @@ def cmd_create(args, repo_root, cfg):
             f'value file already exists: {vf_path}. Use refresh, not create.')
 
     # --- Read all inputs upfront ---
+    # Every JSON input is validated against its declared shape at this
+    # boundary. A mismatch raises ContractError, which the CLI entry
+    # point translates into a categorized exit (code 2 / stderr prefix
+    # 'ContractError:') the dispatching SKILL recognizes.
     value_text = _util.read(args.value_file)
     sibling_edits = axis_utils.unwrap_list(
         _util.load_json(args.sibling_edits), 'sibling_edits')
+    axis_utils.validate_list_of_dicts(
+        sibling_edits,
+        input_name='sibling_edits',
+        shape=axis_utils.SIBLING_EDIT_SHAPE,
+    )
     registry_entry_line = _util.read(args.registry_entry).strip()
-    issues = _util.load_json(args.issues) if args.provisional else None
+    issues = None
+    if args.provisional:
+        issues = axis_utils.unwrap_list(
+            _util.load_json(args.issues), 'issues')
+        axis_utils.validate_list_of_dicts(
+            issues,
+            input_name='issues',
+            shape=axis_utils.ISSUE_SHAPE,
+        )
 
     # --- Re-enforce G1 at the apply step ---
     # QC's 3-iteration loop can give up and ship a provisional build with
@@ -274,9 +291,18 @@ def cmd_refresh(args, repo_root, cfg):
     text = _bump_last_researched(text, _util.today_ym())
 
     # --- Load issues and apply provisional flag to the in-memory text ---
+    # Validate against ISSUE_SHAPE at the boundary so a malformed issues
+    # array fails with a categorized ContractError instead of corrupting
+    # the file's YAML frontmatter downstream.
     issues = None
     if args.provisional:
-        issues = _util.load_json(args.issues)
+        issues = axis_utils.unwrap_list(
+            _util.load_json(args.issues), 'issues')
+        axis_utils.validate_list_of_dicts(
+            issues,
+            input_name='issues',
+            shape=axis_utils.ISSUE_SHAPE,
+        )
         text = axis_qc.apply_provisional(text, issues)
 
     # --- Write the value file first (primary artifact) ---
@@ -348,10 +374,17 @@ def main():
         parser.error('--provisional requires --issues')
 
     # --- Dispatch ---
+    # ContractError gets its own categorized exit code (2) and stderr
+    # prefix so the dispatching SKILL can recognize input-shape failures
+    # and translate them into a user-facing message distinct from
+    # generic build failures.
     try:
         sys.stdout.reconfigure(encoding='utf-8')
         repo_root, cfg = _config.load()
         args.func(args, repo_root, cfg)
+    except axis_utils.ContractError as e:
+        print(f'ContractError: {e}', file=sys.stderr)
+        sys.exit(2)
     except Exception as e:
         print(f'Error: {e}', file=sys.stderr)
         sys.exit(1)
