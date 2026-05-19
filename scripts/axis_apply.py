@@ -47,17 +47,60 @@ import axis_utils
 # ---------------------------------------------------------------------------
 
 def _insert_bullet_in_section(text, heading, bullet_text):
-    """Append a bullet line at the end of a named section.
+    """Append a bullet to the appropriate location in a named section.
 
-    The bullet is inserted just before the section-ending blank line (or just
-    before the next '## ' heading if no trailing blank line). Preserves any
-    existing trailing whitespace structure.
+    For Adjacency, the insertion respects the two-form schema per
+    `axes-file-schema` and detects form from the bullet shape:
+
+    - **Substantive** (starts with `- **`): insert at the end of the
+      section's main portion (above any `### Low or no adjacency`
+      sub-section if present, else at the end of the section).
+    - **Plain low-form** (starts with `- ` but no `**`): insert at the end
+      of the section's `### Low or no adjacency` sub-section. If the
+      sub-section does not exist, it is created at the end of the
+      section's main portion and the bullet placed inside it.
+
+    For any other section (non-Adjacency call site), behavior is the legacy
+    "append at end of section" with a trailing blank line. The only
+    in-tree caller targets Adjacency, but the guard keeps the helper
+    sensible if a future caller targets a different section.
     """
     body_start, body_end = axis_utils.find_section_bounds(text, heading)
     body = text[body_start:body_end]
-    # Strip trailing whitespace/newlines from the body, append the bullet, then
-    # add one trailing blank line so section separation is preserved.
-    new_body = body.rstrip() + '\n' + bullet_text.rstrip() + '\n\n'
+
+    if heading != 'Adjacency':
+        new_body = body.rstrip() + '\n' + bullet_text.rstrip() + '\n\n'
+        return text[:body_start] + new_body + text[body_end:]
+
+    # Form detection. Substantive bullets start with '- **' (after any
+    # leading whitespace); plain low-form bullets start with '- ' but no
+    # '**'. A leading whitespace + dash + whitespace + '**' is the
+    # canonical substantive signature.
+    is_substantive = bool(re.match(r'-[ \t]+\*\*', bullet_text.lstrip()))
+    low_anchor = re.search(
+        r'(?m)^###[ ]+Low or no adjacency[ \t]*\n',
+        body,
+    )
+
+    if is_substantive:
+        if low_anchor:
+            main_text = body[:low_anchor.start()].rstrip()
+            low_text = body[low_anchor.start():].rstrip()
+            new_body = (
+                main_text + '\n' + bullet_text.rstrip() + '\n\n'
+                + low_text + '\n\n'
+            )
+        else:
+            new_body = body.rstrip() + '\n' + bullet_text.rstrip() + '\n\n'
+    else:
+        if low_anchor:
+            new_body = body.rstrip() + '\n' + bullet_text.rstrip() + '\n\n'
+        else:
+            new_body = (
+                body.rstrip() + '\n\n'
+                + '### Low or no adjacency\n\n'
+                + bullet_text.rstrip() + '\n\n'
+            )
     return text[:body_start] + new_body + text[body_end:]
 
 

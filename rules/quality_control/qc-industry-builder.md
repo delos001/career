@@ -117,13 +117,21 @@ subagent (judgment-only set), then aggregates both result lists.
 
 ### E - Adjacency completeness
 
-- **E1** *(script)*: The drafted file's `## Adjacency` section contains
-  one bullet per non-self entry in `rules/industries/registry.md`
-  (file-backed, file-deferred, and registry-only). The reconciler still
-  drafts back-edges only into file-backed siblings; E1 just enforces the
-  new file's Adjacency completeness.
+- **E1** *(script)*: The drafted file's `## Adjacency` section enumerates
+  every non-self entry in `rules/industries/registry.md` (file-backed,
+  file-deferred, and registry-only). Per `axes-file-schema`, each sibling
+  appears in exactly one of two forms:
+  - **Substantive bullet** in the main portion: `- **<sibling>**:
+    <translation rule>.` Used when the pair has a real translation rule.
+  - **Plain bullet** inside the optional terminal `### Low or no
+    adjacency` sub-section: `- <sibling>`. Used when the pair has no
+    translation logic worth stating.
+
+  Missing from both is the failure case. The reconciler still drafts
+  back-edges only into file-backed siblings; E1 just enforces the new
+  file's Adjacency completeness.
   - Fix on fail: re-enter Phase 3 to add the missing bullet(s) based on
-    the research findings.
+    the research findings, choosing the appropriate form.
 - **E2** *(script)*: The drafted file's `## Adjacency` section does not
   reference itself.
   - Fix on fail: remove the self-reference.

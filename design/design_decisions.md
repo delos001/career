@@ -279,9 +279,18 @@ Each axis carries a distinct file schema reflecting its purpose per `axes-compos
 
 All axis files carry a `**Used by:**` metadata header below the title per `document-metadata-header-discipline`.
 
+The `## Adjacency` section in every axis enumerates the relationship between this value and every non-self entry in the same axis's registry. Two forms are permitted within the section, used in combination:
+
+- **Substantive bullets** for siblings that carry a translation rule. Format: `- **<sibling>**: <translation rule>.` These are the bullets cv_targeted reads to translate work across adjacent values.
+- **Optional terminal sub-section `### Low or no adjacency`** for siblings that have no translation logic worth stating (the candidate either holds both tags or does not, and the axis files have nothing more to say). Format: plain bulleted list of value names, one per line: `- <sibling>`. No bolding, no translation prose.
+
+Every non-self registry entry must appear in exactly one of the two forms. Missing from both is the QC failure case (E1). The sub-section is omitted entirely when every sibling has a substantive bullet.
+
+Rationale: fully enumerating every sibling as a substantive bullet bloats Adjacency sections as an axis grows, and most sibling pairs in a typical axis carry no real translation logic (the bullets restate "co-tags only when both held" in different prose). Pure omission of weak siblings creates ambiguity between "considered weak" and "forgotten." The two-form rule preserves the audit trail (every sibling appears somewhere) without paying full-bullet cost for non-translating pairs.
+
 Per-section content authoring guidance (what each section should contain, depth expectations, framing rules) is per-axis-builder design territory and deferred to those skills.
 
-Refs: `axes-composition-precedence`, `document-metadata-header-discipline`, `foundation-execution-order`.
+Refs: `axes-composition-precedence`, `document-metadata-header-discipline`, `foundation-execution-order`, `adjacency-graph-fully-connected-rule-revisit` (deferral closed by this amendment).
 
 #### skill-stability-loose-coupling
 Skills reference rules by category/slug. Resolver script looks up the current file. Skill body does not hard-code paths.

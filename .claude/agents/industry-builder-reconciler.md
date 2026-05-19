@@ -46,19 +46,31 @@ For each sibling in `siblings`:
 
 1. Use the provided `adjacency_text` as the sibling's Adjacency section.
    Do not attempt to read the sibling file from disk.
-2. Decide whether the section already covers the new `value`. A bullet that
-   names the new value as its bolded token (e.g. `- **generics**: ...`)
-   counts as coverage; nothing else does.
-3. If the section does not cover the new value, draft a back-edge bullet
-   for it. The bullet:
-   - Starts with `- **<value>**:` followed by a translation rule.
-   - Reads in the sibling's voice (this is the sibling describing how the
-     new value's work translates to or from it, not the new value describing
-     itself).
-   - Matches the density and phrasing style of the sibling's existing
-     Adjacency bullets in `adjacency_text`. Those bullets are your voice
-     reference.
-   - States what carries from the sibling's perspective and what does not.
+2. Decide whether the section already covers the new `value`. Two coverage
+   forms count per `axes-file-schema`:
+   - **Substantive bullet** in the main portion: `- **<value>**: ...`.
+   - **Plain-name bullet** inside the sibling's `### Low or no adjacency`
+     sub-section: `- <value>` on its own line.
+
+   Either form counts as coverage; nothing else does.
+3. If the section does not cover the new value, judge whether the pair
+   carries a real translation rule and emit one of two forms:
+
+   - **Substantive back-edge bullet** when a translation rule exists:
+     - Starts with `- **<value>**:` followed by the translation rule.
+     - Reads in the sibling's voice (this is the sibling describing how
+       the new value's work translates to or from it, not the new value
+       describing itself).
+     - Matches the density and phrasing style of the sibling's existing
+       Adjacency bullets in `adjacency_text`. Those bullets are your
+       voice reference.
+     - States what carries from the sibling's perspective and what does not.
+   - **Plain low-form bullet** when there is no real translation rule
+     to state (the candidate either holds both tags or does not, and the
+     axis files have nothing more to say): the bullet is exactly
+     `- <value>` on its own line. The apply step inserts plain bullets
+     into the sibling's `### Low or no adjacency` sub-section, creating
+     it if absent.
 
 Collect the new bullets across all siblings.
 
@@ -66,12 +78,19 @@ Collect the new bullets across all siblings.
 
 1. Read the current value file at `current_value_file`.
 2. For each section in the schema (`Vocabulary`, `Dialect`, `Emphasis`,
-   `Adjacency`), compare the current text against the drafted text.
+   `Adjacency`), compare the current text against the drafted text. The
+   `## Adjacency` section may contain two forms per `axes-file-schema`:
+   substantive bullets (`- **<sibling>**: <rule>.`) in the main portion
+   and plain-name bullets (`- <sibling>`) inside an optional terminal
+   `### Low or no adjacency` sub-section. A change from one form to the
+   other for the same sibling is a substantive difference (the adjacency
+   has been promoted or demoted between strong and weak); emit it as a
+   `modify` change naming the sibling and the form transition.
 3. Emit one change record per substantive difference. A substantive
    difference is one that changes meaning (a new term, a removed term, an
-   updated version stamp, a reworded emphasis claim). Pure whitespace,
-   punctuation-only edits, and reorderings that do not change meaning are
-   skipped.
+   updated version stamp, a reworded emphasis claim, a form transition
+   in Adjacency). Pure whitespace, punctuation-only edits, and
+   reorderings that do not change meaning are skipped.
 4. Cross-check each change against `research_findings`. The change's
    reasoning must name the source-supported finding that drove it. If a
    diff exists but no research finding supports it, omit the change rather

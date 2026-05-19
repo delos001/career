@@ -433,13 +433,21 @@ def _check_b3_no_extra_sections(text, required_sections):
 # ---------------------------------------------------------------------------
 
 def _check_e1_adjacency_complete(text, value, registry_path):
-    """E1: Adjacency has one bullet per non-self registry entry.
+    """E1: every non-self registry entry appears in Adjacency in one of two forms.
 
-    Includes file-backed, file-deferred, and registry-only siblings - the
-    Adjacency section enumerates every other axis value so a candidate can
-    translate between any pair. The reconciler still drafts back-edges only
-    into file-backed siblings (the other states have no file to edit); E1
-    just enforces completeness of the new file's own Adjacency.
+    Per `axes-file-schema`, the `## Adjacency` section has two permitted forms:
+    - **Substantive bullet** anywhere in the main portion of Adjacency:
+      `- **<sibling>**: <translation>.` Used for siblings that carry a real
+      translation rule.
+    - **Plain bullet inside the terminal `### Low or no adjacency`
+      sub-section**: `- <sibling>`. Used for siblings with no translation
+      logic worth stating; the candidate either holds both tags or does not.
+
+    Every non-self registry entry must appear in exactly one form. Missing
+    from both is the failure case. Includes file-backed, file-deferred, and
+    registry-only siblings; the reconciler still drafts back-edges only into
+    file-backed siblings, but E1 enforces completeness of the new file's own
+    Adjacency regardless.
     """
     try:
         body_start, body_end = axis_utils.find_section_bounds(text, 'Adjacency')
@@ -448,6 +456,21 @@ def _check_e1_adjacency_complete(text, value, registry_path):
     adjacency_body = text[body_start:body_end]
     if not os.path.exists(registry_path):
         return text, _record('E1', False, False, f'registry missing: {registry_path}')
+
+    # Split Adjacency into main portion (substantive bullets) and
+    # low-or-no-adjacency portion (plain-name bullets), if the optional
+    # sub-section is present.
+    low_match = re.search(
+        r'(?m)^###[ ]+Low or no adjacency[ \t]*\n',
+        adjacency_body,
+    )
+    if low_match:
+        main_portion = adjacency_body[:low_match.start()]
+        low_portion = adjacency_body[low_match.end():]
+    else:
+        main_portion = adjacency_body
+        low_portion = ''
+
     registry_text = _util.read(registry_path)
     siblings = []
     for m in axis_registry.BULLET_RE.finditer(registry_text):
@@ -457,9 +480,19 @@ def _check_e1_adjacency_complete(text, value, registry_path):
         siblings.append(sibling_value)
     missing = []
     for sibling in siblings:
-        # A bullet referencing the sibling has '- **<sibling>**' near its start.
-        if not re.search(r'^- \*\*' + re.escape(sibling) + r'\*\*', adjacency_body, re.MULTILINE):
-            missing.append(sibling)
+        # Substantive bullet in the main portion.
+        if re.search(
+            r'^- \*\*' + re.escape(sibling) + r'\*\*',
+            main_portion, re.MULTILINE,
+        ):
+            continue
+        # Plain bullet in the low-or-no-adjacency sub-section.
+        if re.search(
+            r'^-[ \t]+' + re.escape(sibling) + r'[ \t]*$',
+            low_portion, re.MULTILINE,
+        ):
+            continue
+        missing.append(sibling)
     if missing:
         return text, _record('E1', False, False,
                              f'Adjacency missing sibling(s): {", ".join(missing)}')
