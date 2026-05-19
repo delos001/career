@@ -1,6 +1,6 @@
 ---
 work-state: scaling
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # Scaling - CV Framing Rules
@@ -26,3 +26,10 @@ Translation signal for entries tagged with adjacent work-states:
 - **greenfield**: greenfield work translates partially when the work moved from origination through to first-scale; pure standup without expansion does not carry as scaling.
 - **mature**: mature-state work translates only when the candidate's contribution was scope-expansion within the mature operation; pure steady-state operation does not.
 - **pivot**: pivot work translates when the redirection required scaling the new direction; pivots that did not reach scale do not.
+- **turnaround**: turnaround work translates as scaling only when the recovery was followed by scope expansion as part of the recovery mechanism; pure stabilization without expansion does not.
+- **post-merger-integration**: post-merger work translates as scaling when the integration deliverable was scope-expansion of the combined entity (cross-portfolio harmonization to enterprise scope); pure operational unification without expansion does not.
+
+### Low or no adjacency
+
+- divestiture
+

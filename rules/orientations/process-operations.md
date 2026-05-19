@@ -1,6 +1,6 @@
 ---
 orientation: process-operations
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # Process & Operations - CV Framing Rules
@@ -32,3 +32,8 @@ Translation rule for entries tagged with another orientation when this orientati
 - **transformation-strategy**: translates when the entry's deliverable can be re-anchored on a process, governance, or SOP outcome. Pure organizational capability building without a process anchor does not translate.
 - **data-analytics**: translates when the entry's data work can be re-anchored on improved process reliability or governance outcome. Pure analytical or modeling work does not translate.
 - **platform-technology**: translates when the entry's platform work can be re-anchored on a process or governance capability enabled by the technology. Pure system implementation does not translate.
+
+### Low or no adjacency
+
+_(none)_
+

@@ -1,6 +1,6 @@
 ---
 work-state: greenfield
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # Greenfield - CV Framing Rules
@@ -26,3 +26,10 @@ Translation signal for entries tagged with adjacent work-states:
 - **scaling**: scaling work translates partially when the scaling included net-new components built from scratch; pure replication or expansion of existing models does not carry as greenfield.
 - **divestiture**: divestiture work translates as greenfield-flavored when establishing new independent operations was the primary deliverable; pure dependency-severance without standing up new capability does not.
 - **pivot**: pivot work translates only when the new direction required net-new capability construction; pure redirection of existing capability does not.
+- **turnaround**: turnaround work translates as greenfield only when the rebuild was so complete that it amounted to standing up from nothing; recovery within recognizable prior structure does not.
+
+### Low or no adjacency
+
+- mature
+- post-merger-integration
+

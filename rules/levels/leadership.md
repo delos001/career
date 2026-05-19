@@ -1,6 +1,6 @@
 ---
 level: leadership
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # Leadership - CV Framing Rules
@@ -36,3 +36,8 @@ Reads as under-leveled: tool selection without organizational framing, individua
 Translation rule for entries tagged with ic when this level is selected for the CV:
 
 - **ic**: translates when the entry's individual technical work can be re-anchored on a strategic outcome it enabled or a capability it built. Hands-on execution surfaced without organizational framing does not translate; it reads as scope inflation in reverse (leadership reframed as IC).
+
+### Low or no adjacency
+
+_(none)_
+

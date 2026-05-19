@@ -1,6 +1,6 @@
 ---
 work-state: pivot
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # Pivot - CV Framing Rules
@@ -26,3 +26,10 @@ Translation signal for entries tagged with adjacent work-states:
 - **turnaround**: turnaround work translates as pivot only when strategic redirect was the recovery mechanism; recovery without direction change does not.
 - **scaling**: scaling work translates as pivot only when scope expansion was directed at a new target; replication of the existing direction does not.
 - **greenfield**: greenfield work translates as pivot only when the new capability replaced a discontinued prior direction; pure standup without prior direction does not.
+- **post-merger-integration**: post-merger work translates as pivot when the acquisition was strategically directed at redirecting the combined entity to a new market or model; routine post-merger unification without strategic redirect does not.
+- **divestiture**: divestiture work translates as pivot when separation was the mechanism of strategic refocus (divesting non-core to redirect to core); pure separation without strategic redirect does not.
+
+### Low or no adjacency
+
+- mature
+

@@ -1,0 +1,169 @@
+---
+qc_target: work-state-builder
+last_updated: 2026-05
+---
+
+# QC - work-state-builder
+
+**Used by:** qc-work-state-builder, work-state-builder, scripts/axis_qc.py, scripts/axis_apply.py
+
+Quality checks the `qc-work-state-builder` subagent runs against a drafted
+work-state value file plus the per-sibling Adjacency edits (create mode) or
+structured change list (refresh mode). The QC is part of the build loop, not a
+user surface: every failed check either gets auto-fixed within the loop or is
+written to the build issues log when the loop exits with unresolved items.
+
+## Loop and exit
+
+The builder runs QC, attempts fixes, and re-runs QC. The loop caps at
+**3 iterations**. On the final iteration, all checks pass = clean; any
+remaining failure = provisional with unresolved findings emitted to
+`--issues` for `axis_apply.py` to attach to frontmatter and append to
+`design/build_issues.md`.
+
+## Checks
+
+Two owners:
+- **`script`** - `scripts/axis_qc.py` runs the check and auto-fixes where
+  the fix is purely textual.
+- **`subagent`** - `qc-work-state-builder` subagent runs the check in
+  isolated context (LLM judgment required).
+
+### A - Frontmatter and metadata
+
+- **A1** *(script)*: Frontmatter present and bounded by `---` fences.
+  - Fix on fail: report; Phase 5 routes to Phase 3 redraft.
+- **A2** *(script)*: `work-state: <value>` key present and matches the
+  value being built.
+  - Fix on fail: insert or correct the line.
+- **A3** *(script)*: `last_researched: YYYY-MM` key present and equals
+  the current year-month.
+  - Fix on fail: insert or correct the line.
+- **A4** *(script)*: Title line present, ends with `- CV Framing Rules`
+  (case-insensitive on the suffix).
+  - Fix on fail: report; Phase 5 routes to Phase 3.
+- **A5** *(script)*: `**Used by:** <consumers>` header present on the
+  first non-blank line after the title.
+  - Fix on fail: insert standard header (`cv_targeted, axis-classifier`);
+    if buried elsewhere, report and route to Phase 3.
+
+### B - Structural schema
+
+- **B1** *(script)*: All three required sections present, unique, and
+  non-empty: `## Identity`, `## Achievement framing`, `## Adjacency`.
+  - Fix on fail: re-enter Phase 3 to draft the missing or merge the
+    duplicated section.
+- **B2** *(script)*: Section order matches the schema.
+  - Fix on fail: reorder sections.
+- **B3** *(script)*: No sections beyond the schema.
+  - Fix on fail: relocate content from extra sections into the appropriate
+    schema section, then remove the extra heading.
+- **B4** *(script)*: `## Adjacency` contains the mandatory
+  `### Low or no adjacency` sub-section per `axes-file-schema`.
+  - Fix on fail: insert the sub-section at the end of `## Adjacency`
+    with the `_(none)_` placeholder. Auto-fix.
+
+### C - Content traceability
+
+- **C1** *(subagent)*: Every named framework or convention in the drafted
+  file traces to a source in `research_findings`.
+  - Fix on fail: re-enter Phase 2 to re-research the missing citation.
+- **C2** *(subagent)*: Version-stamped references carry stamps consistent
+  with research-findings currency. Work-state files rarely carry version
+  stamps; pass silently when none are present.
+  - Fix on fail: correct the version stamp from research.
+- **C3** *(subagent)*: Every quantitative or temporal claim traces to a
+  source.
+  - Fix on fail: re-research; if unsourced, rewrite qualitatively or remove.
+
+### D - Cross-file responsibility boundaries
+
+- **D1** *(subagent)*: The drafted file's Identity section does not
+  paraphrase the identity of a sibling work-state. Each work-state's
+  identity is uniquely owned by its own file; the new file's identity
+  should be distinct enough that the "does not fit when ..." conditions
+  explicitly route sibling cases away.
+  - Fix on fail: remove or rewrite the overlapping content to make the
+    distinction explicit.
+- **D2** *(subagent)*: The drafted file's content stays within the
+  work-states axis (identity framing, achievement-framing signals,
+  adjacency translation). Off-axis content includes: industry-specific
+  terminology or regulatory framing (industries territory), capability
+  vocabulary or practice methods (specialties territory), voice-and-verb
+  framing or scope signals (levels territory), CV-identity framing
+  (orientations territory).
+  - Fix on fail: remove off-axis content.
+
+### E - Adjacency completeness
+
+- **E1** *(script)*: The drafted file's `## Adjacency` section enumerates
+  every non-self entry in `rules/work-states/registry.md` in one of two
+  forms per `axes-file-schema`: substantive bullet
+  (`- **<sibling>**: <translation rule>.`) or plain bullet inside
+  `### Low or no adjacency` (`- <sibling>`). Missing from both is the
+  failure case.
+  - Fix on fail: re-enter Phase 3 to add the missing bullet(s).
+- **E2** *(script)*: The drafted file's `## Adjacency` section does not
+  reference itself.
+  - Fix on fail: remove the self-reference.
+- **E3** *(subagent, create only)*: Each per-sibling back-edge bullet is
+  phrased in that sibling's voice (describes when entries tagged with
+  this work-state translate to the sibling's work-state framing).
+  - Fix on fail: re-enter Phase 4 reconciler to redraft.
+- **E4** *(script)*: Each per-sibling back-edge targets the sibling's
+  `## Adjacency` section.
+  - Fix on fail: reject the edit; reconciler must re-target.
+
+### F - Source quality
+
+- **F1** *(subagent)*: Sources cited in research findings match the
+  acceptable source class for the claim type they support. Work-state
+  files are framing-heavy; F1 typically applies to hiring-pattern and
+  CV-convention claims. Acceptable sources at that tier: authoritative
+  references where they exist; otherwise verified industry intelligence
+  (recognized recruiter firms, established trade publications, sector-
+  specific newsletters with editorial accountability). Marketing pages,
+  unsourced blogs, sponsored content, and AI-generated summaries without
+  attribution fail F1.
+  - Fix on fail: re-enter Phase 2 to find a source in the acceptable class.
+
+### G - Registry alignment
+
+- **G1** *(script)*: The registry entry text lists the same filename as
+  the value file being written.
+  - Fix on fail: rewrite the registry entry text to match.
+- **G2** *(subagent)*: The registry entry's one-line description summarizes
+  the file's scope.
+  - Fix on fail: re-enter Phase 3 to redraft the registry-entry line.
+
+### H - Voice and style
+
+- **H1** *(subagent)*: Em dashes do not appear in body prose. Frontmatter
+  fences (`---`) and structural separators are exempt.
+  - Fix on fail: re-enter Phase 3 to redraft the offending sentence
+    without an em dash.
+- **H2** *(script)*: Acronym list reconciliation, conditional on the file
+  declaring an explicit acronym catalog (canonical anchor phrase
+  `Acronyms recognized [...]:`). Work-state files in current convention
+  do not maintain an acronym catalog, so H2 is a no-op for those files.
+  - Fix on fail: re-enter Phase 3 for the drafter to address.
+
+### I - Mode invariants
+
+- **I1** *(script, create only)*: The value file did not exist before this run.
+  - Fix on fail: halt; invocation error.
+- **I2** *(script, refresh only)*: The value file existed before this run.
+  - Fix on fail: halt; invocation error.
+- **I3** *(script, refresh only)*: At least one meaningful change is present.
+  - Fix on fail: re-enter Phase 2 with broader research scope; if still no
+    change, exit clean and note that the file is current.
+
+## Unresolved-finding output format
+
+```json
+{
+  "check": "<check-id from above, e.g. C1>",
+  "detail": "<one-line description of what failed and where>",
+  "attempted": "<one-line description of fix attempts within the loop>"
+}
+```

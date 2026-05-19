@@ -1,6 +1,6 @@
 ---
 work-state: divestiture
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # Divestiture - CV Framing Rules
@@ -26,3 +26,10 @@ Translation signal for entries tagged with adjacent work-states:
 - **post-merger-integration**: post-merger work translates partially because both involve organizational restructuring; the direction is opposite (combining vs separating), so framing must be reframed accordingly.
 - **greenfield**: greenfield work translates as divestiture-flavored only when the new capability replaced a previously-shared parent capability; pure standup without inheritance does not.
 - **pivot**: pivot work translates as divestiture only when the strategic redirect required separating from a parent capability; pivots that retained shared infrastructure do not.
+- **turnaround**: turnaround work translates as divestiture when the recovery mechanism involved separating distressed operations from a parent; pure recovery without separation does not.
+
+### Low or no adjacency
+
+- scaling
+- mature
+

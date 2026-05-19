@@ -1,6 +1,6 @@
 ---
 orientation: data-analytics
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # Data & Analytics - CV Framing Rules
@@ -32,3 +32,8 @@ Translation rule for entries tagged with another orientation when this orientati
 - **platform-technology**: translates when the entry's deliverable can be re-anchored on analytical capability or data strategy outcome. Pure system or vendor delivery does not translate.
 - **process-operations**: translates when the entry's process work can be re-anchored on data quality, governance, or decision-readiness outcome. Standalone process work without a data dimension does not translate.
 - **transformation-strategy**: translates when the entry's transformation can be re-anchored on the analytical capability built. Operating-model redesigns without a data anchor do not translate.
+
+### Low or no adjacency
+
+_(none)_
+

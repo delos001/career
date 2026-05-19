@@ -1,6 +1,6 @@
 ---
 work-state: post-merger-integration
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # Post-Merger Integration - CV Framing Rules
@@ -26,3 +26,10 @@ Translation signal for entries tagged with adjacent work-states:
 - **divestiture**: divestiture work translates partially because both involve organizational restructuring; the direction is opposite (separating vs combining), so framing must be reframed accordingly.
 - **turnaround**: turnaround work translates as post-merger integration only when the integration itself was distressed; routine recovery does not.
 - **mature**: mature work translates as post-merger integration only when the candidate's contribution was completing or sustaining the integration into steady-state; pre-merger or post-completion mature operation does not.
+
+### Low or no adjacency
+
+- greenfield
+- scaling
+- pivot
+

@@ -1,6 +1,6 @@
 ---
 work-state: mature
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # Mature - CV Framing Rules
@@ -26,3 +26,11 @@ Translation signal for entries tagged with adjacent work-states:
 - **scaling**: scaling work translates as mature only after the scaling endpoint is reached and operations enter steady state; in-flight scaling does not.
 - **post-merger-integration**: post-merger work translates as mature once integration is complete and operations are steady; in-flight integration does not.
 - **turnaround**: turnaround work translates as mature only after stabilization is achieved and operations are steady; in-flight recovery does not.
+- **greenfield**: greenfield work translates as mature only after the buildout was complete and operations entered steady-state under the candidate's stewardship; pure establishment without steady-state operation does not.
+- **divestiture**: divestiture work translates as mature only after the standalone entity reached operational stability; in-flight separation does not.
+- **pivot**: pivot work translates as mature only after the new direction reached steady-state operation; in-flight redirection does not.
+
+### Low or no adjacency
+
+_(none)_
+

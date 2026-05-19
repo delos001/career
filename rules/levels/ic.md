@@ -1,6 +1,6 @@
 ---
 level: ic
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # Individual Contributor - CV Framing Rules
@@ -36,3 +36,8 @@ Reads as inflated at IC level: organizational leadership, multi-function governa
 Translation rule for entries tagged with leadership when this level is selected for the CV:
 
 - **leadership**: translates when the entry's content can be re-anchored on technical leadership, architecture or system-scale decisions, deep specialty contribution, or influence without management authority. Pure organizational-management framing (headcount management, budget authority, multi-function governance) does not translate to IC-positioned content.
+
+### Low or no adjacency
+
+_(none)_
+

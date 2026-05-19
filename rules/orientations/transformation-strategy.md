@@ -32,3 +32,8 @@ Translation rule for entries tagged with another orientation when this orientati
 - **process-operations**: translates when the entry's process work can be re-anchored on new capability construction. Pure efficiency or steady-state optimization does not translate.
 - **data-analytics**: translates when the entry's analytical work can be re-anchored on a transformation decision it informed. Otherwise does not translate.
 - **platform-technology**: translates when the entry's platform work can be re-anchored on adoption or capability shift as the outcome. Pure technology delivery does not translate.
+
+### Low or no adjacency
+
+_(none)_
+

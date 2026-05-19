@@ -1,6 +1,6 @@
 ---
 work-state: turnaround
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # Turnaround - CV Framing Rules
@@ -26,3 +26,10 @@ Translation signal for entries tagged with adjacent work-states:
 - **pivot**: pivot work translates as turnaround only when the redirection was driven by sustained underperformance rather than strategic choice; opportunistic pivots do not carry.
 - **post-merger-integration**: post-merger work translates as turnaround when integration was distressed (failed cultural fit, missed synergies, value erosion); routine integration does not.
 - **mature**: mature work translates as turnaround only when the candidate inherited the function in a distressed state and stabilized it before steady-state operation began; pure steady-state operation does not.
+- **scaling**: scaling work translates as turnaround only when the scaling effort was driven by recovering from chronic underperformance in the prior scale; growth without distress as the driver does not.
+- **divestiture**: divestiture work translates as turnaround when the divestiture was driven by chronic underperformance of the unit (separating to unload or recover distressed operations); strategic divestiture without distress as the driver does not.
+
+### Low or no adjacency
+
+- greenfield
+
