@@ -54,3 +54,8 @@ Translation signal for entries tagged with adjacent specialties:
 - **quality-compliance**: when validation testing applied to analytical code, methods, or quality-check programming the candidate authored, quality-compliance co-tags as the validation framing and data-science carries the underlying analytical work.
 - **operations-strategy**: when analytical work informed operating-model decisions (capability evaluation through analytics, performance KPI design driven by statistical methods, benchmarking analyses underpinning strategy), operations-strategy co-tags as the strategy layer and data-science carries the analytical method.
 - **people-leadership**: co-tags when the data-science role included team management (direct or matrixed) of analytics staff. Senior IC analytical work without team management does not co-tag.
+
+### Low or no adjacency
+
+_(none)_
+

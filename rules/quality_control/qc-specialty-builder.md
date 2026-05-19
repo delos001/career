@@ -83,6 +83,13 @@ subagent (judgment-only set), then aggregates both result lists.
 - **B3** *(script)*: No sections beyond the schema (no extra `## ` headings).
   - Fix on fail: relocate content from extra sections into the appropriate
     schema section, then remove the extra heading.
+- **B4** *(script)*: `## Adjacency` contains the mandatory
+  `### Low or no adjacency` sub-section per `axes-file-schema`. The
+  sub-section is always present, with a `_(none)_` placeholder body when
+  no siblings qualify; structural presence signals "considered and none"
+  rather than "forgotten or absent."
+  - Fix on fail: insert the sub-section at the end of `## Adjacency`
+    with the `_(none)_` placeholder. Auto-fix.
 
 ### C - Content traceability
 

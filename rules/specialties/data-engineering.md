@@ -54,3 +54,8 @@ Translation signal for entries tagged with adjacent specialties:
 - **quality-compliance**: when the data systems were subject to CSV/CSA validation, quality-compliance co-tags as the validation framing and data-engineering carries the build.
 - **clinical-operations**: when data infrastructure was built for clinical systems (EDC integration, eTMF data ingestion, central monitoring data layer, lab data warehousing, CTMS data flows), clinical-operations co-tags as the domain context and data-engineering carries the infrastructure layer.
 - **people-leadership**: co-tags when the data-engineering role included team management (direct or matrixed) of engineering staff. Technical lead-without-team-management does not co-tag.
+
+### Low or no adjacency
+
+_(none)_
+

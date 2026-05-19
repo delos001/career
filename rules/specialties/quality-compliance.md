@@ -54,3 +54,8 @@ Translation signal for entries tagged with adjacent specialties:
 - **data-science**: when validation testing applies to analytical code, methods, or quality-check programming the candidate authored, data-science co-tags as the underlying analytical work.
 - **ai-engineering**: bridge is narrow. Co-tags when ML/LLM systems the candidate built were subject to CSV/CSA validation, model documentation per FDA AI/ML guidance, or audit-trail requirements. Quality-compliance is the validation framing; ai-engineering is the underlying build.
 - **people-leadership**: co-tags when the quality-compliance role included team management (direct or matrixed) of QA/QC staff. Quality-system leadership without team management does not co-tag.
+
+### Low or no adjacency
+
+_(none)_
+

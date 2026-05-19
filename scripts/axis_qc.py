@@ -424,6 +424,36 @@ def _check_b3_no_extra_sections(text, required_sections):
                          f'extra section(s): {", ".join(extras)}')
 
 
+def _check_b4_low_subsection_present(text):
+    """B4: '## Adjacency' contains the mandatory '### Low or no adjacency' sub-section.
+
+    Auto-fix when missing: append the sub-section to the end of Adjacency
+    with a `_(none)_` placeholder body. The placeholder signals "considered
+    and none" rather than "forgotten or absent" per `axes-file-schema`.
+
+    When Adjacency itself is missing, B1 already flagged the structural
+    failure; B4 passes silently to avoid double-reporting.
+    """
+    try:
+        body_start, body_end = axis_utils.find_section_bounds(text, 'Adjacency')
+    except ValueError:
+        return text, _record('B4', True, False,
+                             'no Adjacency section to check (see B1)')
+    adjacency_body = text[body_start:body_end]
+    if re.search(r'(?m)^###[ ]+Low or no adjacency[ \t]*\n', adjacency_body):
+        return text, _record('B4', True, False,
+                             'Low or no adjacency sub-section present')
+    new_adjacency = (
+        adjacency_body.rstrip()
+        + '\n\n### Low or no adjacency\n\n_(none)_\n\n'
+    )
+    new_text = text[:body_start] + new_adjacency + text[body_end:]
+    return new_text, _record(
+        'B4', True, True,
+        'inserted Low or no adjacency sub-section with _(none)_ placeholder',
+    )
+
+
 # ---------------------------------------------------------------------------
 # Check group E - Adjacency completeness
 # E1 checks the new file references every file-backed sibling. E2 removes a
@@ -742,10 +772,11 @@ def run_qc(args, repo_root, cfg):
     text, rec = _check_a4_title(text, args.value); checks.append(rec)
     text, rec = _check_a5_used_by(text, used_by_line); checks.append(rec)
 
-    # --- Group B: structural schema (B2 auto-fix; B1/B3 report) ---
+    # --- Group B: structural schema (B2/B4 auto-fix; B1/B3 report) ---
     text, rec = _check_b1_sections_present(text, required_sections); checks.append(rec)
     text, rec = _check_b2_section_order(text, required_sections); checks.append(rec)
     text, rec = _check_b3_no_extra_sections(text, required_sections); checks.append(rec)
+    text, rec = _check_b4_low_subsection_present(text); checks.append(rec)
 
     # --- Group E (mechanical): Adjacency completeness and self-reference ---
     reg_path = axis_utils.registry_path(repo_root, cfg, args.axis)

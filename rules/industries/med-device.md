@@ -1,6 +1,6 @@
 ---
 industry: med-device
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # Med-Device - CV Framing Rules
@@ -73,4 +73,8 @@ Translation signal for entries tagged with adjacent industries:
 - **diagnostics**: IVDR / IVDD / LDT and 510(k) IVD experience is a near-direct translation; ISO 13485 carries; design-controls vocabulary carries. Assay-development specifics do not translate to therapeutic-device contexts.
 - **eclinical**: IEC 62304 software-lifecycle and cybersecurity (FDA Sep 2023) experience translates as regulated-software discipline; 21 CFR Part 11 is shared. SaMD specifically maps as the device-side analog of regulated clinical software platforms. PCCP discipline is a differentiator - eclinical has nothing equivalent yet.
 - **generics**: shared quality-system DNA (CGMP under 21 CFR 210/211 parallels 21 CFR 820 / QMSR), inspection-readiness vocabulary, supplier qualification, and CAPA discipline translate. Combination-product generic experience (MDIs, DPIs, auto-injectors, transdermal patches, prefilled syringes) is the strongest bridge - design controls, human factors, and device-similarity assessment carry directly. ANDA / 505(b)(2) / BE / dissolution / PSG pathway specifics and Orange Book / paragraph IV / 180-day exclusivity vocabulary do not map; frame device-side work in 510(k) / De Novo / PMA terms rather than borrowing generics submission framing.
+
+### Low or no adjacency
+
+_(none)_
 

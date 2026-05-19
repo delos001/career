@@ -1,6 +1,6 @@
 ---
 industry: pharma
-last_researched: 2026-04
+last_researched: 2026-05
 ---
 
 # Pharma - CV Framing Rules
@@ -53,3 +53,8 @@ Translation signal for entries tagged with adjacent industries:
 - **med-device**: 510(k)/PMA experience translates as regulatory rigor; ISO 13485 maps to GMP discipline; device-specific terminology does not carry.
 - **diagnostics**: regulated-environment and quality-systems work translates; LDT/IVDR context is the relevant signal; assay-specific detail does not.
 - **eclinical**: pharma sponsors are the primary buyer of eClinical platforms (EDC, CTMS, eTMF, RTSM/IRT, eCOA/ePRO, eConsent, RBQM). Sponsor-side platform-evaluation, vendor selection, system validation (CSV/CSA), integration, and SOP-aligned configuration translate to eclinical vendor or platform-role contexts. Veeva Vault, Medidata Rave, Oracle Clinical One, Florence are current dominant platforms.
+
+### Low or no adjacency
+
+_(none)_
+

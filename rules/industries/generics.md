@@ -51,3 +51,8 @@ Translation signal for entries tagged with adjacent industries:
 - **med-device**: quality systems mindset (CGMP / 21 CFR 820 share QMS DNA), inspection readiness, design controls for drug-device combination generics (MDIs, DPIs, auto-injectors, transdermal patches, prefilled syringes), human factors and usability for device-similarity assessment, and supplier qualification carry. 510(k) / De Novo / PMA pathways, ISO 13485, IEC 60601, SaMD, and UDI do not. Combination-product generic experience is the strongest bridge.
 - **eclinical**: CDISC SDTM (and ADaM) literacy for BE study submissions, eCTD via FDA ESG, EDC for BE study CRFs, audit-trail review, and ALCOA+ data integrity carry. Trial-platform design (EDC architecture, CTMS, eTMF, ePRO/eCOA, IRT/RTSM), CSV under GAMP 5 from the vendor side, and large-trial data architecture do not. Position as a regulated-data consumer with deep ALCOA+ / Part 11 / CDISC fluency from the sponsor side.
 - **diagnostics**: shared themes are limited to general FDA literacy, quality-system principles, and analytical method development discipline (HPLC, LC-MS, dissolution, impurity analysis transfer rigor to assay validation, but the regulatory framework differs). IVD pathways (510(k), De Novo, PMA for diagnostics; LDT framework), CLIA, CAP, ISO 15189, analytical and clinical validation of diagnostic assays, companion diagnostic co-development, and IVDR do not carry. Bridge is narrow; lead with regulated-industry rigor without overclaiming diagnostics-pathway expertise.
+
+### Low or no adjacency
+
+_(none)_
+

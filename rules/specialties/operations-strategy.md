@@ -56,3 +56,8 @@ Translation signal for entries tagged with adjacent specialties:
 - **data-engineering**: when data-platform strategy decisions (capability evaluation, build-vs-buy, architecture choices made strategically) preceded or accompanied implementation the candidate also performed, data-engineering co-tags for the build layer and operations-strategy carries the strategy layer.
 - **ai-engineering**: when AI strategy and platform evaluation decisions preceded or accompanied implementation the candidate also performed, ai-engineering co-tags for the build layer and operations-strategy carries the strategy layer.
 - **data-science**: when analytical work informed operating-model decisions (capability evaluation through analytics, performance KPI design driven by statistical methods, benchmarking analyses underpinning strategy), data-science co-tags as the analytical method and operations-strategy carries the strategy layer.
+
+### Low or no adjacency
+
+_(none)_
+

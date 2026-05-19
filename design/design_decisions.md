@@ -282,9 +282,9 @@ All axis files carry a `**Used by:**` metadata header below the title per `docum
 The `## Adjacency` section in every axis enumerates the relationship between this value and every non-self entry in the same axis's registry. Two forms are permitted within the section, used in combination:
 
 - **Substantive bullets** for siblings that carry a translation rule. Format: `- **<sibling>**: <translation rule>.` These are the bullets cv_targeted reads to translate work across adjacent values.
-- **Optional terminal sub-section `### Low or no adjacency`** for siblings that have no translation logic worth stating (the candidate either holds both tags or does not, and the axis files have nothing more to say). Format: plain bulleted list of value names, one per line: `- <sibling>`. No bolding, no translation prose.
+- **Mandatory terminal sub-section `### Low or no adjacency`** for siblings that have no translation logic worth stating (the candidate either holds both tags or does not, and the axis files have nothing more to say). Format: plain bulleted list of value names, one per line: `- <sibling>`. No bolding, no translation prose. The sub-section is always present in every value file, even when no siblings qualify; when empty, the body is the single placeholder line `_(none)_`. Mandatory presence signals "considered and none" rather than "forgotten or absent" and makes future low-adjacency additions pure-append rather than create-the-section-first.
 
-Every non-self registry entry must appear in exactly one of the two forms. Missing from both is the QC failure case (E1). The sub-section is omitted entirely when every sibling has a substantive bullet.
+Every non-self registry entry must appear in exactly one of the two forms. Missing from both is the QC failure case (E1).
 
 Rationale: fully enumerating every sibling as a substantive bullet bloats Adjacency sections as an axis grows, and most sibling pairs in a typical axis carry no real translation logic (the bullets restate "co-tags only when both held" in different prose). Pure omission of weak siblings creates ambiguity between "considered weak" and "forgotten." The two-form rule preserves the audit trail (every sibling appears somewhere) without paying full-bullet cost for non-translating pairs.
 

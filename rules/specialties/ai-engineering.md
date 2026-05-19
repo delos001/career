@@ -55,3 +55,8 @@ Translation signal for entries tagged with adjacent specialties:
 - **clinical-operations**: bridge is narrow. Co-tags only when production AI/ML systems were deployed for clinical-operations purposes (anomaly detection in centralized monitoring, AI-assisted protocol or site analytics in production). Clinical-domain prototypes that stop short of production deployment do not carry.
 - **quality-compliance**: when AI/ML systems the candidate built were subject to validation (CSV/CSA), model documentation per FDA AI/ML guidance, or audit-trail requirements, quality-compliance co-tags as the validation framing and ai-engineering carries the build.
 - **people-leadership**: co-tags when the ai-engineering role included team management (direct or matrixed) of ML/AI engineering staff. Technical lead-without-team-management does not co-tag.
+
+### Low or no adjacency
+
+_(none)_
+

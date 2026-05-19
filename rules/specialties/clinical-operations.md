@@ -53,3 +53,8 @@ Translation signal for entries tagged with adjacent specialties:
 - **data-engineering**: when clinical-operations work depended on data systems (EDC, eTMF, CTMS, lab data pipelines) the candidate also designed, built, or extended, data-engineering co-tags as the infrastructure layer. Pure clinical-operations on vendor-provided systems does not carry forward to data-engineering.
 - **ai-engineering**: bridge is narrow. Co-tags only when production AI/ML systems were deployed as part of clinical operations (e.g., centralized monitoring with statistical anomaly models in production, AI-assisted protocol or site analytics in production). Operational analytics that stop short of production deployment are not ai-engineering.
 - **people-leadership**: co-tags when the clinical-operations role included team management (direct or matrixed) of clinical staff (CRA teams, study managers, FSP/CRO personnel). Operational oversight without team management does not co-tag.
+
+### Low or no adjacency
+
+_(none)_
+
