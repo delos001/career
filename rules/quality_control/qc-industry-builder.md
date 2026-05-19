@@ -158,10 +158,18 @@ subagent (judgment-only set), then aggregates both result lists.
   the em dash (period, semicolon, conjunction, or restructure). The check
   does not delete characters or sub-clauses.
   - Fix on fail: re-enter Phase 3 to redraft the offending sentence.
-- **H2** *(subagent)*: Where the file defines an acronym list under
-  `## Dialect`, acronyms used in the body but not in the list are added to
-  the list; acronyms listed but unused in the body are removed.
-  - Fix on fail: reconcile the list to actual body usage.
+- **H2** *(script)*: Where the file defines an acronym list under
+  `## Dialect`, acronyms used in the body but not in the list are flagged
+  for addition; acronyms listed but unused in the body are flagged for
+  removal. The script extracts both sets deterministically (regex on
+  2-6 char alphabetic runs with at least 2 uppercase letters, with plural
+  normalization so `ANDAs` matches `ANDA`, and a small exclusion set for
+  Roman numerals, the `CV` title artifact, and cross-domain world
+  acronyms like `DNA`, `UN`, `XML`). Report-only in both directions;
+  splicing tokens out of the comma-separated Dialect catalog safely is
+  deferred to a v2 auto-fix.
+  - Fix on fail: re-enter Phase 3 for the drafter to add to the list,
+    rewrite the body to drop the term, or prune the unused entry.
 
 ### I - Mode invariants
 

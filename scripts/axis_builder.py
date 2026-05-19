@@ -754,8 +754,131 @@ def _check_g1_registry_entry_filename(registry_entry_text, expected_filename):
 # rewriting the surrounding sentence, not substitution; the script previously
 # enforced H1 with a regex that corrupted '---' fences and adjacent content.
 # H1 now lives in the qc-industry-builder subagent and routes failures to
-# Phase 3 redraft. H2 (acronym list reconciliation) is also subagent-owned.
+# Phase 3 redraft.
+#
+# H2 (acronym list reconciliation) is script-owned as of 2026-05. The check
+# is deterministic regex extraction in both directions (acronyms used in
+# body but absent from the Dialect list, and listed acronyms unused in the
+# body). Report-only in both directions; the drafter resolves either case
+# in Phase 3 redraft. Moved from the subagent after a generics-build run
+# where the subagent oscillated across iterations catching different
+# subsets of the same all-caps tokens each pass (resolves deferral
+# 'qc-h2-acronym-reconciliation-should-be-mechanical').
 # ---------------------------------------------------------------------------
+
+# Acronym detection: alphabetic 2-6 char runs with at least 2 uppercase
+# letters. Captures pure all-caps (ANDA, FDA, CFR), lowercase-prefix
+# CamelCase (eCTD, eTMF, ePRO), and mid-CamelCase initialisms (QbD, SaMD,
+# ADaM). Excludes single-uppercase tokens like Cmax and Tmax, which the
+# spec ("any all-caps token 2-6 letters") does not target. Exclusion set
+# covers: Roman numerals (II..XII); the 'CV' artifact from the canonical
+# title suffix ('- CV Framing Rules'); cross-domain world acronyms that
+# no industry file would reasonably catalog as industry-specific
+# terminology (DNA, RNA, UN, EU, UK, USA, XML).
+_ACRONYM_TOKEN_RE = re.compile(r'\b[A-Za-z]{2,6}\b')
+_ACRONYM_EXCLUSIONS = frozenset({
+    'II', 'III', 'IV', 'VI', 'VII', 'VIII', 'IX', 'XI', 'XII',
+    'CV',
+    'DNA', 'RNA', 'UN', 'EU', 'UK', 'USA', 'XML',
+})
+
+
+def _singular_acronym(tok):
+    """Strip a lowercase 's' plural suffix from an all-caps acronym.
+
+    Acronym plurals in body prose typically take a lowercase 's' (ANDAs,
+    CROs, CRFs) while the Dialect catalog lists the singular (ANDA, CRO,
+    CRF). Normalize both sides to singular for comparison so plurals do
+    not surface as false H2 findings. Only triggered for tokens where the
+    pre-'s' segment is entirely uppercase; mixed-case forms (eTMFs would
+    map to eTMF) are left untouched since they are rarer and the regex
+    treats them on their own merits.
+    """
+    if len(tok) >= 3 and tok.endswith('s') and tok[:-1].isupper():
+        return tok[:-1]
+    return tok
+
+
+def _extract_acronyms(text):
+    """Return the set of acronym-shaped tokens in text.
+
+    A token is acronym-shaped when it is 2-6 alphabetic characters with at
+    least 2 uppercase letters and is not in the hardcoded exclusion set.
+    Used by H2 to compare body usage against the Dialect catalog.
+    """
+    found = set()
+    for tok in _ACRONYM_TOKEN_RE.findall(text):
+        if tok in _ACRONYM_EXCLUSIONS:
+            continue
+        if sum(1 for c in tok if c.isupper()) >= 2:
+            found.add(tok)
+    return found
+
+
+def _check_h2_acronym_reconciliation(text):
+    """H2: Dialect acronym list reconciles with body usage. Report-only.
+
+    Extracts acronyms from:
+      - the Dialect section's catalog (the content after the first ':' in
+        the Dialect section body, treated as the list area)
+      - the concatenated bodies of Vocabulary, Emphasis, and Adjacency
+        (frontmatter, title, Used-by header, and Dialect prose excluded)
+
+    Reports two directions:
+      - in_body_not_listed: acronyms used in the body sections that the
+        Dialect catalog does not name. Drafter adds to the list, rewrites
+        to drop, or judges as a false positive in Phase 3.
+      - in_list_not_in_body: acronyms in the catalog that no body section
+        actually uses. Drafter prunes in Phase 3 (auto-fix deferred to a
+        v2 that handles comma-list splicing safely).
+
+    Both directions are report-only; the check passes when both sets are
+    empty.
+    """
+    # Locate the Dialect section. If it is missing, B1 already flagged it
+    # and H2 cannot evaluate meaningfully; report pass to avoid double-flagging.
+    try:
+        dialect_start, dialect_end = _find_section_bounds(text, 'Dialect')
+    except ValueError:
+        return text, _record('H2', True, False, 'no Dialect section to check')
+    dialect_body = text[dialect_start:dialect_end]
+
+    # The Dialect catalog is the content after the first ':' in the section
+    # body (matching the established pattern: optional prose intro, then
+    # 'Acronyms recognized without expansion in <industry> hiring contexts: <list>').
+    # When no colon exists, treat the whole section as the catalog.
+    colon_idx = dialect_body.find(':')
+    catalog_text = dialect_body[colon_idx + 1:] if colon_idx != -1 else dialect_body
+    listed = _extract_acronyms(catalog_text)
+
+    # Body scope: concatenate Vocabulary, Emphasis, Adjacency bodies. Each
+    # may be absent (B1 will have flagged it); skip absent sections.
+    body_text_parts = []
+    for section in ('Vocabulary', 'Emphasis', 'Adjacency'):
+        try:
+            s, e = _find_section_bounds(text, section)
+        except ValueError:
+            continue
+        body_text_parts.append(text[s:e])
+    body_used = _extract_acronyms('\n'.join(body_text_parts))
+
+    # Normalize plurals so 'ANDAs' in body and 'ANDA' in catalog match.
+    listed_norm = {_singular_acronym(t) for t in listed}
+    body_norm = {_singular_acronym(t) for t in body_used}
+
+    in_body_not_listed = sorted(body_norm - listed_norm)
+    in_list_not_in_body = sorted(listed_norm - body_norm)
+
+    if not in_body_not_listed and not in_list_not_in_body:
+        return text, _record('H2', True, False,
+                             'acronym list reconciles with body usage')
+
+    parts = []
+    if in_body_not_listed:
+        parts.append('used in body but not listed: ' + ', '.join(in_body_not_listed))
+    if in_list_not_in_body:
+        parts.append('listed but unused in body: ' + ', '.join(in_list_not_in_body))
+    return text, _record('H2', False, False, '; '.join(parts))
 
 
 # ---------------------------------------------------------------------------
@@ -832,6 +955,9 @@ def cmd_qc(args, repo_root, cfg):
     registry_path = _registry_path(repo_root, cfg, args.axis)
     text, rec = _check_e1_adjacency_complete(text, args.value, registry_path); checks.append(rec)
     text, rec = _check_e2_no_self_reference(text, args.value); checks.append(rec)
+
+    # --- Group H (mechanical): acronym list reconciles with body usage ---
+    text, rec = _check_h2_acronym_reconciliation(text); checks.append(rec)
 
     # --- Mode-specific: create runs E4 + G1 + I1; refresh runs I2 + I3 ---
     value_path = _value_file_path(repo_root, cfg, args.axis, f'{args.value}.md')

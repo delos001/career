@@ -185,7 +185,7 @@ invoking it after flagging an axis gap.
   passed - no judgment check uses it; it is the script's I3 input only.
   The subagent returns
   `{"findings": [{"check": "...", "detail": "..."}]}` covering only the
-  judgment-owned checks (C1-C3, D1-D2, E3, F1, G2, H1, H2).
+  judgment-owned checks (C1-C3, D1-D2, E3, F1, G2, H1).
 
 - Aggregate failures from both halves:
   - Script half: any `passed: false` from the script's `checks` array.

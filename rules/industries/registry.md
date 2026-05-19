@@ -14,4 +14,4 @@ Industry values for axis validation. Per-value framing rules in same-folder file
 - **med-device** - medical device manufacturers; CDRH submission pathway (510(k), PMA, De Novo). File: `med-device.md`.
 - **eclinical** - clinical technology vendors. Registry-only; pharma adjacency handles translation.
 - **generics** - generic and 505(b)(2) drug manufacturers. File: generics.md.
-- **diagnostics** - IVD and LDT diagnostics companies. File deferred.
+- **diagnostics** - in vitro diagnostics, laboratory developed tests, and companion diagnostics; CDRH submission pathway and CLIA framework. File: diagnostics.md.

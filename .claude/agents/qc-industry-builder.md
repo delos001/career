@@ -95,17 +95,11 @@ propose a rewrite in the finding; the drafter rewrites in Phase 3.
 Removing the em dash alone is not the fix - the sentence must be
 rewritten to read naturally without it.
 
-### H2 - acronym list reconciles with body usage
-The drafted file's Dialect section lists acronyms recognized without
-expansion. Every acronym used in the body (any all-caps token 2-6 letters)
-must appear in that list. Every acronym in the list must appear in the
-body. Report H2 with the specific acronyms missing or unused.
-
 ## Rules
 
 - Do not edit any file.
 - Do not re-run the script-owned checks (A1-A5, B1-B3, E1, E2, E4, G1,
-  I1-I3). The dispatching skill runs them before dispatching you.
+  H2, I1-I3). The dispatching skill runs them before dispatching you.
 - Do not propose multi-phase rework. Each finding's `detail` is one line
   describing what failed and where. The dispatching skill decides which
   phase to route back to.
