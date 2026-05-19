@@ -28,4 +28,6 @@ Summary / Key facts / Sources body.
 {{role_block}}
 
 {{industry_block}}
+
+{{axis_gaps}}
 ```

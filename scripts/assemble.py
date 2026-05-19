@@ -22,9 +22,10 @@ re-runs and sections added by downstream skills are not clobbered.
 Author    : Jason Delosh
 Created   : 2026-05-14
 Project   : career
-Usage     : python scripts/assemble.py init     --slug ... --app-id ... --ym ... --company ... --role ... [--level ...] --industry ... --start-date ... --jd-text-file ... --jd-source ... [--comms-text-file ... --comms-source ...]
+Usage     : python scripts/assemble.py ingest   --slug ... --app-id ... --ym ... --jd-text-file ... [--comms-text-file ...]
+            python scripts/assemble.py init     --slug ... --app-id ... --ym ... --company ... --role ... [--level ...] --industry ... --start-date ... --jd-source ... [--comms-source ...]
             python scripts/assemble.py research --folder ... --app-id ... --company ... --role ... --date ... --company-file ... --role-file ... --industry-file ...
-            python scripts/assemble.py finalize --session-log ... --date ... --axis-file ...
+            python scripts/assemble.py finalize --session-log ... --date ... --axis-file ... [--research-file ...]
 Depends   : pyyaml (via _config)
 """
 
@@ -101,14 +102,46 @@ def _replace_section(text, heading, new_section):
 
 
 # ---------------------------------------------------------------------------
-# Subcommand: init  (role-intake Phase 3)
-# Creates the application folder and writes the initial session log - metadata
-# filled in, axis sections marked pending for finalize to fill later. Folder
-# locations and naming patterns come from config.yaml.
+# Subcommand: ingest  (role-intake Phase 3a)
+# Creates the application folder and writes the JD (and comms if present) to
+# disk immediately. Run this before 'init' so raw inputs are persisted before
+# the session log is written - if the session closes between the two calls the
+# inputs survive and the run can be resumed from the session-log step.
+# ---------------------------------------------------------------------------
+
+def cmd_ingest(args, repo_root, cfg):
+    stem = cfg['naming']['application_stem'].format(
+        slug=args.slug, app_id=args.app_id, ym=args.ym)
+    app_folder = os.path.join(repo_root, cfg['paths']['applications'], stem)
+
+    os.makedirs(app_folder, exist_ok=True)
+
+    jd_file_name = cfg['filenames']['jd_file']
+    jd_path = os.path.join(app_folder, jd_file_name)
+    _util.write(jd_path, _util.read(args.jd_text_file))
+
+    comms_file_name = cfg['filenames']['comms_file']
+    comms_path = None
+    if args.comms_text_file:
+        comms_path = os.path.join(app_folder, comms_file_name)
+        _util.write(comms_path, _util.read(args.comms_text_file))
+
+    # Print written paths so the skill can capture them and pass jd_path
+    # (and comms_path) as the --jd-source / --comms-source to 'init'.
+    print(app_folder)
+    print(jd_path)
+    if comms_path is not None:
+        print(comms_path)
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: init  (role-intake Phase 3b)
+# Writes the initial session log into an already-existing application folder.
+# Run after 'ingest'. JD and comms are already on disk; this step only needs
+# their canonical paths (for the session log) plus the confirmed metadata.
 # ---------------------------------------------------------------------------
 
 def cmd_init(args, repo_root, cfg):
-    # Build the per-job stem and the two artifact locations from config patterns.
     stem = cfg['naming']['application_stem'].format(
         slug=args.slug, app_id=args.app_id, ym=args.ym)
     app_folder = os.path.join(repo_root, cfg['paths']['applications'], stem)
@@ -119,27 +152,15 @@ def cmd_init(args, repo_root, cfg):
     # really a resume, which the skill's resume check should have caught.
     if os.path.exists(session_log):
         raise FileExistsError(f'session log already exists: {session_log}')
+    # Folder must exist - ingest creates it; missing folder means ingest was skipped.
+    if not os.path.exists(app_folder):
+        raise FileNotFoundError(f'application folder not found (run ingest first): {app_folder}')
 
-    os.makedirs(app_folder, exist_ok=True)
-
-    # Persist the JD into the application folder so it survives across sessions;
-    # resume detection relies on jd.md being present.
     jd_file_name = cfg['filenames']['jd_file']
-    jd_path = os.path.join(app_folder, jd_file_name)
-    _util.write(jd_path, _util.read(args.jd_text_file))
-
-    # Comms is optional; persist only when supplied. Blank session-log fields
-    # carry through when no comms were ingested.
     comms_file_name = cfg['filenames']['comms_file']
-    if args.comms_text_file:
-        comms_path = os.path.join(app_folder, comms_file_name)
-        _util.write(comms_path, _util.read(args.comms_text_file))
-        comms_file_value = comms_file_name
-        comms_source_value = args.comms_source or ''
-    else:
-        comms_path = None
-        comms_file_value = ''
-        comms_source_value = ''
+    # comms_source presence signals that comms were ingested.
+    comms_file_value = comms_file_name if args.comms_source else ''
+    comms_source_value = args.comms_source or ''
 
     templates_dir = os.path.join(repo_root, cfg['paths']['templates'])
     skeleton = _skeleton(templates_dir, cfg['filenames']['session_log_template'])
@@ -161,12 +182,8 @@ def cmd_init(args, repo_root, cfg):
         'axis_gaps': '## Axis Gaps\n\n_(pending)_',
     })
     _util.write(session_log, body)
-    # Print all written paths so the calling skill knows where things landed.
     print(app_folder)
     print(session_log)
-    print(jd_path)
-    if comms_path is not None:
-        print(comms_path)
 
 
 # ---------------------------------------------------------------------------
@@ -193,6 +210,8 @@ def cmd_research(args, repo_root, cfg):
             'company_block': company_block,
             'role_block': role_block,
             'industry_block': industry_block,
+            # Filled at finalize (Phase 7) once axis-classifier has run.
+            'axis_gaps': '## Axis Gaps\n\n_(pending)_',
         })
         _util.write(research_file, body)
     else:
@@ -224,17 +243,35 @@ def cmd_finalize(args, repo_root, cfg):
     text = re.sub(r'(?m)^- Research Completed Date: .*$',
                   f'- Research Completed Date: {args.date}', text)
 
-    # The axis file holds both '## Axis Classification' and '## Axis Gaps'.
-    # Split on the gaps heading so each section can be replaced on its own.
+    # Split the axis file into classification lines and gaps lines. The classifier
+    # may emit either '## Axis Gaps' (heading form) or 'Axis gaps:' (inline form);
+    # accept both so the split is reliable regardless of classifier output style.
     axis_text = _util.read(args.axis_file).strip()
-    parts = re.split(r'(?m)^(?=## Axis Gaps)', axis_text, maxsplit=1)
-    classification_section = parts[0].strip()
-    gaps_section = parts[1].strip() if len(parts) > 1 else '## Axis Gaps\n\nNone'
+    split_pat = re.compile(r'(?mi)^(?:##\s+)?Axis\s+[Gg]aps:?\s*$')
+    parts = split_pat.split(axis_text, maxsplit=1)
+
+    classification_body = parts[0].strip()
+    if len(parts) > 1:
+        gaps_body = parts[1].strip()
+        gaps_content = 'None' if not gaps_body or gaps_body.lower() == 'none' else gaps_body
+    else:
+        gaps_content = 'None'
+
+    # _replace_section replaces the whole matched block including its '## Heading'
+    # line, so each new_section must carry the heading itself.
+    classification_section = f'## Axis Classification\n\n{classification_body}'
+    gaps_section = f'## Axis Gaps\n\n{gaps_content}'
 
     text = _replace_section(text, 'Axis Classification', classification_section)
     text = _replace_section(text, 'Axis Gaps', gaps_section)
     _util.write(args.session_log, text)
     print(args.session_log)
+
+    if args.research_file:
+        research_text = _util.read(args.research_file)
+        research_text = _replace_section(research_text, 'Axis Gaps', gaps_section)
+        _util.write(args.research_file, research_text)
+        print(args.research_file)
 
 
 # ---------------------------------------------------------------------------
@@ -248,7 +285,17 @@ def main():
     parser = argparse.ArgumentParser(description='role-intake artifact assembler')
     sub = parser.add_subparsers(dest='command', required=True)
 
-    p_init = sub.add_parser('init', help='Phase 3: folder + JD + comms + initial session log')
+    p_ingest = sub.add_parser('ingest', help='Phase 3a: create folder and write JD + comms to disk')
+    p_ingest.add_argument('--slug', required=True)
+    p_ingest.add_argument('--app-id', required=True)
+    p_ingest.add_argument('--ym', required=True, help='year-month, e.g. 2026-05')
+    p_ingest.add_argument('--jd-text-file', required=True,
+                          help='path to a file holding the extracted JD text')
+    p_ingest.add_argument('--comms-text-file', default=None,
+                          help='path to a file holding the extracted comms text (optional)')
+    p_ingest.set_defaults(func=cmd_ingest)
+
+    p_init = sub.add_parser('init', help='Phase 3b: write initial session log (run after ingest)')
     p_init.add_argument('--slug', required=True)
     p_init.add_argument('--app-id', required=True)
     p_init.add_argument('--ym', required=True, help='year-month, e.g. 2026-05')
@@ -257,14 +304,10 @@ def main():
     p_init.add_argument('--level', default=None)
     p_init.add_argument('--industry', required=True)
     p_init.add_argument('--start-date', required=True, help='YYYY-MM-DD')
-    p_init.add_argument('--jd-text-file', required=True,
-                        help='path to a file holding the extracted JD text')
     p_init.add_argument('--jd-source', required=True,
-                        help='URL, original file path, or "pasted"')
-    p_init.add_argument('--comms-text-file', default=None,
-                        help='path to a file holding the extracted comms text (optional)')
+                        help='app-folder path to jd.md (from ingest output), or URL')
     p_init.add_argument('--comms-source', default=None,
-                        help='URL, original file path, or "pasted" (optional)')
+                        help='app-folder path to comms.md (from ingest output), URL, or "pasted"; omit if no comms')
     p_init.set_defaults(func=cmd_init)
 
     p_res = sub.add_parser('research', help='Phase 5: write research.md')
@@ -282,6 +325,8 @@ def main():
     p_fin.add_argument('--session-log', required=True)
     p_fin.add_argument('--date', required=True, help='YYYY-MM-DD')
     p_fin.add_argument('--axis-file', required=True)
+    p_fin.add_argument('--research-file', default=None,
+                       help='path to research.md; when supplied, Axis Gaps is also written there')
     p_fin.set_defaults(func=cmd_finalize)
 
     args = parser.parse_args()

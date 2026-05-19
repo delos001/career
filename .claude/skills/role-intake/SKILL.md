@@ -25,9 +25,11 @@ Ask if this session is for a new role or to resume a previous one?
 - **Resume:** ask the APP-NNN; locate the matching folder under
   `personal/applications/`. Probe and land per the ladder (first match wins):
   1. Folder missing - halt; APP-NNN likely wrong.  Ask for APP-NNN again.
-  2. `research.md` missing - resume at start of **Phase 4**.
-  3. Axis classification still `_(pending)_` in the session log - resume at start of **Phase 6**.
-  4. All filled - resume at start of**Phase 8** (re-QC).
+  2. Session log missing - ingest already ran but init did not; re-confirm
+     metadata with user and resume at **Phase 3b** (session log write only).
+  3. `research.md` missing - resume at start of **Phase 4**.
+  4. Axis classification still `_(pending)_` in the session log - resume at start of **Phase 6**.
+  5. All filled - resume at start of **Phase 8** (re-QC).
 
   Announce ("Resuming APP-NNN at Phase N.") and proceed without prompting.
 
@@ -56,6 +58,9 @@ Ask if this session is for a new role or to resume a previous one?
 **Extracting role title, company, level, and industry from the JD.**
 
 - Input: JD text + comms.
+- Read `rules/levels/registry.md` first. Use only values defined there when
+  inferring or presenting a level. Do not present a level value not in the
+  registry.
 - Infer title, company, level, industry. Infer level (it may appear in the
   title, body, or be implicit from scope) rather than leaving blank.
 - Prompt the user for any value that cannot be inferred.
@@ -82,11 +87,19 @@ Ask if this session is for a new role or to resume a previous one?
 - Run `python scripts/app_id.py` for the next APP-NNN. Ask the user for a short
   company slug. Determine the current `YYYY-MM`.
 - Write JD (and comms if present) to temp files.
-- Run `python scripts/assemble.py init` with the slug, APP-NNN, YM, metadata
-  (company, role, level, industry), start date, JD temp-file + source, and (if
-  comms) comms temp-file + source. It creates the folder, writes `jd.md` and
-  optionally `comms.md`, writes the initial session log, and prints all paths.
-- Output: paths printed by `assemble.py`.
+- **Step 3a - ingest (checkpoint):** Run `python scripts/assemble.py ingest`
+  with the slug, APP-NNN, YM, and the JD temp-file (plus comms temp-file if
+  present). This creates the folder and writes `jd.md` and optionally `comms.md`
+  immediately. Capture the printed paths: `app_folder`, `jd_path`, and
+  optionally `comms_path`.
+- **Step 3b - session log:** Run `python scripts/assemble.py init` with the
+  slug, APP-NNN, YM, confirmed metadata (company, role, level, industry), start
+  date, and `--jd-source`. For `--jd-source`: pass `jd_path` from Step 3a,
+  unless the original JD source was a URL (pass the URL instead). For
+  `--comms-source`: pass `comms_path` from Step 3a if comms were written and
+  the original source was a local file; pass `"pasted"` if comms were pasted;
+  pass the URL if the original source was a URL; omit if no comms.
+- Output: paths printed by `assemble.py init`.
 
 ## Phase 4 - Research
 
@@ -94,8 +107,13 @@ Ask if this session is for a new role or to resume a previous one?
 
 - Input: JD text, company, role, role industry (per Phase 2 confirmation).
 - Dispatch three subagents **in parallel** - `company-research`,
-  `role-research`, `industry-research` - giving each the JD text, company, role,
-  and (for `industry-research`) the role industry.
+  `role-research`, `industry-research` - giving each the JD text, company, and role.
+- For `industry-research`: pass the Phase 2 industry label as a starting hint,
+  but explicitly instruct the subagent to research the industry the company
+  *actually operates in* - using the company name and JD context to identify the
+  real sector. The Phase 2 label may be generic or recruiter-facing; the subagent
+  should not treat it as the definitive sector if the company's actual business
+  suggests otherwise.
 - Each returns a fixed block (`## Company` / `## Role` / `## Industry`, with
   Summary / Key facts / Sources). Scoped to what this skill needs to classify
   and characterize - not exhaustive dossiers.
@@ -127,11 +145,13 @@ Ask if this session is for a new role or to resume a previous one?
 
 **Finalizing the session log with the classification results.**
 
-- Input: session log path, `axis-classifier` output, research-completed date.
+- Input: session log path, research file path, `axis-classifier` output, research-completed date.
 - Write the `axis-classifier` output to a temp file. Run
   `python scripts/assemble.py finalize` with the session log path, the date,
-  and the temp file. It fills the date and replaces the pending axis sections.
-- Output: session log complete.
+  the temp file, and `--research-file` pointing to `research.md`. It fills the
+  date, replaces the pending axis sections in the session log, and writes the
+  resolved `## Axis Gaps` section to `research.md`.
+- Output: session log complete; `research.md` Axis Gaps section filled.
 
 ## Phase 8 - QC
 

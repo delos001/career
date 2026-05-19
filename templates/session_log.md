@@ -43,8 +43,10 @@ All other fields are populated at `init`.
 - **{{jd_file}}** / **{{comms_file}}** - filenames within the application folder.
   `jd.md` always present after Phase 3; `comms.md` present only when role
   communications were ingested.
-- **{{jd_source}}** / **{{comms_source}}** - URL, original file path, or
-  `"pasted"`. `{{comms_source}}` is blank when no comms were ingested.
+- **{{jd_source}}** / **{{comms_source}}** - canonical persistent location of
+  the file: the app-folder path written by `ingest`, or a URL if the source was
+  a URL, or `"pasted"` if comms were pasted. Never an ephemeral path such as a
+  desktop location. `{{comms_source}}` is blank when no comms were ingested.
 - **Dates** - `YYYY-MM-DD`. `{{start_date}}` is set at creation;
   `{{research_completed_date}}` is `_(pending)_` until finalization.
 - **{{axis_classification}}** / **{{axis_gaps}}** - `_(pending)_` markers at `init`;
