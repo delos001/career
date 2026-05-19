@@ -28,12 +28,6 @@ A CLI or UI utility that filters `inventory.md` EX/PR entries by Role (RL-NNN), 
 - Blocks: nothing currently (Phase D was completed by Claude acting as the filter interactively).
 - Refs: `career-narratives-schema`, `career-narratives-existing-data-migration`.
 
-### research-notes-disposition
-`design/axis_research_notes.md` retained as historical record of pre-reconciliation research candidates. Disposition deferred until axis-builder skills are built — at that point either delete the notes or formalize them into a research-sources file (precedent from prior projects where research sources were maintained as permanent reference).
-- Trigger: axis-builder skills built (industry_builder, specialty_builder, orientation_builder, level_builder, work_state_builder).
-- Blocks: nothing currently.
-- Refs: `design/axis_research_notes.md`, `builders-axis-parity`.
-
 ### inventory-builder-research-classification-sections-5-6
 inventory builder skill needs a research component to classify Section 5 (Technical Experience) tools and Section 6 (Industry Exposure Profile) content against industry-pack and specialty-pack vocabularies. Drives downstream retrieval relevance and cv_targeted's ability to surface section content matched to JD industry/specialty signals.
 - Trigger: inventory builder skill design.
@@ -132,12 +126,6 @@ Numeric adjacency weights stripped from all axis file frontmatter; rule-format a
 - Trigger: cv_targeted skill design specifies what adjacency weights should drive in translation behavior.
 - Blocks: cv_targeted weighted-translation behavior.
 - Refs: `cv-targeted-weighted-matching`, `cv-targeted-content-rules-from-axes`.
-
-### level-builder-design
-Full level_builder design, including whether/when to split `leadership.md` into finer levels.
-- Trigger: first new level being authored or level_builder design.
-- Blocks: level_builder build.
-- Refs: `level-axis-two-buckets`.
 
 ### level-axis-finer-grained-files
 Whether/when to split `leadership.md` into people manager, senior leadership, c-suite, etc.
