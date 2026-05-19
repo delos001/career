@@ -52,3 +52,5 @@ Translation signal for entries tagged with adjacent specialties:
 - **operations-strategy**: when QMS or compliance program design is part of broader operating-model construction, the operating-model layer reads as operations-strategy depth and the QMS-anchored governance reads as quality-compliance depth.
 - **data-engineering**: when validation work (CSV/CSA) or audit-trail review applies to data systems the candidate built or owned, data-engineering co-tags as the underlying technology layer.
 - **data-science**: when validation testing applies to analytical code, methods, or quality-check programming the candidate authored, data-science co-tags as the underlying analytical work.
+- **ai-engineering**: bridge is narrow. Co-tags when ML/LLM systems the candidate built were subject to CSV/CSA validation, model documentation per FDA AI/ML guidance, or audit-trail requirements. Quality-compliance is the validation framing; ai-engineering is the underlying build.
+- **people-leadership**: co-tags when the quality-compliance role included team management (direct or matrixed) of QA/QC staff. Quality-system leadership without team management does not co-tag.
