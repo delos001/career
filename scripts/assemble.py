@@ -34,27 +34,15 @@ import re
 import sys
 
 import _config
+import _util
 
 
 # ---------------------------------------------------------------------------
 # Shared helpers
-# Small utilities used by more than one subcommand: reading and writing UTF-8
-# files, pulling the skeleton out of a template, substituting {{tokens}}, and
-# replacing a single Markdown section in place.
+# Small utilities used by more than one subcommand: pulling the skeleton out
+# of a template, substituting {{tokens}}, and replacing a single Markdown
+# section in place. UTF-8 read/write live in scripts/_util.py.
 # ---------------------------------------------------------------------------
-
-def _read(path):
-    """Read a UTF-8 text file and return its contents (raises if it is missing)."""
-    with open(path, 'r', encoding='utf-8') as f:
-        return f.read()
-
-
-def _write(path, text):
-    """Write text to a UTF-8 file, creating parent folders if they do not exist."""
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, 'w', encoding='utf-8') as f:
-        f.write(text)
-
 
 def _skeleton(templates_dir, template_name):
     """Return the skeleton block from a template file in the templates folder.
@@ -63,7 +51,7 @@ def _skeleton(templates_dir, template_name):
     inside the first fenced code block. This pulls out the text between the first
     pair of triple-backtick fences.
     """
-    text = _read(os.path.join(templates_dir, template_name))
+    text = _util.read(os.path.join(templates_dir, template_name))
     # Regex: capture everything between the first ``` fence and the next one.
     # re.DOTALL lets '.' span newlines so the whole block is captured.
     m = re.search(r'```\n(.*?)\n```', text, re.DOTALL)
@@ -138,14 +126,14 @@ def cmd_init(args, repo_root, cfg):
     # resume detection relies on jd.md being present.
     jd_file_name = cfg['filenames']['jd_file']
     jd_path = os.path.join(app_folder, jd_file_name)
-    _write(jd_path, _read(args.jd_text_file))
+    _util.write(jd_path, _util.read(args.jd_text_file))
 
     # Comms is optional; persist only when supplied. Blank session-log fields
     # carry through when no comms were ingested.
     comms_file_name = cfg['filenames']['comms_file']
     if args.comms_text_file:
         comms_path = os.path.join(app_folder, comms_file_name)
-        _write(comms_path, _read(args.comms_text_file))
+        _util.write(comms_path, _util.read(args.comms_text_file))
         comms_file_value = comms_file_name
         comms_source_value = args.comms_source or ''
     else:
@@ -172,7 +160,7 @@ def cmd_init(args, repo_root, cfg):
         'axis_classification': '## Axis Classification\n\n_(pending)_',
         'axis_gaps': '## Axis Gaps\n\n_(pending)_',
     })
-    _write(session_log, body)
+    _util.write(session_log, body)
     # Print all written paths so the calling skill knows where things landed.
     print(app_folder)
     print(session_log)
@@ -189,9 +177,9 @@ def cmd_init(args, repo_root, cfg):
 
 def cmd_research(args, repo_root, cfg):
     research_file = os.path.join(args.folder, cfg['filenames']['research_file'])
-    company_block = _read(args.company_file).strip()
-    role_block = _read(args.role_file).strip()
-    industry_block = _read(args.industry_file).strip()
+    company_block = _util.read(args.company_file).strip()
+    role_block = _util.read(args.role_file).strip()
+    industry_block = _util.read(args.industry_file).strip()
 
     if not os.path.exists(research_file):
         # First write: render the whole file from the template.
@@ -206,17 +194,17 @@ def cmd_research(args, repo_root, cfg):
             'role_block': role_block,
             'industry_block': industry_block,
         })
-        _write(research_file, body)
+        _util.write(research_file, body)
     else:
         # Re-run: replace only role-intake's sections and the completed-date
         # line, so a current-state refresh does not clobber anything else.
-        text = _read(research_file)
+        text = _util.read(research_file)
         text = re.sub(r'(?m)^\*\*Research completed:\*\* .*$',
                       f'**Research completed:** {args.date}', text)
         text = _replace_section(text, 'Company', company_block)
         text = _replace_section(text, 'Role', role_block)
         text = _replace_section(text, 'Industry', industry_block)
-        _write(research_file, text)
+        _util.write(research_file, text)
     print(research_file)
 
 
@@ -230,7 +218,7 @@ def cmd_finalize(args, repo_root, cfg):
     # repo_root and cfg are unused here by design: finalize only edits an existing
     # session log (path passed in), and the section headings it targets stay
     # inline rather than in config.
-    text = _read(args.session_log)
+    text = _util.read(args.session_log)
 
     # Fill the research-completed date line in the Metadata section.
     text = re.sub(r'(?m)^- Research Completed Date: .*$',
@@ -238,14 +226,14 @@ def cmd_finalize(args, repo_root, cfg):
 
     # The axis file holds both '## Axis Classification' and '## Axis Gaps'.
     # Split on the gaps heading so each section can be replaced on its own.
-    axis_text = _read(args.axis_file).strip()
+    axis_text = _util.read(args.axis_file).strip()
     parts = re.split(r'(?m)^(?=## Axis Gaps)', axis_text, maxsplit=1)
     classification_section = parts[0].strip()
     gaps_section = parts[1].strip() if len(parts) > 1 else '## Axis Gaps\n\nNone'
 
     text = _replace_section(text, 'Axis Classification', classification_section)
     text = _replace_section(text, 'Axis Gaps', gaps_section)
-    _write(args.session_log, text)
+    _util.write(args.session_log, text)
     print(args.session_log)
 
 

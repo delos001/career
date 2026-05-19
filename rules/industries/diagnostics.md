@@ -1,10 +1,6 @@
 ---
 industry: diagnostics
 last_researched: 2026-05
-provisional: true
-provisional_issues:
-  - check: "F1"
-    detail: "Emphasis section's non-regulatory hiring-panel weighting claims (platform-specific depth, CDx co-development experience, reagent and manufacturing depth, clinical and medical credibility) rely on recruiter-blog source authority (Cerca Talent IVD hiring trends post). Regulatory-function emphasis claims have authoritative backing from RAPS Regulatory Competency Framework, RAPS Global Compensation and Scope of Practice Report 2024, and RAPS RCC-IVDR Candidate Guide."
 ---
 
 # Diagnostics - CV Framing Rules

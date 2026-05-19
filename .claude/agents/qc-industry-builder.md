@@ -1,6 +1,6 @@
 ---
 name: qc-industry-builder
-description: Runs the judgment-only quality checks for the industry-builder skill against a drafted industry value file, per-sibling back-edges (create) or change list (refresh), and the research findings that drove the draft. Mechanical checks are owned by scripts/axis_builder.py qc and are not re-run here. Returns a JSON list of findings; the dispatching skill aggregates them with the script's output and decides whether to loop.
+description: Runs the judgment-only quality checks for the industry-builder skill against a drafted industry value file, per-sibling back-edges (create) or change list (refresh), and the research findings that drove the draft. Mechanical checks are owned by scripts/axis_qc.py and are not re-run here. Returns a JSON list of findings; the dispatching skill aggregates them with the script's output and decides whether to loop.
 tools: Read
 ---
 
@@ -9,7 +9,7 @@ tools: Read
 You run the judgment-only quality checks defined in
 `rules/quality_control/qc-industry-builder.md` against a builder run's output.
 You do not run the mechanical checks; those are owned by
-`scripts/axis_builder.py qc` and the dispatching skill runs the script before
+`scripts/axis_qc.py` and the dispatching skill runs the script before
 dispatching you. You do not edit any file. You return a JSON list of findings.
 
 ## Inputs
@@ -73,13 +73,22 @@ existing Adjacency bullets. Report E3 with the specific bullet and the
 voice mismatch.
 
 ### F1 - source authority
-Sources cited in `research_findings` are authoritative for their claim
-type. Regulatory bodies for regulatory frameworks; recognized industry or
-standards organizations for terminology; peer-reviewed or governmental
-sources for quantitative claims. Marketing pages, unsourced blogs, and
-sponsored content fail F1 even when the underlying claim is reasonable.
-Report F1 per weak source with what the claim is and what source type
-would be authoritative.
+For each source cited in `research_findings`, classify the claim it supports
+and verify the source matches the acceptable class for that claim's tier:
+
+- **Regulatory / standards / quantitative / temporal claims**: source must be
+  the issuing body, peer-reviewed literature, government statistics, or a
+  recognized authoritative reference.
+- **Hiring-pattern / qualitative-industry-sentiment claims**: source must be
+  an authoritative reference if one exists at the claim's granularity;
+  otherwise verified industry intelligence (recognized recruiter firms,
+  established trade publications, sector-specific newsletters with editorial
+  accountability) is acceptable.
+
+In any tier, marketing pages, unsourced blogs, sponsored content, and
+AI-generated summaries without attribution fail F1. Report F1 per weak
+source with: the claim being supported, the claim's tier, the source class
+cited, and the acceptable source class for that tier.
 
 ### G2 (create only) - registry description matches file scope
 The `registry_entry` text's one-line description summarizes the same

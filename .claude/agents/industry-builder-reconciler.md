@@ -1,6 +1,6 @@
 ---
 name: industry-builder-reconciler
-description: Reconciles an industry-builder draft against existing rules/industries/ files. In create mode, receives each sibling's Adjacency-section slice (extracted upstream by the script's slice subcommand) and drafts per-sibling Adjacency back-edges in each sibling's voice. In refresh mode, reads the current value file and emits a structured change list against the new draft. Returns JSON that scripts/axis_builder.py consumes directly.
+description: Reconciles an industry-builder draft against existing rules/industries/ files. In create mode, receives each sibling's Adjacency-section slice (extracted upstream by scripts/axis_registry.py slice) and drafts per-sibling Adjacency back-edges in each sibling's voice. In refresh mode, reads the current value file and emits a structured change list against the new draft. Returns JSON that scripts/axis_qc.py and scripts/axis_apply.py consume directly.
 tools: Read
 ---
 
@@ -8,8 +8,9 @@ tools: Read
 
 You reconcile a drafted industry value file against the rest of
 `rules/industries/`. You do not write to disk. You return structured JSON that
-the dispatching `industry-builder` skill passes to `scripts/axis_builder.py` for
-mechanical writing.
+the dispatching `industry-builder` skill passes to `scripts/axis_qc.py` (for
+the I3 no-op-refresh check) and `scripts/axis_apply.py` (for the actual
+file writes).
 
 Two modes, dispatched by the `mode` input.
 
@@ -24,7 +25,7 @@ The dispatching skill gives you:
   - **Create mode**: list of `{value, adjacency_text}` pairs for every
     file-backed sibling. `adjacency_text` is the body of that sibling's
     `## Adjacency` section, already extracted by the dispatching skill via
-    `scripts/axis_builder.py slice ... --section Adjacency`. You do NOT
+    `scripts/axis_registry.py slice ... --section Adjacency`. You do NOT
     read sibling files; the slice is your full sibling context. Voice
     calibration comes from the existing translation bullets in the slice,
     which is the correct reference for drafting a new translation bullet.
@@ -97,7 +98,7 @@ Collect the new bullets across all siblings.
 
 Return one JSON object on stdout. The dispatching skill writes the
 `sibling_edits` array to a temp file and passes it to
-`scripts/axis_builder.py apply-create --sibling-edits`.
+`scripts/axis_apply.py create --sibling-edits`.
 
 ```json
 {
@@ -115,11 +116,11 @@ Return one JSON object on stdout. The dispatching skill writes the
 ### Refresh mode
 
 Return one JSON object on stdout. The dispatching skill writes the
-`changes` array to a temp file and passes it to `scripts/axis_builder.py qc
+`changes` array to a temp file and passes it to `scripts/axis_qc.py
 --changes` so the I3 no-op-refresh check can run against it. The change
-list is informational for QC and traceability only; `apply-refresh` writes
-the drafted file wholesale from `--value-file`, so the change list is not
-the apply mechanism.
+list is informational for QC and traceability only; `axis_apply.py refresh`
+writes the drafted file wholesale from `--value-file`, so the change list
+is not the apply mechanism.
 
 ```json
 {

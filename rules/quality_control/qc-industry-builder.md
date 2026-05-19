@@ -5,7 +5,7 @@ last_updated: 2026-05
 
 # QC - industry-builder
 
-**Used by:** qc-industry-builder, industry-builder, scripts/axis_builder.py
+**Used by:** qc-industry-builder, industry-builder, scripts/axis_qc.py, scripts/axis_apply.py
 
 Quality checks the `qc-industry-builder` subagent runs against a drafted
 industry value file plus the per-sibling Adjacency edits (create mode) or
@@ -20,7 +20,7 @@ caps at **3 iterations**. On the final iteration:
 - All checks pass: build proceeds clean.
 - One or more checks still fail: build proceeds with the latest draft as
   provisional. Unresolved findings are emitted to `--issues` for
-  `scripts/axis_builder.py` to attach to the file's frontmatter and append to
+  `scripts/axis_apply.py` to attach to the file's frontmatter and append to
   `design/build_issues.md`.
 
 ## Checks
@@ -30,13 +30,13 @@ check), and the fix the build attempts on failure.
 
 Two owners:
 
-- **`script`** - `scripts/axis_builder.py qc` runs the check and, where the fix is
+- **`script`** - `scripts/axis_qc.py` runs the check and, where the fix is
   purely textual, auto-fixes the value file in place. Reports the result in
-  the qc subcommand's JSON output.
+  the script's JSON output.
 - **`subagent`** - `qc-industry-builder` subagent runs the check in isolated
   context (LLM judgment required). The skill collects the subagent's findings
-  and feeds the unresolved set to `apply-create` / `apply-refresh` via
-  `--issues`.
+  and feeds the unresolved set to `axis_apply.py create` / `axis_apply.py
+  refresh` via `--issues`.
 
 The calling skill runs the script first (auto-fixes applied), then the
 subagent (judgment-only set), then aggregates both result lists.
@@ -130,13 +130,32 @@ subagent (judgment-only set), then aggregates both result lists.
 
 ### F - Source quality
 
-- **F1** *(subagent)*: Sources cited in the research findings are
-  authoritative for their claim type (regulatory bodies for regulatory
-  frameworks, recognized industry organizations or standards bodies for
-  terminology, peer-reviewed or governmental sources for quantitative claims).
-  Marketing pages and low-authority blogs are recorded as findings even when
-  the underlying claim is uncontroversial.
-  - Fix on fail: re-enter Phase 2 to find a stronger source for the same claim.
+- **F1** *(subagent)*: Sources cited in the research findings match the
+  acceptable source class for the claim type they support. Tier table:
+  - **Regulatory framework / statute / rule-number citations** (FDA guidance,
+    CFR sections, EMA, EU regulations, ICH guidelines, formal industry
+    codification such as the RAPS regulatory-affairs corpus): require the
+    issuing body or a recognized authoritative reference.
+  - **Standards-body citations** (ISO, IEC, AAMI, CLSI, USP, EP): require the
+    standards body itself or a recognized authoritative reference.
+  - **Quantitative or temporal claims** (counts, percentages, dates, "current
+    as of", "X is dominant"): require peer-reviewed literature, government
+    statistics, or a recognized standards body.
+  - **Hiring-pattern or qualitative-industry-sentiment claims** (what hiring
+    panels weight, which credentials matter, where talent moves between
+    sectors): require an authoritative source if one exists at the claim's
+    granularity; otherwise accept verified industry intelligence (recognized
+    recruiter firms, established trade publications, sector-specific
+    newsletters) provided the source has editorial accountability (named
+    authors or named organization, traceable to a known entity in the sector).
+
+  In any tier, marketing pages (vendor self-promotion), unsourced blogs (no
+  editorial accountability), sponsored content, and AI-generated summaries
+  without attribution fail F1 regardless of claim type.
+  - Fix on fail: re-enter Phase 2 to find a source in the acceptable class
+    for the claim's tier. If the tier is hiring-pattern and re-research
+    confirms no authoritative source exists at the claim's granularity, a
+    verified-industry-intelligence source is acceptable.
 
 ### G - Registry alignment
 
@@ -188,8 +207,8 @@ subagent (judgment-only set), then aggregates both result lists.
 ## Unresolved-finding output format
 
 When the loop exits with unresolved findings, the QC subagent emits a JSON
-list to the `--issues` temp file passed to `scripts/axis_builder.py
-apply-create` or `apply-refresh`. Each entry:
+list to the `--issues` temp file passed to `scripts/axis_apply.py create` or
+`scripts/axis_apply.py refresh`. Each entry:
 
 ```json
 {

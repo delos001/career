@@ -39,7 +39,7 @@ invoking it after flagging an axis gap.
   mode. Ignore any `create`/`refresh` token the user may have passed.
 - Ask the user for the target value if it is not in the arguments. Do
   not ask for mode.
-- Run `python scripts/axis_builder.py list industries`. It returns
+- Run `python scripts/axis_registry.py list industries`. It returns
   `{"entries": [{value, state, value_file_path}, ...]}` with every
   registry entry. Each `state` is `file-backed`, `file-deferred`, or
   `registry-only`; `value_file_path` is set for file-backed entries and
@@ -113,7 +113,7 @@ invoking it after flagging an axis gap.
   file-backed sibling from Phase 1's siblings list, run:
 
   ```
-  python scripts/axis_builder.py slice industries <sibling_value> \
+  python scripts/axis_registry.py slice industries <sibling_value> \
     --section Adjacency
   ```
 
@@ -164,7 +164,7 @@ invoking it after flagging an axis gap.
   to a temp file. Run:
 
   ```
-  python scripts/axis_builder.py qc industries <value> \
+  python scripts/axis_qc.py industries <value> \
     --mode <create|refresh> \
     --value-file <temp> \
     [--sibling-edits <temp>]   # create mode
@@ -231,7 +231,7 @@ invoking it after flagging an axis gap.
   temp files. Run:
 
   ```
-  python scripts/axis_builder.py apply-create industries <value> \
+  python scripts/axis_apply.py create industries <value> \
     --value-file <temp> \
     --sibling-edits <temp> \
     --registry-entry <temp> \
@@ -249,7 +249,7 @@ invoking it after flagging an axis gap.
   the apply mechanism, so Phase 5 auto-fixes always carry through. Run:
 
   ```
-  python scripts/axis_builder.py apply-refresh industries <value> \
+  python scripts/axis_apply.py refresh industries <value> \
     --value-file <temp> \
     [--provisional --issues <temp>]
   ```
