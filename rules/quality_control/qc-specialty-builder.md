@@ -39,7 +39,10 @@ Two owners:
   refresh` via `--issues`.
 
 The calling skill runs the script first (auto-fixes applied), then the
-subagent (judgment-only set), then aggregates both result lists.
+subagent (judgment-only set), then aggregates both result lists. It routes
+each failure per the failing check's **Fix on fail** entry below, which
+names the phase to re-enter (or directs a halt). This file is the single
+routing source; the skill's Phase 5 does not carry its own routing table.
 
 ### A - Frontmatter and metadata
 
@@ -79,10 +82,13 @@ subagent (judgment-only set), then aggregates both result lists.
     duplicated section from research.
 - **B2** *(script)*: Section order matches the schema (Capability
   vocabulary, Terminology, Knowledge-transfer mode, Adjacency).
-  - Fix on fail: reorder sections.
+  - Fix on fail: order mismatches are auto-fixed. The only failure the
+    script surfaces is "cannot reorder: duplicate headings," which always
+    co-occurs with a B1 duplicate-heading failure; B1's Phase 3 redraft
+    resolves it. No separate routing.
 - **B3** *(script)*: No sections beyond the schema (no extra `## ` headings).
-  - Fix on fail: relocate content from extra sections into the appropriate
-    schema section, then remove the extra heading.
+  - Fix on fail: re-enter Phase 3 to relocate content from extra sections
+    into the appropriate schema section, then remove the extra heading.
 - **B4** *(script)*: `## Adjacency` contains the mandatory
   `### Low or no adjacency` sub-section per `axes-file-schema`. The
   sub-section is always present, with a `_(none)_` placeholder body when
@@ -101,26 +107,27 @@ subagent (judgment-only set), then aggregates both result lists.
 - **C2** *(subagent)*: Every version-stamped framework or tool (e.g.
   `ICH E6(R3)`, `scikit-learn 1.x`) carries a version stamp consistent
   with the research findings' currency.
-  - Fix on fail: correct the version stamp from research; remove if no source
-    supports any specific version.
+  - Fix on fail: re-enter Phase 2 to re-confirm the framework's current
+    version; correct or remove the stamp on redraft.
 - **C3** *(subagent)*: Every quantitative or temporal claim (counts,
   dates, "current as of", adoption-share figures) traces to a source.
-  - Fix on fail: re-research; if unsourced, rewrite the claim qualitatively
-    or remove it.
+  - Fix on fail: re-enter Phase 2 to re-research; if still unsourced,
+    rewrite the claim qualitatively or remove it on redraft.
 
 ### D - Cross-file responsibility boundaries
 
-- **D1** *(subagent)*: The drafted file's Terminology and Capability
-  vocabulary do not restate sector-wide vocabulary owned by industry
-  files in `rules/industries/` (regulatory bodies, sector-wide frameworks,
-  pharmacovigilance terms, trial-lifecycle stages) or capability
-  vocabulary owned by other specialty files in `rules/specialties/`.
-  The Terminology section opens with an explicit cross-reference sentence
-  naming which industry file(s) own the sector-wide vocabulary so the
-  scoping is self-documenting.
-  - Fix on fail: remove the duplicated content; if the content is genuinely
-    distinct in the new specialty's context, rewrite it to reflect that
-    distinction.
+- **D1** *(subagent)*: Two checks. First, the drafted file's Terminology
+  section opens with the explicit cross-reference sentence naming which
+  industry file(s) own the sector-wide vocabulary; D1 verifies that
+  sentence is present. Second, the drafted file's Capability vocabulary
+  and Terminology do not restate capability vocabulary owned by another
+  specialty file in `rules/specialties/`. Detection of industry vocabulary
+  actually restated in the draft is D2's job (a specialty file carrying
+  industry vocabulary is off-axis content); D1 only checks that the
+  scoping sentence is present.
+  - Fix on fail: re-enter Phase 3 to add the missing cross-reference
+    sentence, or to remove or rewrite content that duplicates a sibling
+    specialty file.
 - **D2** *(subagent)*: The drafted file's content stays within the
   specialties axis (capability vocabulary, practice-specific terminology,
   knowledge-transfer convention, adjacency). Off-axis content includes:
@@ -128,7 +135,7 @@ subagent (judgment-only set), then aggregates both result lists.
   territory), voice-and-verb framing (level territory), identity framing
   (orientation territory), achievement framing by work-state
   (work-states territory).
-  - Fix on fail: remove off-axis content.
+  - Fix on fail: re-enter Phase 3 to remove off-axis content.
 
 ### E - Adjacency completeness
 
@@ -157,7 +164,8 @@ subagent (judgment-only set), then aggregates both result lists.
   - Fix on fail: re-enter Phase 4 reconciler to redraft the offending back-edge.
 - **E4** *(script)*: Each per-sibling back-edge targets the sibling's
   `## Adjacency` section (no other section is modified).
-  - Fix on fail: reject the edit; reconciler must re-target.
+  - Fix on fail: re-enter Phase 4 for the reconciler to re-target the
+    edit to the Adjacency section.
 
 ### F - Source quality
 
@@ -188,7 +196,8 @@ subagent (judgment-only set), then aggregates both result lists.
 - **G1** *(script)*: The registry entry text passed to `apply create` or
   the existing registry entry (refresh) lists the same filename as the value
   file being written (`File: <value>.md` matches the actual filename).
-  - Fix on fail: rewrite the registry entry text to match.
+  - Fix on fail: re-enter Phase 3 to rewrite the registry entry text to
+    match.
 - **G2** *(subagent)*: The registry entry's one-line description summarizes
   the file's scope (description and file content agree on the substantive area).
   - Fix on fail: re-enter Phase 3 to redraft the registry-entry line from
@@ -203,16 +212,11 @@ subagent (judgment-only set), then aggregates both result lists.
   the em dash (period, semicolon, conjunction, or restructure). The check
   does not delete characters or sub-clauses.
   - Fix on fail: re-enter Phase 3 to redraft the offending sentence.
-- **H2** *(script)*: Acronym list reconciliation, conditional on the file
-  declaring an explicit acronym catalog (canonical anchor phrase
-  `Acronyms recognized [...]:`). Specialty files in current convention
-  embed acronyms inline in Terminology bullets rather than maintaining a
-  separate catalog, so H2 is a no-op for those files. The check passes
-  silently when no catalog anchor is found. If a future specialty file
-  adopts an acronym catalog, H2 enforces the same reconciliation it does
-  for industries (used in body but unlisted, or listed but unused).
-  - Fix on fail: re-enter Phase 3 for the drafter to add to the list,
-    rewrite the body to drop the term, or prune the unused entry.
+- **H2** *(script)*: Does not apply to specialty files. The script's
+  acronym-reconciliation check inspects only a `## Dialect` section, which
+  the specialty schema does not include; H2 always passes. Adding acronym
+  reconciliation for specialty files would require a script change.
+  - Fix on fail: none; the check cannot fail for this axis.
 
 ### I - Mode invariants
 

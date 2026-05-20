@@ -29,6 +29,12 @@ Two owners:
 - **`subagent`** - `qc-work-state-builder` subagent runs the check in
   isolated context (LLM judgment required).
 
+The calling skill runs the script first (auto-fixes applied), then the
+subagent (judgment-only set), aggregates both result lists, and routes
+each failure per the failing check's **Fix on fail** entry below, which
+names the phase to re-enter (or directs a halt). This file is the single
+routing source; the skill's Phase 5 does not carry its own routing table.
+
 ### A - Frontmatter and metadata
 
 - **A1** *(script)*: Frontmatter present and bounded by `---` fences.
@@ -54,10 +60,13 @@ Two owners:
   - Fix on fail: re-enter Phase 3 to draft the missing or merge the
     duplicated section.
 - **B2** *(script)*: Section order matches the schema.
-  - Fix on fail: reorder sections.
+  - Fix on fail: order mismatches are auto-fixed. The only failure the
+    script surfaces is "cannot reorder: duplicate headings," which always
+    co-occurs with a B1 duplicate-heading failure; B1's Phase 3 redraft
+    resolves it. No separate routing.
 - **B3** *(script)*: No sections beyond the schema.
-  - Fix on fail: relocate content from extra sections into the appropriate
-    schema section, then remove the extra heading.
+  - Fix on fail: re-enter Phase 3 to relocate content from extra sections
+    into the appropriate schema section, then remove the extra heading.
 - **B4** *(script)*: `## Adjacency` contains the mandatory
   `### Low or no adjacency` sub-section per `axes-file-schema`.
   - Fix on fail: insert the sub-section at the end of `## Adjacency`
@@ -71,10 +80,12 @@ Two owners:
 - **C2** *(subagent)*: Version-stamped references carry stamps consistent
   with research-findings currency. Work-state files rarely carry version
   stamps; pass silently when none are present.
-  - Fix on fail: correct the version stamp from research.
+  - Fix on fail: re-enter Phase 2 to re-confirm the reference's current
+    version; correct or remove the stamp on redraft.
 - **C3** *(subagent)*: Every quantitative or temporal claim traces to a
   source.
-  - Fix on fail: re-research; if unsourced, rewrite qualitatively or remove.
+  - Fix on fail: re-enter Phase 2 to re-research; if still unsourced,
+    rewrite the claim qualitatively or remove it on redraft.
 
 ### D - Cross-file responsibility boundaries
 
@@ -83,8 +94,8 @@ Two owners:
   identity is uniquely owned by its own file; the new file's identity
   should be distinct enough that the "does not fit when ..." conditions
   explicitly route sibling cases away.
-  - Fix on fail: remove or rewrite the overlapping content to make the
-    distinction explicit.
+  - Fix on fail: re-enter Phase 3 to remove or rewrite the overlapping
+    content to make the distinction explicit.
 - **D2** *(subagent)*: The drafted file's content stays within the
   work-states axis (identity framing, achievement-framing signals,
   adjacency translation). Off-axis content includes: industry-specific
@@ -92,7 +103,7 @@ Two owners:
   vocabulary or practice methods (specialties territory), voice-and-verb
   framing or scope signals (levels territory), CV-identity framing
   (orientations territory).
-  - Fix on fail: remove off-axis content.
+  - Fix on fail: re-enter Phase 3 to remove off-axis content.
 
 ### E - Adjacency completeness
 
@@ -112,7 +123,8 @@ Two owners:
   - Fix on fail: re-enter Phase 4 reconciler to redraft.
 - **E4** *(script)*: Each per-sibling back-edge targets the sibling's
   `## Adjacency` section.
-  - Fix on fail: reject the edit; reconciler must re-target.
+  - Fix on fail: re-enter Phase 4 for the reconciler to re-target the
+    edit to the Adjacency section.
 
 ### F - Source quality
 
@@ -131,7 +143,8 @@ Two owners:
 
 - **G1** *(script)*: The registry entry text lists the same filename as
   the value file being written.
-  - Fix on fail: rewrite the registry entry text to match.
+  - Fix on fail: re-enter Phase 3 to rewrite the registry entry text to
+    match.
 - **G2** *(subagent)*: The registry entry's one-line description summarizes
   the file's scope.
   - Fix on fail: re-enter Phase 3 to redraft the registry-entry line.
@@ -142,11 +155,12 @@ Two owners:
   fences (`---`) and structural separators are exempt.
   - Fix on fail: re-enter Phase 3 to redraft the offending sentence
     without an em dash.
-- **H2** *(script)*: Acronym list reconciliation, conditional on the file
-  declaring an explicit acronym catalog (canonical anchor phrase
-  `Acronyms recognized [...]:`). Work-state files in current convention
-  do not maintain an acronym catalog, so H2 is a no-op for those files.
-  - Fix on fail: re-enter Phase 3 for the drafter to address.
+- **H2** *(script)*: Does not apply to work-state files. The script's
+  acronym-reconciliation check inspects only a `## Dialect` section, which
+  the work-states schema does not include; H2 always passes. Adding
+  acronym reconciliation for work-state files would require a script
+  change.
+  - Fix on fail: none; the check cannot fail for this axis.
 
 ### I - Mode invariants
 

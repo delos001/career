@@ -104,8 +104,9 @@ propose a rewrite in the finding; the drafter rewrites in Phase 3.
 ## Rules
 
 - Do not edit any file.
-- Do not re-run the script-owned checks (A1-A5, B1-B4, E1, E2, E4, G1,
-  H2, I1-I3).
+- Do not run any check that is not listed in the "Checks you run" section
+  above; all other check IDs are script-owned and the dispatching skill
+  runs them before dispatching you.
 - Do not propose multi-phase rework. Each finding's `detail` is one line.
 - Do not fabricate.
 

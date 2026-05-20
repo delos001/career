@@ -41,9 +41,19 @@ For each of the five axes:
      the registry one-line. If it matches, record the value AND record an axis
      gap: `<axis>: '<name>' matched but value file not yet authored - framing
      rules missing`. If it does not match, return to step 2. Skip step 4.
-4. **Confirm (file-having candidates only).** Check the candidate's value file
-   (its Identity and any selection / exclusion criteria) against the JD and
-   research. Does the file's content actually confirm the match?
+4. **Confirm (file-having candidates only).** Check the candidate's value
+   file against the JD and research, using the mechanism for the axis type:
+   - **Framing axes (orientations, levels, work-states):** read the value
+     file's Identity section and its selection / exclusion criteria. The
+     match is confirmed when the JD and research satisfy the selection
+     criteria and trip none of the exclusions.
+   - **Vocabulary axes (industries, specialties):** these files have no
+     Identity section. Confirm by vocabulary and terminology overlap - read
+     the Vocabulary, Dialect, and Emphasis sections (industries) or the
+     Capability vocabulary and Terminology sections (specialties), and
+     confirm the candidate when the JD and research show substantive
+     overlap with them.
+   Then:
    - **Confirmed** → record it (primary, and secondary if applicable).
    - **Not confirmed** → return to step 2, pick a different candidate, and repeat.
    - **No registry value confirms** (all candidates exhausted across step 3 and

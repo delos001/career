@@ -15,6 +15,10 @@ file**.
 - Phases below run in order; each has a declared input and output.
 - Each phase opens with the **bold lead line** under its heading - speak it
   verbatim before running the phase.
+- User-facing status and prompts use plain English. No raw QC check tags or
+  route-back labels, no implementation jargon (subagent, JSON). Translate
+  every finding, loop status, and error message to what the user needs to
+  know to decide or act.
 - Phase 8 (QC) and Phase 9 (approval) loop back per *Phase routing on failure*.
 
 ## Resume check - run before Phase 0
@@ -30,6 +34,12 @@ Ask if this session is for a new role or to resume a previous one?
   3. `research.md` missing - resume at start of **Phase 4**.
   4. Axis classification still `_(pending)_` in the session log - resume at start of **Phase 6**.
   5. All filled - resume at start of **Phase 8** (re-QC).
+
+  Before running the landing phase, reload its declared inputs from the
+  artifacts already on disk - the prior phases' in-conversation outputs are
+  gone on a resume. `jd.md` (and any `comms.md`) holds the JD and comms
+  text; the session log holds the confirmed metadata; `research.md` holds
+  the research findings.
 
   Announce ("Resuming APP-NNN at Phase N.") and proceed without prompting.
 
@@ -158,16 +168,22 @@ Ask if this session is for a new role or to resume a previous one?
 **Running QC on the session log and research file.**
 
 - Input: session log path, research file path, brief activity record.
-- Dispatch `qc-role-intake`. **Loops on FINDINGS:** present findings, route back
-  per *Phase routing on failure*, re-run forward, return to Phase 8. Exit on
-  **PASS** only.
-- Output: PASS verdict.
+- Dispatch `qc-role-intake`. **Loops on FINDINGS:** translate the findings
+  to plain English for the user, then apply each per *Phase routing on
+  failure* (or as a direct session-log edit where the finding specifies
+  one), re-run forward, and return to Phase 8.
+- Cap the loop at **3 iterations**. Exit earlier on **PASS**. If findings
+  remain after the third iteration, stop looping and carry them into the
+  Phase 9 approval block so the user decides whether to approve as-is or
+  intervene.
+- Output: PASS verdict, or the unresolved findings after 3 iterations.
 
 ## Phase 9 - User approval and handoff
 
 **Reviewing key outputs with you and handing off to the gap-analysis skill.**
 
-- Input: QC-passed session log and research file.
+- Input: session log and research file - QC-passed, or with unresolved
+  findings carried over after 3 QC iterations.
 - Present the approval block:
 
   ```
@@ -175,6 +191,7 @@ Ask if this session is for a new role or to resume a previous one?
   Axis classification - per axis (Orientation, Industry, Specialty, Level,
     Work-state): <primary> / <secondary>
   Axis gaps: <listed, or "none">
+  Unresolved QC findings: <listed in plain English, or "none">
   Session log + Research file: <paths>
 
   Reply with corrections, or "approved" to hand off.

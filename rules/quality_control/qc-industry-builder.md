@@ -39,7 +39,10 @@ Two owners:
   refresh` via `--issues`.
 
 The calling skill runs the script first (auto-fixes applied), then the
-subagent (judgment-only set), then aggregates both result lists.
+subagent (judgment-only set), then aggregates both result lists. It routes
+each failure per the failing check's **Fix on fail** entry below, which
+names the phase to re-enter (or directs a halt). This file is the single
+routing source; the skill's Phase 5 does not carry its own routing table.
 
 ### A - Frontmatter and metadata
 
@@ -64,9 +67,11 @@ subagent (judgment-only set), then aggregates both result lists.
   - Fix on fail: report; Phase 5 routes the failure to Phase 3 for the
     drafter to write or correct the title line.
 - **A5** *(script)*: `**Used by:** <consumers>` header present on the
-  line immediately under the title (after a blank line).
-  - Fix on fail: insert the standard header listing `cv_targeted,
-    axis-classifier`.
+  first non-blank line after the title.
+  - Fix on fail: the script auto-inserts the standard header
+    (`cv_targeted, axis-classifier`) when it is absent. If the header
+    exists but is buried elsewhere in the body, the script reports it;
+    re-enter Phase 3 to remove the stray.
 
 ### B - Structural schema
 
@@ -78,10 +83,13 @@ subagent (judgment-only set), then aggregates both result lists.
     duplicated section from research.
 - **B2** *(script)*: Section order matches the schema (Vocabulary,
   Dialect, Emphasis, Adjacency).
-  - Fix on fail: reorder sections.
+  - Fix on fail: order mismatches are auto-fixed. The only failure the
+    script surfaces is "cannot reorder: duplicate headings," which always
+    co-occurs with a B1 duplicate-heading failure; B1's Phase 3 redraft
+    resolves it. No separate routing.
 - **B3** *(script)*: No sections beyond the schema (no extra `## ` headings).
-  - Fix on fail: relocate content from extra sections into the appropriate
-    schema section, then remove the extra heading.
+  - Fix on fail: re-enter Phase 3 to relocate content from extra sections
+    into the appropriate schema section, then remove the extra heading.
 - **B4** *(script)*: `## Adjacency` contains the mandatory
   `### Low or no adjacency` sub-section per `axes-file-schema`. The
   sub-section is always present, with a `_(none)_` placeholder body when
@@ -100,27 +108,27 @@ subagent (judgment-only set), then aggregates both result lists.
 - **C2** *(subagent)*: Every version-stamped framework (e.g. `ICH E6(R3)`,
   `eCTD v4.0`) carries a version stamp consistent with the research findings'
   currency.
-  - Fix on fail: correct the version stamp from research; remove if no source
-    supports any specific version.
+  - Fix on fail: re-enter Phase 2 to re-confirm the framework's current
+    version; correct or remove the stamp on redraft.
 - **C3** *(subagent)*: Every quantitative or temporal claim
   (counts, dates, "current as of", market-share figures) traces to a source.
-  - Fix on fail: re-research; if unsourced, rewrite the claim qualitatively
-    or remove it.
+  - Fix on fail: re-enter Phase 2 to re-research; if still unsourced,
+    rewrite the claim qualitatively or remove it on redraft.
 
 ### D - Cross-file responsibility boundaries
 
-- **D1** *(subagent)*: The drafted file's content does not restate terms,
-  acronyms, or framings already owned by a sibling industry file in
+- **D1** *(subagent)*: The drafted file's Vocabulary and Dialect do not
+  restate terms or acronyms already owned by a sibling industry file in
   `rules/industries/` (the new file's vocabulary belongs to its own
   industry; sibling-owned content belongs to siblings).
-  - Fix on fail: remove the duplicated content; if the content is genuinely
-    distinct in the new industry's context, rewrite it to reflect that
-    distinction.
+  - Fix on fail: re-enter Phase 3 to remove the duplicated content; if it
+    is genuinely distinct in the new industry's context, rewrite it to
+    reflect that distinction.
 - **D2** *(subagent)*: The drafted file's content stays within the industries
   axis (regulatory landscape, industry terminology, hiring-panel emphasis).
   Capability vocabulary, method names, voice-and-verb framing, identity
   framing, and work-state framing belong to other axis files and are excluded.
-  - Fix on fail: remove off-axis content.
+  - Fix on fail: re-enter Phase 3 to remove off-axis content.
 
 ### E - Adjacency completeness
 
@@ -148,7 +156,8 @@ subagent (judgment-only set), then aggregates both result lists.
   - Fix on fail: re-enter Phase 4 reconciler to redraft the offending back-edge.
 - **E4** *(script)*: Each per-sibling back-edge targets the sibling's
   `## Adjacency` section (no other section is modified).
-  - Fix on fail: reject the edit; reconciler must re-target.
+  - Fix on fail: re-enter Phase 4 for the reconciler to re-target the
+    edit to the Adjacency section.
 
 ### F - Source quality
 
@@ -184,7 +193,8 @@ subagent (judgment-only set), then aggregates both result lists.
 - **G1** *(script)*: The registry entry text passed to `apply-create` or
   the existing registry entry (refresh) lists the same filename as the value
   file being written (`File: <value>.md` matches the actual filename).
-  - Fix on fail: rewrite the registry entry text to match.
+  - Fix on fail: re-enter Phase 3 to rewrite the registry entry text to
+    match.
 - **G2** *(subagent)*: The registry entry's one-line description summarizes
   the file's scope (description and file content agree on the substantive area).
   - Fix on fail: re-enter Phase 3 to redraft the registry-entry line from

@@ -66,9 +66,11 @@ Delete `rule-builder-skills-inline-procedure` from `design_decisions.md` — the
 
 ### registry-overlap-tracking
 Use `rules/industries/registry.md` (or an extension file) as a cross-reference of which terms appear in which industry files, so updates to shared regulatory/vocabulary terms (FDA guidance, ICH adoptions) can be propagated to all relevant files. Full-enumeration approach (`industry-files-full-enumeration`) duplicates shared terms across pharma/biotech/cro; redundancy is acceptable now but update-cost grows over time.
-- Trigger: first shared-term update where propagation cost surfaces as friction; or earlier if foundation tooling investment is warranted.
+
+The same inverted term index is the scaled fix for the axis-builder QC D1 check (cross-sibling-content redundancy). D1 currently reads whole sibling files into the QC subagent's context, which is O(N-siblings); the deliberate choice to leave it that way holds only while axes stay small. At scale the fix is to compute verbatim term/acronym overlap deterministically against the index and surface only the flagged candidates to the subagent, making its context independent of sibling count. One index serves both the propagation use case and D1.
+- Trigger: first shared-term update where propagation cost surfaces as friction; or any axis registry exceeding ~15 file-backed values (where D1's whole-file reads start to pressure context); or earlier if foundation tooling investment is warranted.
 - Blocks: nothing currently.
-- Refs: `industry-files-full-enumeration`.
+- Refs: `industry-files-full-enumeration`, `builder-reconciler-adjacency-slice-2026-05` (D1 whole-file rationale).
 
 ### participant-terminology-cross-file-consistency
 The Participant terminology paragraph ("participant" is the current preference in protocols and consent forms... TransCelerate / NIH / FDA / NEJM standard) is verbatim identical in `rules/industries/pharma.md` and `rules/industries/biotech.md`. Surfaced 2026-05-19 during /industry-builder refresh of cro.md when D1 fired on the same paragraph copied into cro.md from the prior 2026-04 build. The paragraph is cross-cutting CV-style editorial guidance, not industry-specific. Resolved for cro.md by dropping the paragraph (D1 cleared). The pharma↔biotech overlap is still in place and would fire D1 on any future refresh of either file. Options: (a) drop the paragraph from pharma.md and biotech.md (matches the post-cro state across 6 of 7 industry files); (b) move the rule to a cross-cutting location such as `rules/conventions/participant-terminology.md` or fold into a future CV format spec, and remove from all industry files; (c) accept the duplication and override D1 with a documented exception for cross-cutting CV-style content.

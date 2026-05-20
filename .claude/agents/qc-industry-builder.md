@@ -50,12 +50,12 @@ have a finding behind them. Report C3 for any unsourced quantitative or
 temporal claim.
 
 ### D1 - no cross-sibling content redundancy
-The drafted value file does not restate vocabulary or framings already
-owned by a sibling industry file. To check, read each sibling at its given
-path and compare its Vocabulary and Dialect against the draft's. Verbatim
-overlap is a fail; the same term used in genuinely distinct context for
-this industry is a pass (the draft should make the distinction explicit).
-Report D1 with the specific overlap.
+The drafted value file's Vocabulary and Dialect do not restate terms or
+acronyms already owned by a sibling industry file. To check, read each
+sibling at its given path and compare its Vocabulary and Dialect against
+the draft's. Verbatim overlap is a fail; the same term used in genuinely
+distinct context for this industry is a pass (the draft should make the
+distinction explicit). Report D1 with the specific overlap.
 
 ### D2 - on-axis content
 The drafted value file's content stays within the industries axis. Off-axis
@@ -107,8 +107,9 @@ rewritten to read naturally without it.
 ## Rules
 
 - Do not edit any file.
-- Do not re-run the script-owned checks (A1-A5, B1-B3, E1, E2, E4, G1,
-  H2, I1-I3). The dispatching skill runs them before dispatching you.
+- Do not run any check that is not listed in the "Checks you run" section
+  above; all other check IDs are script-owned and the dispatching skill
+  runs them before dispatching you.
 - Do not propose multi-phase rework. Each finding's `detail` is one line
   describing what failed and where. The dispatching skill decides which
   phase to route back to.

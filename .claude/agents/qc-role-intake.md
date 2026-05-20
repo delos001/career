@@ -29,8 +29,10 @@ Read both files in full before checking.
    company, role, role level, industry, session-start and research-completed
    dates, JD file + source, comms file + source (blank if no comms), axes
    (primary/secondary per axis), axis gaps.
-   Route-back: phase 7 if axis or date fields are missing; phase 3 if JD/comms
-   file or source fields are missing; phase 2 if industry is missing.
+   Route-back: phase 7 if axis or date fields are missing; phase 2 if
+   industry is missing. A missing or wrong JD/comms file-or-source field is
+   a one-field correction - flag it for a direct edit to the session log,
+   not a phase re-run (Phase 3 will not re-run over an existing session log).
 3. **Cross-file consistency** - company and role match between the session log and
    the research file; the axis classification in the session log is consistent
    with what the research file supports.
@@ -61,6 +63,6 @@ PASS, or FINDINGS (<n>)
 (omit this section if PASS)
 - **Finding:** <what is wrong>
   **Check:** <which check above>
-  **Route-back:** phase <n>
+  **Route-back:** phase <n> (or "direct edit" for a one-field session-log correction)
 - ...
 ```

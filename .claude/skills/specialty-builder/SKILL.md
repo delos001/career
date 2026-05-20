@@ -26,16 +26,14 @@ invoking it after flagging an axis gap.
   follows the same exit contract:
   - Exit 0: success. Parse stdout per the subcommand's documented output.
   - Exit 2 with `ContractError:` stderr prefix: a subagent's JSON output
-    did not match the declared shape (wrong top-level type, missing or
-    unexpected key, wrong field type, bad enum value). The build cannot
-    continue. Halt and tell the user verbatim:
+    did not match the declared shape. The build cannot continue. Halt and
+    tell the user verbatim:
     "The build couldn't continue because one of the helper outputs didn't
     match the expected shape. Details logged for dev triage."
     Then append a section to `design/build_issues.md` (header
     `## <YYYY-MM-DD> - <axis>-builder <mode> - <value> (contract failure)`),
     with one bullet containing the full stderr text and one bullet naming
-    which subagent produced the offending output. Do not retry; this is a
-    code-level mismatch, not a content issue the loop can resolve.
+    which subagent produced the offending output. Do not retry.
   - Exit 1 with `Error:` stderr prefix: any other failure (file missing,
     registry malformed, mode invariant violated). Translate the stderr
     text to plain English using the situation context; halt.
@@ -91,11 +89,10 @@ invoking it after flagging an axis gap.
   - `axis`: `specialties`
   - `value`: the target value
   - `siblings`: every non-self entry from Phase 1's siblings list, as just
-    the value names. The agent researches adjacency considerations for
-    each.
-- Output: research findings block per the agent's return schema
-  (capability landscape, practice-specific terminology, knowledge-transfer
-  convention, adjacency considerations per sibling).
+    the value names.
+- Output: research findings block per the agent's return schema (capability
+  landscape, practice-specific terminology, knowledge-transfer convention,
+  adjacency considerations per sibling).
 
 ## Phase 3 - Draft value file (and registry entry, create mode)
 
@@ -109,20 +106,14 @@ invoking it after flagging an axis gap.
 - Match the voice and density of existing files in `rules/specialties/`.
   `clinical-operations.md` is the canonical reference.
 - **Terminology scoping discipline.** The Terminology section lists only
-  practice-specific terms. Sector-wide terms (regulatory bodies,
-  pharmacovigilance vocabulary, trial-lifecycle stages, etc.) live in
-  `rules/industries/*.md` Vocabulary sections and must not be restated
-  here. The drafter writes the explicit cross-reference sentence at the
-  top of the Terminology section that names which industry file owns
-  the sector-wide vocabulary (D1 enforces).
-- **Create mode only**: also draft the one-line registry-entry bullet that
+  practice-specific terms; sector-wide terms (regulatory bodies,
+  pharmacovigilance vocabulary, trial-lifecycle stages) belong to
+  `rules/industries/*.md` and must not be restated. Open the Terminology
+  section with the explicit cross-reference sentence naming which industry
+  file owns the sector-wide vocabulary (D1 checks for it).
+- **Create mode only**: also draft the one-line registry-entry bullet
   Phase 6 will splice into `rules/specialties/registry.md`. Format:
   `- **<value>**: <short scope description>. File: <value>.md.`
-  The description must summarize the same substantive area the drafted
-  value file covers (so G2 holds), and the filename must match the value
-  (so G1 holds). For a value currently in the registry as `File deferred`,
-  reuse the existing description if it still fits; otherwise rewrite it
-  from the drafted value file's scope.
 - Output:
   - Refresh: drafted value file content as text.
   - Create: drafted value file content as text + registry-entry line as text.
@@ -141,10 +132,7 @@ invoking it after flagging an axis gap.
     --section Adjacency
   ```
 
-  Capture the stdout as `adjacency_text` for that sibling. Gives the
-  reconciler the exact context it needs (existing translation bullets in
-  the sibling's voice) without dumping full sibling files into its context
-  window.
+  Capture the stdout as `adjacency_text` for that sibling.
 - Dispatch the `specialty-builder-reconciler` subagent with the inputs it
   declares in `.claude/agents/specialty-builder-reconciler.md`:
   - `axis`: `specialties`
@@ -153,23 +141,10 @@ invoking it after flagging an axis gap.
   - `drafted_value_file`: the Phase 3 drafted text
   - `siblings`:
     - Create mode: `{value, adjacency_text}` pairs for every file-backed
-      sibling, using the slices captured in the pre-step.
+      sibling.
     - Refresh mode: `{value, path}` pairs for cross-reference checks.
-    File-deferred and registry-only entries have no file to slice or read
-    and are excluded.
   - `current_value_file` (refresh only): the existing value-file path
-  - `research_findings` (refresh only): the Phase 2 research block, so
-    refresh-mode change records can cite their source
-
-  **Create mode**: the agent reads each sibling's Adjacency slice,
-  identifies which already cover the new value, drafts a back-edge bullet
-  for each one that does not (in that sibling's voice, matching the slice's
-  existing-bullet style), and returns the per-sibling edits.
-
-  **Refresh mode**: the agent reads the current value file, compares
-  against the new draft section-by-section, and returns a structured
-  change list (per change: section, type [add/remove/modify], current,
-  proposed, reasoning citing a research finding).
+  - `research_findings` (refresh only): the Phase 2 research block
 
 - Output:
   - Create: drafted value file + per-sibling back-edge edits.
@@ -184,8 +159,8 @@ invoking it after flagging an axis gap.
   the script half (mechanical checks with auto-fix) and the subagent half
   (judgment checks).
 
-  **Script half - mechanical checks + auto-fix.** Write the drafted value file
-  to a temp file. Run:
+  **Script half - mechanical checks + auto-fix.** Write the drafted value
+  file to a temp file. Run:
 
   ```
   python scripts/axis_qc.py specialties <value> \
@@ -196,58 +171,24 @@ invoking it after flagging an axis gap.
     [--changes <temp>]         # refresh mode
   ```
 
-  The script auto-fixes script-owned issues in place and prints
-  `{"checks": [{"id": "...", "passed": bool, "fixed": bool, "detail": "..."}]}`.
-  Re-read the (possibly mutated) value-file temp before dispatching the
-  subagent so the subagent sees the auto-fixed text.
+  The script auto-fixes script-owned issues in place. Re-read the
+  (possibly mutated) value-file temp before dispatching the subagent.
 
   **Subagent half - judgment checks.** Dispatch `qc-specialty-builder` with
   the (post-script) drafted file, the research findings, the file-backed
-  sibling file paths (for the D1 cross-sibling-content check, which runs
-  in both modes), and (create mode only) the sibling edits plus the
-  registry entry text. The subagent returns
-  `{"findings": [{"check": "...", "detail": "..."}]}` covering only the
-  judgment-owned checks (C1-C3, D1-D2, E3, F1, G2, H1).
+  sibling file paths (for D1), and (create mode only) the sibling edits
+  plus the registry entry text.
 
-- Aggregate failures from both halves:
-  - Script half: any `passed: false` from the script's `checks` array.
-  - Subagent half: every entry in the `findings` array.
-
-- For each aggregated failure, route to the phase that produced the
-  failing artifact, then re-enter Phase 5 from the script half:
-  - **A1** (frontmatter fences missing) -> Phase 3 redraft of the whole
-    frontmatter block.
-  - **A4** (title exists but suffix wrong) -> Phase 3 redraft of the title line.
-  - **A5** (Used by header buried elsewhere in the body) -> Phase 3 redraft;
-    drafter removes the stray and lets the script reinsert in the correct
-    position on the next QC pass.
-  - **B1, B3** (missing, duplicate, or extra sections) -> Phase 3 redraft.
-  - **E1** (new file's Adjacency missing a sibling) -> Phase 3 redraft of
-    the Adjacency section. The reconciler does not touch this section.
-  - **E4** (sibling edits target non-Adjacency section) -> Phase 4
-    reconciler re-run.
-  - **G1, G2** (registry-entry filename or description wrong) -> Phase 3
-    redraft of the registry-entry line.
-  - **I1, I2** (mode invariants) -> halt and surface; these are invocation
-    errors, not content errors.
-  - **I3** (refresh produced no meaningful changes) -> Phase 2 re-research
-    with broader scope. If a second pass still produces no changes, exit
-    clean and tell the user the file is already current; do not halt.
-  - **C1-C3, F1** (citation traceability, source authority) -> Phase 2
-    re-research.
-  - **D1, D2, H2** (cross-file boundaries, acronym list where applicable)
-    -> Phase 3 redraft.
-  - **H1** (em dash in body prose) -> Phase 3 redraft of the offending sentence.
-  - **E3** (sibling-voice phrasing) -> Phase 4 reconciler re-run.
-
-- Loop up to 3 iterations. After 3 iterations, accept the best draft as-is
-  and treat the still-unresolved failures as the provisional-issues list.
+- Aggregate failures from both halves. For each failure, follow the
+  Fix-on-fail entry for that check in
+  `rules/quality_control/qc-specialty-builder.md` - it names the phase to
+  re-enter, or directs a halt for invocation errors - then re-run Phase 5.
+  Loop up to 3 iterations. After 3 iterations, accept the best draft and
+  treat unresolved failures as the provisional-issues list.
 
 - Output:
   - Final drafted value file + sibling edits (create) or change list (refresh).
-  - QC result: `clean` (all checks pass) or `provisional` with the unresolved
-    list. Each unresolved entry is `{check, detail, attempted}` where
-    `attempted` summarizes what the loop tried.
+  - QC result: `clean` or `provisional` with unresolved-issues list.
 
 ## Phase 6 - Write
 
@@ -257,36 +198,21 @@ invoking it after flagging an axis gap.
 
 ### Create path
 
-- Write the final value file content, sibling edits, and registry-entry text to
-  temp files. Run:
-
-  ```
-  python scripts/axis_apply.py create specialties <value> \
-    --value-file <temp> \
-    --sibling-edits <temp> \
-    --registry-entry <temp> \
-    [--provisional --issues <temp>]
-  ```
-
-  Side effects: value file written, sibling Adjacency sections edited,
-  registry entry replaced. With `--provisional`, the value-file frontmatter
-  is marked and `design/build_issues.md` is appended.
+```
+python scripts/axis_apply.py create specialties <value> \
+  --value-file <temp> \
+  --sibling-edits <temp> \
+  --registry-entry <temp> \
+  [--provisional --issues <temp>]
+```
 
 ### Refresh path
 
-- The post-QC `--value-file` temp (with script auto-fixes already in it) is
-  the source of truth; the reconciler's change list is informational, not
-  the apply mechanism, so Phase 5 auto-fixes always carry through. Run:
-
-  ```
-  python scripts/axis_apply.py refresh specialties <value> \
-    --value-file <temp> \
-    [--provisional --issues <temp>]
-  ```
-
-  Side effects: `rules/specialties/<value>.md` overwritten, `last_researched`
-  bumped. With `--provisional`, the file is marked and
-  `design/build_issues.md` is appended.
+```
+python scripts/axis_apply.py refresh specialties <value> \
+  --value-file <temp> \
+  [--provisional --issues <temp>]
+```
 
 - Output: paths printed by the script.
 

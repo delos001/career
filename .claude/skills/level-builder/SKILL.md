@@ -161,9 +161,12 @@ invoking it after flagging an axis gap.
   sibling file paths, and (create mode only) the sibling edits plus the
   registry entry text.
 
-- Aggregate failures from both halves. Loop up to 3 iterations. After 3
-  iterations, accept the best draft and treat unresolved failures as
-  the provisional-issues list.
+- Aggregate failures from both halves. For each failure, follow the
+  Fix-on-fail entry for that check in
+  `rules/quality_control/qc-level-builder.md` - it names the phase to
+  re-enter, or directs a halt for invocation errors - then re-run Phase 5.
+  Loop up to 3 iterations. After 3 iterations, accept the best draft and
+  treat unresolved failures as the provisional-issues list.
 
 - Output:
   - Final drafted value file + sibling edits (create) or change list (refresh).

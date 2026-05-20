@@ -49,19 +49,17 @@ source. Drafts that say "as of 2025" or "X is the dominant platform" must
 have a finding behind them. Report C3 for any unsourced quantitative or
 temporal claim.
 
-### D1 - no cross-file content redundancy
-The drafted value file does not restate vocabulary or framings already
-owned by an industry file in `rules/industries/` (sector-wide regulatory
-bodies, sector-wide frameworks, pharmacovigilance vocabulary, trial-
-lifecycle stages) or by a sibling specialty file in
-`rules/specialties/`. To check, read each sibling at its given path and
-compare its Capability vocabulary and Terminology against the draft's.
-Also spot-check the top of the draft's Terminology section for the
-required cross-reference sentence naming which industry file owns the
-sector-wide vocabulary. Verbatim overlap is a fail; the same term used
-in genuinely distinct context for this specialty is a pass (the draft
-should make the distinction explicit).
-Report D1 with the specific overlap or the missing cross-reference.
+### D1 - cross-reference sentence + sibling-specialty redundancy
+Two checks. First, verify the draft's Terminology section opens with the
+required cross-reference sentence naming which industry file(s) own the
+sector-wide vocabulary; report D1 if that sentence is missing. Second,
+read each sibling specialty file at its given path and compare its
+Capability vocabulary and Terminology against the draft's; verbatim
+overlap is a fail, the same term in genuinely distinct context for this
+specialty is a pass. Report D1 with the specific sibling overlap.
+Industry vocabulary actually restated in the draft is caught by D2 (it is
+off-axis content); D1 does not itself compare the draft against industry
+files.
 
 ### D2 - on-axis content
 The drafted value file's content stays within the specialties axis
@@ -116,8 +114,9 @@ rewritten to read naturally without it.
 ## Rules
 
 - Do not edit any file.
-- Do not re-run the script-owned checks (A1-A5, B1-B3, E1, E2, E4, G1,
-  H2, I1-I3). The dispatching skill runs them before dispatching you.
+- Do not run any check that is not listed in the "Checks you run" section
+  above; all other check IDs are script-owned and the dispatching skill
+  runs them before dispatching you.
 - Do not propose multi-phase rework. Each finding's `detail` is one line
   describing what failed and where. The dispatching skill decides which
   phase to route back to.
