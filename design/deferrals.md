@@ -187,14 +187,14 @@ All trigger on foundation execution; all block foundation completion. Apply the 
 Applied 2026-05-04. Migration complete. File renamed `Contact_Info.md` → `user-info.md`; intro paragraph and Usage Notes dropped; `**Used by:** cv_targeted, cv_general` header added; field-value brackets cleaned. External references updated: `temp/support/profile_repo_scaffolding/{README.md, SETUP.md}`, scaffolding template renamed to `user-info.md`. Deeper scaffolding-template content updates (metadata header, phase-based reference stripping, descriptive loading patterns) remain owned by `scaffolding-content-updates`.
 
 ### career-narratives-existing-data-migration
-Apply `career-narratives-schema` to `narratives.md`.
+Migration complete (verified 2026-05-23). File carries `**Used by:**` / `**Stamps:**` header, `Role: RL-NNN`, required `Linked Inventory:`, and `Resistance` sections; removed fields (Era, Purpose, Tags), "What I'd Own Differently" subsections, APPENDIX, and Tag Taxonomy are absent. Discrepancy from design schema: file holds 5 DC entries (DC-001 through DC-005) versus the design doc's earlier "6" figure; schema reconciled to 5 pending user confirmation.
 
 ### career-narratives-cleanup-script
-One-time script: strip Pandoc underline syntax; remove HTML comment blocks. Mechanical.
+Complete as no-op (verified 2026-05-23). `narratives.md` carries zero Pandoc underline-syntax matches and zero HTML comment blocks; the script has no work to do. No script authored or run.
 - Refs: `career-narratives-schema`.
 
 ### positioning-existing-data-migration
-Apply `positioning-schema` to `positioning.md`. Migration surfaces existing inaccuracies: "Story 7 (Direct Report Accountability)" is misclassified (it's DC-003); appendix lists Stories 1-9 but 10 exist (ST-010 may need addition).
+Migration complete 2026-05-23. Applied `positioning-schema` to `positioning.md`. Block moves: Customization Instructions → `.claude/skills/career_brief/SKILL.md` (draft); Recruiter Pitch Template body → `templates/recruiter_pitch_template.md`; `**Avoid:**` line → `.claude/skills/interview_prep/SKILL.md` (draft). Story 7 misclassification corrected (now DC-003 under TH-002). ST-009 and ST-010 left unmapped to themes, matching the original appendix's intent rather than guessing assignments.
 
 ### experience-inventory-existing-data-migration
 All clusters closed. Migration complete.

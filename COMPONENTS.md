@@ -58,21 +58,23 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 ### Roster
 
-**Built** (detailed entry below):
+**Built** (detailed entries below):
 - role-intake
+- industry-builder, level-builder, orientation-builder, specialty-builder, work-state-builder (axis-builder skill family; one per axis; create / refresh modes; user-invoked)
+
+**Drafted** (skeleton SKILL.md exists at `.claude/skills/<name>/`; full design pending; no detailed entry yet):
+- career_brief — placeholder holding the Recruiter Pitch Template Customization Instructions migrated from `personal/profile/positioning.md` per `positioning-schema`.
+- interview_prep — placeholder holding the "Why did you leave?" answer guidance migrated from `personal/profile/positioning.md` per `positioning-schema`.
 
 **Planned** (from `design/design_decisions.md`):
 - cv_targeted
 - cv_general
-- interview_prep
 - interview_capture
 - interview_followup
-- career_brief
 - profile_update (mode parameter: adhoc / inline)
 - positioning
 - inventory (profile-builder)
 - narratives (profile-builder)
-- orientation_builder, industry_builder, specialty_builder, level_builder, work_state_builder (one per axis; create / refresh modes)
 
 ### Detailed Entries
 
@@ -98,6 +100,21 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - When any of its four subagents or three scripts change.
   - When the downstream gap-analysis skill is built (handoff contract).
 
+#### axis-builder skill family (industry-builder, level-builder, orientation-builder, specialty-builder, work-state-builder)
+
+- **Purpose**: Build or refresh a value file in `rules/<axis>/` for one of the five axes. Each builder researches the target value, drafts the per-axis schema sections, reconciles against sibling files, runs QC with auto-fix, and updates the registry. Documented as a family because the five skills share identical Phase 0-7 structure parameterized by axis.
+- **Status**: Designed (one designed skill per axis).
+- **Inputs**:
+  - Rules: `rules/global-rules.md`, `rules/<axis>/registry.md` and sibling value files (read via `scripts/axis_registry.py`), `rules/quality_control/qc-<axis>-builder.md`.
+  - Agents: `<axis>-builder-research`, `<axis>-builder-reconciler`, `qc-<axis>-builder`.
+  - Scripts: `scripts/axis_registry.py`, `scripts/axis_qc.py`, `scripts/axis_apply.py`.
+  - User input: target value (arg); yes/no continuation on the mode resolved from registry state.
+- **Outputs**:
+  - Files: `rules/<axis>/<value>.md` (created or refreshed); per-sibling Adjacency back-edges (create); `rules/<axis>/registry.md` entry replaced or appended (create).
+  - Side effects: `last_researched` stamped; `design/build_issues.md` appended on contract failure or provisional ship.
+- **Triggers**: User invocation; may be recommended by `role-intake` Phase 6 after an axis-gap flag for the matching axis.
+- **Update Triggers**: When the per-axis schema, the matching QC rule file, or any of the three agents / three scripts in the axis-builder ecosystem change.
+
 ---
 
 ## Sub-Agents
@@ -106,9 +123,11 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 **Built** (detailed entries below):
 - company-research, role-research, industry-research, axis-classifier, qc-role-intake
+- industry-builder-research, level-builder-research, orientation-builder-research, specialty-builder-research, work-state-builder-research (axis-builder research agent family; one per axis)
+- industry-builder-reconciler, level-builder-reconciler, orientation-builder-reconciler, specialty-builder-reconciler, work-state-builder-reconciler (axis-builder reconciler agent family; one per axis)
+- qc-industry-builder, qc-level-builder, qc-orientation-builder, qc-specialty-builder, qc-work-state-builder (axis-builder QC agent family; one per axis)
 
 **Planned** (from `design/design_decisions.md`):
-- specialty_research, orientation_research, level_research, work_state_research (axis-builder research agents)
 - qc_cv_format, qc_cv_structural, qc_cv_content, qc_gap_analysis_completeness, qc_interview_prep_coverage
 - (additional QC agents as new targets and aspects emerge)
 
@@ -159,6 +178,33 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Triggers**: Invoked by `role-intake` Phase 8.
 - **Update Triggers**: When the role-intake session log or research file schema changes; when the skill's phase structure changes (route-back map).
 
+#### axis-builder research agent family (industry-builder-research, level-builder-research, orientation-builder-research, specialty-builder-research, work-state-builder-research)
+
+- **Purpose**: Research the target axis value in depth for the matching axis-builder skill — produces the per-axis schema content the builder needs to draft a `rules/<axis>/<value>.md` value file. Deeper than role-intake's classification-scope research family.
+- **Status**: Designed (one per axis).
+- **Inputs**: Skill-passed (by `<axis>-builder`): `axis`, `value`, `siblings` (non-self value names). Tools: WebSearch, WebFetch.
+- **Outputs**: Structured research findings block with the per-axis sections the builder's Phase 3 draft consumes.
+- **Triggers**: Invoked by the matching `<axis>-builder` Phase 2.
+- **Update Triggers**: When the axis schema or the builder's research-input contract changes.
+
+#### axis-builder reconciler agent family (industry-builder-reconciler, level-builder-reconciler, orientation-builder-reconciler, specialty-builder-reconciler, work-state-builder-reconciler)
+
+- **Purpose**: Reconcile a drafted axis value file against the rest of the axis folder. In create mode, drafts per-sibling Adjacency back-edges from each sibling's extracted Adjacency slice. In refresh mode, emits a structured change list against the current file. No disk writes; JSON output consumed by `scripts/axis_qc.py` and `scripts/axis_apply.py`.
+- **Status**: Designed (one per axis).
+- **Inputs**: Skill-passed (by `<axis>-builder`): `axis`, `value`, `mode`, `drafted_value_file`, `siblings` (with Adjacency slices in create mode); `current_value_file` and `research_findings` in refresh. Tools: Read.
+- **Outputs**: JSON containing the drafted value file plus per-sibling back-edge edits (create) or a structured change list (refresh).
+- **Triggers**: Invoked by the matching `<axis>-builder` Phase 4.
+- **Update Triggers**: When the axis schema or the reconciler's JSON contract changes.
+
+#### axis-builder QC agent family (qc-industry-builder, qc-level-builder, qc-orientation-builder, qc-specialty-builder, qc-work-state-builder)
+
+- **Purpose**: Run the judgment-only quality checks defined in `rules/quality_control/qc-<axis>-builder.md` against a builder run's output. Mechanical checks are owned by `scripts/axis_qc.py`. Returns a JSON list of findings; the dispatching skill aggregates them with the script's output.
+- **Status**: Designed (one per axis).
+- **Inputs**: Skill-passed (by `<axis>-builder`): `axis`, `value`, `mode`, `value_file_text`, `research_findings`, `siblings` (with paths); `sibling_edits` and `registry_entry` in create mode. Tools: Read.
+- **Outputs**: JSON list of judgment findings.
+- **Triggers**: Invoked by the matching `<axis>-builder` Phase 5 (subagent half of QC).
+- **Update Triggers**: When `rules/quality_control/qc-<axis>-builder.md` or the QC findings contract changes.
+
 ---
 
 ## Scripts and Standalone Operations
@@ -167,7 +213,8 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 **Built** (detailed entries below unless noted):
 - `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/display/introduce.py`, `scripts/assemble.py`
-- `scripts/_config.py` (shared config loader; a helper module, not a standalone script, so no separate entry)
+- `scripts/axis_registry.py`, `scripts/axis_qc.py`, `scripts/axis_apply.py` (axis-builder concern family)
+- `scripts/_config.py`, `scripts/_util.py`, `scripts/axis_utils.py` (shared helper modules; not standalone scripts, no separate entries)
 - `scripts/cv_to_docx.py` (pre-existing; detailed entry pending)
 
 **Planned / referenced in design:**
@@ -222,6 +269,33 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Outputs**: `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`, the `personal/applications/<SLUG>_APP-NNN_YYYY-MM/` folder, and `<folder>/research.md`. Paths echoed to stdout.
 - **Triggers**: Invoked by `role-intake` Phases 3, 5, and 7.
 - **Update Triggers**: When `templates/session_log.md` or `templates/research_file.md` change shape; when the role-intake phase structure changes.
+
+#### scripts/axis_registry.py
+
+- **Purpose**: Read-only registry operations for the axis-builder family. Subcommands: `lookup` (single entry), `list` (all entries with state and value-file path), `slice` (print body of one `## Section` of a value file). Owns the registry-bullet parser; sibling scripts do not parse the registry by hand.
+- **Status**: Designed
+- **Inputs**: Subcommand args (`<axis>`, `<value>`, `--section`). Config: `config.yaml` via `scripts/_config.py`. Filesystem: `rules/<axis>/registry.md` and value files. Deps: pyyaml.
+- **Outputs**: JSON on stdout (`lookup`, `list`) or section body text (`slice`); errors to stderr.
+- **Triggers**: Invoked by every axis-builder skill at Phase 1 (`list`) and Phase 4 (`slice`, once per file-backed sibling).
+- **Update Triggers**: When the registry format or value-file section schema changes.
+
+#### scripts/axis_qc.py
+
+- **Purpose**: Mechanical QC and in-place auto-fix for axis-builder drafted value files. Runs deterministic checks per `rules/quality_control/qc-<axis>-builder.md`; auto-fixes purely textual issues (frontmatter shell + keys, title-suffix detection, Used-by header, section order, Adjacency self-reference). Judgment-required issues reported without fixing.
+- **Status**: Designed
+- **Inputs**: Subcommand args (`<axis>`, `<value>`, `--mode`, `--value-file`, optional `--sibling-edits`, `--registry-entry`, `--changes`). Config: `config.yaml` via `scripts/_config.py`. Deps: pyyaml.
+- **Outputs**: JSON `{ "checks": [...] }` on stdout (per-check pass/fail/fixed/detail). In-place mutation of the value-file temp where auto-fix applies.
+- **Triggers**: Invoked by every axis-builder skill at Phase 5 (script half).
+- **Update Triggers**: When mechanical-check semantics in `rules/quality_control/qc-<axis>-builder.md` change, or when the auto-fix vs report split for any check changes.
+
+#### scripts/axis_apply.py
+
+- **Purpose**: Phase 6 of the axis-builder family. Subcommands: `create` (write new value file + per-sibling Adjacency back-edges + registry-entry insert/replace) and `refresh` (overwrite existing value file + bump `last_researched`). Optionally marks provisional and logs unresolved issues to `design/build_issues.md`. Create stages all writes in memory before committing; refresh writes the primary artifact before the append-only log.
+- **Status**: Designed
+- **Inputs**: Subcommand args (`<axis>`, `<value>`, `--value-file`, plus `--sibling-edits` and `--registry-entry` for create, optional `--provisional --issues`). Config: `config.yaml` via `scripts/_config.py`. Deps: pyyaml.
+- **Outputs**: Files: `rules/<axis>/<value>.md` (create/refresh); modified sibling files (create); updated `rules/<axis>/registry.md` (create); appended `design/build_issues.md` (provisional). Paths printed to stdout.
+- **Triggers**: Invoked by every axis-builder skill at Phase 6.
+- **Update Triggers**: When the value-file or registry format changes; when transactional semantics or the build-issues log format change.
 
 ---
 

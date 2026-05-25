@@ -896,6 +896,10 @@ Refs: `tracker-integration` (deferral).
 Every skill, sub-agent, standalone script has a `COMPONENTS.md` entry: inputs, outputs, triggers, update triggers. Authored alongside the component. Component evolution requires entry update in same change.
 Repo `CLAUDE.md` references `COMPONENTS.md`.
 
+Roster conventions (added 2026-05-23):
+- **Drafted** tier sits between Built and Planned. Use when a skeleton SKILL.md exists (frontmatter + a `Status: Draft` note + reserved content) but orchestration is not yet designed. No detailed entry until the design lands.
+- **Family entries** under Detailed Entries collapse parametric component families (N variants differing only by one parameter) into a single entry naming all variants in the heading and using a placeholder in the body. Used for the axis-builder ecosystem (5 builder skills + 15 supporting agents).
+
 #### document-metadata-header-discipline
 Every doc programmatically consumed by skills/sub-agents/scripts carries a metadata header below the title.
 Scope in: profile documents, rule files, templates.
