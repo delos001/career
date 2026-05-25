@@ -99,6 +99,12 @@ Introduction classification for `interview_capture`, `interview_followup`, `cv_g
 - Blocks: those skill builds.
 - Refs: `workflow-communication-conventions`.
 
+### why-i-left-specifics-for-interview-prep
+Positioning.md's "Why I Chose to Leave BioMarin" section is deliberately diplomatic for external use (no named transition, no defined "traditional model," no specified modernization scope). Interview follow-ups will probe behind the diplomatic language: what changed in the leadership transition, what "traditional model" means concretely, what kind of modernization the current scope does not allow. The specifics needed to defend the diplomatic version under questioning belong in interview_prep skill content (or a private prep document interview_prep references), not in positioning.md. Surfaced 2026-05-25 during positioning audit (finding #13); user chose Option 1 (positioning stays as-is) + Option 3 (specifics deferred to interview_prep design).
+- Trigger: interview_prep skill design.
+- Blocks: interview_prep build — the skill cannot anticipate follow-up questions without these specifics.
+- Refs: `positioning-schema` (the section's diplomatic framing was retained per this design decision); `personal/profile/positioning.md` (Why I Chose to Leave BioMarin section); `.claude/skills/interview_prep/SKILL.md` (Drafted).
+
 ### builder-refresh-mechanics
 Diff presentation, approval gate shape, file-write flow for create vs refresh across the four axis builders.
 - Trigger: first builder skill at design time.
