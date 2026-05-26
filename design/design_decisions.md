@@ -138,7 +138,7 @@ Section 9 (PR entries) unchanged. PR-001/003/004/005 carry `ai-engineering` and 
 
 Resolves the work component of `specialty-axis-extension-data-science-operations-strategy-2026-05`'s "Inventory retag against the extended axis is the next session's work" carryover.
 
-Refs: `specialty-axis-extension-data-science-operations-strategy-2026-05`, `specialty-axis-tagging-by-work-nature`, `specialty-axis-training-as-specialty-work-2026-05`, `experience-inventory-existing-data-migration` (Section 8 retag complete).
+Refs: `specialty-axis-extension-data-science-operations-strategy-2026-05`, `specialty-axis-tagging-by-work-nature`, `specialty-axis-training-as-specialty-work-2026-05`.
 
 #### specialty-knowledge-transfer-section-applied-2026-05
 Added `## Knowledge-transfer mode` section to all 7 specialty files (ai-engineering, data-engineering, data-science, quality-compliance, operations-strategy, clinical-operations, people-leadership), placed between `## Terminology` and `## Adjacency`. Section content identical across all 7 files:
@@ -288,6 +288,8 @@ Every non-self registry entry must appear in exactly one of the two forms. Missi
 
 Rationale: fully enumerating every sibling as a substantive bullet bloats Adjacency sections as an axis grows, and most sibling pairs in a typical axis carry no real translation logic (the bullets restate "co-tags only when both held" in different prose). Pure omission of weak siblings creates ambiguity between "considered weak" and "forgotten." The two-form rule preserves the audit trail (every sibling appears somewhere) without paying full-bullet cost for non-translating pairs.
 
+**Industries' `## Dialect`** carries a mandatory `### Acronyms` sub-section containing the catalog of acronyms recognized without expansion in the industry's hiring contexts. Catalog format: one comma-separated paragraph, optionally split into two when distinguishing inherited versus domain-specific acronyms. Voice prose (style, cadence, posture) stays in Dialect's main body, above the sub-section. The H2 acronym-reconciliation QC check (scripts/axis_qc.py) uses the sub-heading as the catalog boundary; text above the sub-section is treated as body usage rather than as catalog content. Industries are the only axis whose schema currently includes Dialect; other axes have no acronym catalog and no parallel sub-section.
+
 Per-section content authoring guidance (what each section should contain, depth expectations, framing rules) is per-axis-builder design territory and deferred to those skills.
 
 Refs: `axes-composition-precedence`, `document-metadata-header-discipline`, `foundation-execution-order`, `adjacency-graph-fully-connected-rule-revisit` (deferral closed by this amendment).
@@ -314,7 +316,50 @@ Rationale: prototype testing showed (b) pure-semantic outperformed (a) tag-filte
 
 Supplemental tag selection is dynamic, not static — driven by role_evaluation's axis-matching output rather than a fixed "always pull Specialty + Orientation" rule. The matched axes for the role tell us which tags should trigger supplemental pulls for that role.
 
+**Superseded by `retrieval-architecture-2026-05`.** Prior design framed retrieval as part of cv_targeted; new design separates retrieval into its own skill serving multiple downstream consumers, uses critical requirements (not raw JD) as the LLM-judgment matching target, adds adjacency-aware axis scoring, adds an independent narrative semantic pass, and locks LLM-judgment (not RAG) as the semantic mechanism.
+
 Refs: `competency-registry-runtime-value` (resolved here), `cv-targeted-hybrid-retrieval` (deferral, reshaped), `role-evaluation-axis-matching-protocol`, `axes-composition-precedence`, `cv-targeted-content-rules-from-axes` (deferral).
+
+#### retrieval-architecture-2026-05
+Retrieval is a standalone skill that runs after role-intake and serves multiple downstream consumers (gap analysis, CV creation, interview prep, career brief). It produces a single manifest at `personal/applications/<SLUG>_APP-NNN_YYYY-MM/retrieval.md` containing scored references to inventory entries, narratives, and triggered themes. Manifests do not embed full content; downstream consumers fetch entry bodies via `scripts/profile_slice.py` on demand.
+
+**Inputs (read from role-intake outputs):**
+- Critical requirements list (from `research.md`; see `role-intake-critical-requirements-extraction-2026-05`).
+- Axis classification (from the session log).
+- JD text (from `jd.md`).
+
+**Three parallel retrieval passes; results unioned into the manifest:**
+
+1. **Inventory semantic pass (LLM-judgment, chunked).** EX/PR corpus split into chunks of approximately 50 entries each. Each chunk sent to Claude alongside the critical requirements list, with payload format `EX-NNN: <Description + Impact concatenated>`. Returns semantic score (0-1) plus one-line reason per entry. Chunking mitigates attention degradation that affects ranking long lists in a single prompt. Cost scales linearly with corpus size: one LLM call per chunk.
+
+2. **Inventory tag-pull pass (deterministic).** For each axis in the JD classification, include every EX/PR entry whose tag for that axis is an exact match OR an adjacency-match per the axis file's Adjacency section. Inclusion criterion: N≥1 axes (single-axis floor). Broad recall preserves the "no false-positive gaps" goal in downstream gap analysis.
+
+3. **Theme semantic pass (LLM-judgment).** Each Signature Theme (`TH-NNN`) in `positioning.md` is scored against the critical requirements list. The LLM sees `Core message` + `Proof point` + `Use when:` triggers concatenated as the theme description (OR semantics: any one field can justify triggering). Score 0-1 with one-line reason.
+
+**Narrative retrieval — two-signal:**
+- Deterministic Linked-Inventory walk: every narrative (`ST-NNN`, `DC-NNN`) whose `Linked Inventory:` references any inventory entry already in the manifest is included.
+- Independent semantic pass: every narrative is also scored by LLM-judgment against the critical requirements list, providing an arc-level relevance signal independent of inventory linkage.
+A narrative may carry either signal alone or both. Both are reported in the manifest.
+
+**Manifest exposes raw signals; downstream consumers derive tiers locally.** No pre-computed `strong/moderate/weak` tier at retrieval time. Per-entry signals exposed:
+- semantic score (float 0-1) from the LLM-judgment pass.
+- axis exact-match count (int 0-5) against JD axis classification.
+- axis adjacency-weighted score (float; exact match = 1.0, adjacent match per axis file = 0.5 default, axis file Adjacency section can override).
+- match evidence: which axes matched, which adjacency rules fired, LLM-generated free-text reason.
+
+Downstream consumers (gap analysis, CV creation, interview prep) apply their own tier cutoffs locally because "strong coverage" (gap analysis) and "primary bullet candidate" (CV) are different questions and a baked-in retrieval-time tier forces them into the same cuts.
+
+**Scope boundaries:**
+- Sections 1-6 of inventory (reference content: education, certifications, training, technical experience, industry exposure) are OUT of retrieval scope. Downstream skills read these directly via `scripts/profile_slice.py` when a JD requirement names a specific qualification.
+- Positioning scope limited to Signature Themes. Other positioning sections (Core Philosophy, Experience Profile, What Makes Me Unique, Positioning Statement) are voice/framing content; downstream skills load them whole when needed.
+
+**Semantic mechanism: LLM-judgment, not RAG.** The inventory corpus and per-application retrieval workload are well below the scale at which RAG infrastructure (embedding model, vector store, re-indexing on inventory edits) is the right architecture. LLM-judgment via the existing Claude integration is simpler, has stronger nuance handling on cross-domain phrasing (e.g., "regulatory readiness" against "FDA compliance posture"), and avoids stale-embedding risk on inventory edits. Tradeoff: scores may shift slightly across Claude model upgrades; reproducibility within a session is sufficient and retrieval is re-runnable on demand.
+
+**Supersedes `cv-targeted-retrieval-architecture-2026-05`.** Prior design framed retrieval as part of cv_targeted. New design separates retrieval into its own skill serving multiple consumers, uses critical requirements (not raw JD) as the matching target, adds adjacency-aware axis scoring, adds the narrative independent semantic pass, and locks LLM-judgment as the mechanism.
+
+Resolves deferrals: `cv-targeted-hybrid-retrieval` (implementation details specified by this design), `axis-adjacency-weights-redefinition` (adjacency weights drive retrieval ranking and downstream tier derivation; per-axis-file Adjacency text remains authoritative).
+
+Refs: `cv-targeted-retrieval-architecture-2026-05` (superseded), `role-intake-critical-requirements-extraction-2026-05`, `experience-inventory-domain-scoping`, `career-narratives-schema`, `axes-composition-precedence`.
 
 #### arc-composition-for-high-impact-roles
 Atomic inventory entry structure enables broad JD matching and retrieval recall. Roles requiring high-level, enterprise-scope proof points need the composition layer to synthesize related entries into unified achievement arcs rather than treating each as an independent bullet.
@@ -409,14 +454,12 @@ Parser conventions (markdown is the storage format; structure is regular enough 
 
 Tolerant-parser principle applies file-wide and to other profile documents where format conventions exist. Move cognitive burden off the human (every edit) onto the parser implementation (once).
 
-Refs: `user-info-existing-data-migration` (deferral).
-
 #### career-narratives-schema
 Schema (revised 2026-05-12: Era replaced with `Role: RL-NNN` for inventory-schema alignment; Purpose field dropped as phantom. Prior revision 2026-05-06 after retrieval-anchor reframe; supersedes original schema that proposed Tags→Capability rename plus four new axis fields).
 
 narratives is interview-prep primary; cv_targeted / role_evaluation consume it secondarily for bullet-framing depth via inventory linkage. Narratives are not a primary CV retrieval anchor.
 
-- IDs: `ST-NNN` for stories (10), `DC-NNN` for decisions (5; design doc previously said 6, file holds 5; reconciled to 5 pending user confirmation).
+- IDs: `ST-NNN` for stories, `DC-NNN` for decisions.
 - Per-entry fields: ID, Role (RL-NNN reference, multi-value; matches inventory `Role:` field; rebrand-resilient), Framework, Linked Inventory (required, multi-value), Added, Last Used.
 - **Era field replaced with `Role: RL-NNN`.** Original Era field used uncontrolled free-text employer strings, drift-prone and inconsistent with inventory's canonical Role reference. RL records hold authoritative title + company; narratives can carry multiple RLs since a single narrative may span multiple roles within an employer.
 - **Purpose field dropped.** Phantom field: no defined content scope, no controlled vocabulary, no consumer. Schema parsimony preferred over speculative optionality.
@@ -433,7 +476,7 @@ narratives is interview-prep primary; cv_targeted / role_evaluation consume it s
 
 Stale-link mitigation: validator script (deferred to skill build) grep-checks Linked Inventory IDs against actual EX/PR IDs in inventory.
 
-Refs: `career-narratives-existing-data-migration`, `career-narratives-cleanup-script`, `maintained-by-metadata-field` (deferrals); `competency-field-and-registry-removed-2026-05`, `cv-targeted-retrieval-architecture-2026-05`.
+Refs: `maintained-by-metadata-field` (deferral); `competency-field-and-registry-removed-2026-05`, `cv-targeted-retrieval-architecture-2026-05`.
 
 #### positioning-schema
 - Cut: Competencies (~30 bullets), Role-Targeted Accomplishments (~30 bullets). CV and role evaluation pull from inventory directly.
@@ -447,7 +490,6 @@ Refs: `career-narratives-existing-data-migration`, `career-narratives-cleanup-sc
 - "Last Revised" line kept as plain text at top.
 - Typo fix: "INDUSTRY TRAGECTORY" → "INDUSTRY TRAJECTORY".
 - Header: `**Used by:** cv_targeted, cv_general, role_evaluation, interview_prep, career_brief`.
-Refs: `positioning-existing-data-migration` (deferral).
 
 #### experience-inventory-domain-scoping
 Every retrievable entry (EX-NNN, PR-NNN) carries `Industry:` and `Specialty:` fields. Multi-value, pipe-delimited. No document-level Active Domain.
@@ -506,7 +548,6 @@ Sections 9 and 10 swap. Independent & Volunteer Projects → 9. Academic Coursew
 
 #### experience-inventory-tagging-granularity
 Reference sections addressable at sub-section level via heading anchors. Per-item tagging not added.
-Refs: `experience-inventory-existing-data-migration` (deferral).
 
 #### inventory-section-8-rl-grouping-2026-05
 Section 8 renamed "All Tasks Performed" → "Experience Entries" (the `EX-` prefix denotes experience units, not to-do tasks). The ten hand-curated topical sub-headings are replaced with one `### RL-NNN` sub-heading per role; heading text is the RL ID only, preserving the rebrand resilience of `inventory-role-rl-reference-applied-2026-05`.
@@ -595,9 +636,9 @@ Mapping logic: explicit per-EX-ID overrides for the compound-title cluster, then
 
 Apply executed via `_apply_role_rl_reference.py`. Line count 3045 → 2853 (delta -192). Script deleted later per `working-files-deleted-after-apply`; this decision is the durable record.
 
-Closes the work component of `inventory-company-field-rl-reference` deferral and the Cluster C item in `experience-inventory-existing-data-migration`.
+Closes the company-field RL-reference work and inventory Cluster C.
 
-Refs: `experience-inventory-section-7-flat-records`, `inventory-entry-structure-applied`, `inventory-company-field-rl-reference` (deferral, closed here), `experience-inventory-existing-data-migration` (deferral, Cluster C closed here).
+Refs: `experience-inventory-section-7-flat-records`, `inventory-entry-structure-applied`.
 
 #### competency-field-and-registry-removed-2026-05
 Inventory `Competency:` field removed from all 197 EX/PR entries. `rules/competencies/registry.md` deleted; `rules/competencies/` folder removed.
@@ -1124,6 +1165,31 @@ When Phase 6 flags an axis gap, the skill surfaces it at Phase 6 (not Phase 9) w
 
 Placement at Phase 6, not Phase 9, avoids running Phases 7-8 on a known-incomplete classification.
 Refs: `role-intake-axis-classification`, `builder-sequencing-industry-first`.
+
+#### role-intake-critical-requirements-extraction-2026-05
+Role-intake gains a critical-requirements extraction step. A new sub-agent `critical-requirements-extractor` reads the JD and writes a structured list of competency requirements into `research.md` as a new top-level `## Critical Requirements` section.
+
+**Why in role-intake, not retrieval.** Critical requirements describe the JOB, not the candidate's matched experience. They belong alongside other JD-understanding artifacts (axis classification, role/company/industry research), not inside retrieval's manifest. Centralizing extraction in role-intake means every downstream consumer (retrieval, gap analysis, CV creation, interview prep) reads the same canonical artifact rather than re-extracting.
+
+**Three-field schema per requirement:**
+- **Text:** the requirement phrased as a concrete competency or qualification.
+- **Type:** one of `must-have` (explicit hard requirement), `preferred` (explicit nice-to-have), `duty-derived` (implied by duties/responsibilities), `contextual` (implied by company/role/team context).
+- **Source:** short pointer to where in the JD the signal came from (e.g., "Required Qualifications #2", "Day-to-day Responsibilities", "About the Team paragraph").
+
+**Comprehensive JD scan.** The sub-agent reads the entire JD, not just sections labeled "Requirements" or "Qualifications." Duties, responsibilities, "about the role" paragraphs, and team/company-context language often carry competency signals the hiring panel will use even when not labeled as requirements. The `Type` field captures the source nature so downstream consumers can weigh accordingly.
+
+**Downstream consumption:**
+- Retrieval: critical requirements are the matching target for the LLM-judgment passes (inventory entries, narratives, themes), replacing raw JD text as the matching target.
+- Gap analysis: `Type` drives severity. Unmet `must-have` = high severity; unmet `preferred` = low; unmet `contextual` may not constitute a real gap.
+- CV creation: `must-have` requirements receive explicit CV bullets; `preferred` and `duty-derived` widen the matching surface; `contextual` informs framing/voice rather than bullets.
+- Interview prep: requirements inform anticipated panel questions.
+
+**Architecture:**
+- New sub-agent: `critical-requirements-extractor`. Parallel to the existing `company-research`, `role-research`, `industry-research` subagents. Keeps role-intake SKILL.md from accumulating inline extraction logic.
+- Invocation phase TBD at build time (likely Phase 4 alongside the three research subagents, or a Phase 5 JD-understanding consolidation). Output flows through `scripts/assemble.py` writing into `research.md`.
+- `templates/research_file.md` gains a new `## Critical Requirements` section carrying the three-field per-requirement structure.
+
+Refs: `retrieval-architecture-2026-05`, `role-intake-architecture`, `role-intake-research-scope`, `role-intake-artifacts`.
 
 ### role_evaluation
 

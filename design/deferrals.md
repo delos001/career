@@ -23,10 +23,10 @@ Sweeps in-scope docs, parses metadata headers, cross-references against COMPONEN
 - Refs: `document-metadata-header-discipline`, `component-documentation-discipline`.
 
 ### inventory-filter-tool
-A CLI or UI utility that filters `inventory.md` EX/PR entries by Role (RL-NNN), Industry, Specialty, Orientation, Level, Work-state, or other tag axes. Surfaces matching entries with ID + Description for human review. Needed for narrative authoring (selecting Linked Inventory anchors), CV bullet sourcing, and inventory navigation generally. The flat-file structure of the inventory makes manual lookup impractical at 216-entry scale. Surfaced 2026-05-12 during Phase D of `career-narratives-existing-data-migration`, where user could not browse the inventory by role to choose Linked Inventory anchors.
+A CLI or UI utility that filters `inventory.md` EX/PR entries by Role (RL-NNN), Industry, Specialty, Orientation, Level, Work-state, or other tag axes. Surfaces matching entries with ID + Description for human review. Needed for narrative authoring (selecting Linked Inventory anchors), CV bullet sourcing, and inventory navigation generally. The flat-file structure of the inventory makes manual lookup impractical at 216-entry scale.
 - Trigger: next narrative authoring or refresh task, or when CV bullet sourcing becomes a recurring workflow.
-- Blocks: nothing currently (Phase D was completed by Claude acting as the filter interactively).
-- Refs: `career-narratives-schema`, `career-narratives-existing-data-migration`.
+- Blocks: nothing currently.
+- Refs: `career-narratives-schema`.
 
 ### inventory-builder-research-classification-sections-5-6
 inventory builder skill needs a research component to classify Section 5 (Technical Experience) tools and Section 6 (Industry Exposure Profile) content against industry-pack and specialty-pack vocabularies. Drives downstream retrieval relevance and cv_targeted's ability to surface section content matched to JD industry/specialty signals.
@@ -51,6 +51,12 @@ A decision log for QC findings on the inventory that could not be fully closed b
 - Trigger: inventory builder skill design.
 - Blocks: nothing currently (manual audits proceed with the user's mental model of "no-change-needed").
 - Refs: `inventory-builder-quality-check-encoding`, `design/inventory_builder_quality_checks.md`.
+
+### axis-builder-qc-drift-resolution
+The acronym check in `scripts/axis_qc.py` flags ~70 mismatches across pharma, biotech, med-device, and diagnostics industry files. Sample analysis (pharma, 2026-05-26) shows a roughly 60/40 noise-to-real split: regex artifacts ("JSON" pulled out of "Dataset-JSON"), cross-domain reference noise (NIH, NEJM appearing as external-organization names in body prose), and a smaller set of genuine catalog/body inconsistencies. Pharma partial cleanup applied 2026-05-26 (dropped OOS from catalog; spelled out CFR as "21 CFR (Code of Federal Regulations) Part 11" on first use; added CDER/CBER/CDRH to catalog; added eCRF to body in Adjacency's eclinical bullet). Remaining ~25 pharma items and the full mismatch set in biotech/med-device/diagnostics deferred — axis builders are tangential to core capability builds. Note: even spelled-out terms (like CFR after the pharma edit) remain flagged by the mechanical check because the token still appears in body without being in the catalog; the spell-out-on-first-use convention is a human-reader pattern, not a check-satisfying pattern. Two paths to evaluate at trigger: (1) fix each remaining flagged item correctly (drop from catalog, add to catalog, or rewrite body to remove the token), (2) build an "accepted findings" log mechanism so noise can be suppressed permanently — same pattern as `inventory-qc-findings-decision-log`.
+- Trigger: next axis-builder refresh, OR concurrent with `inventory-qc-findings-decision-log` build.
+- Blocks: nothing currently (axis files remain functional; the acronym check is report-only).
+- Refs: `inventory-qc-findings-decision-log` (parallel mechanism), `scripts/axis_qc.py`, `rules/quality_control/qc-industry-builder.md`.
 
 ### design-decisions-audit-closure-bloat-cleanup
 Three prior audit closure records in `design_decisions.md` contain phase-by-phase audit logs that are not genuine design decisions: `experience-inventory-final-audit-phases-1-2-and-3p-applied-2026-05` (line 179), `experience-inventory-final-audit-phase-5-applied-2026-05` (line 218), `experience-inventory-final-audit-step-0-and-phases-6-7-applied-2026-05` (line 241). They bloat the file and consume context at every session start. Extract genuine design changes (rule updates, schema changes, new memory feedback) into their own slugs; remove audit-log content. The 2026-05-11 corrected-order audit closure was deliberately NOT added to `design_decisions.md` per this rule.
@@ -118,10 +124,8 @@ Weighted matching by JD emphasis: industry-emphasis weights Industry higher; spe
 - Refs: `five-orthogonal-axes`, `experience-inventory-domain-scoping`, `axis-adjacency-weights-redefinition`.
 
 ### cv-targeted-hybrid-retrieval
-Reshaped 2026-05-01 per `cv-targeted-retrieval-architecture-2026-05`. Two-pass hybrid: (1) semantic ranking over a Description-only payload returns candidate IDs; (2) supplemental tag-pulls driven by role_evaluation's matched axis values catch entries whose descriptions undersell their nature (Specialty/Orientation are the natural triggers; Industry weights ranking; Level/Work-state are framing-only). Merge, dedup, then load full entry detail for the merged candidate set. Implementation details (pre-extracted Description payload generation, embedding vs LLM-judgment, merge weighting) deferred to cv_targeted skill design.
-- Trigger: cv_targeted skill design.
-- Blocks: cv_targeted build.
-- Refs: `cv-targeted-retrieval-architecture-2026-05`, `role-evaluation-axis-matching-protocol`, `experience-inventory-domain-scoping`, `stack-retrieval`.
+**Resolved 2026-05-26 by `retrieval-architecture-2026-05`.** All previously deferred implementation details settled: semantic pass is LLM-judgment (not RAG) on Description + Impact, chunked at ~50 entries per call; deterministic tag-pull pass is adjacency-aware with N≥1 inclusion floor; merge happens at manifest level with raw signals exposed (semantic score, axis exact-match count, axis adjacency-weighted score) for downstream tier derivation rather than pre-computed at retrieval. Reshaping moved retrieval out of cv_targeted into a standalone skill serving all downstream consumers.
+- Refs: `retrieval-architecture-2026-05`, `cv-targeted-retrieval-architecture-2026-05` (superseded).
 
 ### cross-axis-composition-mechanism
 Mechanism by which cv_targeted reconciles per-axis composition outputs. Possibilities range from per-axis sub-agents proposing content for their owned surface and engaging in review/challenge rounds to converge, to rule-based application of default precedence with no cross-axis review. Specific implementation deferred to cv_targeted skill design.
@@ -130,10 +134,8 @@ Mechanism by which cv_targeted reconciles per-axis composition outputs. Possibil
 - Refs: `axes-composition-precedence`, `cv-targeted-content-rules-from-axes`, `cv-targeted-weighted-matching`.
 
 ### axis-adjacency-weights-redefinition
-Numeric adjacency weights stripped from all axis file frontmatter; rule-format adjacency text in file bodies remains as actionable content. Weights to be re-authored with documented semantics at cv_targeted skill design — what a weight should drive (translation strength threshold, retrieval ranking, bullet count modulation, or other) is undefined and was never deliberately set when the original weights were authored.
-- Trigger: cv_targeted skill design specifies what adjacency weights should drive in translation behavior.
-- Blocks: cv_targeted weighted-translation behavior.
-- Refs: `cv-targeted-weighted-matching`, `cv-targeted-content-rules-from-axes`.
+**Resolved 2026-05-26 by `retrieval-architecture-2026-05`.** Adjacency weights drive retrieval-time axis scoring (exposed in the manifest as an adjacency-weighted float per entry) and feed downstream tier derivation by gap analysis and CV creation. Default semantics: exact axis-value match = 1.0, adjacent value per axis file's Adjacency section = 0.5. Per-axis-file Adjacency text remains authoritative; individual axis files may override the 0.5 default if their Adjacency section so specifies. Open follow-on for translation-strength behavior (CV bullet rewording vs filtering) reverts to `cv-targeted-content-rules-from-axes` and `cv-targeted-weighted-matching` at cv_targeted build time.
+- Refs: `retrieval-architecture-2026-05`, `cv-targeted-weighted-matching`, `cv-targeted-content-rules-from-axes`.
 
 ### level-axis-finer-grained-files
 Whether/when to split `leadership.md` into people manager, senior leadership, c-suite, etc.
@@ -186,41 +188,6 @@ Orientation selection logic and match criteria stripped from axis rule files. Be
 - Refs: `rules/orientations/*`, `dual-orientation-asymmetric-authority`.
 
 ## Migration Items
-
-All trigger on foundation execution; all block foundation completion. Apply the referenced design decisions to the existing files in `personal/profile/`.
-
-### user-info-existing-data-migration
-Applied 2026-05-04. Migration complete. File renamed `Contact_Info.md` → `user-info.md`; intro paragraph and Usage Notes dropped; `**Used by:** cv_targeted, cv_general` header added; field-value brackets cleaned. External references updated: `temp/support/profile_repo_scaffolding/{README.md, SETUP.md}`, scaffolding template renamed to `user-info.md`. Deeper scaffolding-template content updates (metadata header, phase-based reference stripping, descriptive loading patterns) remain owned by `scaffolding-content-updates`.
-
-### career-narratives-existing-data-migration
-Migration complete (verified 2026-05-23). File carries `**Used by:**` / `**Stamps:**` header, `Role: RL-NNN`, required `Linked Inventory:`, and `Resistance` sections; removed fields (Era, Purpose, Tags), "What I'd Own Differently" subsections, APPENDIX, and Tag Taxonomy are absent. Discrepancy from design schema: file holds 5 DC entries (DC-001 through DC-005) versus the design doc's earlier "6" figure; schema reconciled to 5 pending user confirmation.
-
-### career-narratives-cleanup-script
-Complete as no-op (verified 2026-05-23). `narratives.md` carries zero Pandoc underline-syntax matches and zero HTML comment blocks; the script has no work to do. No script authored or run.
-- Refs: `career-narratives-schema`.
-
-### positioning-existing-data-migration
-Migration complete 2026-05-23. Applied `positioning-schema` to `positioning.md`. Block moves: Customization Instructions → `.claude/skills/career_brief/SKILL.md` (draft); Recruiter Pitch Template body → `templates/recruiter_pitch_template.md`; `**Avoid:**` line → `.claude/skills/interview_prep/SKILL.md` (draft). Story 7 misclassification corrected (now DC-003 under TH-002). ST-009 and ST-010 left unmapped to themes, matching the original appendix's intent rather than guessing assignments.
-
-### experience-inventory-existing-data-migration
-All clusters closed. Migration complete.
-
-Closed:
-- Cluster C (Company → `Role: RL-NNN` reference): closed 2026-05-04 by `inventory-role-rl-reference-applied-2026-05`. Title field also dropped from EX entries; two RL Title corrections during reconciliation; one compound-title cluster split per-entry between RL-011 and RL-013.
-- Step 5 (Competency re-tagging) and Step 6 (Section 8 sub-section reassignment) both rendered moot by `competency-field-and-registry-removed-2026-05`. Field stripped 2026-05-01. Section 8 structure subsequently resolved by `inventory-section-8-rl-grouping-2026-05` (RL-grouped `### RL-NNN` sub-headings replace the topical scheme).
-
-Done 2026-05-01:
-- Sections 1-4 restructured with structured-field schemas (Education, Certifications, Affiliations, Training); year-only or YYYY-MM date granularity per section.
-- Section 5 cleaned to tools-only discipline; flat-list convention; capability/method tokens stripped (moved to Section 8 territory).
-- Section 6 closed: Data Sources renamed from Data Modalities; Data Modalities sub-section dropped.
-- Competency field and registry removed entirely (`competency-field-and-registry-removed-2026-05`).
-
-Done 2026-04-30:
-- Section 4/5/6/7 initial restructures per their decisions; per-entry Industry/Specialty/Orientation/Level/Work-state tagging across 197 entries; Capability→Competency rename + initial 16-term registry; Outcome→Impact fold; sub-section reorganization (9 moves); 5 PR Work-state Independent→greenfield; Level removed from RL records; field-drift cleanup. Background Roles encoding-artifact cleanup cleared as no-op (bytes are correct UTF-8; appearance was terminal-rendering artifact).
-
-### questions-library-deletion
-Delete `personal/profile/Questions_Library.md` after manual content extraction if any.
-- Refs: `questions-library-eliminated`.
 
 ### scaffolding-folder-layout
 Folder name, sub-folder layout, file naming for `support/`.
