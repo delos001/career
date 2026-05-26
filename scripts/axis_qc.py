@@ -192,12 +192,9 @@ def _append_build_issues(repo_root, cfg, axis, value, mode, issues):
 def _check_a1_frontmatter_present(text):
     """A1: frontmatter present and bounded by --- fences at top.
 
-    Report-only. A previous implementation auto-fixed by prepending an empty
-    '---\\n---\\n' shell, but if the drafter wrote keys at the top of the file
-    without fences, those keys ended up in the body and A2/A3 then inserted
-    fresh copies into the new shell, leaving the file with duplicated keys.
-    A redraft is cheaper than a safe migrator; Phase 5 routes A1 failures to
-    Phase 3 the same way it routes B1/B3.
+    Report-only. Auto-fix would require pushing orphan keys into a new
+    shell, which clashes with A2/A3 insertion. Phase 5 routes A1 failures
+    to Phase 3 for redraft.
     """
     fm, _ = axis_utils.split_frontmatter(text)
     if fm is not None:
@@ -212,7 +209,7 @@ def _check_a2_frontmatter_key(text, axis_key, value):
     if fm is None:
         return text, _record('A2', False, False,
                              'frontmatter absent; resolve A1 before A2')
-    pattern = re.compile(r'(?m)^' + re.escape(axis_key) + r':[ \t]+(.+)$')
+    pattern = re.compile(r'(?m)^' + re.escape(axis_key) + r':[ \t]*(.+)$')
     m = pattern.search(fm)
     if m and m.group(1).strip() == value:
         return text, _record('A2', True, False, f'{axis_key} matches value')
@@ -232,7 +229,7 @@ def _check_a3_last_researched(text):
         return text, _record('A3', False, False,
                              'frontmatter absent; resolve A1 before A3')
     current = _util.today_ym()
-    pattern = re.compile(r'(?m)^last_researched:[ \t]+(.+)$')
+    pattern = re.compile(r'(?m)^last_researched:[ \t]*(.+)$')
     m = pattern.search(fm)
     if m and m.group(1).strip() == current:
         return text, _record('A3', True, False, f'last_researched is {current}')
@@ -383,15 +380,17 @@ def _check_b2_section_order(text, required_sections):
     # any non-required sections at the end (B3 catches those separately).
     fm, body = axis_utils.split_frontmatter(text)
     fm = fm or ''
-    # Locate the title + Used by prefix so we can preserve it.
+    # Locate the title + Used by prefix so we can preserve it. Prefer the
+    # first '##' section heading as the boundary so the title is preserved
+    # even when Used-by is missing or out of position (A5 may have reported
+    # without auto-inserting). Fall back to Used-by end, then 0.
     prefix_end = 0
+    first_section_match = re.search(r'(?m)^##[ ]', body)
     used_by_match = re.search(r'(?m)^\*\*Used by:\*\*.+$', body)
-    if used_by_match:
+    if first_section_match:
+        prefix_end = first_section_match.start()
+    elif used_by_match:
         prefix_end = used_by_match.end()
-        # Include trailing blank line(s) up to first section.
-        first_section_match = re.search(r'(?m)^##[ ]', body)
-        if first_section_match:
-            prefix_end = first_section_match.start()
     prefix = body[:prefix_end]
 
     # Extract each section's full text (heading + body).
@@ -573,20 +572,11 @@ def _check_g1_registry_entry_filename(registry_entry_text, expected_filename):
 
 # ---------------------------------------------------------------------------
 # Check group H - Voice and style
-# H1 (em dashes) is a subagent judgment check. Removing an em dash requires
-# rewriting the surrounding sentence, not substitution; the script previously
-# enforced H1 with a regex that corrupted '---' fences and adjacent content.
-# H1 now lives in the qc-industry-builder subagent and routes failures to
-# Phase 3 redraft.
-#
-# H2 (acronym list reconciliation) is script-owned as of 2026-05. The check
-# is deterministic regex extraction in both directions (acronyms used in
-# body but absent from the Dialect list, and listed acronyms unused in the
-# body). Report-only in both directions; the drafter resolves either case
-# in Phase 3 redraft. Moved from the subagent after a generics-build run
-# where the subagent oscillated across iterations catching different
-# subsets of the same all-caps tokens each pass (resolves deferral
-# 'qc-h2-acronym-reconciliation-should-be-mechanical').
+# H2 (acronym catalog reconciliation) is script-owned; deterministic regex
+# extraction against the '### Acronyms' sub-section under Dialect. Report-only
+# in both directions; the drafter resolves in Phase 3.
+# H1 (em dashes) lives in the qc-industry-builder subagent: removing an em
+# dash requires rewriting the surrounding sentence, not substitution.
 # ---------------------------------------------------------------------------
 
 # Acronym detection: alphabetic 2-6 char runs with at least 2 uppercase
@@ -639,47 +629,46 @@ def _extract_acronyms(text):
 
 
 def _check_h2_acronym_reconciliation(text):
-    """H2: Dialect acronym list reconciles with body usage. Report-only.
+    """H2: Dialect acronym catalog reconciles with body usage. Report-only.
 
-    Extracts acronyms from:
-      - the Dialect section's catalog (the content after the first ':' in
-        the Dialect section body, treated as the list area)
-      - the concatenated bodies of Vocabulary, Emphasis, and Adjacency
-        (frontmatter, title, Used-by header, and Dialect prose excluded)
+    Catalog location: '### Acronyms' sub-heading inside '## Dialect'
+    (per axes-file-schema). The sub-section is terminal within Dialect;
+    everything from the sub-heading to the end of Dialect is the
+    catalog. Voice prose above the sub-heading counts as body usage,
+    not as catalog content. Axes whose schemas do not include Dialect
+    (specialties, orientations, levels, work-states), or industry files
+    that genuinely carry no acronym catalog, have no '### Acronyms'
+    sub-section and H2 reports a clean pass.
 
     Reports two directions:
-      - in_body_not_listed: acronyms used in the body sections that the
-        Dialect catalog does not name. Drafter adds to the list, rewrites
-        to drop, or judges as a false positive in Phase 3.
-      - in_list_not_in_body: acronyms in the catalog that no body section
-        actually uses. Drafter prunes in Phase 3 (auto-fix deferred to a
-        v2 that handles comma-list splicing safely).
+      - in_body_not_listed: acronyms used in the body but absent from
+        the catalog. Drafter adds to the catalog or rewrites the body.
+      - in_list_not_in_body: acronyms in the catalog but unused in any
+        body section. Drafter prunes the catalog.
 
-    Both directions are report-only; the check passes when both sets are
-    empty.
+    Both directions are report-only; auto-fix deferred to a v2 that
+    handles comma-list splicing safely.
     """
-    # Locate the Dialect section. If it is missing, B1 already flagged it
-    # and H2 cannot evaluate meaningfully; report pass to avoid double-flagging.
     try:
         dialect_start, dialect_end = axis_utils.find_section_bounds(text, 'Dialect')
     except ValueError:
         return text, _record('H2', True, False, 'no Dialect section to check')
     dialect_body = text[dialect_start:dialect_end]
 
-    # The Dialect catalog is the content after the canonical anchor phrase
-    # 'Acronyms recognized [...]:' (case-insensitive). Established convention
-    # across every industry file. Anchoring on the phrase rather than the
-    # first colon in the section keeps prose intros ('Style:', 'Cadence:')
-    # from bleeding into the catalog window and inflating the listed set.
-    # When the anchor is absent, fall back to the whole section body so
-    # acronyms are not silently missed.
-    catalog_match = re.search(r'(?i)Acronyms recognized[^:\n]*:', dialect_body)
-    catalog_text = dialect_body[catalog_match.end():] if catalog_match else dialect_body
+    # Find the '### Acronyms' sub-heading. If absent, no catalog to check.
+    sub_match = re.search(r'(?m)^###[ ]+Acronyms[ \t]*$', dialect_body)
+    if not sub_match:
+        return text, _record('H2', True, False,
+                             'no ### Acronyms sub-section to check')
+
+    # Catalog: everything from the sub-heading to end of Dialect.
+    catalog_text = dialect_body[sub_match.end():]
     listed = _extract_acronyms(catalog_text)
 
-    # Body scope: concatenate Vocabulary, Emphasis, Adjacency bodies. Each
-    # may be absent (B1 will have flagged it); skip absent sections.
-    body_text_parts = []
+    # Body scope: Dialect prose above the sub-heading, plus Vocabulary,
+    # Emphasis, and Adjacency bodies. Voice prose in Dialect's main body
+    # counts as body usage, not as catalog content.
+    body_text_parts = [dialect_body[:sub_match.start()]]
     for section in ('Vocabulary', 'Emphasis', 'Adjacency'):
         try:
             s, e = axis_utils.find_section_bounds(text, section)
@@ -697,7 +686,7 @@ def _check_h2_acronym_reconciliation(text):
 
     if not in_body_not_listed and not in_list_not_in_body:
         return text, _record('H2', True, False,
-                             'acronym list reconciles with body usage')
+                             'acronym catalog reconciles with body usage')
 
     parts = []
     if in_body_not_listed:

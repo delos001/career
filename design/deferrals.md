@@ -59,16 +59,12 @@ The acronym check in `scripts/axis_qc.py` flags ~70 mismatches across pharma, bi
 - Refs: `inventory-qc-findings-decision-log` (parallel mechanism), `scripts/axis_qc.py`, `rules/quality_control/qc-industry-builder.md`.
 
 ### design-decisions-audit-closure-bloat-cleanup
-Three prior audit closure records in `design_decisions.md` contain phase-by-phase audit logs that are not genuine design decisions: `experience-inventory-final-audit-phases-1-2-and-3p-applied-2026-05` (line 179), `experience-inventory-final-audit-phase-5-applied-2026-05` (line 218), `experience-inventory-final-audit-step-0-and-phases-6-7-applied-2026-05` (line 241). They bloat the file and consume context at every session start. Extract genuine design changes (rule updates, schema changes, new memory feedback) into their own slugs; remove audit-log content. The 2026-05-11 corrected-order audit closure was deliberately NOT added to `design_decisions.md` per this rule.
-- Trigger: next maintenance session; or before next inventory QC audit (to avoid adding another bloated closure).
-- Blocks: nothing currently; `design_decisions.md` remains usable.
-- Refs: `design/design_decisions.md`.
+**Resolved 2026-05-26.** Five audit-log entries removed from `design_decisions.md`: the three named audit-closure entries (`experience-inventory-final-audit-phases-1-2-and-3p-applied-2026-05`, `experience-inventory-final-audit-phase-5-applied-2026-05`, `experience-inventory-final-audit-step-0-and-phases-6-7-applied-2026-05`) plus two related apply-status entries (`specialty-retagging-applied-2026-05`, `specialty-training-entries-catch-all-cleanup-2026-05`). Genuine design changes from those entries live in their authoring slugs and rule files: QC rules in `design/inventory_builder_quality_checks.md`, the rl-allocation schema in `rl-allocation-field-schema-2026-05`, the orientation scope-qualifier change in `rules/orientations/transformation-strategy.md`, and the memory feedback entries in `memory/`. Broken slug refs cleaned up across `design_decisions.md`. Standing rule going forward: future audit closures stay as memory or session-log notes; only genuine design changes (rules, schemas, architectural shifts) go into `design_decisions.md`.
+- Refs: `design/design_decisions.md`, `design/inventory_builder_quality_checks.md`.
 
 ### vacuous-design-decisions-cleanup
-Delete `rule-builder-skills-inline-procedure` from `design_decisions.md` — the decision rules out a path (skill procedure under `rules/builders/`) that was never a coherent option (skills live in `.claude/skills/`, rules content lives in `rules/`). The entry adds bloat without recording a real choice. Other vacuous entries surfaced during ongoing review should be added here.
-- Trigger: next maintenance session on `design_decisions.md`.
-- Blocks: nothing.
-- Refs: `design/design_decisions.md`, `design-decisions-audit-closure-bloat-cleanup` (parallel cleanup deferral).
+**Resolved 2026-05-26.** `rule-builder-skills-inline-procedure` removed from `design_decisions.md`. Future vacuous entries surfaced during ongoing review get handled inline; no need for a perpetual parking-spot deferral.
+- Refs: `design/design_decisions.md`, `design-decisions-audit-closure-bloat-cleanup` (parallel cleanup deferral, still open).
 
 ### registry-overlap-tracking
 Use `rules/industries/registry.md` (or an extension file) as a cross-reference of which terms appear in which industry files, so updates to shared regulatory/vocabulary terms (FDA guidance, ICH adoptions) can be propagated to all relevant files. Full-enumeration approach (`industry-files-full-enumeration`) duplicates shared terms across pharma/biotech/cro; redundancy is acceptable now but update-cost grows over time.

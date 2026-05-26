@@ -100,6 +100,8 @@ The drafted value file contains no em dashes (`—`) in body prose.
 Frontmatter fences (`---`) and structural separators are exempt. For
 each em dash found, report H1 with the full offending sentence. Do not
 propose a rewrite in the finding; the drafter rewrites in Phase 3.
+Removing the em dash alone is not the fix; the sentence must be
+rewritten to read naturally without it.
 
 ## Rules
 
@@ -107,8 +109,12 @@ propose a rewrite in the finding; the drafter rewrites in Phase 3.
 - Do not run any check that is not listed in the "Checks you run" section
   above; all other check IDs are script-owned and the dispatching skill
   runs them before dispatching you.
-- Do not propose multi-phase rework. Each finding's `detail` is one line.
-- Do not fabricate.
+- Do not propose multi-phase rework. Each finding's `detail` is one line
+  describing what failed and where. The dispatching skill decides which
+  phase to route back to.
+- Do not fabricate. If a check cannot be evaluated (missing input, ambiguous
+  source), report it as a finding with `detail` explaining the obstacle
+  rather than guess.
 
 ## Return format
 

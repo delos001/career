@@ -11,9 +11,14 @@ sections; it does not accumulate a history of everything ever found.
 
 `scripts/assemble.py` renders the skeleton below: tokens in `{{double braces}}` are
 substituted. The `{{*_block}}` tokens are filled with the verbatim output of the
-`company-research`, `role-research`, and `industry-research` subagents - each block
-carries its own `## Company` / `## Role` / `## Industry` heading and a
-Summary / Key facts / Sources body.
+four Phase 4 subagents - `company-research`, `role-research`, `industry-research`,
+and `critical-requirements-extractor`. Each block carries its own heading and body:
+
+- `{{company_block}}` - `## Company` with Summary / Key facts / Sources.
+- `{{role_block}}` - `## Role` with Summary / Key facts / Sources.
+- `{{industry_block}}` - `## Industry` with Summary / Key facts / Sources.
+- `{{critical_requirements_block}}` - `## Critical Requirements` with a list of
+  requirements, each Text / Type / Source.
 
 ## Skeleton
 
@@ -28,6 +33,8 @@ Summary / Key facts / Sources body.
 {{role_block}}
 
 {{industry_block}}
+
+{{critical_requirements_block}}
 
 {{axis_gaps}}
 ```

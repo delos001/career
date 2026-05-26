@@ -21,15 +21,11 @@ The dispatching skill gives you:
 - `value`: the registry key being built (e.g. `transformation-strategy`).
 - `mode`: `create` or `refresh`.
 - `drafted_value_file`: the new (or updated) value file content as text.
-- `siblings`:
-  - **Create mode**: list of `{value, adjacency_text}` pairs for every
-    file-backed sibling. `adjacency_text` is the body of that sibling's
-    `## Adjacency` section, already extracted by the dispatching skill via
-    `scripts/axis_registry.py slice ... --section Adjacency`. You do NOT
-    read sibling files; the slice is your full sibling context.
-  - **Refresh mode**: list of `{value, path}` pairs for cross-reference
-    checks. Refresh mode's core work uses the current value file, not the
-    siblings.
+- `siblings` (create mode only): list of `{value, adjacency_text}` pairs
+  for every file-backed sibling. `adjacency_text` is the body of that
+  sibling's `## Adjacency` section, already extracted by the dispatching
+  skill via `scripts/axis_registry.py slice ... --section Adjacency`.
+  You do NOT read sibling files; the slice is your full sibling context.
 - `current_value_file` (refresh mode only): absolute path to the existing
   value file the draft is replacing.
 - `research_findings` (refresh mode only): the research block produced by

@@ -209,16 +209,19 @@ routing source; the skill's Phase 5 does not carry its own routing table.
   the em dash (period, semicolon, conjunction, or restructure). The check
   does not delete characters or sub-clauses.
   - Fix on fail: re-enter Phase 3 to redraft the offending sentence.
-- **H2** *(script)*: Where the file defines an acronym list under
-  `## Dialect`, acronyms used in the body but not in the list are flagged
-  for addition; acronyms listed but unused in the body are flagged for
-  removal. The script extracts both sets deterministically (regex on
-  2-6 char alphabetic runs with at least 2 uppercase letters, with plural
-  normalization so `ANDAs` matches `ANDA`, and a small exclusion set for
-  Roman numerals, the `CV` title artifact, and cross-domain world
+- **H2** *(script)*: The acronym catalog under `## Dialect` `### Acronyms`
+  must reconcile with body usage. Acronyms used in the body but not in
+  the catalog are flagged for addition; acronyms in the catalog but
+  unused in the body are flagged for removal. The catalog boundary is
+  the `### Acronyms` sub-heading (per `axes-file-schema`); voice prose
+  above the sub-heading counts as body usage, not as catalog content.
+  The script extracts both sets deterministically (regex on 2-6 char
+  alphabetic runs with at least 2 uppercase letters, with plural
+  normalization so `ANDAs` matches `ANDA`, and a small exclusion set
+  for Roman numerals, the `CV` title artifact, and cross-domain world
   acronyms like `DNA`, `UN`, `XML`). Report-only in both directions;
-  splicing tokens out of the comma-separated Dialect catalog safely is
-  deferred to a v2 auto-fix.
+  splicing tokens out of the comma-separated catalog safely is deferred
+  to a v2 auto-fix.
   - Fix on fail: re-enter Phase 3 for the drafter to add to the list,
     rewrite the body to drop the term, or prune the unused entry.
 

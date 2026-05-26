@@ -155,13 +155,6 @@ routing source; the skill's Phase 5 does not carry its own routing table.
   fences (`---`) and structural separators are exempt.
   - Fix on fail: re-enter Phase 3 to redraft the offending sentence
     without an em dash.
-- **H2** *(script)*: Does not apply to work-state files. The script's
-  acronym-reconciliation check inspects only a `## Dialect` section, which
-  the work-states schema does not include; H2 always passes. Adding
-  acronym reconciliation for work-state files would require a script
-  change.
-  - Fix on fail: none; the check cannot fail for this axis.
-
 ### I - Mode invariants
 
 - **I1** *(script, create only)*: The value file did not exist before this run.

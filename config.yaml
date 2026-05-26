@@ -9,6 +9,7 @@
 paths:
   applications: personal/applications    # one folder per evaluated job
   sessions: personal/sessions            # session logs
+  profile: personal/profile              # candidate's profile documents (inventory, narratives, positioning, user-info)
   templates: templates                   # artifact templates
   rules: rules                           # axis rule files (one folder per axis)
   design: design                         # design state and build issue logs
@@ -23,6 +24,11 @@ filenames:
   introductions: introductions.yaml            # next to scripts/display/introduce.py
   axis_registry: registry.md                   # in each rules/<axis>/ folder
   build_issues_log: build_issues.md            # in the design/ folder; appended to on provisional builds
+  retrieval_manifest: retrieval.md             # written into each application folder by the retrieval skill
+  inventory_file: inventory.md                 # in the profile/ folder
+  narratives_file: narratives.md               # in the profile/ folder
+  positioning_file: positioning.md             # in the profile/ folder
+  user_info_file: user-info.md                 # in the profile/ folder
 
 # Per-axis schema. Consumed by scripts/axis_qc.py and by the axis-builder
 # skills. Each entry defines the value-file frontmatter key, the required

@@ -33,7 +33,13 @@ Non-preferred terms: "drug" without modality qualifier (reads as small-molecule-
 
 ## Dialect
 
-Acronym-dense. Recognized acronyms in biotech hiring contexts: FDA, EMA, MHRA, PMDA, NMPA, GxP, GCP, GMP, GLP, GDP, GVP, ICH, IRB, IEC, IND, NDA, BLA, sBLA, ANDA, CTD, eCTD, CRO, FSP, FSO, EDC, CTMS, eTMF, IRT, eCRF, AE, SAE, SUSAR, ICSR, DSUR, PSUR, PBRER, REMS, RMP, MedDRA, CDISC, SDTM, ADaM, CAPA, SOP, OOS, RBM, DCT, RWE, RWD, KOL, HCP, DSMB, DMC, PI. Biotech-specific additions: mAb, ADC, CAR-T, TCR-T, TIL, AAV, LV, ASO, siRNA, LNP, saRNA, iPSC, MSC, CRISPR, ATMP, HCT/P, COI, CoC, CDMO, MCB, WCB, FIH, PoC, BTD, RMAT, CDx, PRIME, START, OTP, LTFU, GTP (Good Tissue Practice - 21 CFR 1271), PAT, SUB, DS/DP, CQA, ICH Q5(A-E), Q6B, Q11, Q12, Q13, Q14, Q2(R2), CBER, CAT.
+Acronym-dense.
+
+### Acronyms
+
+Acronyms recognized without expansion in biotech hiring contexts: FDA, EMA, MHRA, PMDA, NMPA, GxP, GCP, GMP, GLP, GDP, GVP, ICH, IRB, IEC, IND, NDA, BLA, sBLA, ANDA, CTD, eCTD, CRO, FSP, FSO, EDC, CTMS, eTMF, IRT, eCRF, AE, SAE, SUSAR, ICSR, DSUR, PSUR, PBRER, REMS, RMP, MedDRA, CDISC, SDTM, ADaM, CAPA, SOP, OOS, RBM, DCT, RWE, RWD, KOL, HCP, DSMB, DMC, PI.
+
+Biotech-specific additions: mAb, ADC, CAR-T, TCR-T, TIL, AAV, LV, ASO, siRNA, LNP, saRNA, iPSC, MSC, CRISPR, ATMP, HCT/P, COI, CoC, CDMO, MCB, WCB, FIH, PoC, BTD, RMAT, CDx, PRIME, START, OTP, LTFU, GTP (Good Tissue Practice - 21 CFR 1271), PAT, SUB, DS/DP, CQA, ICH Q5(A-E), Q6B, Q11, Q12, Q13, Q14, Q2(R2), CBER, CAT.
 
 ## Emphasis
 

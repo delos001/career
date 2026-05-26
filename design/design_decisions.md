@@ -116,29 +116,7 @@ Knock-on retags applied 2026-05 under this rule:
 - EX-188 (Excel Pivot table training): ADD `data-science`.
 - EX-189 (ELVIS regulatory compliance training): ADD `quality-compliance`.
 
-Refs: `specialty-axis-tagging-by-work-nature`, `specialty-axis-extension-data-science-operations-strategy-2026-05`, `rules/specialties/people-leadership.md`, `specialty-retagging-applied-2026-05`.
-
-#### specialty-retagging-applied-2026-05
-Re-tagged 78 EX inventory entries (`Specialty:` field) against the 7-term extended specialty axis (`specialty-axis-extension-data-science-operations-strategy-2026-05`) and the training-as-specialty-work clarification (`specialty-axis-training-as-specialty-work-2026-05`).
-
-Net changes by tag:
-- ADD `data-science`: 33 entries.
-- ADD `operations-strategy`: 38 entries.
-- ADD `people-leadership`: 4 entries (where direct people-management or change-leadership work was present but tag was missing).
-- ADD `quality-compliance`: 3 entries (under training-as-specialty rule).
-- ADD `data-engineering`: 1 entry (under training-as-specialty rule).
-- REMOVE `ai-engineering`: 4 entries (work was research/POC or evaluation, not production deployment).
-- REMOVE `data-engineering`: 3 entries (work was analytical scripting or platform selection, not infrastructure).
-- REMOVE `quality-compliance`: 1 entry (no QMS/audit/CSV content).
-- REMOVE `people-leadership`: 4 entries (no direct people-management or change-leadership work; tag had been applied via vision-setting/influence vocabulary path that the design extension explicitly identified as a misclassification driver).
-
-Apply executed via `_apply_specialty_retag_2026-05.py` (validated via dry-run before write). Apply script and proposal file deleted later in the same session per `working-files-deleted-after-apply`; this decision is the durable record. Verification: post-apply counts match expected (33 entries with `data-science`, 38 with `operations-strategy`).
-
-Section 9 (PR entries) unchanged. PR-001/003/004/005 carry `ai-engineering` and `data-engineering` consistent with the build-mode work described.
-
-Resolves the work component of `specialty-axis-extension-data-science-operations-strategy-2026-05`'s "Inventory retag against the extended axis is the next session's work" carryover.
-
-Refs: `specialty-axis-extension-data-science-operations-strategy-2026-05`, `specialty-axis-tagging-by-work-nature`, `specialty-axis-training-as-specialty-work-2026-05`.
+Refs: `specialty-axis-tagging-by-work-nature`, `specialty-axis-extension-data-science-operations-strategy-2026-05`, `rules/specialties/people-leadership.md`.
 
 #### specialty-knowledge-transfer-section-applied-2026-05
 Added `## Knowledge-transfer mode` section to all 7 specialty files (ai-engineering, data-engineering, data-science, quality-compliance, operations-strategy, clinical-operations, people-leadership), placed between `## Terminology` and `## Adjacency`. Section content identical across all 7 files:
@@ -157,108 +135,6 @@ Schema variation rationale: rule applies only to specialty axis. Industries are 
 
 Refs: `specialty-axis-training-as-specialty-work-2026-05`, `axes-file-schema` (amended in this decision), `rule-staleness-threshold`, `specialty-axis-tagging-by-work-nature`.
 
-#### specialty-training-entries-catch-all-cleanup-2026-05
-Retagged 7 EX inventory entries to remove `clinical-operations` parent-domain catch-all from training and platform-advocacy entries where the trained content (or non-training work product) belonged to a narrower specialty. Applied the user's clarification of `specialty-axis-training-as-specialty-work-2026-05`: specialty tag reflects the content trained on, not the role's parent domain. Role context is captured by the Industry and Orientation axes; the Specialty axis must not be inflated by parent-domain framing.
-
-| ID | Description summary | Before | After |
-|---|---|---|---|
-| EX-183 | Led GitHub adoption training (12-15 team members) | `clinical-operations \| data-engineering` | `data-engineering \| people-leadership` |
-| EX-185 | Created/delivered Infosario Analytics platform training | `clinical-operations \| people-leadership` | `data-science \| people-leadership` |
-| EX-188 | Excel Pivot table curriculum + training | `clinical-operations \| data-science` | `data-science` |
-| EX-189 | New hire ELVIS regulatory compliance training | `clinical-operations \| quality-compliance` | `quality-compliance` |
-| EX-199 | Trained users on Infosario self-serve resources | `clinical-operations \| people-leadership` | `data-science \| people-leadership` |
-| EX-200 | Surfaced platform at meetings (advocacy, not training) | `clinical-operations \| people-leadership` | `people-leadership` |
-| EX-201 | Fed structured input to platform business owners | `clinical-operations \| people-leadership` | `operations-strategy \| people-leadership` |
-
-Three training entries audited and unchanged: EX-016, EX-030, EX-184. Trained content in those entries IS clinical-operations content (protocols, investigator responsibilities, CSM as a clinical risk-monitoring concept), so the tag was substantiated rather than catch-all.
-
-EX-183 specifically: `data-engineering` retained per user confirmation that the broader repo-build and CI/CD work (for which GitHub adoption was the team-rollout layer) is captured in a separate inventory entry. EX-200 specifically: single-tag `people-leadership` accepted as honest framing for pure influence/advocacy work without trainable specialty content.
-
-Refs: `specialty-axis-training-as-specialty-work-2026-05`, `specialty-knowledge-transfer-section-applied-2026-05`, `specialty-axis-tagging-by-work-nature`, `specialty-retagging-applied-2026-05`.
-
-#### experience-inventory-final-audit-phases-1-2-and-3p-applied-2026-05
-Final audit of `personal/profile/inventory.md` against the cumulative QC checks in `design/inventory_builder_quality_checks.md`. Audit design (six phases ordered cheap-noise-first; Phase 1 programmatic, Phase 2 judgment-required pattern-search, Phase 3 tag substantiation, Phases 4-6 cross-entry/coverage/taxonomic) executed through Phase 3 Check #16. Phase 3 Check #17 + Phases 4-6 deferred for next session.
-
-Phase 1 (programmatic, 11 named checks + Phase 1.5 SGE sweep) outcomes:
-- 38 missing-Impact entries received drafted bodies; 9 bare-tag Impact lines updated; 47 total Impact-line changes applied across user-provided activity-outcome notes.
-- 19 remaining bare-tag Impact lines substantiated to prose bodies in a second pass.
-- 14 entries augmented with `Scalability/Growth Enablement` value-type prefix (work-state vs value-type axis distinction surfaced as new QC check).
-- 10 en-dashes (–) normalized to hyphens (-) file-wide for stylistic consistency on number/year ranges.
-- RL-004 Start Date corrected `2006-01` → `2007-01` (resolved 8-month phantom overlap with RL-003); Background Roles year range updated.
-- Stale resume note count (209 EX + 4 PR) corrected to actual (198 EX + 4 PR pre-deletion; 197 EX + 4 PR post-deletion).
-- Verified clean: empty optional fields rendered cleared, Type field controlled vocabulary, PR Industry uses `independent`, Bold on Description only, no first-person, no em-dashes in prose, lead-verb past tense uniform, RL Concurrent flag bilateral, per-RL completeness with Background Roles exception.
-
-Phase 2 (judgment-required pattern-search, 4 checks) outcomes:
-- EX-137 Description forward-looking phrase ("aligned to future AI-enabled automation goals") moved to Impact as realized-outcome framing; new Specialty/SGE prefix added.
-- EX-199 outcome-bleed participle clauses ("building user self-sufficiency... reducing ongoing dependency") trimmed from Description; existing Impact already carried the outcomes.
-- EX-034 purpose-clause stripped from Description.
-- EX-045 full reframe: Description scope was too narrow (only captured risk-escalation sub-activity); rewritten to capture full at-the-time work (influence + ongoing assessment + gap communication); Impact rewritten to capture partial wins and surfaced gaps without hindsight bleed.
-- 4 fluff-phrasing cleanups: EX-120 (claim-strong "Pioneered" substantiated via full rewrite + new Context with QA-approved process deviation framing), EX-172 ("high-impact" stripped), EX-132 ("comprehensive"/"significantly"/"materially" ×2 stripped), EX-127 ("materially" stripped).
-- 6 leadership lead-verb agency restructures: EX-048 (→ "Reviewed, assessed, advised"), EX-085 (→ "Conducted gap analysis"), EX-067 (→ "Advised"), EX-093 (→ "Led regional + contributed to study-level"), EX-182 (→ "Influenced"), EX-174 (→ "Conducted interviews and evaluated").
-
-Phase 3 Check #16 (closes deferral `inventory-broader-catch-all-audit`):
-- ~70 multi-specialty entries reviewed across 9 co-tag clusters.
-- 21 retag actions applied: 16 dropped clinical-operations as parent-domain catch-all where work content didn't substantiate (EX-046, EX-047, EX-074, EX-104, EX-106, EX-108, EX-109, EX-111, EX-145, EX-146, EX-148, EX-159, EX-161, EX-166, EX-171, EX-174, EX-191, EX-192); 3 added missing tags (EX-162 + quality-compliance, EX-176 + quality-compliance, EX-146 + people-leadership); 2 entries got Description scope expansion (EX-055 surfacing protocol/SOW/blinding work; per the new "Description scope completeness" rule).
-- 1 entry deleted (EX-112: ambiguous R-script-templates entry not load-bearing).
-- clinical-operations tag count went 170→151.
-
-New QC checks/clarifications added inline to `inventory_builder_quality_checks.md` during the audit:
-- "Every entry has an Impact line" (structural; missing-Impact-line as defect distinct from "two Impact lines")
-- En-dash normalization to hyphen file-wide for stylistic consistency (extends em-dash rule)
-- Strict overlap definition (≥2 months, not boundary-month transitions) for Concurrent flag bilateral check
-- Background Roles exception to per-RL completeness rule
-- "Description scope completeness — opposite of atomic decomposition" (multi-faceted work needs full-scope Description)
-- "Value-type accuracy review at audit time" (work-state vs value-type axis distinction; SGE undercounting common gap)
-- "Distinguishing substantiated co-tag from parent-domain catch-all" (clinical-operations specifically: substantiates via study lifecycle activity / clinical-trial-specific frameworks / clinical-research data domain; doesn't substantiate via mere role-context).
-
-Inventory state at session close: 197 EX + 4 PR. Specialty distribution: clinical-operations 151, quality-compliance 53, operations-strategy 39, data-engineering 37, data-science 34, people-leadership 19, ai-engineering 3.
-
-Refs: `inventory-builder-quality-check-encoding`, `specialty-training-entries-catch-all-cleanup-2026-05`, `impact-field-semantics-2026-05`, `specialty-axis-tagging-by-work-nature`, `design/inventory_builder_quality_checks.md`.
-
-#### experience-inventory-final-audit-phase-5-applied-2026-05
-Phase 5 of the final audit (coverage; 4 checks) executed across the 198-entry inventory.
-
-Check #1 (per-RL entry density): introduced allocation-adjusted FTE-month math (`effective FTE-months = tenure-months × Allocation/100`). RL-011 surfaced as a regression — 9 leadership-coverage entries (EX-202 through EX-210 at commit `24def9d`) had been deleted at commit `c2b6d96` ("cleaned up redudantn and overlapping EX entries") despite being non-redundant against retained 8 entries on every covered dimension. All 9 restored from `24def9d` with bounded-qualitative Impact bodies user-approved; 3 IDs renumbered to EX-211/212/213 to avoid collisions with live RL-020 entries (the cleanup commit had recycled the deleted IDs). RL-008 (20%), RL-012 (20%), RL-016 (10%) PASS-as-explained on allocation-adjusted math after Allocation field was added (see `rl-allocation-field-schema-2026-05`). RL-003 PASS-as-explained on recall-horizon (>15 years; repetitive-technician-work concentration legitimate).
-
-Check #2 (atomic decomposition of bundled umbrellas): 19 candidates evaluated against new tighten-vs-decompose decision tree. 5 tightened (EX-080, EX-172, EX-184, EX-121, EX-137 — workflow/lifecycle umbrellas; mechanism narrative moved to Context). 1 decomposed (EX-132 → EX-214/215/216 separable-deliverables: library content, accountability model, downstream integration mapping). 12 PASS (1 integration-framework: EX-157; 10 false-positive scope/format detail: EX-001, EX-033, EX-050, EX-055, EX-060, EX-061, EX-088, EX-090, EX-097, EX-185; 1 already-reconciled). 1 collaborative user-revise (EX-099 root-cause investigation: Description tightened, scope-and-findings list moved to Context).
-
-Check #3 (leadership coverage prompts): RL-013 +2 entries (EX-217 escalation handling, EX-218 approval/review work); RL-018 +2 entries (EX-219 matrix programming/DB-build oversight, EX-220 escalation handling) and EX-176 updated with team size 7 (3 US + 4 offshore) and operational-lead clarification; RL-019 +1 entry (EX-221 escalation handling) and dimension (a) PASS-as-strategic (no direct reports — strategic-AD scope; internships covered by EX-172); RL-020 +1 entry (EX-222 routine escalation handling beyond Inozyme/attrition events). RL-011 already covered via Check #1 regression recovery; RL-012 PASS-as-explained via 20% allocation; RL-010/RL-015 not leadership-tagged.
-
-Check #4 (pattern-of-work entries explicit framing): EX-117 Context added with explicit pattern-of-work declaration (was missing despite session-resume note classification as RL-014 EDA pattern). EX-097, EX-123, EX-164 verified compliant.
-
-New QC checks/clarifications added inline to `inventory_builder_quality_checks.md` during Phase 5:
-- §1: Allocation field is required on every RL record (semantics defined; defaults; cross-employer non-summing).
-- §3: Coverage entries protected from redundancy collapse (cleanup passes must verify coverage dimension preservation before deleting; distinguishes genuine redundancy from coverage overlap).
-- §3: ID immutability — deleted IDs retire, not recycle (prevents git-history-based recovery collisions).
-- §5: Allocation-adjusted density math (per-RL outlier detection uses `effective FTE-months` denominator).
-- §5: Recall-horizon discount (roles >15 years old; repetitive-technician-work concentration legitimate).
-- §5: Tighten-vs-decompose decision tree for umbrella candidates (workflow/lifecycle → tighten; integration-framework → pass; separable-deliverables → decompose; scope/format detail → pass false-positive).
-
-Inventory state at session close: 211 EX + 4 PR = 215 total.
-
-Refs: `inventory-builder-quality-check-encoding`, `experience-inventory-final-audit-phases-1-2-and-3p-applied-2026-05`, `rl-allocation-field-schema-2026-05`, `design/inventory_builder_quality_checks.md`.
-
-#### experience-inventory-final-audit-step-0-and-phases-6-7-applied-2026-05
-Step 0 verification re-run (per audit-phase-ordering rule) on the Phase 5 change-set (12 new + 8 modified entries), Phase 6 (taxonomic, 2 checks), and Phase 7 prior-cluster force-pick multi-orientation re-audit (closes deferral `inventory-prior-cluster-force-picks-multi-orientation-reaudit`).
-
-**Step 0 (verification re-run on change-set):** §1 structural and §2 content checks PASS for all 20 entries. §3 cross-entry surfaced 1 finding: EX-219 Description as originally created had latent multi-position-differentiation overlap with EX-139 (both leadership entries in RL-018 referencing edit checks/EDC build); EX-219 reframed to focus on run-state DM activity oversight (data review, query/discrepancy resolution, validation listing review, operational dashboard monitoring), distinct from EX-139 (build oversight) and EX-220 (escalation). §4 voice surfaced 4 findings: EX-137 lead verb "Digitized" → "Designed, digitized, and operationalized"; EX-213 "Developed and presented" → "Co-authored, reviewed, and delivered"; EX-216 "Mapped" → "Designed, mapped, and operationalized"; EX-211 "Managed... held accountability for individual and collective team performance" → "Operationally led... held operational accountability for team delivery" (drops line-management implication per `feedback_no_line_management_experience` user clarification).
-
-**Phase 6 Check 1 (people-leadership ↔ operations-strategy boundary):** Audited 57 entries carrying PL and/or OS tags. Applied 7 retags: 4 PL drops in PL+OS pairs (EX-161, EX-171, EX-201, EX-221) where work was pure strategy advisory without people-management substance; 2 PL→OS retags in PL-only entries (EX-215 cross-functional accountability framework = decision-rights design; EX-146 Databricks socialization = strategic narrative communication); 1 phrasing fix in EX-166 (dropped "informal direct management" framing per `feedback_no_line_management_experience`). Category C (35 OS-only entries) audited; no PL-add findings.
-
-**Phase 6 Check 2 (catch-all escalation evaluation):** Clean. Prior catch-all sweeps (`specialty-training-entries-catch-all-cleanup-2026-05`, `Phase 3 Check #16` closing `inventory-broader-catch-all-audit`) resolved all known catch-all situations. This session's changes resolved within existing taxonomy. No new specialty needed, no vocabulary extension, no adjacency change.
-
-**Phase 7 (prior-cluster force-pick multi-orientation re-audit per deferral):** Audited the 5 named candidates (EX-049, EX-065, EX-126, EX-128, EX-159) and broader scan. EX-049 and EX-065 verified as correctly single-orientation. 7 entries dual-tagged: EX-128 process-operations → transformation-strategy | process-operations (lead verb "Championed integration" reads transformation primary); EX-126/125/127 transformation-strategy or process-operations → transformation-strategy | process-operations (parallel "Built X library/capability + standardization" pattern across RL-020 BioMarin); EX-159 platform-technology → platform-technology | process-operations (SharePoint construction + governance organization); EX-124 process-operations → transformation-strategy | process-operations (operating-model redesign primary, standards/SOP secondary); EX-044 process-operations → transformation-strategy | process-operations (LLX partner onboarding + capability construction primary).
-
-**Rule update applied during Phase 7:** `rules/orientations/transformation-strategy.md` scope qualifier removed from Identity section. Prior wording limited orientation selection to "enterprise scope"; user clarified that transformation can occur at functional, business-unit, or enterprise scope. Real differentiator from process-operations is change-vs-optimization, not scope; scope qualifier was decorative and risked misleading future tag selection. `last_researched` bumped 2026-04 → 2026-05.
-
-**New memory feedback added during this session:**
-- `feedback_no_line_management_experience.md`: user has zero line-management experience; all leadership = operational matrix management. Never frame entries as "line management" or use "without direct line management" as a position-vocabulary signal.
-- `feedback_no_fabricated_facts.md`: never assert specific facts about user's history (employer, title, scope, dates, counts) without verifying from the repo or asking. The inventory's Section 7 carries authoritative role records.
-
-Inventory state at session close: 211 EX + 4 PR = 215 total (no count change this session — only retags and phrasing edits).
-
-Refs: `inventory-builder-quality-check-encoding`, `experience-inventory-final-audit-phase-5-applied-2026-05`, `inventory-entry-multi-value-orientation-2026-05`, `inventory-prior-cluster-force-picks-multi-orientation-reaudit` (closes), `design/inventory_builder_quality_checks.md`, `rules/orientations/transformation-strategy.md`.
-
 #### rl-allocation-field-schema-2026-05
 Section 7 RL records carry a required `Allocation: <percentage>%` field capturing fraction of one FTE on the role at its most current (steady-state) value. Defaults to `100%` for full-time roles. Partial roles carry user-provided values: RL-008 (20%, Infosario Business Champion concurrent within Quintiles primary), RL-012 (20%, CSM Deployment Lead concurrent within Amgen primary), RL-013 (80%, Global CTM concurrent), RL-016 (10%, RBM Software Consultant freelance side-engagement). Cross-employer overlapping roles are not constrained to sum to 100% (freelance time is additive on top of primary). Stacked same-employer roles (concurrent layered titles at the same company, e.g., RL-018/019/020 at BioMarin) report each role's allocation just before transition or end, not the historical split during overlap. Required on Background Roles for schema consistency.
 
@@ -266,7 +142,7 @@ Rationale: prior per-RL density math used raw tenure-months as denominator, prod
 
 Applied to all 20 RL records; partial-allocation roles validated via subsequent density check.
 
-Refs: `experience-inventory-final-audit-phase-5-applied-2026-05`, `experience-inventory-section-7-flat-records`, `design/inventory_builder_quality_checks.md`.
+Refs: `experience-inventory-section-7-flat-records`, `design/inventory_builder_quality_checks.md`.
 
 #### axes-file-schema
 Each axis carries a distinct file schema reflecting its purpose per `axes-composition-precedence`:
@@ -376,7 +252,7 @@ Refs: `cv-targeted-retrieval-architecture-2026-05`, `career-narratives-schema`, 
 
 #### level-on-entries-effective-level
 Level lives only on EX/PR entries (effective level). Captures the pattern of doing higher-than-title-level work within a titled role.
-Prior version had Level on both RL-NNN role records (titled level) and EX/PR entries (effective level), with EX/PR defaulting from RL when missing. Removed RL Level after per-entry Level became fully populated on all 197 EX/PR entries: cv_targeted matches JD Level against entry effective level directly; RL Level was never read in retrieval and added no signal. If a future builder skill needs role-level defaulting for new EX entries, the field can be reintroduced.
+Prior version had Level on both RL-NNN role records (titled level) and EX/PR entries (effective level), with EX/PR defaulting from RL when missing. Removed RL Level after per-entry Level became fully populated on every EX/PR entry: cv_targeted matches JD Level against entry effective level directly; RL Level was never read in retrieval and added no signal. If a future builder skill needs role-level defaulting for new EX entries, the field can be reintroduced.
 
 #### cv-section-structure-professional-vs-earlier-roles
 CV experience uses two sections: **Professional Experience** and **Earlier Professional Roles**.
@@ -468,8 +344,8 @@ narratives is interview-prep primary; cv_targeted / role_evaluation consume it s
 - `Linked Inventory:` is **required**, multi-value, and becomes the retrieval anchor:
   - cv_targeted / role_evaluation: select inventory entries by axis match; pass list to narratives lookup; intersecting narratives surface for bullet framing or decision context.
   - interview_prep: retrieves narratives via semantic body match plus inventory-axis-inheritance ranking via Linked Inventory.
-- **Asymmetric linkage (narrative to inventory only).** Reverse direction (inventory to narrative) rejected: 197 inventory entries vs ~15 narratives; back-references on inventory would mean hundreds of inventory edits per narrative authoring event and most inventory entries would carry an empty field. Authoring burden stays on the smaller doc.
-- Framework: stories use `story_personal` (10); decisions use `decision_adr` (5).
+- **Asymmetric linkage (narrative to inventory only).** Reverse direction (inventory to narrative) rejected: the inventory corpus is much larger than the narratives corpus, so back-references on inventory would mean many inventory edits per narrative authoring event and most inventory entries would carry an empty field. Authoring burden stays on the smaller doc.
+- Framework: stories use `story_personal`; decisions use `decision_adr`.
 - Migration body operations: rename "Who Pushed Back" → "Resistance" (keep as standalone section; scope expanded to non-person resistance including time, skill, and technology constraints); drop "What I'd Own Differently" subsections (purely reflective content; no replacement); empty subsections retained with `Not applicable` placeholder.
 - APPENDIX removed; framework defs live in `rules/narratives/`. Tag Taxonomy section removed.
 - Header: `**Used by:** cv_targeted, cv_general, interview_prep, role_evaluation, positioning, career_brief`. `**Stamps:** Last Used (YYYY-MM)`.
@@ -558,7 +434,7 @@ Rationale: the topical sub-headings had no assignment rule and no naming rule, a
 
 ID-matching convention: `### RL-NNN` adds a third occurrence pattern for an RL ID alongside `ID: RL-NNN` (Section 7 record) and `Role: RL-NNN` (Section 8 reference). RL/EX/PR ID matching uses anchored line patterns (`^ID:`, `^Role:`, `^### `, `^Linked Inventory:`), never bare substring.
 
-Background Roles: the `Background Roles (Not Tagged)` block formerly after Section 8 is removed — its three roles already exist as full Section 7 records (RL-001, RL-002, RL-004), so the block was redundant. The QC-exemption function it served is now carried by an `Experience Entries: None` field on those three RL records, machine-checkable per-record. This implements the "Background Roles exception to per-RL completeness rule" noted in `experience-inventory-final-audit-step-0-and-phases-6-7-applied-2026-05`.
+Background Roles: the `Background Roles (Not Tagged)` block formerly after Section 8 is removed — its three roles already exist as full Section 7 records (RL-001, RL-002, RL-004), so the block was redundant. The QC-exemption function it served is now carried by an `Experience Entries: None` field on those three RL records, machine-checkable per-record. This implements the Background Roles exception to the per-RL completeness rule in `design/inventory_builder_quality_checks.md`.
 
 Closes `inventory-section-8-subsection-reassignment` (the deferred Step 6 sub-section remap, already moot since `competency-field-and-registry-removed-2026-05`; the structural question is now resolved by this decision). Apply executed via `scripts/_reorg_section8.py` against 212 EX entries; per `working-files-deleted-after-apply` the script is deletable, this decision is the durable record.
 
@@ -641,7 +517,7 @@ Closes the company-field RL-reference work and inventory Cluster C.
 Refs: `experience-inventory-section-7-flat-records`, `inventory-entry-structure-applied`.
 
 #### competency-field-and-registry-removed-2026-05
-Inventory `Competency:` field removed from all 197 EX/PR entries. `rules/competencies/registry.md` deleted; `rules/competencies/` folder removed.
+Inventory `Competency:` field removed from all EX/PR entries. `rules/competencies/registry.md` deleted; `rules/competencies/` folder removed.
 
 Removal driven by the `cv-targeted-retrieval-architecture-2026-05` decision: tags become composition-time data, not retrieval filter, and Industry/Specialty/Orientation/Level/Work-state already cover the framing and ranking signals cv_targeted needs. Competency added no orthogonal axis once the activity-level redesign was understood as overlapping with what Specialty already captures (specialty-pack capability vocabularies). The bottom-up and activity-level redesign attempts (16→31→36 terms) confirmed the registry could not stably partition the corpus without either over-fitting to inventory texture or duplicating Specialty content.
 
@@ -732,9 +608,6 @@ Kept distinct. Shared inputs resolved by retrieval scripts (slice-level lookup).
 
 #### knowledge-update-collapse
 One skill with mode parameter, replacing `profile_update_adhoc` and `profile_update_inline`. Retrieval script fetches relevant slice at read time.
-
-#### rule-builder-skills-inline-procedure
-Builder skills (`orientation_builder`, `industry_builder`, `specialty_builder`, `level_builder`, `work_state_builder`) hold construction procedure inline in SKILL.md. No `rules/builders/` folder.
 
 #### builders-axis-parity
 One builder per axis. Each wired to its corresponding research sub-agent.
@@ -967,7 +840,7 @@ Applied 2026-05-06. Files deleted under this rule include: proposal/extraction `
 
 Subsumes the prior "apply script retained as evidence trail" pattern that ran across multiple closed decisions before this rule existed.
 
-Refs: `data-only-discipline`, `component-documentation-discipline`, `document-metadata-header-discipline`, `specialty-retagging-applied-2026-05` (operation that exposed the drift problem), `competency-field-and-registry-removed-2026-05` (decision whose orphaned scripts proved that retained scripts go stale).
+Refs: `data-only-discipline`, `component-documentation-discipline`, `document-metadata-header-discipline`, `competency-field-and-registry-removed-2026-05` (decision whose orphaned scripts proved that retained scripts go stale).
 
 #### memory-vs-project-files-discipline
 Operating rule for where information lives:

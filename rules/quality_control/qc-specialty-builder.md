@@ -212,12 +212,6 @@ routing source; the skill's Phase 5 does not carry its own routing table.
   the em dash (period, semicolon, conjunction, or restructure). The check
   does not delete characters or sub-clauses.
   - Fix on fail: re-enter Phase 3 to redraft the offending sentence.
-- **H2** *(script)*: Does not apply to specialty files. The script's
-  acronym-reconciliation check inspects only a `## Dialect` section, which
-  the specialty schema does not include; H2 always passes. Adding acronym
-  reconciliation for specialty files would require a script change.
-  - Fix on fail: none; the check cannot fail for this axis.
-
 ### I - Mode invariants
 
 - **I1** *(script, create only)*: The value file did not exist before this

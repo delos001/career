@@ -3,7 +3,7 @@
 axis_utils.py - shared helpers for the axis-builder script family
 
 Helpers used by 2+ of the axis-builder concern scripts (axis_registry.py,
-axis_qc.py, axis_apply.py). Three groups:
+axis_qc.py, axis_apply.py). Four groups:
 
   Path resolution    Build absolute paths from config.yaml so no script
                      hardcodes repo state.

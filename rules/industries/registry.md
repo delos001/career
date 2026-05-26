@@ -13,5 +13,5 @@ Industry values for axis validation. Per-value framing rules in same-folder file
 - **cro** - contract research organizations; service-side perspective. File: `cro.md`.
 - **med-device** - medical device manufacturers; CDRH submission pathway (510(k), PMA, De Novo). File: `med-device.md`.
 - **eclinical** - clinical technology vendors. Registry-only; pharma adjacency handles translation.
-- **generics** - generic and 505(b)(2) drug manufacturers. File: generics.md.
-- **diagnostics** - in vitro diagnostics, laboratory developed tests, and companion diagnostics; CDRH submission pathway and CLIA framework. File: diagnostics.md.
+- **generics** - generic and 505(b)(2) drug manufacturers. File: `generics.md`.
+- **diagnostics** - in vitro diagnostics, laboratory developed tests, and companion diagnostics; CDRH submission pathway and CLIA framework. File: `diagnostics.md`.

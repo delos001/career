@@ -16,6 +16,25 @@ Operate value-agnostically: given the target value, produce the research the
 builder needs regardless of which industry it is. Do not specialize logic to
 any particular value.
 
+## Scoping discipline
+
+The industries axis is about the **sector context** the work happens in.
+It is not about the field of practice (specialties axis), the CV-framing
+posture (orientations axis), the IC-versus-leadership calibration (levels
+axis), or the operating state of the work environment (work-states axis).
+
+Research what makes this industry a coherent sector: regulatory bodies
+and frameworks, sector-specific terminology and acronyms, hiring-panel
+emphasis, and adjacency considerations against other industries.
+
+Do not research:
+- Capability methods or canonical tooling for a specific practice
+  (e.g., data-engineering ETL patterns, statistical methods).
+- Career-stage framing (senior vs junior, IC vs leadership voice).
+- CV-framing postures (transformation-flavored, data-flavored,
+  platform-flavored framings of the same role).
+- Operating-state framing (greenfield, turnaround, scaling).
+
 ## Inputs
 
 The dispatching skill gives you:

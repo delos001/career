@@ -102,6 +102,12 @@ invoking it after flagging an axis gap.
 - Draft the value file content per the per-axis schema: frontmatter
   (`industry: <value>`, `last_researched: <current YYYY-MM>`),
   `Used by:` header, then Vocabulary, Dialect, Emphasis, Adjacency.
+- `## Dialect` carries a mandatory `### Acronyms` sub-section containing
+  the acronym catalog (comma-separated list of acronyms recognized
+  without expansion in the industry's hiring contexts). Voice prose
+  (style, cadence, posture) stays in Dialect's main body, above the
+  sub-section. Per `axes-file-schema`; the H2 QC check uses the
+  sub-heading as the catalog boundary.
 - Match the voice and density of existing files in `rules/industries/`.
   `pharma.md` is the canonical reference.
 - **Create mode only**: also draft the one-line registry-entry bullet
@@ -132,10 +138,8 @@ invoking it after flagging an axis gap.
   - `value`: the target value
   - `mode`: `create` or `refresh`
   - `drafted_value_file`: the Phase 3 drafted text
-  - `siblings`:
-    - Create mode: `{value, adjacency_text}` pairs for every file-backed
-      sibling.
-    - Refresh mode: `{value, path}` pairs for cross-reference checks.
+  - `siblings` (create mode only): `{value, adjacency_text}` pairs for
+    every file-backed sibling.
   - `current_value_file` (refresh only): the existing value-file path
   - `research_findings` (refresh only): the Phase 2 research block
 

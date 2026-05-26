@@ -29,7 +29,11 @@ Non-preferred terms: "drug discovery" or "develop a new drug" for generics work 
 
 ## Dialect
 
-The industry is acronym-dense and deeply pathway-aware. Acronyms recognized without expansion in generics hiring contexts: FDA, OGD, CDER, OND, EMA, MHRA, PMDA, TGA, ANVISA, NMPA, WHO PQ, LMIC, ICH, GDUFA, CFR, CGMP, GMP, GCP, QbD, CMC, QTPP, CQA, CPP, CMA, API, KSM, FDF, CMO, CDMO, CRO, DMF, LOA, CA, CC, eCTD, ESG, QOS, PSG, ANDA, NDA, BLA, RLD, RS, TE, BE, BA, PK, AUC, Cmax, Tmax, GMR, NTI, HVD, BCS, RSABE, IVIVC, IVRT, IVPT, PAI, EIR, OAI, VAI, NAI, RTR, IR, DRL, CRL, REMS, AG, LOE, IP, COGS, MSL, PTAB, SDTM, SDTMIG, ADaM, CDISC, ALCOA, PPQ, QMS, MDI, DPI, IVD, LDT, CLIA, CAP, IVDR, ISO, IEC, SaMD, UDI, HPLC, LC-MS, EDC, CTMS, CRF, CSV, GAMP, eTMF, ePRO, eCOA, IRT, RTSM.
+The industry is acronym-dense and deeply pathway-aware.
+
+### Acronyms
+
+Acronyms recognized without expansion in generics hiring contexts: FDA, OGD, CDER, OND, EMA, MHRA, PMDA, TGA, ANVISA, NMPA, WHO PQ, LMIC, ICH, GDUFA, CFR, CGMP, GMP, GCP, QbD, CMC, QTPP, CQA, CPP, CMA, API, KSM, FDF, CMO, CDMO, CRO, DMF, LOA, CA, CC, eCTD, ESG, QOS, PSG, ANDA, NDA, BLA, RLD, RS, TE, BE, BA, PK, AUC, Cmax, Tmax, GMR, NTI, HVD, BCS, RSABE, IVIVC, IVRT, IVPT, PAI, EIR, OAI, VAI, NAI, RTR, IR, DRL, CRL, REMS, AG, LOE, IP, COGS, MSL, PTAB, SDTM, SDTMIG, ADaM, CDISC, ALCOA, PPQ, QMS, MDI, DPI, IVD, LDT, CLIA, CAP, IVDR, ISO, IEC, SaMD, UDI, HPLC, LC-MS, EDC, CTMS, CRF, CSV, GAMP, eTMF, ePRO, eCOA, IRT, RTSM.
 
 ## Emphasis
 

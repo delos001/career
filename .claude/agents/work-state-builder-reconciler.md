@@ -20,12 +20,10 @@ The dispatching skill gives you:
 - `value`: the registry key being built (e.g. `greenfield`).
 - `mode`: `create` or `refresh`.
 - `drafted_value_file`: the new (or updated) value file content as text.
-- `siblings`:
-  - **Create mode**: list of `{value, adjacency_text}` pairs for every
-    file-backed sibling. `adjacency_text` is the body of that sibling's
-    `## Adjacency` section, already extracted by the dispatching skill.
-  - **Refresh mode**: list of `{value, path}` pairs for cross-reference
-    checks.
+- `siblings` (create mode only): list of `{value, adjacency_text}` pairs
+  for every file-backed sibling. `adjacency_text` is the body of that
+  sibling's `## Adjacency` section, already extracted by the dispatching
+  skill.
 - `current_value_file` (refresh mode only): absolute path to the existing
   value file.
 - `research_findings` (refresh mode only): the research block produced by

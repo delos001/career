@@ -113,31 +113,41 @@ Ask if this session is for a new role or to resume a previous one?
 
 ## Phase 4 - Research
 
-**Researching the company, role, and industry in parallel.**
+**Researching the company, role, industry, and critical requirements in parallel.**
 
 - Input: JD text, company, role, role industry (per Phase 2 confirmation).
-- Dispatch three subagents **in parallel** - `company-research`,
-  `role-research`, `industry-research` - giving each the JD text, company, and role.
+- Dispatch four subagents **in parallel** - `company-research`,
+  `role-research`, `industry-research`, and `critical-requirements-extractor` -
+  giving each the JD text plus the company and role context they need.
 - For `industry-research`: pass the Phase 2 industry label as a starting hint,
   but explicitly instruct the subagent to research the industry the company
   *actually operates in* - using the company name and JD context to identify the
   real sector. The Phase 2 label may be generic or recruiter-facing; the subagent
   should not treat it as the definitive sector if the company's actual business
   suggests otherwise.
-- Each returns a fixed block (`## Company` / `## Role` / `## Industry`, with
-  Summary / Key facts / Sources). Scoped to what this skill needs to classify
-  and characterize - not exhaustive dossiers.
-- Output: three structured findings blocks.
+- For `critical-requirements-extractor`: pass the full JD text. The agent scans
+  every JD section (not just labeled "Requirements") and emits a list of
+  competency requirements as Text / Type / Source per
+  `role-intake-critical-requirements-extraction-2026-05`.
+- Each returns a fixed block:
+  - `company-research` -> `## Company` with Summary / Key facts / Sources.
+  - `role-research` -> `## Role` with Summary / Key facts / Sources.
+  - `industry-research` -> `## Industry` with Summary / Key facts / Sources.
+  - `critical-requirements-extractor` -> `## Critical Requirements` with Text / Type / Source per requirement.
+  Scoped to what this skill needs to classify and characterize, not exhaustive
+  dossiers.
+- Output: four structured findings blocks.
 
 ## Phase 5 - Research file assembly
 
 **Assembling the research findings into the research file.**
 
-- Input: three findings blocks.
+- Input: four findings blocks.
 - Write each block to its own temp file, then run `python scripts/assemble.py
   research` with the application folder, APP-NNN, company, role, date, and the
-  three temp-file paths. It section-replaces only role-intake's own sections so
-  nothing else is clobbered.
+  four temp-file paths (`--company-file`, `--role-file`, `--industry-file`,
+  `--critical-requirements-file`). It section-replaces only role-intake's own
+  sections so nothing else is clobbered.
 - Output: `research.md` written.
 
 ## Phase 6 - Axis classification

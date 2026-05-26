@@ -31,13 +31,17 @@ Non-preferred terms: "customer" for trial participants, "user" for clinicians, g
 
 ## Dialect
 
-The industry is acronym-dense. Acronyms recognized without expansion in pharma hiring contexts: FDA, EMA, MHRA, PMDA, NMPA, GxP, GCP, GMP, GLP, GDP, GVP, ICH, IRB, IEC, IND, NDA, BLA, ANDA, CTD, eCTD, CRO, FSP, FSO, EDC, CTMS, eTMF, IRT, eCRF, AE, SAE, SUSAR, ICSR, DSUR, PSUR, PBRER, REMS, RMP, MedDRA, CDISC, SDTM, ADaM, CAPA, SOP, OOS, RBM, DCT, RWE, RWD, KOL, HCP, DSMB, DMC, PI.
+The industry is acronym-dense.
+
+### Acronyms
+
+Acronyms recognized without expansion in pharma hiring contexts: FDA, CDER, CBER, CDRH, EMA, MHRA, PMDA, NMPA, GxP, GCP, GMP, GLP, GDP, GVP, ICH, IRB, IEC, IND, NDA, BLA, ANDA, CTD, eCTD, CRO, FSP, FSO, EDC, CTMS, eTMF, IRT, eCRF, AE, SAE, SUSAR, ICSR, DSUR, PSUR, PBRER, REMS, RMP, MedDRA, CDISC, SDTM, ADaM, CAPA, SOP, RBM, DCT, RWE, RWD, KOL, HCP, DSMB, DMC, PI.
 
 ## Emphasis
 
 Hiring-panel emphasis falls on: regulated-environment work; multi-function integration across clinical, regulatory, quality, and CMC; external-partner ecosystem (CRO, FSP, FSO, vendor) under ICH E6(R3) Section 3.9 sponsor-oversight framework (transferred duties documented, sponsor accountability non-delegable, fit-for-purpose service-provider selection); therapeutic-area depth; trial-phase exposure (Phase I, II, III, post-marketing); submission-era exposure (pre-IND, pivotal, registrational); risk-based and quality-by-design approaches (per ICH E6(R3)); decentralized/hybrid trial elements (per FDA Sep 2024 final guidance); data-standards literacy (CDISC) for data-adjacent roles.
 
-Regulated work paired with its governing framework (GCP-compliant, ICH E6(R3)-aligned, 21 CFR Part 11-aligned) reads as regulatory literacy. Regulatory presence without framework attribution does not.
+Regulated work paired with its governing framework (GCP-compliant, ICH E6(R3)-aligned, 21 CFR (Code of Federal Regulations) Part 11-aligned) reads as regulatory literacy. Regulatory presence without framework attribution does not.
 
 Evidence over claims: pharma hiring panels weight documented decisions (audits passed, SOPs authored, deviations and CAPA closed, batch/study volume, timeline metrics) over adjectival framing.
 
@@ -52,7 +56,7 @@ Translation signal for entries tagged with adjacent industries:
 - **generics**: ANDA/505(b)(2)/regulatory and CMC are the relevant signal; clinical novelty is not.
 - **med-device**: 510(k)/PMA experience translates as regulatory rigor; ISO 13485 maps to GMP discipline; device-specific terminology does not carry.
 - **diagnostics**: regulated-environment and quality-systems work translates; LDT/IVDR context is the relevant signal; assay-specific detail does not.
-- **eclinical**: pharma sponsors are the primary buyer of eClinical platforms (EDC, CTMS, eTMF, RTSM/IRT, eCOA/ePRO, eConsent, RBQM). Sponsor-side platform-evaluation, vendor selection, system validation (CSV/CSA), integration, and SOP-aligned configuration translate to eclinical vendor or platform-role contexts. Veeva Vault, Medidata Rave, Oracle Clinical One, Florence are current dominant platforms.
+- **eclinical**: pharma sponsors are the primary buyer of eClinical platforms (EDC, eCRF, CTMS, eTMF, RTSM/IRT, eCOA/ePRO, eConsent, RBQM). Sponsor-side platform-evaluation, vendor selection, system validation (CSV/CSA), integration, and SOP-aligned configuration translate to eclinical vendor or platform-role contexts. Veeva Vault, Medidata Rave, Oracle Clinical One, Florence are current dominant platforms.
 
 ### Low or no adjacency
 

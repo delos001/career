@@ -37,6 +37,8 @@ Non-preferred terms: "drug" or "compound" framing for therapeutic products; "GxP
 
 ## Dialect
 
+### Acronyms
+
 Acronyms recognized in med-device hiring contexts without expansion: FDA, CDRH, CBER, EMA, MHRA, PMDA, NMPA, TGA, IMDRF, 510(k), PMA, De Novo, IDE, HDE, HUD, QSR, QMSR, QSIT, CGMP, ISO 13485, ISO 14971, ISO 14155, IEC 62304, IEC 62366, ISO 10993, MDR (context-dependent), IVDR, EU MDR, CER, PMCF, PMS, PSUR, DHF, DMR, DHR, CAPA, NCR, OOT, OOS, SR, NSR, RTA, eSTAR, Q-Sub, Pre-Sub, SIR, UDI, DI, PI, GUDID, UDID, SaMD, AI-DSF, PCCP, TPLC, SBOM, NB, CE, MDD, AIMDD, IVDD, GMDN, GS1, AdvaMed, MedTech Europe, BSI, TÜV, RWD, RWE, STeP, BDP.
 
 ## Emphasis

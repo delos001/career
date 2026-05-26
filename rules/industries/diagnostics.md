@@ -37,7 +37,11 @@ Preferred-over-alternatives: PPA / NPA over sensitivity / specificity when the c
 
 ## Dialect
 
-The industry is acronym-dense across overlapping regulatory, scientific, and platform vocabularies. Acronyms recognized without expansion in diagnostics hiring contexts: IVD, LDT, CDx, FDA, CDRH, OHT7, OPEQ, MHRA, PMDA, NMPA, TGA, IVDR, MDR, MDSAP, CE, UKCA, CLIA, CMS, CAP, CDC, ISO, IEC, CLSI, CFR, PMA, IDE, CW, QSR, QMSR, CAPA, DHF, DMR, DHR, RMF, IFU, SSP, SSCP, PER, PMS, PMPF, FSCA, EIR, UDI, GCP, GxP, ICH, RUO, IUO, ASR, ALCOA, HL7, FHIR, LOINC, LIS, CSV, CSA, SaMD, PCCP, NAAT, PCR, qPCR, dPCR, NGS, WGS, WES, CGP, TMB, MSI, MRD, ctDNA, cfDNA, FFPE, BAL, IHC, FISH, CISH, ELISA, LFIA, LAMP, RPA, POCT, PPA, NPA, PPV, NPV, LoB, LoD, LoQ, AMI, ROC, AUC, OTC, PGx, MALDI, CDER, CBER, AI, ANDA, BD, BLA, CMC, CRO, CTD, CTMS, DEN, EDC, EP, GLP, GMP, IND, IRT, LC, MI, ML, MS, NDA, QMS, REMS, RT, SD, SaaS, TOF, USP, cGMP, eTMF.
+The industry is acronym-dense across overlapping regulatory, scientific, and platform vocabularies.
+
+### Acronyms
+
+Acronyms recognized without expansion in diagnostics hiring contexts: IVD, LDT, CDx, FDA, CDRH, OHT7, OPEQ, MHRA, PMDA, NMPA, TGA, IVDR, MDR, MDSAP, CE, UKCA, CLIA, CMS, CAP, CDC, ISO, IEC, CLSI, CFR, PMA, IDE, CW, QSR, QMSR, CAPA, DHF, DMR, DHR, RMF, IFU, SSP, SSCP, PER, PMS, PMPF, FSCA, EIR, UDI, GCP, GxP, ICH, RUO, IUO, ASR, ALCOA, HL7, FHIR, LOINC, LIS, CSV, CSA, SaMD, PCCP, NAAT, PCR, qPCR, dPCR, NGS, WGS, WES, CGP, TMB, MSI, MRD, ctDNA, cfDNA, FFPE, BAL, IHC, FISH, CISH, ELISA, LFIA, LAMP, RPA, POCT, PPA, NPA, PPV, NPV, LoB, LoD, LoQ, AMI, ROC, AUC, OTC, PGx, MALDI, CDER, CBER, AI, ANDA, BD, BLA, CMC, CRO, CTD, CTMS, DEN, EDC, EP, GLP, GMP, IND, IRT, LC, MI, ML, MS, NDA, QMS, REMS, RT, SD, SaaS, TOF, USP, cGMP, eTMF.
 
 ## Emphasis
 

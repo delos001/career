@@ -60,6 +60,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 **Built** (detailed entries below):
 - role-intake
+- retrieval
 - industry-builder, level-builder, orientation-builder, specialty-builder, work-state-builder (axis-builder skill family; one per axis; create / refresh modes; user-invoked)
 
 **Drafted** (skeleton SKILL.md exists at `.claude/skills/<name>/`; full design pending; no detailed entry yet):
@@ -84,21 +85,44 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Status**: Designed
 - **Inputs**:
   - Rules: `rules/global-rules.md`. (Axis registries and value files are read by `axis-classifier`, not by the skill directly.)
-  - Agents: `company-research`, `role-research`, `industry-research`, `axis-classifier`, `qc-role-intake`.
+  - Agents: `company-research`, `role-research`, `industry-research`, `critical-requirements-extractor`, `axis-classifier`, `qc-role-intake`.
   - Scripts: `scripts/display/introduce.py`, `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/assemble.py`.
   - Templates: `templates/session_log.md`, `templates/research_file.md`.
   - User input: job description (paste / file / URL), role communications (optional), company slug, metadata confirmations (title/company/level/industry) at Phase 2.
 - **Outputs**:
-  - Files: `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`; `personal/applications/<SLUG>_APP-NNN_YYYY-MM/research.md`.
-  - Skills: hands off to the gap-analysis skill (not yet built).
+  - Files: `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`; `personal/applications/<SLUG>_APP-NNN_YYYY-MM/research.md` (with `## Company`, `## Role`, `## Industry`, `## Critical Requirements`, and `## Axis Gaps` sections).
+  - Skills: hands off to the retrieval skill, then to gap analysis (not yet built).
   - Side effects: consumes the next APP-NNN.
 - **Triggers**:
   - User invocation: `/role-intake` when starting evaluation of a new role; also resumes an interrupted run (user supplies APP-NNN; the skill probes artifacts and lands at the appropriate phase per its resume ladder).
 - **Update Triggers**:
   - When the five-axis rule files or their registries change (axis classification logic).
   - When `rules/global-rules.md` changes.
-  - When any of its four subagents or three scripts change.
-  - When the downstream gap-analysis skill is built (handoff contract).
+  - When any of its subagents or scripts change.
+  - When the downstream retrieval or gap-analysis skill is built (handoff contract).
+
+#### retrieval
+
+- **Purpose**: Surface the relevant profile content for a role. Reads role-intake's outputs (axis classification + critical requirements + JD), scores inventory entries, narratives, and Signature Themes against the critical requirements, and writes a retrieval manifest that downstream skills (gap analysis, CV creation, interview prep, career brief) consume. Per `retrieval-architecture-2026-05`.
+- **Status**: Designed
+- **Inputs**:
+  - Rules: `rules/global-rules.md`; `rules/<axis>/<value>.md` Adjacency sections (read by `scripts/retrieval_apply.py` for adjacency-aware axis scoring).
+  - Agents: `retrieval-scorer`, `qc-retrieval`.
+  - Scripts: `scripts/display/introduce.py`, `scripts/retrieval_payload.py`, `scripts/retrieval_apply.py`.
+  - Profile docs: `personal/profile/inventory.md`, `personal/profile/narratives.md`, `personal/profile/positioning.md` (read indirectly via the scripts above).
+  - Application artifacts: `personal/applications/<SLUG>/research.md` (axis classification + critical requirements), `personal/applications/<SLUG>/jd.md`.
+  - User input: APP-NNN (resume) or implicit (new run; folder must exist with role-intake output already in place).
+- **Outputs**:
+  - Files: `personal/applications/<SLUG>_APP-NNN_YYYY-MM/retrieval.md` (the manifest).
+  - Skills: hands off to gap analysis (not yet built), CV creation, interview prep, career brief.
+  - Side effects: none (read-only against the profile and the role-intake artifacts).
+- **Triggers**:
+  - User invocation: `/retrieval` after a role-intake run has completed for the same APP-NNN. Resumes prior runs via the APP-NNN probe.
+- **Update Triggers**:
+  - When the manifest schema (output of `retrieval_apply.py`) changes.
+  - When the retrieval-scorer rubric or output JSON contract changes.
+  - When the axis adjacency parsing in `retrieval_apply.py` needs to track an axis-file schema change.
+  - When downstream consumers (gap analysis, CV creation, interview prep, career brief) require additional signal columns.
 
 #### axis-builder skill family (industry-builder, level-builder, orientation-builder, specialty-builder, work-state-builder)
 
@@ -122,7 +146,8 @@ Schema discipline and reconciliation script details live in `design/design_decis
 ### Roster
 
 **Built** (detailed entries below):
-- company-research, role-research, industry-research, axis-classifier, qc-role-intake
+- company-research, role-research, industry-research, critical-requirements-extractor, axis-classifier, qc-role-intake
+- retrieval-scorer, qc-retrieval (retrieval skill family)
 - industry-builder-research, level-builder-research, orientation-builder-research, specialty-builder-research, work-state-builder-research (axis-builder research agent family; one per axis)
 - industry-builder-reconciler, level-builder-reconciler, orientation-builder-reconciler, specialty-builder-reconciler, work-state-builder-reconciler (axis-builder reconciler agent family; one per axis)
 - qc-industry-builder, qc-level-builder, qc-orientation-builder, qc-specialty-builder, qc-work-state-builder (axis-builder QC agent family; one per axis)
@@ -160,6 +185,15 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Triggers**: Invoked by `role-intake` Phase 4, in parallel with `company-research` and `role-research`.
 - **Update Triggers**: When the industry axis registry or value files change.
 
+#### critical-requirements-extractor
+
+- **Purpose**: Extract a structured list of competency requirements from a JD for the role-intake skill. Comprehensive scan across all JD sections (not just labeled "Requirements"); each requirement carries Text / Type / Source for downstream use by retrieval, gap analysis, CV creation, and interview prep. Per `role-intake-critical-requirements-extraction-2026-05`.
+- **Status**: Designed
+- **Inputs**: Skill-passed (by `role-intake`): JD text; optionally role title and company name for context. Tools: Read.
+- **Outputs**: Structured findings block (`## Critical Requirements` — list of Text / Type / Source per requirement) returned to the caller.
+- **Triggers**: Invoked by `role-intake` Phase 4, in parallel with `company-research`, `role-research`, and `industry-research`.
+- **Update Triggers**: When the three-field schema (Text / Type / Source) changes; when downstream consumers add new fields they need from extraction.
+
 #### axis-classifier
 
 - **Purpose**: Classify a job against the five axes (orientation, industry, specialty, level, work-state), registry-first, confirming each pick against the value file (or the registry one-line where the file is registry-only or deferred); flag an axis gap where no value confirms or a matched value's file is not yet authored. Keeps axis files out of the main session context.
@@ -177,6 +211,24 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Outputs**: QC verdict (PASS / FINDINGS) with a route-back phase per finding.
 - **Triggers**: Invoked by `role-intake` Phase 8.
 - **Update Triggers**: When the role-intake session log or research file schema changes; when the skill's phase structure changes (route-back map).
+
+#### retrieval-scorer
+
+- **Purpose**: Score a list of inventory entries, narratives, or Signature Themes against the critical requirements list for the retrieval skill. Corpus-agnostic LLM-judgment ranker; uses a consistent 0-1 rubric. Returns JSON with {id, score, reason} per item.
+- **Status**: Designed
+- **Inputs**: Skill-passed (by `retrieval`): critical requirements list, corpus type (`inventory` | `narratives` | `themes`), items to score (one chunk at a time for inventory; full set for narratives and themes), optional JD text for context. Tools: Read.
+- **Outputs**: JSON `{corpus, scores: [{id, score, reason}, ...]}` returned to the caller.
+- **Triggers**: Invoked by `retrieval` Phase 3, once per inventory chunk and once each for narratives and themes (all in parallel).
+- **Update Triggers**: When the scoring rubric changes; when the JSON return contract changes; when the supported corpora change.
+
+#### qc-retrieval
+
+- **Purpose**: Quality-check the retrieval manifest for structural completeness, signal coverage, and cross-reference integrity. Returns findings with route-back guidance per the retrieval skill's phase map.
+- **Status**: Designed
+- **Inputs**: Skill-passed (by `retrieval`): manifest path, research.md path, activity record (scoring counts per corpus). Tools: Read, Grep.
+- **Outputs**: QC verdict (PASS / FINDINGS) with a route-back phase per finding.
+- **Triggers**: Invoked by `retrieval` Phase 5.
+- **Update Triggers**: When the manifest schema or the retrieval skill's phase structure changes; when new sub-agent contracts get added that QC must validate.
 
 #### axis-builder research agent family (industry-builder-research, level-builder-research, orientation-builder-research, specialty-builder-research, work-state-builder-research)
 
@@ -213,6 +265,9 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 **Built** (detailed entries below unless noted):
 - `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/display/introduce.py`, `scripts/assemble.py`
+- `scripts/session_log.py` (shared section-append for all skills that write to a session log)
+- `scripts/profile_slice.py` (consumed by retrieval and downstream skills)
+- `scripts/retrieval_payload.py`, `scripts/retrieval_apply.py` (retrieval concern family)
 - `scripts/axis_registry.py`, `scripts/axis_qc.py`, `scripts/axis_apply.py` (axis-builder concern family)
 - `scripts/_config.py`, `scripts/_util.py`, `scripts/axis_utils.py` (shared helper modules; not standalone scripts, no separate entries)
 - `scripts/cv_to_docx.py` (pre-existing; detailed entry pending)
@@ -223,10 +278,8 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - `scripts/registry/generate_vocabularies.py` (reads tag and registry sources across `rules/`, generates `VOCABULARIES.md` at repo root as a single read-only reference for human browsing; regenerated on demand after tag-source changes)
 - Document metadata header reconciliation script (sweeps in-scope docs, parses headers, cross-references against COMPONENTS.md and skill code; logged to Pending Follow-on Work)
 - Inventory validation script (validates Capability, Industry, Skill, Role, Purpose, Role Level, Org Context against tag/registry sources)
-- Retrieval scripts (slice-based lookup for `inventory`, `narratives`, `positioning`, registries; per Stack section)
 - Format conversion scripts (python-docx CV rendering, per `format_spec.md` transfer note); partially built as `scripts/cv_to_docx.py`
 - Resolver scripts (rule lookup by category/slug, per Skill Stability via Loose Coupling)
-- Application ID assignment is now built as `scripts/app_id.py` (moved to Built above)
 
 ### Generated Artifacts (outputs of scripts above, not standalone components)
 
@@ -263,12 +316,48 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/assemble.py
 
-- **Purpose**: Write role-intake's two artifacts (session log, research file) deterministically by rendering the templates, rather than having the skill hand-write files. Subcommands: `init` (Phase 3), `research` (Phase 5), `finalize` (Phase 7). Every write is section-scoped.
+- **Purpose**: Write role-intake's two artifacts (session log, research file) deterministically by rendering the templates, rather than having the skill hand-write files. Subcommands: `ingest` (Phase 3a), `init` (Phase 3b), `research` (Phase 5; writes all four research-block sections including Critical Requirements), `finalize` (Phase 7). Every write is section-scoped.
 - **Status**: Designed
-- **Inputs**: Skill-passed args (slug, APP-NNN, company, role, dates, paths) and, for `research`/`finalize`, temp files holding subagent output. Config: `config.yaml` (paths, filenames, naming patterns) via `scripts/_config.py`. Templates: `session_log.md`, `research_file.md` (read as the structure source).
+- **Inputs**: Skill-passed args (slug, APP-NNN, company, role, dates, paths) and, for `research`/`finalize`, temp files holding subagent output (including the critical-requirements block as of `role-intake-critical-requirements-extraction-2026-05`). Config: `config.yaml` (paths, filenames, naming patterns) via `scripts/_config.py`. Templates: `session_log.md`, `research_file.md` (read as the structure source).
 - **Outputs**: `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`, the `personal/applications/<SLUG>_APP-NNN_YYYY-MM/` folder, and `<folder>/research.md`. Paths echoed to stdout.
 - **Triggers**: Invoked by `role-intake` Phases 3, 5, and 7.
-- **Update Triggers**: When `templates/session_log.md` or `templates/research_file.md` change shape; when the role-intake phase structure changes.
+- **Update Triggers**: When `templates/session_log.md` or `templates/research_file.md` change shape; when the role-intake phase structure changes; when a new sub-agent's output becomes a new research.md section.
+
+#### scripts/session_log.py
+
+- **Purpose**: Shared session-log section manager for every skill that writes to the multi-skill session log artifact. Single subcommand `append-section`: locates the session log by slug + APP-NNN + YM, reads a caller-supplied section body from a file, and replaces the section in place if its heading already exists or appends it at the end otherwise (current-state discipline; re-runs overwrite rather than accumulate). Keeps file-manipulation instructions out of every consumer skill's SKILL.md.
+- **Status**: Designed
+- **Inputs**: Subcommand args (`--slug`, `--app-id`, `--ym`, `--heading`, `--body-file`). Config: `config.yaml` (sessions path, application naming patterns) via `scripts/_config.py`. Filesystem: the named session log under `personal/sessions/`.
+- **Outputs**: Session-log path printed to stdout on success. Errors to stderr with exit 1 (missing session log; body-file first line does not match the heading).
+- **Triggers**: Invoked by every downstream skill that appends a section to the session log. Currently called by `retrieval` Phase 6; future callers (gap analysis, CV creation, interview prep, follow-up) use the same script.
+- **Update Triggers**: When the session-log filename pattern in `config.yaml` changes; when the section-conflict semantics (current-state vs history-accumulating) change.
+
+#### scripts/profile_slice.py
+
+- **Purpose**: Deterministic slicer for the candidate profile documents. Subcommands: `id <ID>...` (fetch one or more entries by ID; ID prefix selects the file - EX/PR/RL from inventory.md, ST/DC from narratives.md, TH from positioning.md) and `section <file> <slug>` (fetch a named section from inventory, narratives, positioning, or user-info). Used by retrieval to fetch full content for IDs in its manifest, and by every downstream skill (gap analysis, CV creation, interview prep) that needs to load specific profile content on demand.
+- **Status**: Designed
+- **Inputs**: Subcommand args (`<ID>...` or `<file> <slug>`). Config: `config.yaml` (profile path + per-file filenames) via `scripts/_config.py`. Filesystem: `personal/profile/inventory.md`, `narratives.md`, `positioning.md`, `user-info.md`.
+- **Outputs**: Raw text on stdout (block text for IDs separated by blank lines; section body for section subcommand). Errors to stderr with exit 1 on missing file or missing ID/section.
+- **Triggers**: Invoked by retrieval (on-demand content fetch) and by downstream skills (gap analysis, CV creation, interview prep) when JD-named qualifications or specific entries need to be loaded.
+- **Update Triggers**: When the inventory, narratives, or positioning file schemas change (entry headers, ID metadata line, or section heading conventions).
+
+#### scripts/retrieval_payload.py
+
+- **Purpose**: Build LLM-consumable payloads for the retrieval skill. Subcommands: `inventory --chunk-size N` (parse Section 8 of inventory.md; emit JSON with chunked entries, each carrying ID, axis tags, and Description+Impact payload text), `narratives` (parse narratives.md; emit JSON with each narrative's ID, title, Linked Inventory, body), `themes` (parse positioning.md; emit JSON with each Signature Theme's Core message + Proof point + Use when concatenated as payload).
+- **Status**: Designed
+- **Inputs**: Subcommand args (`--chunk-size`). Config: `config.yaml` (profile path + per-file filenames) via `scripts/_config.py`. Filesystem: inventory.md, narratives.md, positioning.md.
+- **Outputs**: JSON to stdout per the per-subcommand schema. Errors to stderr with exit 1.
+- **Triggers**: Invoked by `retrieval` Phase 2.
+- **Update Triggers**: When the inventory entry schema, narrative schema, or theme schema changes; when the chunking strategy changes.
+
+#### scripts/retrieval_apply.py
+
+- **Purpose**: Assemble the retrieval manifest from collected signals. Subcommand: `assemble`. Reads JD axis classification, semantic scores from the retrieval-scorer subagent (inventory chunks merged, narratives, themes), computes per-entry axis exact-match count and adjacency-weighted score using the per-axis-file Adjacency sections in `rules/<axis>/<value>.md`, unions the semantic-pass set with the tag-pull set on inventory, unions semantic-scored narratives with the Linked-Inventory walk, and writes the manifest. Output format generated directly by the script (no template file).
+- **Status**: Designed
+- **Inputs**: Subcommand args (`--folder`, `--slug`, `--app-id`, `--date`, `--jd-axes-file`, `--inventory-scores-file`, `--narrative-scores-file`, `--theme-scores-file`). Config: `config.yaml` (profile path, retrieval_manifest filename) via `scripts/_config.py`. Imports `retrieval_payload.parse_inventory_entries` / `parse_narratives` / `parse_themes` for re-resolution of full entry detail. Filesystem: inventory.md, narratives.md, positioning.md, and the axis value files (for adjacency lookup).
+- **Outputs**: `<folder>/retrieval.md` (the manifest) and its path printed to stdout. Errors to stderr with exit 1.
+- **Triggers**: Invoked by `retrieval` Phase 4.
+- **Update Triggers**: When the manifest schema changes; when adjacency parsing rules change; when the JD-axes JSON schema or score JSON schema changes; when axis files' Adjacency section conventions change.
 
 #### scripts/axis_registry.py
 

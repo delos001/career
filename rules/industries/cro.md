@@ -29,7 +29,11 @@ Non-preferred terms: "client" instead of "sponsor" in operational CV description
 
 ## Dialect
 
-Acronym-dense. Recognized acronyms in CRO hiring contexts: FDA, EMA, MHRA, PMDA, NMPA, NIH, BIMO, GxP, GCP, GCLP, GMP, GLP, GDP, GVP, ICH, IRB, IEC, IND, NDA, BLA, sBLA, ANDA, sNDA, MAA, CTA, CTD, eCTD, DMF, CRO, FSP, FSO, EDC, CTMS, eTMF, eCRF, IRT, IWRS, AE, SAE, MedDRA, CDISC, SDTM, ADaM, CDASH, CAPA, SOP, RBM, RBQM, DCT, RWE, KOL, HCP, DSMB, DMC, PI, FIH, MSA, SOW, CtQ, QTL, KRI, CSM, SDV, SDR, SQV, SIV, IMV, COV, FPI, LPI, LPLV, DBL, CSR, CRA, CTM, PM, PD, BD, AM, RTSM, eCOA, ePRO, JSC, JOC, SLA, KPI, RACI, QMP, QA, DM, SAS, AI, CDx, IVD, NEJM, SaaS, TORO, CTIS, CTR, FTE, ISO, CLIA, CAP, IVDR, MDR, IDE, PMA, PMP, CGT, CNS, TA, CFR, NPV, PPV, LoD, LoQ, RSABE, HVD, PK, BE, QMS, NSCLC, ICON.
+Acronym-dense.
+
+### Acronyms
+
+Acronyms recognized without expansion in CRO hiring contexts: FDA, EMA, MHRA, PMDA, NMPA, NIH, BIMO, GxP, GCP, GCLP, GMP, GLP, GDP, GVP, ICH, IRB, IEC, IND, NDA, BLA, sBLA, ANDA, sNDA, MAA, CTA, CTD, eCTD, DMF, CRO, FSP, FSO, EDC, CTMS, eTMF, eCRF, IRT, IWRS, AE, SAE, MedDRA, CDISC, SDTM, ADaM, CDASH, CAPA, SOP, RBM, RBQM, DCT, RWE, KOL, HCP, DSMB, DMC, PI, FIH, MSA, SOW, CtQ, QTL, KRI, CSM, SDV, SDR, SQV, SIV, IMV, COV, FPI, LPI, LPLV, DBL, CSR, CRA, CTM, PM, PD, BD, AM, RTSM, eCOA, ePRO, JSC, JOC, SLA, KPI, RACI, QMP, QA, DM, SAS, AI, CDx, IVD, NEJM, SaaS, TORO, CTIS, CTR, FTE, ISO, CLIA, CAP, IVDR, MDR, IDE, PMA, PMP, CGT, CNS, TA, CFR, NPV, PPV, LoD, LoQ, RSABE, HVD, PK, BE, QMS, NSCLC, ICON.
 
 ## Emphasis
 

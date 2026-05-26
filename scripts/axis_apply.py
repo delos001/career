@@ -46,31 +46,26 @@ import axis_utils
 # modify/remove helper is needed beyond append.
 # ---------------------------------------------------------------------------
 
-def _insert_bullet_in_section(text, heading, bullet_text):
-    """Append a bullet to the appropriate location in a named section.
+def _insert_adjacency_bullet(text, bullet_text):
+    """Append a bullet to the right location in '## Adjacency'.
 
-    For Adjacency, the insertion respects the two-form schema per
-    `axes-file-schema` and detects form from the bullet shape:
+    Insertion respects the two-form schema per `axes-file-schema` and
+    detects form from the bullet shape:
 
     - **Substantive** (starts with `- **`): insert at the end of the
       section's main portion (above any `### Low or no adjacency`
       sub-section if present, else at the end of the section).
     - **Plain low-form** (starts with `- ` but no `**`): insert at the end
-      of the section's `### Low or no adjacency` sub-section. If the
-      sub-section does not exist, it is created at the end of the
-      section's main portion and the bullet placed inside it.
+      of the `### Low or no adjacency` sub-section. If the sub-section
+      does not exist, it is created at the end of the section's main
+      portion and the bullet placed inside it.
 
-    For any other section (non-Adjacency call site), behavior is the legacy
-    "append at end of section" with a trailing blank line. The only
-    in-tree caller targets Adjacency, but the guard keeps the helper
-    sensible if a future caller targets a different section.
+    Callers must ensure the bullet targets Adjacency; the apply step's
+    E4 re-enforcement refuses any non-Adjacency target before this
+    helper is reached.
     """
-    body_start, body_end = axis_utils.find_section_bounds(text, heading)
+    body_start, body_end = axis_utils.find_section_bounds(text, 'Adjacency')
     body = text[body_start:body_end]
-
-    if heading != 'Adjacency':
-        new_body = body.rstrip() + '\n' + bullet_text.rstrip() + '\n\n'
-        return text[:body_start] + new_body + text[body_end:]
 
     # Form detection. Substantive bullets start with '- **' (after any
     # leading whitespace); plain low-form bullets start with '- ' but no
@@ -116,7 +111,7 @@ def _bump_last_researched(text, ym):
     if frontmatter is None:
         raise ValueError('cannot bump last_researched: file has no frontmatter')
     new_frontmatter = re.sub(
-        r'(?m)^last_researched:[ \t].*$',
+        r'(?m)^last_researched:[ \t]*.*$',
         f'last_researched: {ym}',
         frontmatter,
     )
@@ -213,6 +208,22 @@ def cmd_create(args, repo_root, cfg):
     if not g1['passed']:
         raise ValueError(f"registry entry mismatch (G1): {g1['detail']}")
 
+    # --- Re-enforce E4 at the apply step ---
+    # Same shape as G1. QC's E4 (sibling-edits target Adjacency) is
+    # report-only and can pass through provisional. A back-edge written
+    # to a non-Adjacency section structurally corrupts the sibling
+    # (e.g., a Vocabulary section with a stray Adjacency-style bullet),
+    # not a triage-able content issue. Refuse the apply rather than
+    # write the corruption.
+    bad_targets = [
+        e for e in sibling_edits if e.get('section', 'Adjacency') != 'Adjacency'
+    ]
+    if bad_targets:
+        raise ValueError(
+            f'sibling edit(s) target non-Adjacency section (E4): '
+            f'{len(bad_targets)} edit(s); first: {bad_targets[0]!r}'
+        )
+
     # --- Provisional marking on the value text (in-memory only) ---
     if args.provisional:
         value_text = axis_qc.apply_provisional(value_text, issues)
@@ -229,8 +240,7 @@ def cmd_create(args, repo_root, cfg):
         if not os.path.exists(sibling_path):
             raise FileNotFoundError(f'sibling file missing: {sibling_path}')
         sibling_text = _util.read(sibling_path)
-        sibling_text = _insert_bullet_in_section(
-            sibling_text, edit.get('section', 'Adjacency'), edit['bullet'])
+        sibling_text = _insert_adjacency_bullet(sibling_text, edit['bullet'])
         staged.append((sibling_path, sibling_text))
 
     # Registry: replace existing bullet or append new one.
@@ -241,7 +251,11 @@ def cmd_create(args, repo_root, cfg):
         line_start = registry_text.rfind('\n', 0, existing.start()) + 1
         line_end = registry_text.find('\n', existing.end())
         if line_end == -1:
-            line_end = len(registry_text)
+            # Existing entry is the last line with no trailing newline.
+            # Normalize so the splice below preserves the trailing-newline
+            # invariant the append branch also enforces.
+            registry_text += '\n'
+            line_end = len(registry_text) - 1
         registry_text = (
             registry_text[:line_start] + registry_entry_line + registry_text[line_end:])
     else:

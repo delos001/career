@@ -188,8 +188,9 @@ def cmd_init(args, repo_root, cfg):
 
 # ---------------------------------------------------------------------------
 # Subcommand: research  (role-intake Phase 5)
-# Writes research.md from the three research subagents' output blocks. On a
-# re-run it replaces only role-intake's own sections, leaving anything else.
+# Writes research.md from the four Phase 4 subagent output blocks: company,
+# role, industry, and critical requirements. On a re-run it replaces only
+# role-intake's own sections, leaving anything else.
 # ---------------------------------------------------------------------------
 
 def cmd_research(args, repo_root, cfg):
@@ -197,6 +198,7 @@ def cmd_research(args, repo_root, cfg):
     company_block = _util.read(args.company_file).strip()
     role_block = _util.read(args.role_file).strip()
     industry_block = _util.read(args.industry_file).strip()
+    critical_requirements_block = _util.read(args.critical_requirements_file).strip()
 
     if not os.path.exists(research_file):
         # First write: render the whole file from the template.
@@ -210,6 +212,7 @@ def cmd_research(args, repo_root, cfg):
             'company_block': company_block,
             'role_block': role_block,
             'industry_block': industry_block,
+            'critical_requirements_block': critical_requirements_block,
             # Filled at finalize (Phase 7) once axis-classifier has run.
             'axis_gaps': '## Axis Gaps\n\n_(pending)_',
         })
@@ -223,6 +226,21 @@ def cmd_research(args, repo_root, cfg):
         text = _replace_section(text, 'Company', company_block)
         text = _replace_section(text, 'Role', role_block)
         text = _replace_section(text, 'Industry', industry_block)
+        # Critical Requirements is a newer section (added per
+        # role-intake-critical-requirements-extraction-2026-05). Insert it on
+        # research.md files that pre-date the addition; replace it on files
+        # that already have it.
+        if re.search(r'(?m)^## Critical Requirements\b', text):
+            text = _replace_section(text, 'Critical Requirements', critical_requirements_block)
+        elif re.search(r'(?m)^## Axis Gaps\b', text):
+            text = re.sub(
+                r'(?m)^## Axis Gaps\b',
+                critical_requirements_block.rstrip() + '\n\n## Axis Gaps',
+                text,
+                count=1,
+            )
+        else:
+            text = text.rstrip() + '\n\n' + critical_requirements_block.rstrip() + '\n'
         _util.write(research_file, text)
     print(research_file)
 
@@ -319,6 +337,8 @@ def main():
     p_res.add_argument('--company-file', required=True)
     p_res.add_argument('--role-file', required=True)
     p_res.add_argument('--industry-file', required=True)
+    p_res.add_argument('--critical-requirements-file', required=True,
+                       help='path to a file holding the critical-requirements-extractor output block')
     p_res.set_defaults(func=cmd_research)
 
     p_fin = sub.add_parser('finalize', help='Phase 7: complete the session log')

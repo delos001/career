@@ -137,10 +137,8 @@ invoking it after flagging an axis gap.
   - `value`: the target value
   - `mode`: `create` or `refresh`
   - `drafted_value_file`: the Phase 3 drafted text
-  - `siblings`:
-    - Create mode: `{value, adjacency_text}` pairs for every file-backed
-      sibling.
-    - Refresh mode: `{value, path}` pairs for cross-reference checks.
+  - `siblings` (create mode only): `{value, adjacency_text}` pairs for
+    every file-backed sibling.
   - `current_value_file` (refresh only): the existing value-file path
   - `research_findings` (refresh only): the Phase 2 research block
 

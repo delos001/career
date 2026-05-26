@@ -24,3 +24,35 @@ role-intake: |
 
   Operates under rules/global-rules.md - halts and asks for direction on any
   failure or ambiguity rather than guessing.
+
+retrieval: |
+  # retrieval - surface the relevant profile content for a role
+
+  Runs after role-intake. Reads the JD and research artifacts the role-intake
+  skill produced, then scores every relevant piece of your profile (inventory
+  entries, narratives, Signature Themes) against the role's critical
+  requirements. Produces one artifact: a retrieval manifest that downstream
+  skills (gap analysis, CV creation, interview prep, career brief) read as
+  their starting point.
+
+  Steps:
+    1. Locate the application folder (new application or resume by APP-NNN).
+    2. Read the role-intake outputs - research.md (axis classification +
+       critical requirements) and jd.md.
+    3. Build per-corpus payloads from inventory, narratives, and positioning.
+    4. Score each corpus against the critical requirements list (three
+       parallel scoring passes; inventory is chunked).
+    5. Compute deterministic axis signals against the JD axis classification;
+       walk Linked-Inventory for narratives; assemble the manifest.
+    6. QC the manifest and hand off.
+
+  The manifest exposes raw signals (semantic score, axis exact-match count,
+  axis adjacency-weighted score) per entry. Downstream skills derive their
+  own tier cutoffs (gap analysis: strong/moderate/weak; CV creation:
+  primary/supporting/drop), so retrieval does NOT pre-classify entries.
+
+  Have ready: a completed role-intake run for the role (the application
+  folder must contain jd.md and research.md).
+
+  Operates under rules/global-rules.md - halts and asks for direction on any
+  failure or ambiguity rather than guessing.
