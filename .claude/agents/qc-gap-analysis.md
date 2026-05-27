@@ -29,7 +29,7 @@ Read all referenced files in full before checking.
    Route-back: phase 6 (assemble outputs).
 2. **Header completeness** - the header block carries every required field: `**APP-NNN:**`, `**Date:**`, `**Fit Score:**`, `**Unmet Must-Haves:**`, `**Recommendation:**`. Each field is non-empty.
    Route-back: phase 6 (assemble outputs).
-3. **Session log section** - the session log carries a `## Gap Analysis` section with every required field: Run date, Fit score, Unmet must-haves (with sub-list when count > 0), Recommendation, Eligibility flags, QC verdict, Gap analysis file path.
+3. **Session log section** - the session log carries a `## Gap Analysis` section with every required field: Run date, Gap analysis file path, Fit score, QC verdict.
    Route-back: phase 6 (assemble outputs).
 
 ### Content integrity
@@ -47,7 +47,7 @@ Read all referenced files in full before checking.
 
 8. **No fabricated IDs** - every `EX-NNN`, `PR-NNN`, `ST-NNN`, `DC-NNN` referenced anywhere in `gap_analysis.md` exists in the profile documents. Every `CR-NNN` referenced exists in `research.md`'s critical requirements. Every `PU-NNN` referenced exists in `profile_updates_pending.md`. Grep the source documents to confirm.
    Route-back: the owning phase of the offending reference (phase 3 for evidence IDs in Requirements; phase 5 for de-emphasize entry IDs; phase 6 for PU-NNN references).
-9. **Session log mirroring** - the fit score, recommendation label, and eligibility flag summary in the session log `## Gap Analysis` section match the corresponding values in `gap_analysis.md`'s header and sections. No silent divergence.
+9. **Session log mirroring** - the fit score in the session log `## Gap Analysis` section matches the fit score in `gap_analysis.md`'s header. No silent divergence.
    Route-back: phase 6 (assemble outputs).
 10. **Math correctness** - the fit score equals `sum(weight × credit) / sum(weight)` per the type-weighted formula (must-have=3, preferred=2, contextual=1, duty-derived=1; covered/closed/language-shift credit=1.0, interview-deferred/unresolved credit=0.0). The unmet must-haves count equals the count of must-have requirements with status in `{interview-deferred, unresolved}`.
    Route-back: phase 5 (fit scoring).

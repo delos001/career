@@ -6,11 +6,11 @@ description: Evaluate candidate-to-role fit. Reads role-intake's research file a
 # gap-analysis - evaluate candidate-to-role fit
 
 Produces a **gap analysis artifact** at
-`personal/applications/<SLUG>_APP-NNN_YYYY-MM/gap_analysis.md` plus a session
-log section carrying the fit score, recommendation, and key gaps. New
-information the user raises during gap closure is appended to a profile-level
-staging file at `personal/profile/profile_updates_pending.md` for a separate
-profile-update skill to process later.
+`personal/applications/<SLUG>_APP-NNN_YYYY-MM/gap_analysis.md` plus a brief
+session log section pointing to the artifact (run date, path, fit score, QC
+verdict). New information the user raises during gap closure is appended to
+a profile-level staging file at `personal/profile/profile_updates_pending.md`
+for a separate profile-update skill to process later.
 
 The gap analysis is a **stopping point**: the user reads it to decide whether
 to pursue the role. If they pursue, downstream skills (CV creation, interview
@@ -146,7 +146,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 - Input: Phase 2 flags + decisions, Phase 4 per-requirement final status list, Phase 4 queued staging entries, Phase 5 fit score / unmet count / de-emphasize / recommendation.
 - **Step 6a - Write gap_analysis.md.** Write the structured inputs to temp files (the requirements list with each record carrying `requirement_id` / `requirement_text` / `requirement_type` / `status` / `evidence` / `notes` / optional `closure_ref` / optional `language_shift`; the eligibility-flags list; the de-emphasize list; the recommendation rationale text). Then run `python scripts/gap_assemble.py assemble --folder <app_folder> --app-id APP-NNN --date YYYY-MM-DD --company <company> --role <role> --fit-score <pct> --unmet-must-haves <count> --recommendation-label <label> --recommendation-rationale-file <path> --requirements-file <path> --eligibility-file <path> --de-emphasize-file <path>`. Renders `templates/gap_analysis.md` with substituted blocks. Language-shift cases are filtered from the requirements list internally; no separate file is passed. Capture the printed path. Non-zero exit = halt per global rules.
 - **Step 6b - Append staging entries.** For each queued staging entry, run `python scripts/staging_append.py --captured YYYY-MM-DD --from-app APP-NNN --company <company> --role <role> --closed-requirement <CR-NNN> --requirement-text-short <text> --industry <value> --specialty <value> --orientation <value> --level <value> --work-state <value> --content-file <path> --label <short-label>`. Script assigns the next `PU-NNN` and prints the assigned ID. Capture each PU-NNN; the gap_analysis.md requirement Notes references it inline (Step 6a's `--requirements-file` carries the references).
-- **Step 6c - Write session log section.** Build the `## Gap Analysis` section body in a temp file with: Run date, Fit score, Unmet must-haves count (with sub-list when > 0), Recommendation label, Eligibility flag summary (or `none`), QC verdict (filled after Phase 7), Gap analysis file path. Run `python scripts/session_log.py append-section --slug <slug> --app-id APP-NNN --ym YYYY-MM --heading "Gap Analysis" --body-file <path>`. Script replaces the section on re-runs and appends it on first runs.
+- **Step 6c - Write session log section.** Build the `## Gap Analysis` section body in a temp file with: Run date, Gap analysis file path, Fit score, QC verdict (filled after Phase 7). Run `python scripts/session_log.py append-section --slug <slug> --app-id APP-NNN --ym YYYY-MM --heading "Gap Analysis" --body-file <path>`. Script replaces the section on re-runs and appends it on first runs. Detail (requirements, language-shift cases, eligibility flags, de-emphasize, recommendation rationale) lives in `gap_analysis.md`; the session log section is a pointer + headline.
 - Output: gap_analysis.md written; staging entries appended; session log section written.
 
 ## Phase 7 - QC
