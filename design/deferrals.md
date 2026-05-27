@@ -80,6 +80,18 @@ The Participant terminology paragraph ("participant" is the current preference i
 - Blocks: nothing currently (clean ship on cro.md was achieved).
 - Refs: `rules/industries/pharma.md`, `rules/industries/biotech.md`, `rules/quality_control/qc-industry-builder.md` (D1 definition), `cv-format-spec-from-axes` (parallel cross-cutting concern).
 
+### skill-file-line-wrap-normalization
+SKILL.md files have inconsistent line-wrap conventions. role-intake/SKILL.md is mostly wrapped at ~80 chars; retrieval/SKILL.md and gap-analysis/SKILL.md run long lines (some >900 chars). Pick one convention and apply across all SKILL.md, agent .md, template .md, and other prose files in the repo in one pass.
+- Trigger: project bandwidth, or user direction.
+- Blocks: nothing currently.
+- Refs: `.claude/skills/*/SKILL.md`, `.claude/agents/*.md`, `templates/*.md`.
+
+### bloated-skill-architecture-revisit
+Built skills (role-intake, retrieval, gap-analysis) carry architectural bloat: per-phase input/output declarations, sub-step enumeration, route-back tables, structured JSON contracts between subagents, deterministic rendering scripts, and separate QC files with enumerated checks. The legacy 65-line gap-analysis + role-fit reference (pre-career-repo project) shows the work itself does not require this scaffolding pattern. Pattern surfaced 2026-05-27 during gap-analysis audit; user declined to redesign mid-project to avoid cross-skill inconsistency and the audit-finding cycles that would generate. Revisit in one pass across all built skills when project bandwidth allows.
+- Trigger: project bandwidth, or user direction.
+- Blocks: nothing currently; built skills function as-is.
+- Refs: `gap-analysis-architecture-2026-05`, `role-intake-architecture`, `retrieval-architecture-2026-05`.
+
 ### axis-programmatic-slicing-audit
 Audit all axes (industries, specialties, orientations, levels, work-states) to verify section structure supports programmatic section-level retrieval rather than full-file reads into LLM context. Goal: skills consume only relevant sections of axis files (Vocabulary, Dialect, Emphasis, Adjacency individually addressable), not entire files. Refactor where not.
 - Trigger: knowledge files finalized.

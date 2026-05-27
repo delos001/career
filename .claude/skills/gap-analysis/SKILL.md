@@ -44,7 +44,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   1. Folder missing - halt; APP-NNN likely wrong. Ask for APP-NNN again.
   2. `research.md` missing - halt; direct the user to run `/role-intake`.
   3. `retrieval.md` missing - halt; direct the user to run `/retrieval`.
-  4. `gap_analysis.md` exists - announce ("Gap analysis already exists for APP-NNN. Re-run? Y/N.") and either resume at Phase 1 (re-run) or jump to Phase 8 (review existing).
+  4. `gap_analysis.md` exists - announce ("Gap analysis already exists for APP-NNN at <path>. Re-run? Y/N.") and on Y resume at **Phase 1**; on N print the path and exit (no Phase 8 walk - the user can open the file directly).
   5. Otherwise - resume at start of **Phase 1**.
 
   Announce ("Resuming APP-NNN at Phase N.") and proceed without prompting
@@ -71,8 +71,8 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - `## Work Authorization` (Status, Sponsorship Required).
   - `## Geographic Preferences` (Modality, Willing to Relocate).
   - `## Exclusions` (Industries / Company Types).
-- Note the retrieval manifest path (`retrieval.md` in the application folder). The manifest itself is NOT loaded into main skill context; the `gap-detector` and `de-emphasize-identifier` sub-agents read it in isolated context.
-- Output: critical-requirements block, role/company/industry summary, axis classification, user-info eligibility sections, manifest path.
+- Note the corpus paths the downstream sub-agents will read (`retrieval.md` in the application folder; `inventory.md` and `narratives.md` in the profile folder). These files are NOT loaded into main skill context; the `gap-detector` and `de-emphasize-identifier` sub-agents read them in isolated context.
+- Output: critical-requirements block, role/company/industry summary, axis classification, user-info eligibility sections, paths to `retrieval.md`, `inventory.md`, `narratives.md`.
 
 ## Phase 2 - Eligibility / fit-signal check
 
@@ -114,7 +114,12 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - `interview-deferred` (gap carried into interview, not addressed in CV).
   - `unresolved` (gap acknowledged, no plan to close).
 - Initial categorizations from Step 4b are not binding; the user may re-categorize during the walk.
-- Output: per-requirement final status list, queued staging-file entries (held in memory; written in Phase 6).
+- **Step 4e - Capture notes.** Compose a one-sentence `notes` string for every non-`covered`/non-`language-shift` requirement, recording the reasoning behind the final status:
+  - `closed` - short paraphrase of what the user surfaced (e.g., "User cited 18 months of healthcare regulatory work at Acme"). The `Closure ref: PU-NNN` pointer is appended automatically by the renderer in Phase 6; do not add it here.
+  - `interview-deferred` - user's stated reason for deferring (or default: "Deferred to interview; no CV-side evidence to cite").
+  - `unresolved` - user's stated acknowledgment (or default: "Acknowledged gap; no plan to close").
+  `covered` and `language-shift` requirements do not need notes.
+- Output: per-requirement final-record list (each carrying `requirement_id`, `requirement_text`, `requirement_type`, `status`, `evidence`, `notes`, and `language_shift` where applicable), and queued staging-file entries (held in memory; written in Phase 6).
 
 ## Phase 5 - Fit scoring, de-emphasize, recommendation
 
@@ -130,8 +135,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 - **Step 5c - Recommendation.** Generate one of three labels in main skill, with a 1-2 sentence rationale:
   - **`Proceed`** - strong signals across fit, must-haves, eligibility (high fit, zero unmet must-haves, no overriding eligibility flag).
   - **`Proceed with caution`** - mixed signals (moderate fit, 1-2 unmet must-haves, or an overridden eligibility flag).
-  - **`Do not pursue`** - weak signals (low fit, multiple unmet must-haves, or an eligibility stop).
-  - Hard rule: if any Phase 2 flag's decision is `stop`, recommendation is `Do not pursue`.
+  - **`Do not pursue`** - weak signals (low fit, multiple unmet must-haves).
   - Soft anchors (consistency, not threshold): fit ≥ ~75% reads as high; 50-75% moderate; < 50% low. Adapt to role context.
 - Output: fit score (%), unmet must-haves count, de-emphasize list, recommendation label + rationale.
 
@@ -140,8 +144,8 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 **Writing the gap analysis artifact, session log section, and staging-file additions.**
 
 - Input: Phase 2 flags + decisions, Phase 4 per-requirement final status list, Phase 4 queued staging entries, Phase 5 fit score / unmet count / de-emphasize / recommendation.
-- **Step 6a - Write gap_analysis.md.** Write the structured inputs to temp files, then run `python scripts/assemble.py gap-analysis --folder <app_folder> --slug <slug> --app-id APP-NNN --date YYYY-MM-DD --eligibility-file <path> --requirements-file <path> --language-shift-file <path> --de-emphasize-file <path> --recommendation-file <path> --fit-score <pct> --unmet-must-haves <count>`. Renders `templates/gap_analysis.md` with substituted blocks. Capture the printed path. Non-zero exit = halt per global rules.
-- **Step 6b - Append staging entries.** For each queued staging entry, run `python scripts/staging_append.py --captured YYYY-MM-DD --from APP-NNN --company <company> --role <role> --closed-requirement <CR-NNN> --requirement-text-short <text> --industry <value> --specialty <value> --orientation <value> --level <value> --work-state <value> --content-file <path> --label <short-label>`. Script assigns the next `PU-NNN`, prints the assigned ID. Capture each PU-NNN; the gap_analysis.md requirement Notes references it inline (Step 6a's `--requirements-file` carries the references).
+- **Step 6a - Write gap_analysis.md.** Write the structured inputs to temp files (the requirements list with each record carrying `requirement_id` / `requirement_text` / `requirement_type` / `status` / `evidence` / `notes` / optional `closure_ref` / optional `language_shift`; the eligibility-flags list; the de-emphasize list; the recommendation rationale text). Then run `python scripts/gap_assemble.py assemble --folder <app_folder> --app-id APP-NNN --date YYYY-MM-DD --company <company> --role <role> --fit-score <pct> --unmet-must-haves <count> --recommendation-label <label> --recommendation-rationale-file <path> --requirements-file <path> --eligibility-file <path> --de-emphasize-file <path>`. Renders `templates/gap_analysis.md` with substituted blocks. Language-shift cases are filtered from the requirements list internally; no separate file is passed. Capture the printed path. Non-zero exit = halt per global rules.
+- **Step 6b - Append staging entries.** For each queued staging entry, run `python scripts/staging_append.py --captured YYYY-MM-DD --from-app APP-NNN --company <company> --role <role> --closed-requirement <CR-NNN> --requirement-text-short <text> --industry <value> --specialty <value> --orientation <value> --level <value> --work-state <value> --content-file <path> --label <short-label>`. Script assigns the next `PU-NNN` and prints the assigned ID. Capture each PU-NNN; the gap_analysis.md requirement Notes references it inline (Step 6a's `--requirements-file` carries the references).
 - **Step 6c - Write session log section.** Build the `## Gap Analysis` section body in a temp file with: Run date, Fit score, Unmet must-haves count (with sub-list when > 0), Recommendation label, Eligibility flag summary (or `none`), QC verdict (filled after Phase 7), Gap analysis file path. Run `python scripts/session_log.py append-section --slug <slug> --app-id APP-NNN --ym YYYY-MM --heading "Gap Analysis" --body-file <path>`. Script replaces the section on re-runs and appends it on first runs.
 - Output: gap_analysis.md written; staging entries appended; session log section written.
 
@@ -193,5 +197,4 @@ Consumed by Phase 7 (QC failures). Route back, fix, re-run forward (Phase 7 alwa
 | Fabricated PU-NNN reference | Phase 6 |
 | Session log mirroring divergence | Phase 6 |
 | Fit-score math wrong or unmet-must-haves count wrong | Phase 5 |
-| Eligibility-stop did not force `Do not pursue` | Phase 5 |
 | Recommendation label off-set | Phase 5 |

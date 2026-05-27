@@ -30,7 +30,7 @@ Author    : Jason Delosh
 Created   : 2026-05-27
 Project   : career
 Usage     : python scripts/gap_assemble.py assemble \\
-                --folder ... --slug ... --app-id ... --date ... \\
+                --folder ... --app-id ... --date ... \\
                 --company ... --role ... \\
                 --fit-score ... --unmet-must-haves ... \\
                 --recommendation-label ... --recommendation-rationale-file ... \\
@@ -130,14 +130,14 @@ def _render_requirements(requirements):
         evidence_items = req.get('evidence', []) or []
         evidence_ids = [e.get('id', '') for e in evidence_items if e.get('id')]
         evidence_str = ', '.join(evidence_ids) if evidence_ids else 'none'
-        notes = req.get('notes', '').strip() or '—'
+        notes = req.get('notes', '').strip() or '_(none)_'
         closure_ref = req.get('closure_ref')
         if closure_ref and status == 'closed':
-            notes_with_ref = notes if notes != '—' else ''
+            notes_with_ref = notes if notes != '_(none)_' else ''
             sep = ' ' if notes_with_ref else ''
             notes = f'{notes_with_ref}{sep}Closure ref: {closure_ref}'.strip()
         parts.append(
-            f'### {rid} — {rtext} ({rtype})\n'
+            f'### {rid} - {rtext} ({rtype})\n'
             f'- **Status:** {status}\n'
             f'- **Evidence:** {evidence_str}\n'
             f'- **Notes:** {notes}'
@@ -169,7 +169,7 @@ def _render_language_shift(requirements):
     for c in cases:
         entries_str = ', '.join(c['entries_to_reframe']) if c['entries_to_reframe'] else 'none'
         parts.append(
-            f'### {c["requirement_id"]} — {c["requirement_text_short"]}\n'
+            f'### {c["requirement_id"]} - {c["requirement_text_short"]}\n'
             f'- **Role terminology:** {c["role_terminology"]}\n'
             f'- **Candidate terminology:** {c["candidate_terminology"]}\n'
             f'- **Entries to reframe for CV:** {entries_str}'
@@ -275,7 +275,6 @@ def main():
     p_asm = sub.add_parser('assemble', help='assemble and write gap_analysis.md')
     p_asm.add_argument('--folder', required=True,
                        help='application folder (where gap_analysis.md is written)')
-    p_asm.add_argument('--slug', required=True)
     p_asm.add_argument('--app-id', required=True)
     p_asm.add_argument('--date', required=True, help='YYYY-MM-DD')
     p_asm.add_argument('--company', required=True)

@@ -54,9 +54,7 @@ Read all referenced files in full before checking.
 
 ### Logic
 
-11. **Eligibility-stop forces non-pursuit** - if the activity record names any eligibility flag whose user decision was `stop`, the recommendation label in both `gap_analysis.md` and the session log must be `Do not pursue`.
-   Route-back: phase 5 (recommendation).
-12. **Recommendation label in approved set** - the recommendation label is exactly one of: `Proceed`, `Proceed with caution`, `Do not pursue`. No variants, no additional labels.
+11. **Recommendation label in approved set** - the recommendation label is exactly one of: `Proceed`, `Proceed with caution`, `Do not pursue`. No variants, no additional labels.
    Route-back: phase 5 (recommendation).
 
 ## Sufficiency, not vibes

@@ -1085,7 +1085,7 @@ Built artifact-producing skill running after retrieval; stopping point for the u
 
 **Staging-file discipline.** New information captured to the staging file is concise structured context for correct downstream insertion, not copy-paste content. The profile-update skill adapts captured material to each target doc's conventions; gap-analysis does not write directly into inventory / narratives / positioning. Per the `respect-profile-doc-conventions` feedback memory.
 
-**QC.** `qc-gap-analysis` checks 12 items across structural, content integrity, cross-document consistency, and logic groups; loops up to 3 iterations with per-finding route-back; on bounded-loop failure the artifact ships provisional with findings surfaced in Phase 8 per `artifact-skill-qc-internal`.
+**QC.** `qc-gap-analysis` checks structural, content-integrity, cross-document-consistency, and logic groups; loops up to 3 iterations with per-finding route-back; on bounded-loop failure the artifact ships provisional with findings surfaced in Phase 8 per `artifact-skill-qc-internal`.
 
 Refs: `role-evaluation-and-cv-targeted-separate` (gap analysis as stopping point and handoff artifact), `arc-composition-for-high-impact-roles` (arc-first rule in Phase 3), `retrieval-architecture-2026-05` (gap analysis as downstream consumer of the manifest; raw signals not pre-tiered), `role-intake-critical-requirements-extraction-2026-05` (Type drives severity / coverage credit), `gap-analysis-schema` (deferral resolved here), `respect-profile-doc-conventions` (staging-file discipline).
 
