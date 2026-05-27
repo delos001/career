@@ -25,6 +25,9 @@ filenames:
   axis_registry: registry.md                   # in each rules/<axis>/ folder
   build_issues_log: build_issues.md            # in the design/ folder; appended to on provisional builds
   retrieval_manifest: retrieval.md             # written into each application folder by the retrieval skill
+  gap_analysis_file: gap_analysis.md           # written into each application folder by the gap-analysis skill
+  gap_analysis_template: gap_analysis.md       # in the templates/ folder
+  staging_file: profile_updates_pending.md     # in the profile/ folder; cross-application staging of new info raised during gap-analysis
   inventory_file: inventory.md                 # in the profile/ folder
   narratives_file: narratives.md               # in the profile/ folder
   positioning_file: positioning.md             # in the profile/ folder

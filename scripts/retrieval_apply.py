@@ -369,10 +369,8 @@ def _render_inventory_table(rows):
         sources = []
         if r['in_semantic']:
             sources.append('semantic')
-        if r['in_tag_pull'] and not r['in_semantic']:
+        if r['in_tag_pull']:
             sources.append('tag-pull')
-        elif r['in_tag_pull']:
-            sources.append('tags')
         lines.append(
             f"| {r['id']} | {_fmt_score(r['semantic'])} | {r['exact_count']} | "
             f"{r['adjacency_score']:.2f} | {'+'.join(sources)} | "

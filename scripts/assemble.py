@@ -4,12 +4,16 @@ assemble.py - role-intake artifact assembler
 
 Writes the two artifacts the role-intake skill produces - the session log and the
 research file - so the skill does mechanical file-writing through a deterministic
-tool instead of by hand. Three subcommands, one per write point in the skill:
+tool instead of by hand. Four subcommands, one per write point in the skill:
 
-  init      Phase 3 - create the application folder and write the initial session
-            log (metadata filled in, axis sections marked pending).
-  research  Phase 5 - write (or, on a re-run, refresh) research.md from the three
-            research subagents' output blocks.
+  ingest    Phase 3a - create the application folder and write jd.md (plus
+            comms.md if supplied) so raw inputs are persisted before the session
+            log is written.
+  init      Phase 3b - write the initial session log (metadata filled in, axis
+            sections marked pending) into the folder created by ingest.
+  research  Phase 5 - write (or, on a re-run, refresh) research.md from the four
+            Phase-4 subagent output blocks (company, role, industry, critical
+            requirements).
   finalize  Phase 7 - complete the session log: fill the research-completed date
             and replace the pending axis sections with the axis-classifier output.
 
@@ -229,18 +233,22 @@ def cmd_research(args, repo_root, cfg):
         # Critical Requirements is a newer section (added per
         # role-intake-critical-requirements-extraction-2026-05). Insert it on
         # research.md files that pre-date the addition; replace it on files
-        # that already have it.
+        # that already have it. The Axis-Gaps insert path uses string splice
+        # rather than re.sub so the requirements text (verbatim subagent
+        # output) is not interpreted as a regex replacement string.
         if re.search(r'(?m)^## Critical Requirements\b', text):
             text = _replace_section(text, 'Critical Requirements', critical_requirements_block)
-        elif re.search(r'(?m)^## Axis Gaps\b', text):
-            text = re.sub(
-                r'(?m)^## Axis Gaps\b',
-                critical_requirements_block.rstrip() + '\n\n## Axis Gaps',
-                text,
-                count=1,
-            )
         else:
-            text = text.rstrip() + '\n\n' + critical_requirements_block.rstrip() + '\n'
+            m_gaps = re.search(r'(?m)^## Axis Gaps\b', text)
+            if m_gaps:
+                text = (
+                    text[:m_gaps.start()]
+                    + critical_requirements_block.rstrip()
+                    + '\n\n'
+                    + text[m_gaps.start():]
+                )
+            else:
+                text = text.rstrip() + '\n\n' + critical_requirements_block.rstrip() + '\n'
         _util.write(research_file, text)
     print(research_file)
 
@@ -265,7 +273,7 @@ def cmd_finalize(args, repo_root, cfg):
     # may emit either '## Axis Gaps' (heading form) or 'Axis gaps:' (inline form);
     # accept both so the split is reliable regardless of classifier output style.
     axis_text = _util.read(args.axis_file).strip()
-    split_pat = re.compile(r'(?mi)^(?:##\s+)?Axis\s+[Gg]aps:?\s*$')
+    split_pat = re.compile(r'(?mi)^(?:##\s+)?Axis\s+Gaps:?\s*$')
     parts = split_pat.split(axis_text, maxsplit=1)
 
     classification_body = parts[0].strip()

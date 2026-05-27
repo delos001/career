@@ -15,7 +15,7 @@ The dispatching skill gives you:
 - **Critical requirements** - a list of Text / Type / Source items extracted from the JD. These are the matching targets, not the JD itself.
 - **Corpus type** - one of: `inventory`, `narratives`, `themes`. The dispatching skill names it so you can apply the corpus-specific scoring rubric below.
 - **Items** - a list of items to score. Each item has at minimum an `id` and a `payload` string. Inventory items additionally carry axis tag values for context (do not score on those; the script computes axis signals separately). Narrative items carry a `linked_inventory` list for context. Theme items carry a `title`.
-- **Optional JD context** - the dispatching skill may pass the full JD text or the role/company labels for additional context. Use this to inform judgment; do not score directly against it.
+- **JD context** - the dispatching skill passes the full JD text alongside the requirements list. Use it to inform judgment on borderline matches; do not score directly against it (the requirements list is the matching target).
 
 ## What to do
 

@@ -56,3 +56,42 @@ retrieval: |
 
   Operates under rules/global-rules.md - halts and asks for direction on any
   failure or ambiguity rather than guessing.
+
+gap-analysis: |
+  # gap-analysis - evaluate candidate-to-role fit
+
+  Runs after retrieval. Reads role-intake's research file (critical
+  requirements + role context) and the retrieval manifest (scored inventory,
+  narratives, themes), then evaluates fit per critical requirement, walks
+  any gaps interactively with you to close or categorize them, scores fit,
+  identifies experience to de-emphasize, and produces a gap analysis
+  artifact. This is a stopping point: you read the artifact and decide
+  whether to pursue the role.
+
+  Steps:
+    1. Locate the application folder (new application or resume by APP-NNN).
+    2. Load the role-intake and retrieval artifacts plus your eligibility
+       preferences from user-info.md.
+    3. Surface any eligibility flags (sponsorship, geographic, exclusions)
+       for you to override or stop.
+    4. Detect per-requirement coverage (covered / gap / language-shift) at
+       arc level first, then entry level.
+    5. Walk gaps with you: you may provide clarifying information that
+       closes a gap. New information is queued for the staging file.
+    6. Compute fit score, identify experience to de-emphasize, generate
+       recommendation (Proceed / Proceed with caution / Do not pursue).
+    7. Write the gap analysis artifact, append staging entries, write the
+       session log section, then QC.
+    8. Present the decision block and ask whether to pursue.
+
+  New information you raise during gap closure is captured to a profile-level
+  staging file (personal/profile/profile_updates_pending.md). A separate
+  profile-update skill processes that file into inventory / narratives /
+  positioning when you're ready - you can run it immediately at the end of
+  this skill or defer.
+
+  Have ready: a completed retrieval run for the role (the application
+  folder must contain retrieval.md).
+
+  Operates under rules/global-rules.md - halts and asks for direction on any
+  failure or ambiguity rather than guessing.

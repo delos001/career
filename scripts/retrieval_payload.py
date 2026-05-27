@@ -83,7 +83,9 @@ _ENTRY_RE = re.compile(r'^ID:\s+((?:EX|PR)-\d+)\s*$')
 _TAG_RE = re.compile(r'^(Industry|Specialty|Orientation|Level|Work-state):\s*(.*)$')
 
 # Regex: the Description and Impact fields. The values may run for one line.
-_FIELD_RE = re.compile(r'^(Description|Impact|Context):\s*(.*)$')
+# Context is intentionally not captured; payload is Description + Impact per
+# `retrieval-architecture-2026-05`.
+_FIELD_RE = re.compile(r'^(Description|Impact):\s*(.*)$')
 
 # The five tag axes the retrieval pipeline cares about.
 _AXES = ('Industry', 'Specialty', 'Orientation', 'Level', 'Work-state')
@@ -146,7 +148,6 @@ def _parse_inventory_entries(inventory_text):
                 'work_state': [],
                 'description': '',
                 'impact': '',
-                'context': '',
             }
             continue
         if current is None:

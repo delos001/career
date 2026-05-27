@@ -36,8 +36,8 @@ Ask if this session is for a new retrieval run or to resume a previous one?
   per the ladder (first match wins):
   1. Folder missing - halt; APP-NNN likely wrong. Ask for APP-NNN again.
   2. `research.md` missing - halt; direct the user to run `/role-intake`.
-  3. `retrieval.md` missing - resume at start of **Phase 2**.
-  4. `retrieval.md` exists - announce ("Manifest already exists for APP-NNN. Re-run? Y/N.") and either resume at Phase 2 (re-run) or jump to Phase 6 (review existing).
+  3. `retrieval.md` missing - resume at start of **Phase 1**.
+  4. `retrieval.md` exists - announce ("Manifest already exists for APP-NNN. Re-run? Y/N.") and either resume at Phase 1 (re-run) or jump to Phase 6 (review existing).
 
   Announce ("Resuming APP-NNN at Phase N.") and proceed without prompting
   further.
@@ -55,13 +55,11 @@ Ask if this session is for a new retrieval run or to resume a previous one?
 **Loading the role-intake artifacts for this application.**
 
 - Input: application folder path (from the resume check), APP-NNN, slug.
-- Read `research.md` from the application folder. Extract:
-  - The `## Critical Requirements` section (the matching target for all three scoring passes).
-  - The axis classification (used for the deterministic axis-scoring pass).
+- Read `research.md` from the application folder. Extract the `## Critical Requirements` section (the matching target for all three scoring passes).
+- Read the session log at `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`. Extract the `## Axis Classification` section (used for the deterministic axis-scoring pass). The session log is the authoritative source for the classification per `retrieval-architecture-2026-05`.
 - Read `jd.md` from the application folder. The JD text is passed to the scorer subagent as supporting context.
-- The session log carries the axis classification too; use the version in `research.md` if present, fall back to the session log otherwise.
 - Format the axis classification as a JSON object with one key per axis (`Industry`, `Specialty`, `Orientation`, `Level`, `Work-state`), each holding `{primary: <value>, secondary: <value or null>}`. Write to a temp file (for example `temp/<SLUG>_jd_axes.json`).
-- Output: critical-requirements text block, JD text, axis-classification JSON temp-file path.
+- Output: critical-requirements text block, JD text, axis-classification JSON temp-file path, session-log path (for Phase 5 QC cross-reference).
 
 ## Phase 2 - Build payloads
 
@@ -69,7 +67,7 @@ Ask if this session is for a new retrieval run or to resume a previous one?
 
 - Input: nothing skill-specific; the scripts read the profile documents directly.
 - Run three commands in sequence (or in parallel via shell):
-  - `python scripts/retrieval_payload.py inventory --chunk-size 50` - prints JSON to stdout with the chunked inventory payload.
+  - `python scripts/retrieval_payload.py inventory` - prints JSON to stdout with the chunked inventory payload.
   - `python scripts/retrieval_payload.py narratives` - prints JSON to stdout with the narrative payload.
   - `python scripts/retrieval_payload.py themes` - prints JSON to stdout with the theme payload.
 - Capture each output to a temp file (for example `temp/<SLUG>_inventory_payload.json`, `temp/<SLUG>_narratives_payload.json`, `temp/<SLUG>_themes_payload.json`).
@@ -106,7 +104,7 @@ Ask if this session is for a new retrieval run or to resume a previous one?
 
 **Running QC on the manifest.**
 
-- Input: manifest path, `research.md` path, brief activity record (counts of scored items per corpus).
+- Input: manifest path, `research.md` path, session-log path, brief activity record (counts of scored items per corpus).
 - Dispatch `qc-retrieval`. **Loops on FINDINGS:** translate the findings to plain English for the user, then apply each per *Phase routing on failure*, re-run forward, and return to Phase 5.
 - Cap the loop at **3 iterations**. Exit earlier on **PASS**. If findings remain after the third iteration, stop looping and carry them into the Phase 6 handoff so the user sees them.
 - Output: PASS verdict, or unresolved findings after 3 iterations.
@@ -139,7 +137,7 @@ Consumed by Phase 5 (QC failures). Route back, fix, re-run forward (Phase 5 alwa
 | Finding type | Route back to |
 |---|---|
 | Manifest structure malformed | Phase 4 |
-| Axis classification inconsistent with research.md | Phase 1 |
+| Axis classification inconsistent with session log | Phase 1 |
 | Inventory coverage missing rows | Phase 4 |
 | Signal column population incomplete | Phase 4 |
 | Narrative linked-from IDs not in inventory | Phase 4 |

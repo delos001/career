@@ -61,6 +61,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 **Built** (detailed entries below):
 - role-intake
 - retrieval
+- gap-analysis
 - industry-builder, level-builder, orientation-builder, specialty-builder, work-state-builder (axis-builder skill family; one per axis; create / refresh modes; user-invoked)
 
 **Drafted** (skeleton SKILL.md exists at `.claude/skills/<name>/`; full design pending; no detailed entry yet):
@@ -124,6 +125,32 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - When the axis adjacency parsing in `retrieval_apply.py` needs to track an axis-file schema change.
   - When downstream consumers (gap analysis, CV creation, interview prep, career brief) require additional signal columns.
 
+#### gap-analysis
+
+- **Purpose**: Evaluate candidate-to-role fit. Detects per-requirement coverage gaps, walks them interactively with the user to close or categorize, scores fit, identifies experience to de-emphasize, and produces a gap analysis artifact plus session log entries. Stopping point for the user's pursue / don't-pursue decision; handoff to CV creation, interview prep, and career brief if pursued. Per `gap-analysis-architecture-2026-05`.
+- **Status**: Designed
+- **Inputs**:
+  - Rules: `rules/global-rules.md`; `rules/<axis>/<value>.md` Adjacency sections (read indirectly via the gap-detector sub-agent and `retrieval.md`).
+  - Agents: `gap-detector`, `de-emphasize-identifier`, `qc-gap-analysis`.
+  - Scripts: `scripts/display/introduce.py`, `scripts/gap_assemble.py`, `scripts/staging_append.py`, `scripts/session_log.py`, `scripts/profile_slice.py` (used by sub-agents for on-demand entry/narrative fetches).
+  - Templates: `templates/gap_analysis.md`, `templates/profile_updates_pending.md`.
+  - Profile docs: `personal/profile/inventory.md`, `personal/profile/narratives.md`, `personal/profile/user-info.md` (eligibility sections).
+  - Application artifacts: `personal/applications/<SLUG>/research.md` (critical requirements + role/company/industry blocks), `personal/applications/<SLUG>/retrieval.md`.
+  - Session log: `## Axis Classification` (passed to de-emphasize-identifier as role-context input).
+  - User input: APP-NNN (resume) or implicit (new run; folder must exist with research.md and retrieval.md). Phase 2 eligibility-flag decisions, Phase 4 gap-closure inputs, Phase 8 pursue / don't-pursue decision.
+- **Outputs**:
+  - Files: `personal/applications/<SLUG>_APP-NNN_YYYY-MM/gap_analysis.md` (the artifact); appended entries in `personal/profile/profile_updates_pending.md` (cross-application staging); `## Gap Analysis` section in the session log.
+  - Skills: hands off to CV creation, interview prep, career brief (downstream readers of gap_analysis.md). At Phase 8, prompts user to run the separate profile-update skill now or defer.
+  - Side effects: assigns next `PU-NNN` per staging entry appended; records the role in `personal/do-not-pursue/` on a "no" decision (per `do-not-pursue-folder`).
+- **Triggers**:
+  - User invocation: `/gap-analysis` after a retrieval run has completed for the same APP-NNN. Resumes prior runs via the APP-NNN probe.
+- **Update Triggers**:
+  - When the gap_analysis.md template, the staging-file schema, or the session-log section schema change.
+  - When the fit-score formula or recommendation logic change.
+  - When the gap-detector or de-emphasize-identifier output JSON contracts change.
+  - When the QC check set in `qc-gap-analysis` changes.
+  - When downstream consumers (CV creation, interview prep, career brief, profile-update skill) require additional fields.
+
 #### axis-builder skill family (industry-builder, level-builder, orientation-builder, specialty-builder, work-state-builder)
 
 - **Purpose**: Build or refresh a value file in `rules/<axis>/` for one of the five axes. Each builder researches the target value, drafts the per-axis schema sections, reconciles against sibling files, runs QC with auto-fix, and updates the registry. Documented as a family because the five skills share identical Phase 0-7 structure parameterized by axis.
@@ -148,12 +175,13 @@ Schema discipline and reconciliation script details live in `design/design_decis
 **Built** (detailed entries below):
 - company-research, role-research, industry-research, critical-requirements-extractor, axis-classifier, qc-role-intake
 - retrieval-scorer, qc-retrieval (retrieval skill family)
+- gap-detector, de-emphasize-identifier, qc-gap-analysis (gap-analysis skill family)
 - industry-builder-research, level-builder-research, orientation-builder-research, specialty-builder-research, work-state-builder-research (axis-builder research agent family; one per axis)
 - industry-builder-reconciler, level-builder-reconciler, orientation-builder-reconciler, specialty-builder-reconciler, work-state-builder-reconciler (axis-builder reconciler agent family; one per axis)
 - qc-industry-builder, qc-level-builder, qc-orientation-builder, qc-specialty-builder, qc-work-state-builder (axis-builder QC agent family; one per axis)
 
 **Planned** (from `design/design_decisions.md`):
-- qc_cv_format, qc_cv_structural, qc_cv_content, qc_gap_analysis_completeness, qc_interview_prep_coverage
+- qc_cv_format, qc_cv_structural, qc_cv_content, qc_interview_prep_coverage
 - (additional QC agents as new targets and aspects emerge)
 
 ### Detailed Entries
