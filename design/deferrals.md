@@ -90,10 +90,8 @@ Audit all axes (industries, specialties, orientations, levels, work-states) to v
 ## Per-Skill Design Items
 
 ### gap-analysis-schema
-Output schema for the role_evaluation gap analysis artifact: which axis values to capture from JD, JD emphasis signals (must-haves vs nice-to-haves), detected vocabulary, and application-specific framing notes that cv_targeted will consume. Format depends on axis structure (now stable post-axis-cleanup) and on the matching protocol per `role-evaluation-axis-matching-protocol`.
-- Trigger: role_evaluation skill design.
-- Blocks: role_evaluation build; cv_targeted consumes this format and depends on it.
-- Refs: `role-evaluation-and-cv-targeted-separate`, `role-evaluation-axis-matching-protocol`, `cv-targeted-weighted-matching`.
+**Resolved 2026-05-27 by `gap-analysis-architecture-2026-05`.** Output schema settled: `gap_analysis.md` carries a header (APP-NNN, date, fit score, unmet must-haves count, recommendation label) and six sections (Eligibility Flags, Requirements, Language-Shift Cases, De-emphasize, Recommendation — optional sections render `_(none)_` when empty). Per-requirement records carry CR-NNN id, text, type, status from the locked taxonomy (covered / closed / language-shift / interview-deferred / unresolved), evidence IDs, and notes. The format does not depend on cv_targeted; cv_targeted reads `gap_analysis.md` as input.
+- Refs: `gap-analysis-architecture-2026-05`.
 
 ### introduction-roster-ambiguous-skills
 Introduction classification for `interview_capture`, `interview_followup`, `cv_general`, `inventory`, `narratives`.

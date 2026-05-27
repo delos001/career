@@ -1064,7 +1064,30 @@ Role-intake gains a critical-requirements extraction step. A new sub-agent `crit
 
 Refs: `retrieval-architecture-2026-05`, `role-intake-architecture`, `role-intake-research-scope`, `role-intake-artifacts`.
 
-### role_evaluation
+### gap-analysis
+
+(The skill formerly referenced as `role_evaluation` in pre-build design notes is named `gap-analysis` as built. The old slug `gap-analysis-cluster-derivation` is retained below as a deferred presentation enhancement; v1 of the built skill renders requirements in CR-NNN order rather than cluster-grouped.)
+
+#### gap-analysis-architecture-2026-05
+Built artifact-producing skill running after retrieval; stopping point for the user's pursue / don't-pursue decision; handoff for downstream CV creation, interview prep, and career brief.
+
+**Pipeline position.** role-intake -> retrieval -> **gap-analysis** -> [cv_targeted | interview_prep | career_brief]. Gap analysis reads `research.md` (critical requirements + role/company/industry context), `retrieval.md` (per-entry scored signals), the session log's axis classification, and the user-info eligibility sections. It writes `gap_analysis.md` to the application folder, appends a `## Gap Analysis` section to the session log, and appends per-closure entries to a cross-application staging file at `personal/profile/profile_updates_pending.md`.
+
+**Unit.** One record per critical requirement (CR-NNN assigned in the order requirements appear in role-intake's list). Each carries a status from the locked taxonomy: `covered`, `closed`, `language-shift`, `interview-deferred`, `unresolved`. Status `closed` applies when the user provided clarifying information during the Phase 4 loop that resolved an initial gap; the new information is queued for the staging file.
+
+**Phases (high level).** 0 intro; 1 load context; 2 eligibility / fit-signal check (work auth, geographic prefs, exclusions; flags surface for user override / stop, no automatic short-circuit); 3 gap detection via `gap-detector` sub-agent (arc-first per `arc-composition-for-high-impact-roles`, then entry-level); 4 interactive closure loop (categorize-first walk-evidence-items shape; new info captured to staging buffer); 5 fit scoring + de-emphasize identification (via `de-emphasize-identifier` sub-agent) + recommendation; 6 assemble outputs (gap_analysis.md via `scripts/gap_assemble.py`, staging entries via `scripts/staging_append.py`, session log section via `scripts/session_log.py`); 7 QC via `qc-gap-analysis` sub-agent (loop cap 3); 8 user decision + handoff (on yes, prompt to run the separate profile-update skill now or defer; on no, record in `personal/do-not-pursue/`).
+
+**Fit-score formula.** Per-requirement weight by Type (must-have=3, preferred=2, contextual=1, duty-derived=1); per-requirement coverage credit by status (covered / closed / language-shift = 1.0; interview-deferred / unresolved = 0.0). Fit score = `sum(weight * credit) / sum(weight)`, rendered as percentage with one decimal place. Separately tracked: count of unmet must-haves (must-haves with status interview-deferred or unresolved).
+
+**Recommendation.** LLM judgment in main skill from fit score, unmet must-haves count, and eligibility flag outcomes. Three labels: `Proceed`, `Proceed with caution`, `Do not pursue` + a 1-2 sentence rationale. Hard rule: an eligibility flag whose user decision is `stop` forces `Do not pursue`. Soft anchors (consistency, not threshold): fit >= ~75% reads as high; 50-75% moderate; < 50% low.
+
+**Outputs.** `gap_analysis.md` (current-state, re-runs overwrite) carries header + six sections (Eligibility Flags, Requirements, Language-Shift Cases, De-emphasize, Recommendation; optional sections render `_(none)_` when empty). Session log `## Gap Analysis` section carries run date, fit score, unmet must-haves (with sub-list), recommendation, eligibility flag summary, QC verdict, artifact path. Staging file accumulates `PU-NNN` entries cross-application; processing into inventory / narratives / positioning is the job of a separate profile-update skill (TBD name; out of scope for the gap-analysis build).
+
+**Staging-file discipline.** New information captured to the staging file is concise structured context for correct downstream insertion, not copy-paste content. The profile-update skill adapts captured material to each target doc's conventions; gap-analysis does not write directly into inventory / narratives / positioning. Per the `respect-profile-doc-conventions` feedback memory.
+
+**QC.** `qc-gap-analysis` checks 12 items across structural, content integrity, cross-document consistency, and logic groups; loops up to 3 iterations with per-finding route-back; on bounded-loop failure the artifact ships provisional with findings surfaced in Phase 8 per `artifact-skill-qc-internal`.
+
+Refs: `role-evaluation-and-cv-targeted-separate` (gap analysis as stopping point and handoff artifact), `arc-composition-for-high-impact-roles` (arc-first rule in Phase 3), `retrieval-architecture-2026-05` (gap analysis as downstream consumer of the manifest; raw signals not pre-tiered), `role-intake-critical-requirements-extraction-2026-05` (Type drives severity / coverage credit), `gap-analysis-schema` (deferral resolved here), `respect-profile-doc-conventions` (staging-file discipline).
 
 #### gap-analysis-cluster-derivation
 Gap analysis clusters are distinct competency domains, where a domain is a coherent area of professional capability the JD is independently evaluating. Two JD requirements belong in the same cluster when a hiring panel would assess them as part of the same underlying skill set. Cluster count emerges from this grouping; no target range is prescribed.
@@ -1075,7 +1098,9 @@ Practical guard: if the analysis produces more than 9-10 clusters, some are like
 
 Derivation process: read the JD; identify distinct competency domains; group related requirements under each domain. The grouping should reflect how a hiring panel thinks about the role's requirements, not the JD's section headings.
 
-Refs: `role-evaluation-and-cv-targeted-separate`, `arc-composition-for-high-impact-roles`.
+**Status (2026-05-27):** Not used in `gap-analysis-architecture-2026-05` v1. The built skill renders requirements in CR-NNN order rather than cluster-grouped; clusters remain a deferred presentation enhancement that the Requirements section's rendering could adopt later without changing the underlying unit (per-requirement record).
+
+Refs: `role-evaluation-and-cv-targeted-separate`, `arc-composition-for-high-impact-roles`, `gap-analysis-architecture-2026-05`.
 
 ## Career Workflow Stage
 

@@ -132,7 +132,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Inputs**:
   - Rules: `rules/global-rules.md`; `rules/<axis>/<value>.md` Adjacency sections (read indirectly via the gap-detector sub-agent and `retrieval.md`).
   - Agents: `gap-detector`, `de-emphasize-identifier`, `qc-gap-analysis`.
-  - Scripts: `scripts/display/introduce.py`, `scripts/gap_assemble.py`, `scripts/staging_append.py`, `scripts/session_log.py`, `scripts/profile_slice.py` (used by sub-agents for on-demand entry/narrative fetches).
+  - Scripts: `scripts/display/introduce.py`, `scripts/gap_assemble.py`, `scripts/staging_append.py`, `scripts/session_log.py`.
   - Templates: `templates/gap_analysis.md`, `templates/profile_updates_pending.md`.
   - Profile docs: `personal/profile/inventory.md`, `personal/profile/narratives.md`, `personal/profile/user-info.md` (eligibility sections).
   - Application artifacts: `personal/applications/<SLUG>/research.md` (critical requirements + role/company/industry blocks), `personal/applications/<SLUG>/retrieval.md`.
@@ -258,6 +258,33 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Triggers**: Invoked by `retrieval` Phase 5.
 - **Update Triggers**: When the manifest schema or the retrieval skill's phase structure changes; when new sub-agent contracts get added that QC must validate.
 
+#### gap-detector
+
+- **Purpose**: Detect per-requirement coverage gaps for the gap-analysis skill. Reads the retrieval manifest, inventory, and narratives; evaluates each critical requirement at arc level first and entry level second; returns structured per-requirement assessment (covered / gap / language-shift) with evidence IDs, reasoning, and (for gaps) what evidence would close them.
+- **Status**: Designed
+- **Inputs**: Skill-passed (by `gap-analysis`): critical requirements list, role/company/industry context, paths to `retrieval.md`, `inventory.md`, `narratives.md`. Tools: Read.
+- **Outputs**: JSON `{assessments: [{requirement_id, requirement_text, requirement_type, verdict, evidence, missing, language_shift, reasoning}, ...]}` returned to the caller.
+- **Triggers**: Invoked by `gap-analysis` Phase 3.
+- **Update Triggers**: When the critical-requirements schema, the gap status taxonomy, the per-requirement output contract, or the arc-first rule changes.
+
+#### de-emphasize-identifier
+
+- **Purpose**: Identify inventory entries to de-emphasize in the CV for the gap-analysis skill. Combines role context, final per-requirement assessments, retrieval axis signals, and direct inventory reads to surface entries that don't serve the role's coverage and would dilute the CV's narrative.
+- **Status**: Designed
+- **Inputs**: Skill-passed (by `gap-analysis`): role context (research summaries + axis classification), final per-requirement assessments, paths to `retrieval.md` and `inventory.md`. Tools: Read.
+- **Outputs**: JSON `{de_emphasize: [{entry_id, rationale}, ...]}` returned to the caller; empty list is valid.
+- **Triggers**: Invoked by `gap-analysis` Phase 5.
+- **Update Triggers**: When the de-emphasize criteria, the entry-level vs finer-grained scope, or the output contract changes.
+
+#### qc-gap-analysis
+
+- **Purpose**: Quality-check the gap analysis artifact, session log section, and staging-file additions for structural completeness, content integrity, cross-document consistency, and logic correctness. Returns findings with route-back guidance per the gap-analysis skill's phase map.
+- **Status**: Designed
+- **Inputs**: Skill-passed (by `gap-analysis`): gap_analysis.md path, session log path, research.md path, staging file path, inventory.md path, narratives.md path, activity record (PU-NNN entries appended, fit score and recommendation computed, eligibility outcomes). Tools: Read, Grep.
+- **Outputs**: QC verdict (PASS / FINDINGS) with a route-back phase per finding.
+- **Triggers**: Invoked by `gap-analysis` Phase 7.
+- **Update Triggers**: When the artifact / session log / staging-file schemas change; when the gap-analysis skill's phase structure changes (route-back map); when new sub-agent contracts get added that QC must validate.
+
 #### axis-builder research agent family (industry-builder-research, level-builder-research, orientation-builder-research, specialty-builder-research, work-state-builder-research)
 
 - **Purpose**: Research the target axis value in depth for the matching axis-builder skill — produces the per-axis schema content the builder needs to draft a `rules/<axis>/<value>.md` value file. Deeper than role-intake's classification-scope research family.
@@ -296,6 +323,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - `scripts/session_log.py` (shared section-append for all skills that write to a session log)
 - `scripts/profile_slice.py` (consumed by retrieval and downstream skills)
 - `scripts/retrieval_payload.py`, `scripts/retrieval_apply.py` (retrieval concern family)
+- `scripts/gap_assemble.py`, `scripts/staging_append.py` (gap-analysis concern family)
 - `scripts/axis_registry.py`, `scripts/axis_qc.py`, `scripts/axis_apply.py` (axis-builder concern family)
 - `scripts/_config.py`, `scripts/_util.py`, `scripts/axis_utils.py` (shared helper modules; not standalone scripts, no separate entries)
 - `scripts/cv_to_docx.py` (pre-existing; detailed entry pending)
@@ -386,6 +414,24 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Outputs**: `<folder>/retrieval.md` (the manifest) and its path printed to stdout. Errors to stderr with exit 1.
 - **Triggers**: Invoked by `retrieval` Phase 4.
 - **Update Triggers**: When the manifest schema changes; when adjacency parsing rules change; when the JD-axes JSON schema or score JSON schema changes; when axis files' Adjacency section conventions change.
+
+#### scripts/gap_assemble.py
+
+- **Purpose**: Render the gap analysis artifact from collected signals — the deterministic portion of the gap-analysis Phase 6. Reads structured JSON inputs the dispatching skill prepares (per-requirement records, eligibility flags, de-emphasize items, recommendation rationale), substitutes tokens into `templates/gap_analysis.md`, writes the wholesale artifact to the application folder.
+- **Status**: Designed
+- **Inputs**: Subcommand args (`--folder`, `--slug`, `--app-id`, `--date`, `--company`, `--role`, `--fit-score`, `--unmet-must-haves`, `--recommendation-label`, `--recommendation-rationale-file`, `--requirements-file`, `--eligibility-file`, `--de-emphasize-file`). Config: `config.yaml` (templates path, gap_analysis filename, gap_analysis_template name) via `scripts/_config.py`. Filesystem: the template under `templates/`.
+- **Outputs**: `<folder>/gap_analysis.md` and its path printed to stdout. Errors to stderr with exit 1.
+- **Triggers**: Invoked by `gap-analysis` Phase 6 (Step 6a).
+- **Update Triggers**: When the gap_analysis.md template schema changes; when the per-section block rendering shapes change; when the recommendation-label set changes.
+
+#### scripts/staging_append.py
+
+- **Purpose**: Append a `Profile Updates Pending` entry to the cross-application staging file at `personal/profile/profile_updates_pending.md`. Assigns the next `PU-NNN` by scanning existing entry IDs. Creates the file from `templates/profile_updates_pending.md` if missing. Echoes the assigned PU-NNN on stdout so the caller can reference it inline in `gap_analysis.md`.
+- **Status**: Designed
+- **Inputs**: Subcommand args (`--captured`, `--from-app`, `--company`, `--role`, `--closed-requirement`, `--requirement-text-short`, `--industry`, `--specialty`, `--orientation`, `--level`, `--work-state`, `--content-file`, `--label`). Config: `config.yaml` (profile path, templates path, staging_file filename) via `scripts/_config.py`. Filesystem: the staging file (may not exist on first call), the template under `templates/`.
+- **Outputs**: Updated staging file; assigned `PU-NNN` printed to stdout. Errors to stderr with exit 1.
+- **Triggers**: Invoked by `gap-analysis` Phase 6 (Step 6b), once per closure-via-user-input.
+- **Update Triggers**: When the staging-file per-entry schema changes; when the staging-file location or filename changes; when the `PU-NNN` digit width changes.
 
 #### scripts/axis_registry.py
 
