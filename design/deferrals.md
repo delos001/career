@@ -101,6 +101,12 @@ Audit all axes (industries, specialties, orientations, levels, work-states) to v
 
 ## Per-Skill Design Items
 
+### cv-content-within-entry-layout
+Whether experience entries use within-role sub-section groupings (doc 1 style: sub-headers such as "Strategic Process Leadership & Governance" with an indented role-summary line and deeper bullet indent) or flat bullets directly under the role (doc 2 style, shallower indent, optionally with front "Role-Aligned Capabilities" / "Selected Outcomes" blocks). The choice drives bullet density (chars/line ~85 nested vs ~95 flat) and therefore the calibration guard's bullet-capacity constant. Surfaced 2026-05 during length calibration from the user's two sample CVs.
+- Trigger: cv_structure.md authoring / cv-content build.
+- Blocks: structure-file content; the bullet-capacity guard constant.
+- Refs: `cv-content-output-and-length-2026-05`, `cv-content-structure-decisions-2026-05`.
+
 ### gap-analysis-schema
 **Resolved 2026-05-27 by `gap-analysis-architecture-2026-05`.** Output schema settled: `gap_analysis.md` carries a header (APP-NNN, date, fit score, unmet must-haves count, recommendation label) and six sections (Eligibility Flags, Requirements, Language-Shift Cases, De-emphasize, Recommendation — optional sections render `_(none)_` when empty). Per-requirement records carry CR-NNN id, text, type, status from the locked taxonomy (covered / closed / language-shift / interview-deferred / unresolved), evidence IDs, and notes. The format does not depend on cv_targeted; cv_targeted reads `gap_analysis.md` as input.
 - Refs: `gap-analysis-architecture-2026-05`.
@@ -156,6 +162,7 @@ Parallel to `level-axis-finer-grained-files`: whether/when to split `ic.md` into
 - Refs: `level-axis-two-buckets`, `level-axis-finer-grained-files`.
 
 ### cv-targeted-content-rules-from-axes
+**Status (2026-05):** Home decided - these procedural content rules belong in the CV content-structure rule file (`rules/cv/cv_structure.md`) per `cv-content-structure-decisions-2026-05`; authored at cv-content structure-file build. Trigger now: cv-content build.
 Procedural content stripped from axis rule files (`rules/orientations/*`, `rules/levels/*`, `rules/industries/*`, `rules/specialties/*`, `rules/work-states/*`) during data-only-discipline cleanup. Belongs in the cv_targeted skill, not the rule files. Items to apply when designing cv_targeted:
 - Bullet construction (CCAR framework). IC compresses Context/Challenge into one clause; leadership requires all four components.
 - Impact statement types and preference order: Type 1 quantified, Type 2 bounded qualitative, Type 3 contextual narrative. Fallback chain when quantitative data is absent (bounded qualitative → contextual narrative → proxy metrics → scope as signal).
@@ -172,6 +179,7 @@ Procedural content stripped from axis rule files (`rules/orientations/*`, `rules
 - Refs: `rules/orientations/*`, `rules/levels/*`, `rules/industries/*`, `rules/specialties/*`, `rules/work-states/*`.
 
 ### cv-format-spec-from-axes
+**Status (2026-05):** Home decided - section order, item counts, and page targets now homed in `rules/cv/cv_structure.md` per `cv-content-structure-decisions-2026-05` (not `format_spec.md`, which stays .docx-rendering-only). Page targets recalibrated (legacy 4-5 leadership -> ceiling 3); section order replaced by the two-band model. Remaining items authored at build.
 Bullet formatting, section order, item counts, and page targets stripped from axis rule files. Belongs in CV format spec, not rule files. Items to apply when authoring/refining CV format spec:
 - Bullet length: target 2 lines per bullet; 3 lines acceptable for highest-value complex achievements with significant detail; 4+ lines never acceptable (compress or split).
 - Em-dash rules: prohibited as clause connectors in bullet text and prose (rewrite or use natural connective language); permitted only as structural separators in company/location header lines.

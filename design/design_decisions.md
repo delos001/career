@@ -263,6 +263,8 @@ CV experience uses two sections: **Professional Experience** and **Earlier Profe
 3. If a newer role is included solely to prevent a perceived timeline gap (not for content), it earns 1-2 lines summarizing scope and responsibilities — not detailed bullets.
 4. Any role newer than an older rule-2 inclusion must also appear in Professional Experience to avoid a perceived gap between the two sections.
 
+**Relevance source.** Whether an older role "closes a gap" (rule 2) and whether a within-threshold role is "related" versus included only for timeline continuity (rule 3) are determined by the retrieval / gap-analysis relevance signal for the specific application — the role contributed evidence to a critical requirement, or its entries cleared the relevance threshold — not by a fresh subjective judgment in the CV skill. This keeps relatedness consistent across passes and traceable, per the no-drift constraint. (Binding added 2026-05 during cv-content design; see `cv-content-structure-decisions-2026-05`.)
+
 **Professional Experience treatment:**
 - Roles with strong JD alignment: full arc-level bullet treatment per role scope.
 - Roles included only for timeline continuity (rule 3 above): 1-2 line breadth summary only.
@@ -1101,6 +1103,93 @@ Derivation process: read the JD; identify distinct competency domains; group rel
 **Status (2026-05-27):** Not used in `gap-analysis-architecture-2026-05` v1. The built skill renders requirements in CR-NNN order rather than cluster-grouped; clusters remain a deferred presentation enhancement that the Requirements section's rendering could adopt later without changing the underlying unit (per-requirement record).
 
 Refs: `role-evaluation-and-cv-targeted-separate`, `arc-composition-for-high-impact-roles`, `gap-analysis-architecture-2026-05`.
+
+### cv-content
+
+(Provisional skill name. The targeted, per-application CV-creation skill referenced as `cv_targeted` in earlier pipeline notes; final name TBD. Pipeline: role-intake -> retrieval -> gap-analysis -> **cv-content**. Produces `cv_content.md` (text only); .docx rendering is a separate skill, out of scope.)
+
+#### cv-content-structure-decisions-2026-05
+Structural decisions for the CV-content skill, set 2026-05 from a literature review (`temp/cv_research.md`) reconciled against the legacy archetypes. Design-only; build-time content (exact line caps, Core Competencies counts, full writing rules) deferred to the structure rule file and skill.
+
+**Structural-layer home.** The cross-cutting CV skeleton lives in a new content-structure rule file (working name `rules/cv/cv_structure.md`), consumed by the skill like the axis files. It owns section order, per-section content rules, Core Competencies counts/zoning, summary structure, the CCAR bullet structure, impact-type preference order, acronym-expansion rule, and calibration examples. Rejected: embedding in SKILL.md (bloats the skill, not reusable, breaks rules-as-data vs skills-as-procedure); a format/content hybrid (section order is expressed by the content skill, not the visual spec). `format_spec.md` stays scoped to .docx rendering; its dangling "section order set by archetype" pointer is corrected at build. Reversibility: two-way door.
+
+**Section structure - two bands.** Evidence band (top): Professional Summary -> Core Competencies -> Professional Experience -> relevance-gated work-output sections. Credentials tail: Education -> Certifications & Training -> Technical Proficiencies (last). Work-output section class = Selected Projects, Publications, Research (extensible to Patents, Presentations): one relevance-gated class sharing the purpose of demonstrated output beyond the job history, placed in the evidence band (deliberate deviation from the academic-CV convention of tailing publications, justified because on a targeted industry CV these read as work product, not credentials). Section order is "two bands with relevance-gated members," not one frozen list, absorbing the literature point that some sections move or drop by profile.
+
+**Selected Projects gating.** Relevance-gated, not existence-gated (supersedes the legacy archetype "include whenever project entries exist"). Include when relevant project entries add signal for the target role (judged by the retrieval / gap-analysis signal). Pure leadership roles default to omit unless a project demonstrably evidences a role requirement.
+
+**Page-length targets.** Senior IC: target 2 pp, up to 3 for deep histories. Leadership: target 2-3 pp, hard ceiling 3 pp. 4+ pp: flagged exception only (genuine academic CV, federal/SES, publication-heavy scientist). Governing principle: length follows relevance-prioritized content within the ceiling - never pad to fill, never drop genuinely high-relevance content to hit a lower count. Recalibrated down from the legacy 2-3 IC / 4-5 leadership targets, which the literature placed in academic-CV territory.
+
+**Professional summary length.** Guideline, not a hard rule (supersedes legacy "3-4 sentences only"): default 3-4 sentences; IC 2-4; leadership up to ~6 when scope genuinely requires; no-pad.
+
+**Line-economy principle.** The binding constraint on every section is vertical real estate (lines); sentence and item counts are proxies that fail when a unit runs long (a 5-sentence summary at 3-4 lines each consumes ~half a page). Section real-estate budgets enforce the page ceiling; the summary carries a line cap alongside its sentence guideline, same discipline as the bullet line-limits (2 lines target, 3 max). Exact line caps are build-time writing-rule detail.
+
+**Experience density.** The within-threshold / >10-year treatment of roles (Professional Experience vs Earlier Professional Roles; full-bullets vs summary-bullet vs Company|Title|Dates) is governed by `cv-section-structure-professional-vs-earlier-roles`, extended there with the relevance-source binding. Not duplicated here.
+
+Refs: `cv-section-structure-professional-vs-earlier-roles`, `cv-format-spec-from-axes`, `cv-targeted-content-rules-from-axes`, `format-spec-cv-boundary`, `role-evaluation-and-cv-targeted-separate`, `retrieval-architecture-2026-05`, `dont-anchor-on-stale-specs`. Source: `temp/cv_research.md`.
+
+#### cv-content-agent-architecture-2026-05
+Engine for the CV-content skill. Single-writer, file-anchored, subagent-based to protect the main context window across multi-round revision (the project's founding failure mode: a near-full context produced unusable CV output in prior sessions).
+
+**Roster.**
+- **Drafter** (subagent; renamed from the working "axes agent" because it does more than apply axes). The sole writer. Composes the CV content by applying the axes + the structure file to the inventory / retrieval manifest / gap-analysis / role-intake critical-requirements. Owns adjacency translation (transferable-experience content). Applies all fixes across rounds. Fresh invocation per round, anchored by on-disk state (below), so it never re-derives cold and never holds the whole inventory.
+- **Career-development expert** (subagent; reviewer). Reviews writing craft and best practice (impact-first quantified bullets, CCAR, summary quality, ATS/screening soundness, line economy). Owns gap framing (employment-history gaps via tenure-as-years / career-break labeling; phrasing of partial requirement coverage). Returns structured findings, not rewrites.
+- **Hiring manager** (subagent; reviewer). Reviews from the employer's seat: are the JD's critical requirements visibly addressed, would this earn an interview. Owns experience-to-requirement shortfall review and transferable-experience clarity judgment. Returns structured findings, not rewrites.
+- **QC** (subagent). Verifies the draft including traceability (each citation supports its text, no fabrication) and structural / length compliance. Scope detailed at the step-5 decision.
+- **Orchestrator** = the main skill, kept thin: holds only file paths, compact structured findings lists, and loop state; passes the draft by path; never carries the heavy content.
+
+**Single-writer rule.** Only the Drafter edits text. Reviewers and QC return findings; the Drafter applies them. Primary drift control.
+
+**Traceability.** First-class Drafter responsibility via per-unit source citation: every bullet, summary claim, and competency carries the inventory entry ID (EX/PR/RL) it derives from, attached at write time. Drafter self-verifies; QC verifies independently. Fallback if the Drafter is overloaded: move verification (not citation) to the hiring manager, whose employer lens naturally checks that claims are real and defensible; verification returns findings, the Drafter still applies fixes.
+
+**On-disk state (what makes stateless-per-round drafting safe).**
+- Cited draft (working file): CV content with per-unit source citations.
+- Drafting plan: chosen orientation/level framing, page-budget allocation per section, and the applied de-emphasis list (from gap-analysis). Persisted so a fresh Drafter invocation maintains global coherence (does not blow the page ceiling or reintroduce de-emphasized content) without a long-lived context.
+
+State lives in files, not in any context window, so the orchestrator's footprint stays roughly constant regardless of round count.
+
+Rejected: Drafter as the main skill loop (Option 1). Its only distinctive property was a persistent writing context, but the anti-drift anchor is the per-unit citation (which works identically for a fresh subagent reading the cited draft), and a main loop accumulating inputs + successive drafts + findings across QC-fail rounds reproduces the near-full-window failure that yields unusable output.
+
+Refs: `cv-content-structure-decisions-2026-05`, `cv-section-structure-professional-vs-earlier-roles` (traceability constraint), `gap-analysis-architecture-2026-05` (de-emphasize list + critical requirements as inputs), `retrieval-architecture-2026-05` (manifest pre-narrows the inventory). QC scope at the step-5 decision.
+
+#### cv-content-collaboration-mechanism-2026-05
+Loop and conflict-arbitration for the CV-content engine (`cv-content-agent-architecture-2026-05`).
+
+**Loop topology.** (1) Drafter produces v1 (cited draft + drafting plan on disk). (2) Review round: career-dev expert + hiring manager review the current draft in parallel, returning structured findings tagged material vs nit. (3) Drafter reconciles and revises in place. (4) Repeat 2-3 until both reviewers return no material findings (converged) or a review-round cap of 3 is hit. (5) QC gate runs last; on QC fail the Drafter fixes and QC re-checks, capped at 3; on bounded-loop failure the artifact ships provisional with findings surfaced (per `artifact-skill-qc-internal`). Reviewers never communicate directly; the Drafter is the single reconciliation point (preserves single-writer drift control). Context-safe: each round spawns fresh bounded subagents and the Drafter revises from on-disk state, so the orchestrator accumulates only compact findings + a loop counter, and round count does not clog the window.
+
+**Conflict arbitration.** The Drafter arbitrates (it is the single writer and holds the structure rules + drafting plan). Most apparent conflicts are layer conflicts, not true conflicts: the hiring manager owns *what* (content included/emphasized for coverage and relevance), the career-dev expert owns *how* it is expressed (impact-first, quantification, line economy, ATS-readability); these compose. Precedence for genuine conflicts, in order: (1) hard constraints (traceability/no-fabrication, page ceiling, structure-file invariants) beat both reviewers; (2) apply the what/how layer split; (3) same-lever conflicts (typically coverage-vs-length at the ceiling) resolve by the relevance-prioritized / no-pad principle from `cv-content-structure-decisions-2026-05`; (4) residual irreducible substance conflict: coverage / employer-relevance (hiring manager) outranks craft preference (career-dev), since an unaddressed requirement is a harder failure than a less-polished CV. The Drafter logs each non-trivial arbitration call in the drafting plan (auditable; later rounds do not re-litigate). No mid-loop user escalation; a high-stakes judgment call is noted in the output rationale instead.
+
+Refs: `cv-content-agent-architecture-2026-05`, `cv-content-structure-decisions-2026-05`, `gap-analysis-architecture-2026-05` (capped-QC-loop + provisional-ship precedent), `artifact-skill-qc-internal` (memory).
+
+#### cv-content-qc-scope-2026-05
+QC for the CV-content skill is the correctness / integrity gate, not a third opinion on quality (the reviewers own judgment: career-dev = craft, hiring manager = fit/coverage). Split per the repo's deterministic-script / judgment-agent principle.
+
+**Mechanical check (deterministic script, no LLM).** Citation presence on every content unit (bullet, summary claim, competency); format rules (no em dashes in product text, acronym-expansion-on-first-use where determinable, bullet line-count limits, summary line cap); structure (section order + two-band placement valid, relevance-gated sections present/absent per rules, required sections present); internal consistency (dates / tenure coherent, no duplicate entries).
+
+**QC agent (judgment, narrow).** The one check a script cannot do: does each cited inventory entry actually support its claim text (semantic traceability; no fabrication, no overstatement beyond source). Reads the draft + only the cited slices, so it stays context-bounded.
+
+Both feed the QC gate; failures route to the Drafter (single writer); capped at 3; bounded-loop failure ships provisional with findings surfaced. The Drafter self-verifies traceability at write and the QC agent verifies it independently: deliberate defense-in-depth on the hard constraint, given a prior session ended over drift.
+
+Out of QC scope (owned elsewhere, not re-checked): craft quality (career-dev reviewer), requirement coverage / fit (hiring-manager reviewer), true page count (docx render skill; QC checks only the line-economy proxies the structure file defines, since markdown has no pagination).
+
+Refs: `cv-content-collaboration-mechanism-2026-05`, `cv-content-agent-architecture-2026-05`, `qc-h2-mechanical-script-check-2026-05` (mechanical-script + judgment-agent split precedent), `artifact-skill-qc-internal` (provisional-ship).
+
+#### cv-content-output-and-length-2026-05
+Output artifacts, length verification, and the docx boundary for the CV-content skill.
+
+**Artifacts (application folder).** `cv_content.md` is the sole deliverable handed to the separate docx skill: content organized by section and entry, with each content unit carrying its source inventory ID as a render-invisible HTML-comment marker (e.g. `<!-- src: EX-123 -->`). One file is therefore both the clean handoff (markers invisible in any render) and the durable traceability audit trail; the docx skill ignores the markers. The drafting plan is an internal working file (not handed downstream), retained for audit and resume: chosen orientation/level framing, page-budget allocation, applied de-emphasis list, arbitration log.
+
+**Length verification (Option A).** This skill cannot authoritatively verify rendered length, because markdown has no geometry and even python-docx does not compute wrapping or pagination (only a layout engine does). The skill enforces a conservative geometry-informed estimate as a guard, and the authoritative check happens at the render stage, which measures actual lines/pages and routes violations back to the Drafter to trim (single-writer preserved) before re-rendering, capped.
+
+**Calibration guard constants** (derived 2026-05 from two of the user's real rendered CVs at `temp/CV_padding_spec_estimates*.pdf`, both verified at the documented geometry: US Letter, 1-inch margins, 0.5-inch header/footer, Calibri 11pt body):
+- Usable lines per page: ~45 (page 1, with the 18pt name + 10pt contact block) / ~48 (later). Lower bound of observed (48 and 51); lines/page varies with section-header and divider density, not font.
+- Characters per line at wrap: ~95 full-width; experience bullets ~85 (nested under within-role sub-headers) to ~95 (flat), so bullet capacity is indent-depth dependent.
+- Estimate each unit as ceil(chars / capacity) and sum against the page budget. These are a guard only; exact recalibration happens against a rendered sample once the docx layout is fixed. User accepted residual imprecision and will revisit the estimation method if it underperforms.
+
+**docx boundary.** `cv_content.md` is the only handoff. Visual styling, authoritative pagination / page-count, and reconciling the Earlier Professional Roles styling (the user's actual CVs render those as plain lines, not the blue Calibri-Light / all-caps `SectionHeading` and `Subsection` styles `format_spec.md` documents) belong to the docx stage.
+
+**Success criterion.** The skill produces a `cv_content.md` that is fully traceable (every unit cites a supporting inventory entry, QC-verified), within the page ceiling by the calibrated estimate and render-confirmed, role-tailored per the axes and structure file, and passes QC (or ships provisional with surfaced findings).
+
+Refs: `cv-content-structure-decisions-2026-05`, `cv-content-agent-architecture-2026-05`, `cv-content-collaboration-mechanism-2026-05`, `cv-content-qc-scope-2026-05`, `cv-content-within-entry-layout` (deferral), `format-spec-cv-boundary`.
 
 ## Career Workflow Stage
 
