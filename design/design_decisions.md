@@ -1106,7 +1106,7 @@ Refs: `role-evaluation-and-cv-targeted-separate`, `arc-composition-for-high-impa
 
 ### cv-content
 
-(Provisional skill name. The targeted, per-application CV-creation skill referenced as `cv_targeted` in earlier pipeline notes; final name TBD. Pipeline: role-intake -> retrieval -> gap-analysis -> **cv-content**. Produces `cv_content.md` (text only); .docx rendering is a separate skill, out of scope.)
+(Skill name locked 2026-05-29 as **cv-targeted** (siblings: cv-general, cv-render); see `cv-targeted-name-and-structure-2026-05`. The `### cv-content` slugs below retain that prefix pending the step-c reference sweep. Pipeline: role-intake -> retrieval -> gap-analysis -> **cv-targeted**. Produces `cv_content.md` (text only); .docx rendering is the separate cv-render skill, out of scope.)
 
 #### cv-content-structure-decisions-2026-05
 Structural decisions for the CV-content skill, set 2026-05 from a literature review (`temp/cv_research.md`) reconciled against the legacy archetypes. Design-only; build-time content (exact line caps, Core Competencies counts, full writing rules) deferred to the structure rule file and skill.
@@ -1190,6 +1190,19 @@ Output artifacts, length verification, and the docx boundary for the CV-content 
 **Success criterion.** The skill produces a `cv_content.md` that is fully traceable (every unit cites a supporting inventory entry, QC-verified), within the page ceiling by the calibrated estimate and render-confirmed, role-tailored per the axes and structure file, and passes QC (or ships provisional with surfaced findings).
 
 Refs: `cv-content-structure-decisions-2026-05`, `cv-content-agent-architecture-2026-05`, `cv-content-collaboration-mechanism-2026-05`, `cv-content-qc-scope-2026-05`, `cv-content-within-entry-layout` (deferral), `format-spec-cv-boundary`.
+
+#### cv-targeted-name-and-structure-2026-05
+Skill name locked: **cv-targeted** (provisional was cv-content). Siblings: cv-general (non-targeted), cv-render (docx output); "content vs output" is carried by cv-render's name, not by cv-targeted's.
+
+Step a authored `rules/cv/cv_structure.md` (the structure file from `cv-content-structure-decisions-2026-05` plus the homed deferrals). Resolutions made while authoring:
+- **Within-entry layout (resolves `cv-content-within-entry-layout`):** flat by default; thematic subheadings only on recent, accomplishment-heavy senior/leadership roles, labels sourced from critical requirements (CR-NNN, capped 3-6); IC always flat. Bullet capacity ~90-95 chars/line (flat).
+- **Arc composition reconciled to flat layout:** synthesis into one higher-level bullet (not nested sub-bullets), only via a backing narrative (ST-NNN); ad-hoc re-assembly of atomic entries disallowed (fabrication risk).
+- **New hard rules:** one sentence per bullet; no em dashes (supersedes the legacy header-separator allowance); no AI-tell phrasing, reproduced inline from Wikipedia "Signs of AI writing" rather than via an external rewrite skill (a rewrite pass would break single-writer traceability).
+- **Affiliations:** conditional, relevance-gated credentials-tail member (added to the section order).
+
+Post-step-b task logged: reviewer-autonomy reconciliation (deferral `cv-targeted-reviewer-autonomy-reconciliation`).
+
+Refs: `cv-content-structure-decisions-2026-05`, `arc-composition-for-high-impact-roles`, `cv-content-agent-architecture-2026-05`, `cv-targeted-content-rules-from-axes`, `cv-format-spec-from-axes`.
 
 ## Career Workflow Stage
 

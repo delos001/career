@@ -1,0 +1,423 @@
+---
+last_researched: 2026-05
+---
+
+# CV Structure - Content and Layout Rules
+
+**Used by:** cv-targeted
+
+Cross-cutting CV skeleton consumed by the cv-targeted skill alongside the five
+axis files. Owns section order, per-section content rules, bullet and summary
+structure, and the page-length guard. It does not vary by axis value; the axis
+files supply the voice, vocabulary, and emphasis that compose with this
+structure. Rules marked `(hard rule)` are non-negotiable; rules marked
+`(guideline)` are defaults a reviewer may negotiate. All rules operate under
+`global-rules.md` no-fabrication (every claim traces to a source entry; nothing
+is invented); that is assumed throughout and not repeated per rule.
+
+## Section order - two bands
+
+The CV is two ordered bands, not one frozen list. Within each band the members
+hold a fixed order; relevance-gated members appear only when they earn space
+(see each section's gating rule).
+
+**Evidence band** (top - carries the case for fit):
+1. Professional Summary
+2. Core Competencies
+3. Professional Experience
+4. Work-output sections (Selected Projects / Publications / Research) - relevance-gated
+
+**Credentials tail** (bottom - verifies):
+5. Education
+6. Certifications & Training
+7. Professional Affiliations - conditional, relevance-gated
+8. Technical Proficiencies (always last)
+
+Work-output sections sit in the evidence band, not the tail - a deliberate
+deviation from the academic-CV convention of tailing publications, because on a
+targeted industry CV these read as demonstrated work product, not credentials.
+The class is extensible (e.g. Patents, Presentations) under the same relevance
+gate.
+
+## Professional Summary
+
+The opening value proposition. It primes both the fast human skim and the
+keyword match, so it leads with the candidate's positioning for THIS role, not a
+generic career abstract.
+
+**Content.** Strategic scope and - for leadership - scale (team size, budget,
+cross-functional or enterprise reach); domain and industry positioning; and one
+to two quantified signature achievements. Weave the target role's terminology in
+naturally; do not stuff a keyword list.
+
+**Length (guideline, not a hard rule).** Default 3-4 sentences. IC 2-4
+sentences; a focused 2-sentence summary can read as confident for a very senior,
+narrow target. Leadership up to ~6 sentences when scope genuinely requires it.
+Never pad to reach a count.
+
+**Line cap (guard).** Vertical space is the binding constraint, so the summary
+carries a line budget, not only a sentence count: target <=6 rendered lines
+(default / IC), <=8 lines (leadership exception). A 5-sentence summary at 3-4
+lines each would eat roughly half a page - over budget even when the sentence
+count looks fine. Caps are estimated at draft time and confirmed at render (see
+Page length and line economy).
+
+## Core Competencies
+
+A high-placed keyword-and-skill block (directly under the summary) that doubles
+as the ATS keyword anchor and the recruiter's fast-scan signal. Tailored to the
+target role: the terms mirror the JD's language for the hard skills and domain
+capabilities the candidate genuinely holds.
+
+**Count.** 8-10 items at IC; 8-12 at leadership. Each item is a concise
+capability phrase, not a sentence. Do not pad toward the ceiling or stuff a long
+keyword list; relevance to the target role governs inclusion.
+
+**Format (ATS-safe).** Single column. Items separated by a consistent delimiter
+(pipe or comma) or set as a simple single-level bulleted list. No multi-column
+layouts or tables - parsers read left-to-right and scramble columns.
+
+**Zoning.** Group the items into 2-3 coherent zones rather than one flat list,
+so the block reads as a structured capability profile aligned to the target
+role's emphasis. Label zones where a label adds scan value.
+
+Defined zonings by orientation:
+- **data-analytics** (3 zones): data strategy & governance; analytics capability
+  & operating model; technical credibility.
+- **platform-technology** (3 zones): technology strategy & platform governance;
+  systems & domain knowledge; analytical & process credibility.
+
+For an orientation without a defined zoning above, cluster the competencies into
+2-3 zones following that orientation's emphasis (see the orientation axis file's
+Section emphasis); a flat single list is acceptable when zones would be
+artificial.
+
+## Professional Experience
+
+The core evidence section. Reverse-chronological. Each role earns its space by
+relevance to the target; depth concentrates on the roles that matter most for
+this application.
+
+**"Relevant" is an upstream signal, not Drafter judgment.** Throughout this file,
+"relevant" / "relevance" means the retrieval manifest scores (semantic, axis
+exact-match, axis adjacency-weighted) and the gap-analysis per-requirement
+coverage, read together. The Drafter consumes those signals; it does not
+re-decide relevance ad hoc.
+
+**Adjacency translation (transferable experience).** Entries whose axis value is
+adjacent to the target (per the axis file's Adjacency section; adjacency weight
+~0.5 in the manifest) are translated, not dropped: reworded toward the target
+value's language while the underlying facts stay intact. Entries whose axis value
+is non-adjacent are surfaced for their cross-cutting capability only (e.g.
+leadership, capability building, driving process), not claimed as target-domain
+experience. Cross-cutting themes that are not domain-bound transfer regardless of
+axis distance. Translation rewords; it never fabricates a domain, metric, or
+scope the source entry does not support.
+
+**Entry header.** Company | Location (remote/onsite) | dates, then the role title
+and its dates. A single company spanning multiple roles groups those roles under
+one company line.
+
+**Default entry layout: flat.** Bullets sit directly under the role title as a
+single-level list. This is the default for every role and the only layout at IC
+level. (Senior/leadership roles may add thematic subheadings under defined
+conditions - see Within-role thematic subheadings.)
+
+**Bullets per role, by relevance and recency.** The most recent, most relevant
+roles carry the most bullets; older or less-relevant roles compress. Roughly 2-8
+bullets per role as a norm; a heavy recent senior role may run higher.
+
+**Ordering.** Lead each role with its strongest, most role-relevant bullet
+(impact-first), not the role's chronological first task. The top of each entry is
+high-attention space.
+
+**Earlier Professional Roles.** Roles beyond the recency/relevance threshold move
+to a compressed "Earlier Professional Roles" treatment (summary-bullet, or
+Company | Title | Dates lines). The threshold and rendering are governed by
+`cv-section-structure-professional-vs-earlier-roles`, not restated here.
+
+### Bullet rules
+
+**Bullet construction: CCAR, rendered impact-first.** The underlying model is
+Challenge - Context - Action - Result. On the page the bullet leads with the
+result/impact, then the action and (briefly) the context; full narration is
+reserved for interviews, not the bullet. IC bullets compress Challenge and
+Context into a single clause or imply them, foregrounding action and result.
+Leadership bullets carry all four components, because scope and stakes (the
+challenge and context) are part of what the bullet must establish.
+
+**Accomplishment-framed, not duty-framed.** Every bullet states what was
+achieved, not what the role was responsible for. "Responsible for X" and
+duty-list phrasing are not acceptable bullet forms.
+
+**Impact-type preference order.** Lead with the strongest impact type available
+for the claim, in this order:
+1. Type 1 - quantified (a number: %, $, time, count, scale).
+2. Type 2 - bounded qualitative (a concrete, verifiable outcome without a clean
+   number: "eliminated rework," "passed inspection with no findings").
+3. Type 3 - contextual narrative (significance or effect described in context).
+
+Fallback chain when quantitative data is absent: quantified -> bounded
+qualitative -> contextual narrative -> proxy metric (scale/scope affected) ->
+scope as signal (team size, budget, breadth) as a last resort. Never fabricate a
+number to satisfy Type 1.
+
+**One sentence per bullet (hard rule).** Each bullet is exactly one sentence.
+Multi-sentence bullets are not permitted. CCAR components render as clauses
+within that single sentence, never as separate sentences. If a bullet contains
+two distinct accomplishments, split it into two bullets; if it is one
+accomplishment written as two sentences, condense it to one.
+
+**Bullet length (hard rule).** Target 2 lines; 3 lines acceptable only for a
+highest-value, genuinely complex achievement; 4+ lines never. A bullet over the
+limit is condensed (tighter wording), or split when it bundles distinct
+accomplishments - never left to run long. Line count is the ceiling; the
+one-sentence rule and the line limit are applied at draft time and enforced
+mechanically by QC (both are deterministically checkable).
+
+### Within-role thematic subheadings (senior/leadership only)
+
+An optional device to group a heavy role's bullets under thematic subheadings.
+Use sparingly and only where it earns its space; the default remains flat.
+
+**Level gate.** Senior/leadership roles only. IC CVs never use subheadings (flat
+only, per Default entry layout).
+
+**Per-role condition.** Apply only to a recent, accomplishment-heavy role - one
+carrying enough bullets (roughly 8+ across distinct themes) that a flat list
+would be hard to skim. Lighter and older roles stay flat even on a leadership CV.
+Typically only the one or two most recent senior roles qualify.
+
+**Labels come from the critical-requirements artifact, not the raw JD (hard
+rule).** Each subheading label is a critical requirement (CR-NNN) as produced by
+role-intake and carried through gap-analysis - the processed JD - in the
+requirement's vetted wording. The Drafter never re-parses the raw JD, and labels
+are never drawn from the candidate's narratives or inventory. The label cites its
+CR-NNN. Restrict labels to requirements this role has cited evidence for (per the
+retrieval manifest and gap-analysis coverage), so a subheading both mirrors a
+real JD priority and is genuinely backed by the role.
+
+**Cap.** 3-6 subheadings per role. Fewer than 3 distinct JD-aligned themes ->
+stay flat (subheadings add clutter, not signal). More than 6 -> the role is
+over-segmented; consolidate.
+
+**No forcing.** A subheading appears only when the role has genuine, cited
+evidence for that JD theme. Never create a JD-themed subheading the role cannot
+fill, and never stretch a bullet to fit a theme.
+
+**Bullets under a subheading** follow all standard bullet rules: flat
+single-level, impact-first, one sentence each, within the line limit, each citing
+its inventory entry ID.
+
+**ATS.** Keep subheadings visually subordinate to the role title (the standard
+section headings carry the parse); subheadings are an organizational aid, not new
+top-level sections.
+
+### Arc composition (senior / enterprise-scope roles)
+
+For roles whose target requires enterprise or cross-functional program-scope
+proof points, a list of atomic bullets undersells collective impact (the panel
+reads ten process improvements, not one transformation). Arc composition
+synthesizes related atomic entries into a single higher-level achievement bullet.
+Governed by `arc-composition-for-high-impact-roles`; reconciled here to flat
+layout.
+
+**Trigger.** The JD's primary deliverable language is at enterprise or
+cross-functional program scope ("led enterprise initiative," "built and scaled a
+capability"), and gap-analysis surfaced the relevant strength at arc level.
+Senior/leadership context. Otherwise compose atomic bullets normally.
+
+**Composition unit: narratives (ST-NNN).** A narrative's required Linked Inventory
+field defines which atomic EX/PR entries form the arc and supplies the arc claim.
+The Drafter reads that authored grouping; it does not re-derive which entries
+combine. Synthesis without a backing narrative is not permitted - ad-hoc
+re-assembly of atomic entries is the fabrication-risk path and is disallowed.
+
+**Output: one synthesized bullet (not nested).** The arc renders as a single
+higher-level bullet that subsumes its linked entries - one sentence, within the
+line limit, impact-first. The atomic entries are compressed into the claim, not
+listed beneath it (flat layout; no sub-bullets). Citation is the union of the
+linked source ids (e.g. `<!-- src: EX-12, EX-15, EX-23 -->`), optionally also the
+ST-NNN.
+
+**No overstatement.** The synthesized claim must not assert scope, scale, or
+impact beyond the union of its cited entries. QC verifies the arc bullet against
+its cited slices.
+
+**Same role/company only.** An arc bullet composes only from entries within the
+role/company it sits under. A narrative arc that spans employers is a
+career-level theme: it informs the Professional Summary and positioning, not a
+single experience bullet.
+
+**Relationship to subheadings.** Orthogonal. A synthesized arc bullet may sit
+under a JD-sourced subheading or in a flat list; the arc determines bullet
+content, never the heading.
+
+**Default is atomic.** Synthesize only when a narrative arc exists and collective
+impact genuinely exceeds the sum of granular bullets. Do not over-synthesize -
+concrete, quantified atomic achievements that carry their own weight stay as
+their own bullets.
+
+## Work-output sections (Selected Projects / Publications / Research)
+
+One relevance-gated section class in the evidence band, demonstrating work product
+beyond the role history. Members: Selected Projects, Publications, Research
+(extensible to Patents, Presentations). Each renders only when it earns its space.
+
+**Relevance-gated, not existence-gated.** Include a member section only when its
+entries add signal for the target role (per the retrieval manifest and
+gap-analysis), not merely because such entries exist in the inventory. This
+supersedes the legacy "include whenever project entries exist" rule. Pure
+leadership roles default to omitting Selected Projects unless a specific project
+demonstrably evidences a JD requirement.
+
+**Placement.** Evidence band, not the credentials tail (rationale under Section
+order). Most defensible for senior-scientist / regulated-IC profiles.
+
+**Project voice exception.** Project entries follow design/build voice (what was
+designed, built, analyzed, delivered), not the organizational leadership framing
+used in Professional Experience. Leadership voice rules apply to Professional
+Experience entries only; a project is described as work product regardless of the
+CV's level framing.
+
+**Standard rules still apply.** Entries are impact-first, one sentence per bullet,
+within the line limit, and each cites its inventory entry id (PR-NNN, or the
+relevant id for publications/research).
+
+## Credentials tail
+
+The verifying band, below the evidence band, read at lower attention. Fixed
+order: Education, then Certifications & Training, then Professional Affiliations
+(conditional), then Technical Proficiencies (always last).
+
+**Education.** Below Professional Experience (the experienced-candidate
+convention; education leads only for new graduates). Degree, discipline,
+institution, year. No GPA or honors (per inventory schema). List all degrees;
+short reference content, not relevance-gated.
+
+**Certifications & Training.** Certifications (with issuer and, where relevant,
+status/currency) and material training. Lead with credentials relevant to the
+target role; omit stale or off-target items that add noise rather than signal.
+Concise reference lines, not bulleted achievements.
+
+**Professional Affiliations (conditional, relevance-gated).** Include only for
+board, governance, or senior-leadership targets where memberships, board seats,
+or committee roles are a JD signal; omit otherwise. When included, place after
+Certifications & Training and before Technical Proficiencies. Affiliation, role
+(Member through Board / Officer / Committee Chair), and currency; concise
+reference lines drawn from inventory Section 3.
+
+**Technical Proficiencies (always last).** Tools, platforms, languages, and
+methods the candidate genuinely holds, tailored to mirror the JD's technical
+terminology (a secondary ATS keyword anchor). Group into short labeled clusters
+(e.g. Languages, Platforms, Methods) where that aids scanning. For pure-leadership
+targets the section may be brief or omitted when technical tooling is not a JD
+signal. Listed proficiencies must be real; never list a technology to match a
+keyword the candidate does not actually know.
+
+## Cross-cutting writing rules
+
+Apply across every section.
+
+**Impact-first.** Lead with the outcome/result wherever a claim has one, in
+bullets and in the summary. The high-attention position carries the strongest
+signal.
+
+**Acronym expansion.** Spell out a less-common acronym on first use, with the
+acronym in parentheses; use the acronym thereafter. Common in-industry acronyms
+the hiring panel reads fluently (e.g. FDA, GCP, ICH, IRB, GxP in pharma) need no
+expansion. Judge "common" by the target industry, not the general reader.
+
+**No em dashes (hard rule).** Em dashes do not appear in the CV. Use a pipe (|) or
+hyphen for header separators (Company | Location | Dates), and rewrite prose and
+bullets with periods, semicolons, or natural connectives instead of em-dash
+clause breaks.
+
+**No AI-tell phrasing (hard rule).** The CV must not read as machine-written.
+(Source: Wikipedia, "Signs of AI writing.") Avoid:
+- Negation-contrast framing: "not just X, but Y," "it's not X, it's Y," "less
+  about X and more about Y." State the point directly.
+- Rule-of-three padding: do not force a third item (adjective, adjective,
+  adjective; phrase, phrase, and phrase) for rhythm. List only what is real.
+- Trailing significance clauses: the appended "-ing" flourish ("..., driving
+  efficiency," "..., streamlining operations") that asserts vague impact. Replace
+  with a quantified result (per impact-type order) or cut it.
+- Buzzword/puffery used as filler: leverage, robust, seamless, pivotal, crucial,
+  foster, underscore, showcase, groundbreaking, world-class, cutting-edge,
+  transformative (and "spearhead" except where level-appropriate). Prefer the
+  level axis file's verb vocabulary and concrete language.
+- Marketing copulas: "serves as," "stands as," "is designed to" in place of plain
+  "is/was" or an action verb.
+- Vague intensifiers standing in for a number: significantly, greatly,
+  successfully, substantially. Quantify if the impact is real; otherwise state it
+  plainly.
+- Title Case headings and decorative boldface: labels use the defined heading
+  style, not Title Case On Every Word.
+
+**Plain, verifiable language.** No keyword-stuffing, no verbs inflated beyond the
+level's voice (governed by the level axis file), no duty-list phrasing. Tailoring
+means genuine relevance and terminology alignment, not term dumping.
+
+## Page length and line economy
+
+**Page targets.** Senior IC: target 2 pages, up to 3 for a deep history.
+Leadership: target 2-3 pages, hard ceiling 3. 4+ pages is a flagged exception only
+(genuine academic CV, federal/SES, or publication-heavy scientist).
+
+**Governing principle: relevance-prioritized, no-pad.** Length follows
+relevance-prioritized content within the ceiling. Never pad to fill a page; never
+drop genuinely high-relevance content to hit a lower count. Page count is an
+outcome of including the right content, not a target to engineer.
+
+**Line economy.** The binding constraint in every section is vertical space
+(rendered lines), not item or sentence counts; counts are proxies that fail when a
+unit runs long. Section real-estate budgets enforce the page ceiling. This is why
+the summary carries a line cap and bullets carry a line limit.
+
+**Length verification is a guard, confirmed at render (Option A).** This skill
+cannot authoritatively measure rendered length (markdown has no geometry, and
+python-docx does not compute wrapping or pagination). It enforces a conservative
+geometry-informed estimate as a guard; the render stage measures actual
+lines/pages and routes any violation back to the Drafter to trim (single-writer
+preserved), capped, before re-rendering.
+
+**Calibration guard constants** (derived 2026-05 from the user's rendered CVs at
+US Letter, 1-inch margins, 0.5-inch header/footer, Calibri 11pt body; recalibrate
+against a rendered sample once the docx layout is fixed):
+- Usable lines per page: ~45 (page 1, with the name and contact block) / ~48
+  (later pages).
+- Characters per line at wrap: ~95 full-width; flat experience bullets ~90-95
+  (subheading-grouped bullets sit at a slightly deeper indent, nearer ~90).
+- Estimate each unit as ceil(characters / line capacity) and sum against the
+  section's page budget. Guard only; the render stage is authoritative.
+
+**docx boundary.** Visual styling, authoritative pagination and page count, and
+the Earlier Professional Roles rendering belong to the render stage (cv-render),
+not this skill. cv_content.md is the only handoff.
+
+## Scope boundary
+
+This file owns CV content structure and writing rules only. It does not own, and
+does not restate:
+
+- **Relevance scoring, retrieval, and coverage** - the retrieval skill scores
+  entries and exposes manifest signals; gap-analysis assigns per-requirement
+  coverage. This file consumes those signals (see "Relevant is an upstream
+  signal").
+- **Adjacency weights** - set by the retrieval manifest and the axis files'
+  Adjacency sections. This file owns only the translation framing (how adjacent
+  vs non-adjacent experience is worded; see Professional Experience).
+- **Axis voice and vocabulary** - level voice and verb vocabulary, orientation
+  summary-lead and section-emphasis, and industry/specialty terminology come from
+  the five axis files and compose with this structure.
+- **Critical-requirements extraction** - produced by role-intake (CR-NNN), carried
+  through gap-analysis. This file consumes them; it does not derive them.
+- **Earlier Professional Roles threshold and density** - governed by
+  `cv-section-structure-professional-vs-earlier-roles`.
+- **Visual rendering** - styling, fonts, authoritative pagination and page count,
+  and Earlier Professional Roles rendering belong to cv-render (docx). The single
+  handoff is cv_content.md.
+- **No-fabrication, failure handling, partial-content discipline** -
+  `global-rules.md`.
+- **Skill procedure** - the Drafter/reviewer/QC loop, orchestration, and citation
+  mechanics live in the cv-targeted SKILL.md and its agents, not in this rule file.
