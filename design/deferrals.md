@@ -102,18 +102,18 @@ Audit all axes (industries, specialties, orientations, levels, work-states) to v
 ## Per-Skill Design Items
 
 ### cv-targeted-reviewer-autonomy-reconciliation
-After the cv-targeted agents are built (step b), reconcile to confirm the career-dev and hiring-manager reviewer agents have genuine authority to participate, challenge, and shape the CV, and are not steamrolled by the prescriptive `rules/cv/cv_structure.md` (400+ lines) plus the sole-writer Drafter. Check: arbitration precedence leaves reviewers real latitude on their owned layers (career-dev = how/craft, HM = what/coverage); hard rules constrain without erasing judgment; reviewer findings can change the draft, not just rubber-stamp it.
-- Trigger: cv-targeted agents authored (step b).
-- Blocks: step-b sign-off.
-- Refs: `cv-content-agent-architecture-2026-05`, `cv-content-collaboration-mechanism-2026-05`, `cv-targeted-name-and-structure-2026-05`.
+**Resolved 2026-05-29 (b5).** Reviewers reframed as **stakeholders** in a DACI model (architect = decision-maker; advisors hold genuine, non-binding authority on their owned layers). Bidirectional loop: the architect returns a disposition (integrated / partial / declined + reason) for every material contribution, fed back next round; logged to `cv_collaboration_log.md`; unresolved items surfaced at handoff. The 2026-06-01 candidate-advocate build preserves this conclusion (third advisor, same DACI mechanics). Captured in `cv-targeted-name-and-structure-2026-05` and `cv-targeted-candidate-advocate-2026-05`.
+- Refs: `cv-content-agent-architecture-2026-05`, `cv-content-collaboration-mechanism-2026-05`, `cv-targeted-name-and-structure-2026-05`, `cv-targeted-candidate-advocate-2026-05`.
+
+### cv-best-practices-refresh
+`rules/cv/cv-best-practices.md` is the vetted evidence base behind `cv-structure.md` and the grounding for the career-strategist stakeholder. It is static research and will go stale (the AI-tell guidance ages fastest). Refresh procedure: re-run the CV best-practice web research, reconcile against the current doc, bump `last_researched`, and cascade any rule changes into `cv-structure.md` (the rules are derived from this evidence).
+- Trigger: the cv-targeted skill's runtime staleness check fires when `last_researched` is over ~12 months old (the reliable, point-of-use trigger; built into `SKILL.md` at step b). Also refresh on demand if a CV run surfaces obsolete or missing guidance.
+- Blocks: nothing; the doc functions until stale.
+- Refs: `cv-targeted-name-and-structure-2026-05`, `rules/cv/cv-structure.md`, `rules/cv/cv-best-practices.md`.
 
 ### cv-content-within-entry-layout
-**Resolved 2026-05-29 by `cv-targeted-name-and-structure-2026-05`:** flat by default; thematic subheadings only on recent, accomplishment-heavy senior/leadership roles with CR-sourced labels (capped 3-6); IC always flat; arc rollups synthesize into one bullet via narratives. Bullet-capacity guard constant set at ~90-95 chars/line (flat). Original framing below.
-
-Whether experience entries use within-role sub-section groupings (doc 1 style: sub-headers such as "Strategic Process Leadership & Governance" with an indented role-summary line and deeper bullet indent) or flat bullets directly under the role (doc 2 style, shallower indent, optionally with front "Role-Aligned Capabilities" / "Selected Outcomes" blocks). The choice drives bullet density (chars/line ~85 nested vs ~95 flat) and therefore the calibration guard's bullet-capacity constant. Surfaced 2026-05 during length calibration from the user's two sample CVs.
-- Trigger: cv_structure.md authoring / cv-content build.
-- Blocks: structure-file content; the bullet-capacity guard constant.
-- Refs: `cv-content-output-and-length-2026-05`, `cv-content-structure-decisions-2026-05`.
+**Resolved 2026-05-29 by `cv-targeted-name-and-structure-2026-05`:** flat by default; thematic subheadings only on recent, accomplishment-heavy senior/leadership roles with CR-sourced labels (capped 3-6); IC always flat; arc rollups synthesize into one bullet via narratives. Bullet-capacity guard constant ~90-95 chars/line (flat).
+- Refs: `cv-content-output-and-length-2026-05`, `cv-content-structure-decisions-2026-05`, `cv-targeted-name-and-structure-2026-05`.
 
 ### gap-analysis-schema
 **Resolved 2026-05-27 by `gap-analysis-architecture-2026-05`.** Output schema settled: `gap_analysis.md` carries a header (APP-NNN, date, fit score, unmet must-haves count, recommendation label) and six sections (Eligibility Flags, Requirements, Language-Shift Cases, De-emphasize, Recommendation — optional sections render `_(none)_` when empty). Per-requirement records carry CR-NNN id, text, type, status from the locked taxonomy (covered / closed / language-shift / interview-deferred / unresolved), evidence IDs, and notes. The format does not depend on cv_targeted; cv_targeted reads `gap_analysis.md` as input.
@@ -170,7 +170,7 @@ Parallel to `level-axis-finer-grained-files`: whether/when to split `ic.md` into
 - Refs: `level-axis-two-buckets`, `level-axis-finer-grained-files`.
 
 ### cv-targeted-content-rules-from-axes
-**Status (2026-05-29):** Largely authored into `rules/cv/cv_structure.md` (CCAR; impact types + fallback chain; Core Competencies zoning for data-analytics and platform-technology; project voice exception; adjacency translation; acronym rule). Routed elsewhere, not into the structure file: tag-query logic and inventory-coverage-gap flagging (owned by retrieval / the cv-targeted skill procedure); achievement-framing-by-orientation points to the orientation axis files' Section emphasis rather than being duplicated. Remaining procedure-level items resolve at step b (skill build).
+**Status (2026-05-29):** Largely authored into `rules/cv/cv-structure.md` (CCAR; impact types + fallback chain; Core Competencies zoning for data-analytics and platform-technology; project voice exception; adjacency translation; acronym rule). Routed elsewhere, not into the structure file: tag-query logic and inventory-coverage-gap flagging (owned by retrieval / the cv-targeted skill procedure); achievement-framing-by-orientation points to the orientation axis files' Section emphasis rather than being duplicated. Remaining procedure-level items resolve at step b (skill build).
 Procedural content stripped from axis rule files (`rules/orientations/*`, `rules/levels/*`, `rules/industries/*`, `rules/specialties/*`, `rules/work-states/*`) during data-only-discipline cleanup. Belongs in the cv_targeted skill, not the rule files. Items to apply when designing cv_targeted:
 - Bullet construction (CCAR framework). IC compresses Context/Challenge into one clause; leadership requires all four components.
 - Impact statement types and preference order: Type 1 quantified, Type 2 bounded qualitative, Type 3 contextual narrative. Fallback chain when quantitative data is absent (bounded qualitative → contextual narrative → proxy metrics → scope as signal).
@@ -187,7 +187,7 @@ Procedural content stripped from axis rule files (`rules/orientations/*`, `rules
 - Refs: `rules/orientations/*`, `rules/levels/*`, `rules/industries/*`, `rules/specialties/*`, `rules/work-states/*`.
 
 ### cv-format-spec-from-axes
-**Status (2026-05-29):** Authored into `rules/cv/cv_structure.md`: two-band section order (with Affiliations conditional), Core Competencies counts (8-10 IC / 8-12 leadership), bullet length limits (2 target / 3 max / 4 never), page targets (IC 2-3, leadership ceiling 3), and the em-dash rule (tightened to no em dashes at all, superseding the header-separator allowance). `format_spec.md` stays .docx-rendering-only; fixing its dangling "section order set by archetype" pointer remains a step-c item.
+**Status (2026-05-29):** Authored into `rules/cv/cv-structure.md`: two-band section order (with Affiliations conditional), Core Competencies counts (8-10 IC / 8-12 leadership), bullet length limits (2 target / 3 max / 4 never), page targets (IC 2-3, leadership ceiling 3), and the em-dash rule (tightened to no em dashes at all, superseding the header-separator allowance). `format_spec.md` stays .docx-rendering-only; fixing its dangling "section order set by archetype" pointer remains a step-c item.
 Bullet formatting, section order, item counts, and page targets stripped from axis rule files. Belongs in CV format spec, not rule files. Items to apply when authoring/refining CV format spec:
 - Bullet length: target 2 lines per bullet; 3 lines acceptable for highest-value complex achievements with significant detail; 4+ lines never acceptable (compress or split).
 - Em-dash rules: prohibited as clause connectors in bullet text and prose (rewrite or use natural connective language); permitted only as structural separators in company/location header lines.

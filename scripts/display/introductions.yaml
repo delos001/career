@@ -95,3 +95,39 @@ gap-analysis: |
 
   Operates under rules/global-rules.md - halts and asks for direction on any
   failure or ambiguity rather than guessing.
+
+cv-targeted: |
+  # cv-targeted - draft a role-tailored CV
+
+  Runs after gap-analysis. Reads the role-intake research (critical
+  requirements + axis classification), the retrieval manifest, the gap
+  analysis, and your inventory / narratives, then drafts a CV tailored to this
+  role. Produces one artifact: cv_content.md (text only, with a source citation
+  on every line). A separate render skill (cv-render) turns it into a formatted
+  .docx later.
+
+  Steps:
+    1. Locate the application folder (new application or resume by APP-NNN).
+    2. Load the upstream artifacts (research, retrieval manifest, gap analysis)
+       plus the CV structure rules and the relevant axis files.
+    3. A drafter agent writes the CV, applying the structure rules and axes to
+       your inventory and citing the source entry for every bullet, summary
+       claim, and competency.
+    4. Three reviewers (a career-development expert, a hiring manager, and a
+       candidate advocate who fights against underselling you) review the draft
+       in parallel; the drafter revises until all are satisfied or a review cap
+       is reached.
+    5. QC checks correctness and traceability (every claim traces to a real
+       inventory entry; format, structure, and length-guard rules hold).
+    6. Write cv_content.md, write the session log section, then hand off.
+
+  The drafter is the sole writer - reviewers and QC return findings and the
+  drafter applies them - so every claim stays traceable to your inventory.
+  Length is guarded by a conservative estimate here and confirmed at the render
+  stage.
+
+  Have ready: a completed gap-analysis run for the role (the application folder
+  must contain gap_analysis.md).
+
+  Operates under rules/global-rules.md - halts and asks for direction on any
+  failure or ambiguity rather than guessing.
