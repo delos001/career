@@ -76,13 +76,15 @@ Return exactly this structure:
 
 ```
 ## Axis Classification
-- Orientation: <primary> (primary)[, <secondary> (secondary)]
-- Industry: <value>
-- Specialty: <primary>[, <secondary>]
-- Level: <value>
-- Work-state: <value>
+- Orientation: <primary> (primary)[, <secondary> (secondary)] - <one-line rationale>
+- Industry: <value> - <one-line rationale>
+- Specialty: <primary>[, <secondary>] - <one-line rationale>
+- Level: <value> - <one-line rationale>
+- Work-state: <value> - <one-line rationale>
 
 ## Axis Gaps
 - <axis>: <one-line description (no value covers, or value matched but file not authored)>
 (or: None)
 ```
+
+The rationale is one sentence per axis explaining why the value was selected and why the main alternative(s) were not. Use a plain hyphen separator, not an em dash.

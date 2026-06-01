@@ -115,7 +115,7 @@ def _replace_section(text, heading, new_section):
 
 def cmd_ingest(args, repo_root, cfg):
     stem = cfg['naming']['application_stem'].format(
-        slug=args.slug, app_id=args.app_id, ym=args.ym)
+        slug=args.slug.lower(), app_id=args.app_id, ym=args.ym)
     app_folder = os.path.join(repo_root, cfg['paths']['applications'], stem)
 
     os.makedirs(app_folder, exist_ok=True)
@@ -147,7 +147,7 @@ def cmd_ingest(args, repo_root, cfg):
 
 def cmd_init(args, repo_root, cfg):
     stem = cfg['naming']['application_stem'].format(
-        slug=args.slug, app_id=args.app_id, ym=args.ym)
+        slug=args.slug.lower(), app_id=args.app_id, ym=args.ym)
     app_folder = os.path.join(repo_root, cfg['paths']['applications'], stem)
     session_log_name = cfg['naming']['session_log_filename'].format(stem=stem)
     session_log = os.path.join(repo_root, cfg['paths']['sessions'], session_log_name)

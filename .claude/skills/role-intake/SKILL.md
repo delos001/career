@@ -95,16 +95,16 @@ Ask if this session is for a new role or to resume a previous one?
 - Input: title, company, level, industry; JD text + source; comms text + source
   (if any).
 - Run `python scripts/app_id.py` for the next APP-NNN. Ask the user for a short
-  company slug. Determine the current `YYYY-MM`.
+  lowercase company slug. Determine the current `YYYY-MM`.
 - Write JD (and comms if present) to temp files.
 - **Step 3a - ingest (checkpoint):** Run `python scripts/assemble.py ingest`
-  with the slug, APP-NNN, YM, and the JD temp-file (plus comms temp-file if
-  present). This creates the folder and writes `jd.md` and optionally `comms.md`
-  immediately. Capture the printed paths: `app_folder`, `jd_path`, and
-  optionally `comms_path`.
+  with `--slug`, `--app-id`, `--ym`, `--jd-text-file` (plus `--comms-text-file`
+  if present). This creates the folder and writes `jd.md` and optionally
+  `comms.md` immediately. Capture the printed paths: `app_folder`, `jd_path`,
+  and optionally `comms_path`.
 - **Step 3b - session log:** Run `python scripts/assemble.py init` with the
-  slug, APP-NNN, YM, confirmed metadata (company, role, level, industry), start
-  date, and `--jd-source`. For `--jd-source`: pass `jd_path` from Step 3a,
+  slug, APP-NNN, YM, confirmed metadata (company, role, level, industry),
+  `--start-date`, and `--jd-source`. For `--jd-source`: pass `jd_path` from Step 3a,
   unless the original JD source was a URL (pass the URL instead). For
   `--comms-source`: pass `comms_path` from Step 3a if comms were written and
   the original source was a local file; pass `"pasted"` if comms were pasted;
@@ -127,8 +127,7 @@ Ask if this session is for a new role or to resume a previous one?
   suggests otherwise.
 - For `critical-requirements-extractor`: pass the full JD text. The agent scans
   every JD section (not just labeled "Requirements") and emits a list of
-  competency requirements as Text / Type / Source per
-  `role-intake-critical-requirements-extraction-2026-05`.
+  competency requirements as Text / Type / Source.
 - Each returns a fixed block:
   - `company-research` -> `## Company` with Summary / Key facts / Sources.
   - `role-research` -> `## Role` with Summary / Key facts / Sources.
@@ -144,8 +143,8 @@ Ask if this session is for a new role or to resume a previous one?
 
 - Input: four findings blocks.
 - Write each block to its own temp file, then run `python scripts/assemble.py
-  research` with the application folder, APP-NNN, company, role, date, and the
-  four temp-file paths (`--company-file`, `--role-file`, `--industry-file`,
+  research` with `--folder`, `--app-id`, `--company`, `--role`, `--date`, and
+  the four temp-file paths (`--company-file`, `--role-file`, `--industry-file`,
   `--critical-requirements-file`). It section-replaces only role-intake's own
   sections so nothing else is clobbered.
 - Output: `research.md` written.
@@ -159,7 +158,7 @@ Ask if this session is for a new role or to resume a previous one?
   works registry-first per axis: read the registry, pick candidate value(s),
   read only the candidate value files, confirm each pick. Where no registry
   value confirms, flag an axis gap (not blocked, not routed to a builder).
-- Output: per-axis primary/secondary + a list of axis gaps.
+- Output: per-axis primary/secondary with one-line rationale each + a list of axis gaps.
 
 ## Phase 7 - Session log finalization
 
@@ -167,8 +166,8 @@ Ask if this session is for a new role or to resume a previous one?
 
 - Input: session log path, research file path, `axis-classifier` output, research-completed date.
 - Write the `axis-classifier` output to a temp file. Run
-  `python scripts/assemble.py finalize` with the session log path, the date,
-  the temp file, and `--research-file` pointing to `research.md`. It fills the
+  `python scripts/assemble.py finalize` with `--session-log`, `--date`,
+  `--axis-file`, and `--research-file` pointing to `research.md`. It fills the
   date, replaces the pending axis sections in the session log, and writes the
   resolved `## Axis Gaps` section to `research.md`.
 - Output: session log complete; `research.md` Axis Gaps section filled.
@@ -198,8 +197,12 @@ Ask if this session is for a new role or to resume a previous one?
 
   ```
   Title / Company / Level / Industry: <values>
-  Axis classification - per axis (Orientation, Industry, Specialty, Level,
-    Work-state): <primary> / <secondary>
+  Axis classification:
+    Orientation:  <primary>[, <secondary>] - <rationale>
+    Industry:     <value> - <rationale>
+    Specialty:    <primary>[, <secondary>] - <rationale>
+    Level:        <value> - <rationale>
+    Work-state:   <value> - <rationale>
   Axis gaps: <listed, or "none">
   Unresolved QC findings: <listed in plain English, or "none">
   Session log + Research file: <paths>
@@ -216,7 +219,9 @@ Ask if this session is for a new role or to resume a previous one?
     file.
 
   User chooses. Apply, re-QC, return to Phase 9.
-- On approval: state completion. Artifacts are ready for the gap-analysis skill.
+- On approval: delete any temp files written during the session (JD, comms,
+  research blocks, axis file) using the PowerShell tool (`Remove-Item`). Then
+  state completion. Artifacts are ready for the gap-analysis skill.
 
 ## Phase routing on failure
 

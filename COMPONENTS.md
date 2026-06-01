@@ -215,7 +215,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### critical-requirements-extractor
 
-- **Purpose**: Extract a structured list of competency requirements from a JD for the role-intake skill. Comprehensive scan across all JD sections (not just labeled "Requirements"); each requirement carries Text / Type / Source for downstream use by retrieval, gap analysis, CV creation, and interview prep. Per `role-intake-critical-requirements-extraction-2026-05`.
+- **Purpose**: Extract a structured list of competency requirements from a JD for the role-intake skill. Comprehensive scan across all JD sections (not just labeled "Requirements"); each requirement carries Text / Type / Source for downstream use by retrieval, gap analysis, CV creation, and interview prep.
 - **Status**: Designed
 - **Inputs**: Skill-passed (by `role-intake`): JD text; optionally role title and company name for context. Tools: Read.
 - **Outputs**: Structured findings block (`## Critical Requirements` — list of Text / Type / Source per requirement) returned to the caller.
@@ -227,7 +227,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Purpose**: Classify a job against the five axes (orientation, industry, specialty, level, work-state), registry-first, confirming each pick against the value file (or the registry one-line where the file is registry-only or deferred); flag an axis gap where no value confirms or a matched value's file is not yet authored. Keeps axis files out of the main session context.
 - **Status**: Designed
 - **Inputs**: Skill-passed (by `role-intake`): JD text, research findings. Rules: the five axis registries (`rules/<axis>/registry.md`) and the candidate value files only. Tools: Read.
-- **Outputs**: The five-axis classification (primary/secondary per axis) + a list of axis gaps, returned to the caller.
+- **Outputs**: The five-axis classification (primary/secondary per axis, with one-line rationale each) + a list of axis gaps, returned to the caller.
 - **Triggers**: Invoked by `role-intake` Phase 6.
 - **Update Triggers**: When an axis registry or its value files change; when the five-axis model changes.
 
@@ -374,7 +374,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 - **Purpose**: Write role-intake's two artifacts (session log, research file) deterministically by rendering the templates, rather than having the skill hand-write files. Subcommands: `ingest` (Phase 3a), `init` (Phase 3b), `research` (Phase 5; writes all four research-block sections including Critical Requirements), `finalize` (Phase 7). Every write is section-scoped.
 - **Status**: Designed
-- **Inputs**: Skill-passed args (slug, APP-NNN, company, role, dates, paths) and, for `research`/`finalize`, temp files holding subagent output (including the critical-requirements block as of `role-intake-critical-requirements-extraction-2026-05`). Config: `config.yaml` (paths, filenames, naming patterns) via `scripts/_config.py`. Templates: `session_log.md`, `research_file.md` (read as the structure source).
+- **Inputs**: Skill-passed args (slug, APP-NNN, company, role, dates, paths) and, for `research`/`finalize`, temp files holding subagent output. Config: `config.yaml` (paths, filenames, naming patterns) via `scripts/_config.py`. Templates: `session_log.md`, `research_file.md` (read as the structure source).
 - **Outputs**: `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`, the `personal/applications/<SLUG>_APP-NNN_YYYY-MM/` folder, and `<folder>/research.md`. Paths echoed to stdout.
 - **Triggers**: Invoked by `role-intake` Phases 3, 5, and 7.
 - **Update Triggers**: When `templates/session_log.md` or `templates/research_file.md` change shape; when the role-intake phase structure changes; when a new sub-agent's output becomes a new research.md section.
