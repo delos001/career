@@ -69,13 +69,18 @@ Ask if this session is for a new CV or to resume a previous one.
 - Input: application folder path (from the resume check), APP-NNN, slug.
 - Read `research.md` from the application folder. Extract:
   - the `## Critical Requirements` section (each requirement's `CR-NNN`, text, type),
-  - the `## Axis Classification` section (the five axis values), and from it the
-    candidate **level** (`ic` or `leadership`, the level axis value),
   - the `## Role`, `## Company`, `## Industry` summary blocks (role context).
+- Read the session log at
+  `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`. Extract the
+  `## Axis Classification` section (the five axis values, each with primary and
+  optional secondary), and from it the candidate **level** (`ic` or
+  `leadership`, the level axis value). The session log is the authoritative
+  source for the classification (per `retrieval-architecture-2026-05`); the same
+  source retrieval reads.
 - Read `gap_analysis.md`. Extract the per-requirement coverage statuses and the
   `## De-emphasize` list (entry ids to down-weight).
-- Read `user-info.md`. Extract the contact block (name, location, contact line,
-  profile links) for the CV header.
+- Read `user-info.md` from the profile folder (`personal/profile/`). Extract the
+  contact block (name, location, contact line, profile links) for the CV header.
 - **Resolve the axis value files.** For each classified axis value, resolve its
   rule file path `rules/<axis>/<value>.md`. Pass the files that exist to the
   sub-agents; for any axis marked "File deferred" in the classification, note it
@@ -87,9 +92,11 @@ Ask if this session is for a new CV or to resume a previous one.
   for a refresh (per the `cv-best-practices-refresh` process). Non-blocking; the
   run continues.
 - Note the corpus paths the sub-agents will read in their own context, NOT loaded
-  into the main skill: `rules/cv/cv-structure.md`, `rules/cv/cv-best-practices.md`,
-  the resolved axis files, `retrieval.md`, `inventory.md`, `narratives.md`,
-  `jd.md`, and `comms.md` (if present).
+  into the main skill. From the profile folder (`personal/profile/`):
+  `inventory.md`, `narratives.md`. From the application folder: `retrieval.md`,
+  `gap_analysis.md`, `jd.md`, and `comms.md` (if present). From `rules/`:
+  `rules/cv/cv-structure.md`, `rules/cv/cv-best-practices.md`, and the resolved
+  axis files.
 - Output: critical requirements; axis classification with resolved axis-file
   paths (and any deferred-axis note); level; de-emphasize list; per-requirement
   coverage; contact block; staleness warning (if any); corpus paths.
