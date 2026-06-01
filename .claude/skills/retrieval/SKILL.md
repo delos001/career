@@ -65,30 +65,36 @@ Ask if this session is for a new retrieval run or to resume a previous one?
 
 **Building scoring payloads for the inventory, narratives, and themes corpora.**
 
-- Input: nothing skill-specific; the scripts read the profile documents directly.
+- Input: slug, APP-NNN.
 - Run three commands in sequence (or in parallel via shell):
   - `python scripts/retrieval_payload.py inventory` - prints JSON to stdout with the chunked inventory payload.
   - `python scripts/retrieval_payload.py narratives` - prints JSON to stdout with the narrative payload.
   - `python scripts/retrieval_payload.py themes` - prints JSON to stdout with the theme payload.
-- Capture each output to a temp file (for example `temp/<SLUG>_inventory_payload.json`, `temp/<SLUG>_narratives_payload.json`, `temp/<SLUG>_themes_payload.json`).
+- Capture each output to a temp file: `temp/<SLUG>_APP-NNN_inventory_payload.json`, `temp/<SLUG>_APP-NNN_narratives_payload.json`, `temp/<SLUG>_APP-NNN_themes_payload.json`.
 - Non-zero exit on any of these = halt per global rules.
-- Output: three temp-file paths holding the corpus payloads.
+- Run `python scripts/retrieval_payload.py split --slug <slug> --app-id APP-NNN`. This writes one JSON file per inventory chunk (`temp/<SLUG>_APP-NNN_inv_chunk0.json`, etc.) and prints a plain-English summary of chunk count, chunk sizes, narrative count, and theme count. Non-zero exit = halt per global rules.
+- Output: three payload temp-file paths, per-chunk temp-file paths, chunk count and entry counts (from split output).
 
 ## Phase 3 - Score all three corpora
 
 **Scoring inventory chunks, narratives, and themes against critical requirements.**
 
-- Input: critical-requirements block, JD text, three payload temp-file paths.
-- Dispatch the scorer subagent in parallel:
-  - **One `retrieval-scorer` invocation per inventory chunk.** Read the inventory payload JSON to find the chunk count; for each chunk dispatch an invocation with `corpus=inventory`, the critical requirements list, the JD text, and the chunk's `entries` array as the items to score.
-  - **One `retrieval-scorer` invocation for narratives.** `corpus=narratives`, the critical requirements list, the JD text, and the narratives payload `entries` array.
-  - **One `retrieval-scorer` invocation for themes.** `corpus=themes`, the critical requirements list, the JD text, and the themes payload `entries` array.
-- Each scorer invocation returns JSON of the shape `{corpus, scores: [{id, score, reason}, ...]}`.
-- **Merge the inventory chunk responses** into a single `scores` array. Concatenate the chunk arrays in chunk-index order. No deduplication needed; each ID appears in exactly one chunk.
-- Write the merged inventory scores to a temp file (`temp/<SLUG>_inventory_scores.json`) with shape `{"scores": [...]}`.
-- Write the narrative scores to a temp file (`temp/<SLUG>_narrative_scores.json`).
-- Write the theme scores to a temp file (`temp/<SLUG>_theme_scores.json`).
-- Output: three temp-file paths holding the scoring results.
+- Input: critical-requirements block, JD text, per-chunk file paths and per-narrative file paths (from Phase 2 split output), themes payload file path.
+- Dispatch the scorer subagent in parallel. Each invocation receives: input file path, output file path, corpus type, critical requirements, JD text. The scorer writes results to the output file and returns only a brief confirmation — do not read or echo the scores in the main context.
+  - **One `retrieval-scorer` invocation per inventory chunk.**
+    - Input file: `temp/<SLUG>_APP-NNN_inv_chunk{N}.json`
+    - Output file: `temp/<SLUG>_APP-NNN_scores_inventory_chunk{N}.json`
+    - Corpus: `inventory`
+  - **One `retrieval-scorer` invocation per narrative entry.**
+    - Input file: `temp/<SLUG>_APP-NNN_narrative_{ID}.json`
+    - Output file: `temp/<SLUG>_APP-NNN_scores_narrative_{ID}.json`
+    - Corpus: `narratives`
+  - **One `retrieval-scorer` invocation for themes.**
+    - Input file: `temp/<SLUG>_APP-NNN_themes_payload.json`
+    - Output file: `temp/<SLUG>_APP-NNN_scores_themes.json`
+    - Corpus: `themes`
+- After all scorers confirm completion, run `python scripts/retrieval_score_merge.py --slug <slug> --app-id APP-NNN`. This reads all per-agent output files, merges by corpus, and writes `temp/<SLUG>_APP-NNN_inventory_scores.json`, `temp/<SLUG>_APP-NNN_narrative_scores.json`, and `temp/<SLUG>_APP-NNN_theme_scores.json`. Non-zero exit = halt per global rules.
+- Output: three merged score file paths.
 
 ## Phase 4 - Assemble and write manifest
 

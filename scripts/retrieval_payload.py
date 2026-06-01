@@ -18,6 +18,11 @@ subagent consumes alongside the critical requirements list. Three subcommands:
   themes      Read positioning.md and emit a JSON list of every Signature
               Theme (TH-NNN) with Core message + Proof point + Use when
               triggers concatenated. One LLM call sees the whole list.
+  split       Read the three payload files previously written to the temp
+              directory, write one JSON file per inventory chunk, and print
+              a plain-English summary (chunk count, sizes, narrative count,
+              theme count). Eliminates the need for ad-hoc inline Python
+              between Phase 2 (build payloads) and Phase 3 (score).
 
 Nothing repo-dependent is hardcoded; folder locations and filenames come from
 config.yaml. The script does not invoke any LLM itself: it only prepares
@@ -29,6 +34,7 @@ Project   : career
 Usage     : python scripts/retrieval_payload.py inventory [--chunk-size 50]
             python scripts/retrieval_payload.py narratives
             python scripts/retrieval_payload.py themes
+            python scripts/retrieval_payload.py split --slug <slug> --app-id <APP-NNN> [--temp-dir temp]
 Depends   : pyyaml (via _config)
 """
 
@@ -372,6 +378,66 @@ def cmd_themes(args, repo_root, cfg):
 
 
 # ---------------------------------------------------------------------------
+# Split subcommand
+# After the three payload files are written, this subcommand splits them into
+# one JSON file per inventory chunk and one JSON file per narrative entry, then
+# prints a summary so the calling skill knows exactly which files to pass to
+# scorer agents. Eliminates ad-hoc inline Python between Phase 2 and Phase 3
+# and guarantees each scorer reads a bounded file rather than a large payload.
+# ---------------------------------------------------------------------------
+
+def cmd_split(args, repo_root, cfg):
+    """Split payload files into per-chunk and per-narrative files; print summary."""
+    prefix = f"{args.slug}_{args.app_id}"
+    temp_dir = args.temp_dir
+
+    inv_path = os.path.join(temp_dir, f"{prefix}_inventory_payload.json")
+    nar_path = os.path.join(temp_dir, f"{prefix}_narratives_payload.json")
+    th_path  = os.path.join(temp_dir, f"{prefix}_themes_payload.json")
+
+    with open(inv_path, encoding='utf-8') as f:
+        inv_data = json.load(f)
+    with open(nar_path, encoding='utf-8') as f:
+        nar_data = json.load(f)
+    with open(th_path, encoding='utf-8') as f:
+        th_data = json.load(f)
+
+    # Write one file per inventory chunk.
+    chunk_paths = []
+    for chunk in inv_data['chunks']:
+        idx = chunk['index']
+        out_path = os.path.join(temp_dir, f"{prefix}_inv_chunk{idx}.json")
+        with open(out_path, 'w', encoding='utf-8') as f:
+            json.dump(
+                {'corpus': 'inventory', 'chunk_index': idx, 'entries': chunk['entries']},
+                f,
+                ensure_ascii=False,
+            )
+        chunk_paths.append((out_path, len(chunk['entries'])))
+
+    # Write one file per narrative entry. Narrative bodies can be large enough
+    # that a single payload file exceeds the Read tool token cap; individual
+    # files guarantee each scorer invocation reads a bounded amount.
+    narrative_paths = []
+    for entry in nar_data['entries']:
+        nid = entry['id']
+        out_path = os.path.join(temp_dir, f"{prefix}_narrative_{nid}.json")
+        with open(out_path, 'w', encoding='utf-8') as f:
+            json.dump({'corpus': 'narratives', 'entry': entry}, f, ensure_ascii=False)
+        narrative_paths.append(out_path)
+
+    # Print summary.
+    sizes = '+'.join(str(n) for _, n in chunk_paths)
+    print(f"Inventory: {inv_data['chunk_count']} chunks written ({sizes} = {inv_data['entry_count']} entries)")
+    for path, size in chunk_paths:
+        print(f"  {path} ({size} entries)")
+    print(f"Narratives: {nar_data['entry_count']} entries written")
+    for path in narrative_paths:
+        print(f"  {path}")
+    print(f"Themes: {th_data['entry_count']} entries (use {prefix}_themes_payload.json)")
+
+
+# ---------------------------------------------------------------------------
 # Cross-script helpers
 # retrieval_apply.py imports these parsers to re-resolve full entry detail
 # at manifest-assembly time (the scorer subagent's JSON output carries only
@@ -412,6 +478,15 @@ def main():
     # --- Subparser: themes ---
     p_th = sub.add_parser('themes', help='build Signature Themes payload')
     p_th.set_defaults(func=cmd_themes)
+
+    # --- Subparser: split ---
+    p_split = sub.add_parser(
+        'split', help='split payload files into per-chunk files and print summary'
+    )
+    p_split.add_argument('--slug', required=True, help='role slug (e.g. takeda)')
+    p_split.add_argument('--app-id', required=True, help='application ID (e.g. APP-006)')
+    p_split.add_argument('--temp-dir', default='temp', help='temp directory (default: temp)')
+    p_split.set_defaults(func=cmd_split)
 
     args = parser.parse_args()
 
