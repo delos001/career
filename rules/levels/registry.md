@@ -4,7 +4,7 @@ last_researched: 2026-04
 
 # Level Registry
 
-**Used by:** cv_targeted, axis-classifier, inventory, narratives
+**Used by:** cv-targeted, axis-classifier, inventory, narratives
 
 Level values for axis classification and validation. Per-value framing rules in the same-folder files.
 

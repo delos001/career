@@ -50,7 +50,7 @@ routing source; the skill's Phase 5 does not carry its own routing table.
   - Fix on fail: report; Phase 5 routes to Phase 3.
 - **A5** *(script)*: `**Used by:** <consumers>` header present on the
   first non-blank line after the title.
-  - Fix on fail: insert standard header (`cv_targeted, axis-classifier`);
+  - Fix on fail: insert standard header (`cv-targeted, axis-classifier`);
     if buried elsewhere, report and route to Phase 3.
 
 ### B - Structural schema

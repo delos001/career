@@ -1073,6 +1073,10 @@ Built artifact-producing skill running after retrieval; stopping point for the u
 
 **QC.** `qc-gap-analysis` checks structural, content-integrity, cross-document-consistency, and logic groups; loops up to 3 iterations with per-finding route-back; on bounded-loop failure the artifact ships provisional with findings surfaced in Phase 8 per `artifact-skill-qc-internal`.
 
+**Interface amendments (2026-06-02):**
+- *Gap-detector compact output:* `gap-detector` returns a compact shape for `covered` requirements (`requirement_id` + `verdict` + flat evidence ID list; no text, type, or reasoning) and a full shape only for `gap` and `language-shift`. Reduces sub-agent output volume proportionally to the covered/total ratio (15/19 covered on APP-006 = ~80% payload reduction).
+- *Assembler reads research.md:* `scripts/gap_assemble.py` accepts `--research-file` and reads requirement text and type directly from `research.md`'s `## Critical Requirements` table. The requirements JSON the dispatching skill passes carries only per-run decisions (`status`, `evidence`, `notes`, `language_shift`, `closure_ref`); static fields are not echoed through the LLM.
+
 Refs: `role-evaluation-and-cv-targeted-separate` (gap analysis as stopping point and handoff artifact), `arc-composition-for-high-impact-roles` (arc-first rule in Phase 3), `retrieval-architecture-2026-05` (gap analysis as downstream consumer of the manifest; raw signals not pre-tiered), `role-intake-critical-requirements-extraction-2026-05` (Type drives severity / coverage credit), `gap-analysis-schema` (deferral resolved here), `respect-profile-doc-conventions` (staging-file discipline).
 
 #### gap-analysis-cluster-derivation

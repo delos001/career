@@ -58,7 +58,7 @@ routing source; the skill's Phase 5 does not carry its own routing table.
     drafter to write or correct the title line.
 - **A5** *(script)*: `**Used by:** <consumers>` header present on the
   first non-blank line after the title.
-  - Fix on fail: insert the standard header listing `cv_targeted,
+  - Fix on fail: insert the standard header listing `cv-targeted,
     axis-classifier`. If buried elsewhere in the body, report and route
     to Phase 3.
 

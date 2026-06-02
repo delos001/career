@@ -69,7 +69,7 @@ routing source; the skill's Phase 5 does not carry its own routing table.
 - **A5** *(script)*: `**Used by:** <consumers>` header present on the
   first non-blank line after the title.
   - Fix on fail: the script auto-inserts the standard header
-    (`cv_targeted, axis-classifier`) when it is absent. If the header
+    (`cv-targeted, axis-classifier`) when it is absent. If the header
     exists but is buried elsewhere in the body, the script reports it;
     re-enter Phase 3 to remove the stray.
 

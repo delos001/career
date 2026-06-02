@@ -5,7 +5,7 @@ last_researched: 2026-05
 
 # Clinical Operations - CV Framing Rules
 
-**Used by:** cv_targeted, axis-classifier
+**Used by:** cv-targeted, axis-classifier
 
 ## Capability vocabulary
 

@@ -9,13 +9,18 @@ user-loop results. Writes the artifact to the application folder.
 
 Inputs (JSON files written by the dispatching skill):
 
-  --requirements-file       per-requirement final records (gap-detector output
-                            augmented with Phase 4 status / closure ref).
+  --research-file           research.md for this application; provides
+                            requirement text and type keyed by CR-NNN so the
+                            requirements JSON need not duplicate that data.
+  --requirements-file       per-requirement decisions: requirement_id, status,
+                            evidence (flat ID list or {id,...} list), notes,
+                            closure_ref, language_shift. Text and type are
+                            resolved from --research-file.
   --eligibility-file        Phase 2 flags + user decisions.
   --de-emphasize-file       de-emphasize-identifier output.
 
 Plus header scalars (--fit-score, --unmet-must-haves, --recommendation-label,
---recommendation-rationale, --slug, --app-id, --date, --company, --role) and
+--recommendation-rationale, --app-id, --date, --company, --role) and
 the application folder path (--folder) where the artifact is written.
 
 The script renders the artifact wholesale (it does not section-edit an
@@ -34,8 +39,8 @@ Usage     : python scripts/gap_assemble.py assemble \\
                 --company ... --role ... \\
                 --fit-score ... --unmet-must-haves ... \\
                 --recommendation-label ... --recommendation-rationale-file ... \\
-                --requirements-file ... --eligibility-file ... \\
-                --de-emphasize-file ...
+                --research-file ... --requirements-file ... \\
+                --eligibility-file ... --de-emphasize-file ...
 Depends   : pyyaml (via _config)
 """
 
@@ -85,6 +90,50 @@ def _fill(skeleton, values):
 
 
 # ---------------------------------------------------------------------------
+# Research.md parser
+# Reads the ## Critical Requirements table to get {CR-NNN: {text, type}}.
+# The requirements JSON the skill passes carries only per-run decisions;
+# static fields (text, type) are resolved here so they are not duplicated.
+# ---------------------------------------------------------------------------
+
+def _parse_requirements_from_research(research_path):
+    """Return {CR-NNN: {text, type}} parsed from the ## Critical Requirements table.
+
+    Row position determines the CR-NNN key: row 1 -> CR-001, row 2 -> CR-002,
+    matching the gap-detector's positional ID assignment. The '#' column value
+    is used rather than row order so blank or separator lines do not shift IDs.
+    """
+    text = _util.read(research_path)
+    # Capture the ## Critical Requirements section up to the next ## heading or EOF.
+    section_match = re.search(
+        r'## Critical Requirements\n(.*?)(?=\n## |\Z)', text, re.DOTALL
+    )
+    if not section_match:
+        raise ValueError('## Critical Requirements section not found in research file')
+    section = section_match.group(1)
+    lookup = {}
+    for line in section.splitlines():
+        line = line.strip()
+        if not line.startswith('|') or not line.endswith('|'):
+            continue
+        cells = [c.strip() for c in line.strip('|').split('|')]
+        if len(cells) < 3:
+            continue
+        # Skip header row ('#') and separator rows ('---').
+        if cells[0] == '#' or cells[0].startswith('---'):
+            continue
+        try:
+            num = int(cells[0])
+        except ValueError:
+            continue
+        cr_id = f'CR-{num:03d}'
+        lookup[cr_id] = {'text': cells[1], 'type': cells[2]}
+    if not lookup:
+        raise ValueError('no requirement rows parsed from ## Critical Requirements table')
+    return lookup
+
+
+# ---------------------------------------------------------------------------
 # Block renderers
 # Each of the four per-section blocks is rendered from structured JSON into
 # the Markdown shape that the template's field-notes section specifies. The
@@ -110,27 +159,33 @@ def _render_eligibility(flags):
     return '\n'.join(lines)
 
 
-def _render_requirements(requirements):
+def _render_requirements(requirements, req_lookup):
     """Render the Requirements block: one sub-section per requirement.
 
-    `requirements` is a list of dicts with at least: requirement_id,
-    requirement_text, requirement_type, status, evidence (list of {id}),
-    notes (str). Optional: closure_ref (PU-NNN) - when present and the
-    requirement closed via user input, appended to notes as 'Closure ref:'.
+    `requirements` is a list of per-run decision dicts: requirement_id, status,
+    evidence (flat ID strings or {id,...} dicts - both normalized to IDs here),
+    notes, optional closure_ref and language_shift. Text and type are resolved
+    from req_lookup keyed by requirement_id; inline fields are a fallback only.
     """
     if not requirements:
-        # Defensive: should never happen (a JD always has critical requirements).
         return '_(no requirements)_'
     parts = []
     for req in requirements:
         rid = req.get('requirement_id', '')
-        rtext = req.get('requirement_text', '')
-        rtype = req.get('requirement_type', '')
+        info = req_lookup.get(rid, {})
+        rtext = info.get('text') or req.get('requirement_text', rid)
+        rtype = info.get('type') or req.get('requirement_type', '')
         status = req.get('status', '')
-        evidence_items = req.get('evidence', []) or []
-        evidence_ids = [e.get('id', '') for e in evidence_items if e.get('id')]
+        # Normalize evidence: flat ID strings (compact shape) or {id,...} dicts (full shape).
+        raw_evidence = req.get('evidence', []) or []
+        evidence_ids = []
+        for e in raw_evidence:
+            if isinstance(e, str):
+                evidence_ids.append(e)
+            elif isinstance(e, dict) and e.get('id'):
+                evidence_ids.append(e['id'])
         evidence_str = ', '.join(evidence_ids) if evidence_ids else 'none'
-        notes = req.get('notes', '').strip() or '_(none)_'
+        notes = (req.get('notes') or '').strip() or '_(none)_'
         closure_ref = req.get('closure_ref')
         if closure_ref and status == 'closed':
             notes_with_ref = notes if notes != '_(none)_' else ''
@@ -145,20 +200,24 @@ def _render_requirements(requirements):
     return '\n\n'.join(parts)
 
 
-def _render_language_shift(requirements):
+def _render_language_shift(requirements, req_lookup):
     """Render the Language-Shift Cases block by filtering requirements.
 
-    Only requirements with verdict/status `language-shift` and a populated
+    Only requirements with status `language-shift` and a populated
     `language_shift` object render here. '_(none)_' when no cases.
+    Text is resolved from req_lookup; inline requirement_text is a fallback.
     """
     cases = []
     for req in requirements:
         ls = req.get('language_shift')
         if not ls or req.get('status') != 'language-shift':
             continue
+        rid = req.get('requirement_id', '')
+        info = req_lookup.get(rid, {})
+        rtext = info.get('text') or req.get('requirement_text', rid)
         cases.append({
-            'requirement_id': req.get('requirement_id', ''),
-            'requirement_text_short': req.get('requirement_text', '')[:80],
+            'requirement_id': rid,
+            'requirement_text_short': rtext[:80],
             'role_terminology': ls.get('role_terminology', ''),
             'candidate_terminology': ls.get('candidate_terminology', ''),
             'entries_to_reframe': ls.get('entries_to_reframe', []) or [],
@@ -229,11 +288,12 @@ def cmd_assemble(args, repo_root, cfg):
     )
 
     rationale = _util.read(args.recommendation_rationale_file).strip()
+    req_lookup = _parse_requirements_from_research(args.research_file)
 
     # Render the per-section blocks.
     eligibility_block = _render_eligibility(flags)
-    requirements_block = _render_requirements(requirements)
-    language_shift_block = _render_language_shift(requirements)
+    requirements_block = _render_requirements(requirements, req_lookup)
+    language_shift_block = _render_language_shift(requirements, req_lookup)
     de_emphasize_block = _render_de_emphasize(de_emphasize_items)
     recommendation_block = _render_recommendation(args.recommendation_label, rationale)
 
@@ -287,8 +347,10 @@ def main():
                        choices=['Proceed', 'Proceed with caution', 'Do not pursue'])
     p_asm.add_argument('--recommendation-rationale-file', required=True,
                        help='path to a file holding the 1-2 sentence rationale text')
+    p_asm.add_argument('--research-file', required=True,
+                       help='path to research.md; provides requirement text and type keyed by CR-NNN')
     p_asm.add_argument('--requirements-file', required=True,
-                       help='JSON: per-requirement final records (gap-detector output + Phase 4 status/closure)')
+                       help='JSON: per-requirement decisions (status, evidence IDs, notes, language_shift, closure_ref)')
     p_asm.add_argument('--eligibility-file', required=True,
                        help='JSON: Phase 2 flags + decisions')
     p_asm.add_argument('--de-emphasize-file', required=True,

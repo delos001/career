@@ -1,6 +1,6 @@
 ---
 name: gap-detector
-description: Detects per-requirement coverage gaps for the gap-analysis skill. Reads the retrieval manifest, inventory, and narratives; evaluates each critical requirement at arc-level first and entry-level second; returns a structured per-requirement assessment (covered / gap / language-shift) with evidence IDs and reasoning. Read-only.
+description: Detects per-requirement coverage gaps for the gap-analysis skill. Reads the retrieval manifest, inventory, and narratives; evaluates each critical requirement at arc-level first and entry-level second; returns compact records for covered requirements (id + verdict + evidence IDs) and full records for gap and language-shift. Read-only.
 tools: Read
 ---
 
@@ -40,37 +40,42 @@ For language-shifts, populate `language_shift` with the role's terminology, the 
 - Score every requirement. Do not skip.
 - Score against the critical requirements; do not invent additional requirements from the role context or JD.
 - Do not fabricate IDs. Every ID in `evidence` and `language_shift.entries_to_reframe` must exist in `inventory.md` or `narratives.md`.
-- For `covered` or `language-shift`: `evidence` is non-empty.
-- For `gap`: `evidence` is empty; `missing` is populated.
-- One sentence per `reasoning`. Plain English. Name the strongest piece of evidence (or its absence) and why.
+- For `covered`: return the compact shape (no relevance text, no reasoning). Top 1-3 evidence IDs only.
+- For `language-shift`: return the full shape with `evidence` (with relevance), `language_shift`, and `reasoning`.
+- For `gap`: return the full shape with `missing` and `reasoning`. `evidence` is `[]`.
 - Do not edit or rewrite source content; return the assessment structure only.
 
 ## Return format
 
-Return exactly this JSON structure (parseable by `json.loads`):
+Return exactly this JSON structure (parseable by `json.loads`). Two shapes depending on verdict:
 
+**Compact shape — `covered` only:**
+```
+{"requirement_id": "CR-001", "verdict": "covered", "evidence": ["EX-NNN", "ST-NNN"]}
+```
+`evidence` is a flat list of 1-3 ID strings (no relevance text). No `requirement_text`, `requirement_type`, `missing`, `language_shift`, or `reasoning`.
+
+**Full shape — `gap` and `language-shift`:**
 ```
 {
-  "assessments": [
-    {
-      "requirement_id": "CR-001",
-      "requirement_text": "<verbatim from critical requirements list>",
-      "requirement_type": "must-have | preferred | contextual | duty-derived",
-      "verdict": "covered | gap | language-shift",
-      "evidence": [
-        {"id": "<EX-NNN | PR-NNN | ST-NNN | DC-NNN>", "relevance": "<one-line>"}
-      ],
-      "missing": "<one-line, gap only; null for covered / language-shift>",
-      "language_shift": {
-        "role_terminology": "<verbatim from requirement text>",
-        "candidate_terminology": "<what the candidate's entries call it>",
-        "entries_to_reframe": ["EX-NNN", "..."]
-      },
-      "reasoning": "<one-sentence>"
-    },
-    ...
-  ]
+  "requirement_id": "CR-002",
+  "verdict": "gap | language-shift",
+  "evidence": [
+    {"id": "<EX-NNN | PR-NNN | ST-NNN | DC-NNN>", "relevance": "<one-line>"}
+  ],
+  "missing": "<one-line, gap only; null for language-shift>",
+  "language_shift": {
+    "role_terminology": "<verbatim from requirement text>",
+    "candidate_terminology": "<what the candidate's entries call it>",
+    "entries_to_reframe": ["EX-NNN", "..."]
+  },
+  "reasoning": "<one-sentence>"
 }
 ```
+`requirement_text` and `requirement_type` are omitted; the assembler reads them from research.md. The dispatching skill looks them up from its Phase 1 requirements list when it needs them for the user-facing loop.
+`language_shift` is `null` for `gap`. `evidence` is `[]` for `gap`.
 
-`language_shift` is `null` for `covered` and `gap`. `evidence` is `[]` for `gap`.
+**Wrapper:**
+```
+{"assessments": [ <one record per requirement, compact or full> ]}
+```

@@ -64,12 +64,6 @@ The acronym check in `scripts/axis_qc.py` flags ~70 mismatches across pharma, bi
 - Blocks: nothing currently (axis files remain functional; the acronym check is report-only).
 - Refs: `inventory-qc-findings-decision-log` (parallel mechanism), `scripts/axis_qc.py`, `rules/quality_control/qc-industry-builder.md`.
 
-### design-decisions-audit-closure-bloat-cleanup
-**Resolved 2026-05-26.** Removed five audit-log entries from `design_decisions.md` (genuine design changes preserved in their authoring slugs and rule files). Standing rule (audit closures stay in memory/session-log; only design changes go in `design_decisions.md`) lives in the `feedback_design_decisions_design_only` memory.
-
-### vacuous-design-decisions-cleanup
-**Resolved 2026-05-26.** Removed `rule-builder-skills-inline-procedure` from `design_decisions.md`; future vacuous entries handled inline.
-
 ### registry-overlap-tracking
 Use `rules/industries/registry.md` (or an extension file) as a cross-reference of which terms appear in which industry files, so updates to shared regulatory/vocabulary terms (FDA guidance, ICH adoptions) can be propagated to all relevant files. Full-enumeration approach (`industry-files-full-enumeration`) duplicates shared terms across pharma/biotech/cro; redundancy is acceptable now but update-cost grows over time.
 

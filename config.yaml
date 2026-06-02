@@ -44,23 +44,23 @@ axes:
   industries:
     frontmatter_key: industry
     required_sections: [Vocabulary, Dialect, Emphasis, Adjacency]
-    used_by: cv_targeted, axis-classifier
+    used_by: cv-targeted, axis-classifier
   specialties:
     frontmatter_key: specialty
     required_sections: [Capability vocabulary, Terminology, Knowledge-transfer mode, Adjacency]
-    used_by: cv_targeted, axis-classifier
+    used_by: cv-targeted, axis-classifier
   orientations:
     frontmatter_key: orientation
     required_sections: [Identity, Summary lead, Section emphasis, Adjacency]
-    used_by: cv_targeted, axis-classifier
+    used_by: cv-targeted, axis-classifier
   levels:
     frontmatter_key: level
     required_sections: [Identity, Voice, Verb vocabulary, Scope signals, Adjacency]
-    used_by: cv_targeted, axis-classifier
+    used_by: cv-targeted, axis-classifier
   work-states:
     frontmatter_key: work-state
     required_sections: [Identity, Achievement framing, Adjacency]
-    used_by: cv_targeted, axis-classifier
+    used_by: cv-targeted, axis-classifier
 
 # Naming patterns.
 naming:
