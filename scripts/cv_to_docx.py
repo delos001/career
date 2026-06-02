@@ -1,16 +1,36 @@
 #!/usr/bin/env python3
 """
-Convert a CV markdown file to a formatted Word document.
-Follows design/format_spec.md exactly.
+cv_to_docx.py - render a targeted CV (cv_content.md) to a formatted .docx
 
-Usage:
-    python scripts/cv_to_docx.py <input.md> <output.docx>
-    python scripts/cv_to_docx.py   # uses default PFM paths
+Converts the cv-targeted skill's handoff artifact (cv_content.md) into a Word
+document whose geometry, typography, spacing, and bullets match the user's
+example CVs (temp/CV_example_for_specs{1,2,3}.docx, the source of truth per the
+cv-render-build-2026-06 design decision) and design/format_spec.md.
+
+Input grammar (the cv_qc.py + cv-architect contract):
+  - '# Name' and the contact line(s) sit above the first '## ' heading.
+  - '## <Section>'           section heading.
+  - '### <subheading text>'  within-role thematic subheading (its following
+                             '<!-- cr: CR-NNN -->' marker line strips to empty).
+  - '- <text> <!-- src: ... -->'  bullet; the citation comment is stripped.
+  - Company / role header lines are plain text (not list items); bold/italic are
+    carried by markdown '**...**' / '*...*' and rendered faithfully.
+  - All HTML comments ('<!-- ... -->') are stripped so citations never render.
+
+Bullets render as a native Word list (middle-dot U+00B7 in Cambria, indent
+left=144 / hanging=144), not a literal bullet character run.
+
+Author    : Jason Delosh
+Created   : 2026-06-02
+Project   : career
+Usage     : python scripts/cv_to_docx.py --cv-file <cv_content.md> --out <out.docx>
+Depends   : python-docx
 """
 
+import argparse
 import re
 import sys
-import os
+
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -19,23 +39,68 @@ from docx.oxml import OxmlElement
 
 
 # ---------------------------------------------------------------------------
-# Low-level helpers
+# Formatting constants (design/format_spec.md, grounded on the example CVs)
+# Sizes in points; indents/spacing in DXA (twips): 1 pt = 20 DXA, 1440 DXA = 1 in.
 # ---------------------------------------------------------------------------
 
-def _set_para_spacing(para, space_before_pt=0):
-    """space_before in pt, space_after=0, single line (240 DXA auto)."""
+FONT_BODY = 'Calibri'
+FONT_BULLET = 'Symbol'           # round-bullet glyph font (U+F0B7 renders as •)
+BULLET_CHAR = ''           # Symbol-font round bullet
+SIZE_BODY = 11
+SIZE_NAME = 18
+SIZE_CONTACT = 10
+SIZE_BULLET_GLYPH = 10           # bullet glyph size (text stays SIZE_BODY)
+
+SPACE_SECTION = 8                # pt before a section header
+SPACE_COMPANY = 8                # pt before the first company block in a section
+SPACE_SUBSEQUENT_TITLE = 8       # pt before a 2nd+ role title under one company
+SPACE_SUBHEADING = 6             # pt before a within-role thematic subheading
+
+BULLET_INDENT_LEFT = 360         # DXA: text starts 0.25" from the margin
+BULLET_INDENT_HANGING = 360      # DXA: bullet hangs back to the margin (0.25" gap)
+BULLET_NUM_ID = 100              # our injected numbering definition id
+
+# A company header line is distinguished from a role-title line by a location
+# token: '(Remote)'/'(Onsite)'/'(Hybrid)' or a 'City, ST' two-letter state.
+LOCATION_RE = re.compile(r'\((?:Remote|Onsite|On-site|Hybrid)\)|,\s*[A-Z]{2}\b')
+
+# Sections whose every content line renders as a bullet (matched on the
+# normalized lowercase heading). Professional Experience is excluded (its
+# company / title header lines are not bullets); Selected Projects is excluded
+# (its project-name line is a header, with '- ' description bullets beneath it).
+FORCE_BULLET_SECTIONS = {
+    'core competencies',
+    'education',
+    'earlier professional roles',
+    'certifications & training',
+    'professional affiliations',
+    'technical proficiencies',
+}
+
+COMMENT_RE = re.compile(r'<!--.*?-->')
+BOLD_RE = re.compile(r'\*\*(.+?)\*\*')
+# Inline markdown tokenizer: a bold span, an italic span, or a plain run.
+INLINE_RE = re.compile(r'(\*\*.+?\*\*|\*[^*]+?\*)')
+
+
+# ---------------------------------------------------------------------------
+# Low-level docx helpers (paragraph spacing, indent, runs)
+# ---------------------------------------------------------------------------
+
+def _set_spacing(para, before_pt=0):
+    """Single line spacing (240 auto), zero after, `before_pt` before."""
     pPr = para._p.get_or_add_pPr()
     spacing = pPr.find(qn('w:spacing'))
     if spacing is None:
         spacing = OxmlElement('w:spacing')
         pPr.append(spacing)
-    spacing.set(qn('w:before'), str(int(space_before_pt * 20)))  # pt -> DXA
+    spacing.set(qn('w:before'), str(int(before_pt * 20)))
     spacing.set(qn('w:after'), '0')
     spacing.set(qn('w:line'), '240')
     spacing.set(qn('w:lineRule'), 'auto')
 
 
-def _set_para_indent(para, left_dxa, hanging_dxa):
+def _set_indent(para, left_dxa, hanging_dxa):
     pPr = para._p.get_or_add_pPr()
     ind = pPr.find(qn('w:ind'))
     if ind is None:
@@ -45,141 +110,199 @@ def _set_para_indent(para, left_dxa, hanging_dxa):
     ind.set(qn('w:hanging'), str(hanging_dxa))
 
 
-def _make_run(para, text, bold=False, italic=False, size_pt=11,
-              font_name='Calibri', color_rgb=None):
-    run = para.add_run(text)
-    run.font.name = font_name
-    run.font.size = Pt(size_pt)
-    run.font.bold = bold
-    run.font.italic = italic
-    if color_rgb:
-        run.font.color.rgb = RGBColor(*color_rgb)
-    return run
+def _set_numbering(para, num_id, ilvl=0):
+    """Attach a list numbering reference (numPr) to a paragraph."""
+    pPr = para._p.get_or_add_pPr()
+    numPr = OxmlElement('w:numPr')
+    ilvl_el = OxmlElement('w:ilvl')
+    ilvl_el.set(qn('w:val'), str(ilvl))
+    numId_el = OxmlElement('w:numId')
+    numId_el.set(qn('w:val'), str(num_id))
+    numPr.append(ilvl_el)
+    numPr.append(numId_el)
+    pPr.append(numPr)
 
 
-def _new_para(doc, align=WD_ALIGN_PARAGRAPH.LEFT, space_before_pt=0):
-    para = doc.add_paragraph()
-    para.alignment = align
-    _set_para_spacing(para, space_before_pt)
-    return para
+def _run(para, text, bold=False, italic=False, size_pt=SIZE_BODY,
+         font=FONT_BODY, color=None):
+    r = para.add_run(text)
+    r.font.name = font
+    r.font.size = Pt(size_pt)
+    # Only emit the b/i toggles when on, so plain runs carry no element (the
+    # examples omit them entirely rather than writing an explicit "off").
+    if bold:
+        r.font.bold = True
+    if italic:
+        r.font.italic = True
+    if color:
+        r.font.color.rgb = RGBColor(*color)
+    return r
 
 
-def _strip_md(text):
-    """Remove **bold** and *italic* markdown markers."""
-    text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
-    text = re.sub(r'\*(.+?)\*', r'\1', text)
-    return text
+def _para(doc, align=WD_ALIGN_PARAGRAPH.LEFT, before_pt=0):
+    p = doc.add_paragraph()
+    p.alignment = align
+    _set_spacing(p, before_pt)
+    return p
 
 
-def _parse_bold_line(line):
-    """Return (bold_part, rest) for a line starting with **text**..."""
-    m = re.match(r'^\*\*(.+?)\*\*(.*)$', line)
-    if m:
-        return m.group(1), m.group(2)
-    return line, ''
+def _add_inline(para, text, size_pt=SIZE_BODY):
+    """Render a line with inline markdown: '**bold**' and '*italic*' spans.
 
-
-def _extract_company_and_title(bold_part, rest):
+    Splits the text into bold / italic / plain runs so company names, zone
+    labels, degree names, etc. carry their markdown emphasis faithfully.
     """
-    Input:  bold_part='Company', rest=' | Title | Dates [*(note)*]'
-    Output: (company_str, title_dates_raw)
-    title_dates_raw preserves *(...)* for italic rendering in add_title_para.
+    for token in INLINE_RE.split(text):
+        if not token:
+            continue
+        if token.startswith('**') and token.endswith('**'):
+            _run(para, token[2:-2], bold=True, size_pt=size_pt)
+        elif token.startswith('*') and token.endswith('*'):
+            _run(para, token[1:-1], italic=True, size_pt=size_pt)
+        else:
+            _run(para, token, size_pt=size_pt)
+
+
+# ---------------------------------------------------------------------------
+# Numbering definition: inject the example CVs' bullet (U+00B7, Cambria, 144/144)
+# ---------------------------------------------------------------------------
+
+def _add_field(para, instr):
+    """Append a simple Word field (e.g. PAGE, NUMPAGES) to a footer paragraph.
+
+    Uses w:fldSimple with a placeholder result; Word recalculates the value when
+    the document is opened.
     """
-    company = bold_part.strip()
-    if rest.startswith(' | '):
-        title_dates_raw = rest[3:]
-    elif rest.startswith('| '):
-        title_dates_raw = rest[2:]
+    fld = OxmlElement('w:fldSimple')
+    fld.set(qn('w:instr'), instr)
+    r = OxmlElement('w:r')
+    rPr = OxmlElement('w:rPr')
+    rFonts = OxmlElement('w:rFonts')
+    rFonts.set(qn('w:ascii'), FONT_BODY)
+    rFonts.set(qn('w:hAnsi'), FONT_BODY)
+    sz = OxmlElement('w:sz')
+    sz.set(qn('w:val'), str(SIZE_CONTACT * 2))   # half-points
+    rPr.append(rFonts)
+    rPr.append(sz)
+    r.append(rPr)
+    t = OxmlElement('w:t')
+    t.text = '1'
+    r.append(t)
+    fld.append(r)
+    para._p.append(fld)
+
+
+def add_page_footer(sec):
+    """Centered 'Page X of Y' footer (10pt Calibri), shown on every page."""
+    footer = sec.footer
+    footer.is_linked_to_previous = False
+    p = footer.paragraphs[0]
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    _set_spacing(p, 0)
+    _run(p, 'Page ', size_pt=SIZE_CONTACT)
+    _add_field(p, 'PAGE')
+    _run(p, ' of ', size_pt=SIZE_CONTACT)
+    _add_field(p, 'NUMPAGES')
+
+
+def _ensure_bullet_numbering(doc):
+    """Add an abstractNum + num for the CV bullet to the document numbering part.
+
+    Mirrors the example CVs' list definition: a middle-dot glyph in Cambria with
+    a left indent of 144 DXA and a 144 DXA hanging indent. Idempotent on id.
+    """
+    numbering = doc.part.numbering_part.element
+    abstract_id = str(BULLET_NUM_ID)
+
+    abstract = OxmlElement('w:abstractNum')
+    abstract.set(qn('w:abstractNumId'), abstract_id)
+    lvl = OxmlElement('w:lvl')
+    lvl.set(qn('w:ilvl'), '0')
+    for tag, val in (('w:start', '1'), ('w:numFmt', 'bullet'),
+                     ('w:lvlText', BULLET_CHAR), ('w:lvlJc', 'left')):
+        el = OxmlElement(tag)
+        el.set(qn('w:val'), val)
+        lvl.append(el)
+    pPr = OxmlElement('w:pPr')
+    ind = OxmlElement('w:ind')
+    ind.set(qn('w:left'), str(BULLET_INDENT_LEFT))
+    ind.set(qn('w:hanging'), str(BULLET_INDENT_HANGING))
+    pPr.append(ind)
+    lvl.append(pPr)
+    rPr = OxmlElement('w:rPr')
+    rFonts = OxmlElement('w:rFonts')
+    rFonts.set(qn('w:ascii'), FONT_BULLET)
+    rFonts.set(qn('w:hAnsi'), FONT_BULLET)
+    rFonts.set(qn('w:hint'), 'default')
+    rPr.append(rFonts)
+    sz = OxmlElement('w:sz')
+    sz.set(qn('w:val'), str(SIZE_BULLET_GLYPH * 2))   # half-points
+    rPr.append(sz)
+    lvl.append(rPr)
+    abstract.append(lvl)
+
+    num = OxmlElement('w:num')
+    num.set(qn('w:numId'), str(BULLET_NUM_ID))
+    abstract_ref = OxmlElement('w:abstractNumId')
+    abstract_ref.set(qn('w:val'), abstract_id)
+    num.append(abstract_ref)
+
+    # abstractNum elements must precede num elements in the numbering part.
+    last_abstract = numbering.findall(qn('w:abstractNum'))
+    if last_abstract:
+        last_abstract[-1].addnext(abstract)
     else:
-        title_dates_raw = rest.strip()
-    return company, title_dates_raw
+        numbering.insert(0, abstract)
+    numbering.append(num)
 
 
 # ---------------------------------------------------------------------------
-# Paragraph builders
+# Element builders
 # ---------------------------------------------------------------------------
 
-def add_name_para(doc, text):
-    """Name header: 18pt, centered."""
-    p = _new_para(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_before_pt=0)
-    _make_run(p, text, size_pt=18)
+def add_name(doc, text):
+    p = _para(doc, align=WD_ALIGN_PARAGRAPH.CENTER, before_pt=0)
+    _run(p, text, size_pt=SIZE_NAME)
 
 
-def add_contact_para(doc, text):
-    """Contact line: 10pt, centered."""
-    p = _new_para(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_before_pt=0)
-    _make_run(p, text, size_pt=10)
+def add_contact(doc, text):
+    p = _para(doc, align=WD_ALIGN_PARAGRAPH.CENTER, before_pt=0)
+    _add_inline(p, text, size_pt=SIZE_CONTACT)
 
 
 def add_section_header(doc, text):
-    """Section header: bold 11pt, 8pt before, mixed case."""
-    p = _new_para(doc, space_before_pt=8)
-    _make_run(p, text, bold=True)
+    p = _para(doc, before_pt=SPACE_SECTION)
+    _run(p, text, bold=True)
 
 
-def add_body_para(doc, text, space_before_pt=0):
-    """Regular narrative body text: 11pt, left-aligned."""
-    text = _strip_md(text)
-    p = _new_para(doc, space_before_pt=space_before_pt)
-    _make_run(p, text)
+def add_subheading(doc, text):
+    p = _para(doc, before_pt=SPACE_SUBHEADING)
+    _run(p, text, bold=True)
 
 
-def add_bullet_para(doc, text):
-    """
-    Middle-dot bullet per format_spec.md.
-    Bullet char: U+00B7 in Cambria 11pt; text: Calibri 11pt.
-    Indent: left 144 DXA, hanging 144 DXA.
-    """
-    text = _strip_md(text)
-    p = _new_para(doc, space_before_pt=0)
-    _set_para_indent(p, left_dxa=144, hanging_dxa=144)
-    br = p.add_run('· ')
-    br.font.name = 'Cambria'
-    br.font.size = Pt(11)
-    tr = p.add_run(text)
-    tr.font.name = 'Calibri'
-    tr.font.size = Pt(11)
+def add_line(doc, text, before_pt=0):
+    """A non-bullet content line rendered with inline markdown."""
+    p = _para(doc, before_pt=before_pt)
+    _add_inline(p, text)
 
 
-def add_company_para(doc, text, space_before_pt=8):
-    """Company name line: bold 11pt, 8pt before."""
-    p = _new_para(doc, space_before_pt=space_before_pt)
-    _make_run(p, text, bold=True)
+def add_bullet(doc, text):
+    p = _para(doc, before_pt=0)
+    _set_numbering(p, BULLET_NUM_ID)
+    _add_inline(p, text)
 
 
-def add_title_para(doc, text, space_before_pt=0):
-    """
-    Job title line: bold 11pt.
-    Handles trailing *(italic note)* rendered as non-bold italic.
-    """
-    p = _new_para(doc, space_before_pt=space_before_pt)
-    m = re.search(r'\s*\*\((.+?)\)\*\s*$', text)
-    if m:
-        normal = text[:m.start()]
-        italic_text = '(' + m.group(1) + ')'
-        _make_run(p, normal, bold=True)
-        _make_run(p, ' ' + italic_text, bold=False, italic=True)
-    else:
-        _make_run(p, text, bold=True)
+# ---------------------------------------------------------------------------
+# Parsing helpers
+# ---------------------------------------------------------------------------
+
+def _strip_comments(line):
+    return COMMENT_RE.sub('', line).rstrip()
 
 
-def add_earlier_role_para(doc, text):
-    """
-    Earlier Professional Roles entry.
-    SectionHeading style: Calibri Light, bold, #2198CF, 8pt before.
-    """
-    text = _strip_md(text)
-    p = _new_para(doc, space_before_pt=8)
-    _make_run(p, text, bold=True, font_name='Calibri Light',
-              color_rgb=(0x21, 0x98, 0xCF))
-
-
-def add_edu_cert_para(doc, bold_part, rest):
-    """Education or Certification: degree/cert name bold, rest normal."""
-    p = _new_para(doc, space_before_pt=0)
-    _make_run(p, bold_part, bold=True)
-    if rest:
-        _make_run(p, rest, bold=False)
+def _is_company_line(text):
+    """A header line naming a company (carries a location token)."""
+    return bool(LOCATION_RE.search(text))
 
 
 # ---------------------------------------------------------------------------
@@ -191,100 +314,89 @@ def build_cv(md_path, out_path):
         lines = f.read().splitlines()
 
     doc = Document()
-
-    # Remove default empty paragraph that Document() creates
+    # Drop the default empty paragraph the template starts with.
     for p in doc.paragraphs:
         if not p.text.strip():
             p._element.getparent().remove(p._element)
             break
 
-    # Page layout: US Letter, 1-inch margins all sides
+    # Page layout: US Letter, 0.75-inch margins, 0.5-inch header/footer.
     sec = doc.sections[0]
     sec.page_height = Inches(11)
     sec.page_width = Inches(8.5)
-    sec.top_margin = Inches(1)
-    sec.bottom_margin = Inches(1)
-    sec.left_margin = Inches(1)
-    sec.right_margin = Inches(1)
-    sec.header_distance = Inches(0.5)
-    sec.footer_distance = Inches(0.5)
+    sec.top_margin = sec.bottom_margin = Inches(0.75)
+    sec.left_margin = sec.right_margin = Inches(0.75)
+    sec.header_distance = sec.footer_distance = Inches(0.5)
 
-    # Default style: Calibri 11pt, no space after
+    # Normal style: Calibri 11pt, no space before/after.
     normal = doc.styles['Normal']
-    normal.paragraph_format.space_after = Pt(0)
+    normal.font.name = FONT_BODY
+    normal.font.size = Pt(SIZE_BODY)
     normal.paragraph_format.space_before = Pt(0)
-    normal.font.name = 'Calibri'
-    normal.font.size = Pt(11)
+    normal.paragraph_format.space_after = Pt(0)
 
-    # Parser state
-    current_section = None
-    prev_company = None
-    saw_name = False
+    _ensure_bullet_numbering(doc)
+    add_page_footer(sec)
 
-    for raw_line in lines:
-        line = raw_line.rstrip()
+    # Parser state.
+    section = None              # normalized current section
+    saw_name = False            # have we emitted the name (h1) yet
+    in_first_section = False    # have we passed the first '## '
+    pending_first_title = False  # next title under the current company is the 1st
 
-        # Skip blank lines and horizontal rules
-        if not line or line == '---':
+    for raw in lines:
+        line = _strip_comments(raw)
+        if not line.strip():
             continue
 
-        # ── Name (h1) ──────────────────────────────────────────────────────
-        if re.match(r'^# (?!#)', line):
-            add_name_para(doc, line[2:].strip())
-            saw_name = True
-            continue
+        # Name (h1) and contact block, above the first '## '.
+        if not in_first_section:
+            if line.startswith('# ') and not line.startswith('## '):
+                add_name(doc, line[2:].strip())
+                saw_name = True
+                continue
+            if saw_name and not line.startswith('#'):
+                add_contact(doc, line.strip())
+                continue
 
-        # ── Section header (h2) ────────────────────────────────────────────
+        # Section heading.
         if line.startswith('## '):
-            section_name = line[3:].strip()
-            current_section = section_name
-            prev_company = None
-            saw_name = False
-            add_section_header(doc, section_name)
+            section = re.sub(r'\s+', ' ', line[3:].strip()).lower()
+            in_first_section = True
+            pending_first_title = False
+            add_section_header(doc, line[3:].strip())
             continue
 
-        # ── Contact line (first text line before any section header) ───────
-        if saw_name and current_section is None:
-            add_contact_para(doc, line)
-            saw_name = False
+        # Within-role thematic subheading.
+        if line.startswith('### '):
+            add_subheading(doc, line[4:].strip())
             continue
 
-        # ── Bullet item ────────────────────────────────────────────────────
-        if line.startswith('- '):
-            add_bullet_para(doc, line[2:].strip())
+        # Bullet (explicit '- ' list item, in any section).
+        if re.match(r'^\s*-\s+', line):
+            add_bullet(doc, re.sub(r'^\s*-\s+', '', line).strip())
             continue
 
-        # ── Bold-led line: **...** ─────────────────────────────────────────
-        if line.startswith('**'):
-            bold_part, rest = _parse_bold_line(line)
+        text = line.strip()
 
-            if current_section == 'Earlier Professional Roles':
-                add_earlier_role_para(doc, bold_part + rest)
+        # Sections whose every content line renders as a bullet.
+        if section in FORCE_BULLET_SECTIONS:
+            add_bullet(doc, text)
+            continue
 
-            elif current_section == 'Professional Experience':
-                company, title_dates_raw = _extract_company_and_title(bold_part, rest)
-
-                if company == prev_company:
-                    # Subsequent role under same company: title line only, 8pt before
-                    add_title_para(doc, title_dates_raw, space_before_pt=8)
-                else:
-                    # New company block: company line (8pt) + title line (0pt)
-                    add_company_para(doc, company, space_before_pt=8)
-                    if title_dates_raw:
-                        add_title_para(doc, title_dates_raw, space_before_pt=0)
-                    prev_company = company
-
-            elif current_section in ('Education', 'Certifications'):
-                add_edu_cert_para(doc, bold_part, rest)
-
+        # Non-list content line: spacing depends on the section.
+        if section == 'professional experience':
+            if _is_company_line(text):
+                add_line(doc, text, before_pt=SPACE_COMPANY)
+                pending_first_title = True
+            elif pending_first_title:
+                add_line(doc, text, before_pt=0)
+                pending_first_title = False
             else:
-                # Fallback: bold body line
-                p = _new_para(doc)
-                _make_run(p, bold_part + rest, bold=True)
-            continue
-
-        # ── Regular body paragraph ─────────────────────────────────────────
-        add_body_para(doc, line)
+                # A subsequent role title under the same company.
+                add_line(doc, text, before_pt=SPACE_SUBSEQUENT_TITLE)
+        else:
+            add_line(doc, text, before_pt=0)
 
     doc.save(out_path)
     print(f'Saved: {out_path}')
@@ -292,23 +404,23 @@ def build_cv(md_path, out_path):
 
 
 # ---------------------------------------------------------------------------
-# Entry point
+# Command-line entry point
 # ---------------------------------------------------------------------------
 
-if __name__ == '__main__':
-    if len(sys.argv) == 3:
-        md_path = sys.argv[1]
-        out_path = sys.argv[2]
-    else:
-        base = r'C:\Users\delos\code\career\personal\applications\PFM_APP-003_2026-05'
-        md_path = os.path.join(base, 'CV_Draft_2026-05.md')
-        out_path = os.path.join(
-            base,
-            'Jason_Delosh_CV_PrecisionForMedicine_AssocOpExDir_2026-05.docx'
-        )
+def main():
+    parser = argparse.ArgumentParser(
+        description='Render cv_content.md to a formatted .docx')
+    parser.add_argument('--cv-file', required=True, help='path to cv_content.md')
+    parser.add_argument('--out', required=True, help='path to the output .docx')
+    args = parser.parse_args()
 
-    if not os.path.exists(md_path):
-        print(f'Error: input file not found: {md_path}', file=sys.stderr)
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        build_cv(args.cv_file, args.out)
+    except FileNotFoundError as e:
+        print(f'Error: input file not found: {e.filename}', file=sys.stderr)
         sys.exit(1)
 
-    build_cv(md_path, out_path)
+
+if __name__ == '__main__':
+    main()

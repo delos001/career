@@ -3,8 +3,12 @@
 > **This file is the authoritative formatting reference for all CV output.**
 > In any conflict between this spec and instructions elsewhere (e.g. CLAUDE.md skill), this spec takes precedence.
 >
-> Extracted from `user_CV_General_Lrge_Enterprise_Established.docx` and `user_CV_General_Mid_Size_Scale_Up.docx` via XML analysis.
-> Both source files are formatting-identical. This single spec covers both archetypes.
+> Source of truth (confirmed 2026-06-02): the user's example CVs
+> `temp/CV_example_for_specs{1,2,3}.docx`, verified by XML analysis. Where this
+> spec conflicted with those files, the files governed and this spec was
+> corrected to match (the `cv-render-build-2026-06` decision).
+> The renderer that implements this spec is `scripts/cv_to_docx.py` (run by the
+> cv-render skill); it parses `cv_content.md` and strips its citation comments.
 > All measurements in DXA (twips) unless noted. 1440 DXA = 1 inch. 1 pt = 20 DXA.
 
 ---
@@ -14,13 +18,19 @@
 | Property | Value | Notes |
 |---|---|---|
 | Paper size | US Letter | 12240 × 15840 DXA |
-| Top margin | 1440 DXA | 1 inch |
-| Bottom margin | 1440 DXA | 1 inch |
-| Left margin | 1440 DXA | 1 inch |
-| Right margin | 1440 DXA | 1 inch |
+| Top margin | 1080 DXA | 0.75 inch |
+| Bottom margin | 1080 DXA | 0.75 inch |
+| Left margin | 1080 DXA | 0.75 inch |
+| Right margin | 1080 DXA | 0.75 inch |
 | Header distance | 720 DXA | 0.5 inch |
 | Footer distance | 720 DXA | 0.5 inch |
-| Content width | 9360 DXA | 12240 − 2880 |
+| Content width | 10080 DXA | 12240 − 2160 |
+
+> **Margin note (2026-06-02):** The example CVs use 1-inch margins; 0.75 inch is a
+> deliberate choice (within the accepted 0.5-1 inch resume range) to widen lines
+> (fewer bullet wraps) and add vertical room (lower page-count risk) without
+> breaking norms. The `cv_qc.py` length-guard constants and the `cv-structure.md`
+> calibration constants are calibrated to this 0.75-inch geometry.
 
 ---
 
@@ -36,10 +46,12 @@
 | Job title | Calibri (minorHAnsi theme) | 22 | 11 | Yes | Black |
 | Body text / narrative | Calibri (minorHAnsi theme) | 22 | 11 | No | Black |
 | Bullet text | Calibri (minorHAnsi theme) | 22 | 11 | No | Black |
-| Earlier roles (SectionHeading style) | Calibri (majorHAnsi theme) | 22 | 11 | Yes | #2198CF |
-| Earlier roles secondary (Subsection style) | Calibri (minorHAnsi theme) | 18 | 9 | Yes | All-caps, #171717 |
+| Within-role thematic subheading | Calibri (minorHAnsi theme) | 22 | 11 | Yes | Black |
+| Earlier Professional Roles entries | Calibri (minorHAnsi theme) | 22 | 11 | No | Black |
 
-> **Note:** Section headers must be mixed case bold — NEVER ALL CAPS (except Subsection style used only for earlier roles secondary entries).
+> **Note:** Section headers must be mixed case bold, never ALL CAPS.
+>
+> **Earlier Professional Roles render as plain 11pt black lines** (`Company | Title | Dates`), identical in typography to body text. The blue Calibri-Light `SectionHeading` and 9pt all-caps `Subsection` styles a prior version of this spec documented do **not** appear in any example CV and are not used (confirmed 2026-06-02, `cv-render-build-2026-06`).
 
 ---
 
@@ -62,6 +74,7 @@
 | First company block header in section | 160 | 8 |
 | First job title under a company | 0 | 0 |
 | Subsequent job titles under same company | 160 | 8 |
+| Within-role thematic subheading | 120 | 6 |
 | Body text / narrative | 0 | 0 |
 | Bullet items | 0 | 0 |
 | Education entries | 0 | 0 |
@@ -86,71 +99,54 @@ Single-column bulleted list only. Two-column tables are never used anywhere in t
 
 | Property | Value |
 |---|---|
-| Bullet character | · (middle dot, U+00B7) |
-| Bullet font | Cambria |
-| Indent left | 144 DXA |
-| Hanging indent | 144 DXA |
-| Font size | 22 half-pts (11pt) |
+| Bullet character | • (round bullet, Symbol font code U+F0B7) |
+| Bullet glyph font | Symbol |
+| Bullet glyph size | 20 half-pts (10pt) |
+| Indent left | 360 DXA (0.25 inch) |
+| Hanging indent | 360 DXA (0.25 inch) |
+| Bullet text font / size | Calibri 11pt |
 
-**python-docx implementation:**
-```python
-from docx.oxml.ns import qn
-from docx.oxml import OxmlElement
-from docx.shared import Pt, Inches
-import docx
+**Implementation: a native Word list, not a literal bullet character.** Bullets
+render as a real bulleted list (`numPr` referencing a numbering definition), not
+by prepending a bullet-character text run to the paragraph. The list definition
+(`abstractNum`) carries the glyph (round bullet, Symbol font code U+F0B7, 10pt),
+the `bullet` numbering format, and the 360/360 indent; each bullet paragraph
+references it via `numPr`. The hanging indent puts a 0.25-inch gap between the
+glyph and the text, which starts at a tab stop at the left indent.
 
-# Add bullet paragraph
-def add_bullet(doc, text):
-    p = doc.add_paragraph()
-    p.style = doc.styles['Normal']
+`scripts/cv_to_docx.py` (`_ensure_bullet_numbering` + `_set_numbering`) injects
+one such definition into the document's numbering part and references it from
+every bullet paragraph. One indent (360/360) is used for all bulleted lists.
 
-    # Set indentation: left 144 DXA, hanging 144 DXA (144 DXA = 0.1 inch)
-    pPr = p._p.get_or_add_pPr()
-    ind = OxmlElement('w:ind')
-    ind.set(qn('w:left'), '144')
-    ind.set(qn('w:hanging'), '144')
-    pPr.append(ind)
-
-    # Add bullet character run (middle dot U+00B7, Cambria font, 11pt)
-    bullet_run = p.add_run('\u00B7 ')
-    bullet_run.font.name = 'Cambria'
-    bullet_run.font.size = Pt(11)
-
-    # Add bullet text run (Calibri, 11pt)
-    text_run = p.add_run(text)
-    text_run.font.name = 'Calibri'
-    text_run.font.size = Pt(11)
-```
+**Bulleted sections.** These sections render every content line as a bullet:
+Professional Experience (role bullets), Core Competencies (one bullet per zone),
+Earlier Professional Roles, Education, Certifications & Training, Professional
+Affiliations, Technical Proficiencies, and the description lines of Selected
+Projects. The Professional Summary is prose (never bulleted); company / role
+header lines and the Selected Projects project-name line are headers, not
+bullets.
 
 ---
 
-## Custom Paragraph Styles
+## Footer
 
-Two custom styles exist in the source documents. Use only for the elements described.
-
-### SectionHeading
-Used for: "Earlier Professional Roles" section entries (company/role lines, not body text).
+A centered page-number footer appears on every page (present in the example
+CVs). Live Word fields, so the count updates as content changes.
 
 | Property | Value |
 |---|---|
-| Font | majorHAnsi theme (Calibri Light) |
-| Bold | Yes |
-| Color | #2198CF |
-| Space before | 160 DXA (8pt) |
-| Space after | 0 |
-| Line spacing | Single |
+| Content | `Page <PAGE> of <NUMPAGES>` (live fields) |
+| Alignment | Center |
+| Font | Calibri 10pt |
+| Footer distance | 720 DXA (0.5 inch) |
 
-### Subsection
-Used for: Secondary earlier role entries (older/less prominent roles in the earlier roles section).
+## Earlier Professional Roles rendering
 
-| Property | Value |
-|---|---|
-| Bold | Yes |
-| All caps | Yes |
-| Color | #171717 |
-| Size | 18 half-pts (9pt) |
-| Space before | 0 |
-| Space after | 0 |
+Plain 11pt black `Company | Title | Dates` lines, identical typography to body
+text. No bullets, no descriptions, no special color or case. The blue
+Calibri-Light `SectionHeading` and 9pt all-caps `Subsection` styles documented
+in an earlier version of this spec are **not used** (they appear in no example
+CV; confirmed 2026-06-02, `cv-render-build-2026-06`).
 
 ---
 
@@ -172,7 +168,7 @@ No job title line is used. The timeframe, context descriptor, and optional repos
 
 ## Section Order
 
-Section order is governed exclusively by the archetype approved in Phase 2. This spec does not define or default section order. Refer to the approved archetype.
+Section order is governed by `rules/cv/cv-structure.md`. This spec does not define or default section order; it covers .docx rendering only.
 
 ---
 
@@ -192,7 +188,7 @@ These rules are the single source of truth for CV output. All rules below are de
 
 | Rule | Specification |
 |---|---|
-| Section header case | Mixed case bold — **never ALL CAPS** (Subsection style entries for secondary earlier roles are the only exception) |
+| Section header case | Mixed case bold; **never ALL CAPS** |
 | Font size | 11pt throughout the entire document, **except** the name header (18pt) and contact line (10pt) |
 | Space between job title and first bullet | **None** — zero space before first bullet under any job title |
 | Space before section headers | 8pt (160 DXA) |

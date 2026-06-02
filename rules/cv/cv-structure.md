@@ -406,13 +406,13 @@ geometry-informed estimate as a guard; the render stage measures actual
 lines/pages and routes any violation back to the Drafter to trim (single-writer
 preserved), capped, before re-rendering.
 
-**Calibration guard constants** (derived 2026-05 from the user's rendered CVs at
-US Letter, 1-inch margins, 0.5-inch header/footer, Calibri 11pt body; recalibrate
-against a rendered sample once the docx layout is fixed):
-- Usable lines per page: ~45 (page 1, with the name and contact block) / ~48
+**Calibration guard constants** (US Letter, 0.75-inch margins, 0.5-inch
+header/footer, Calibri 11pt body; the cv-render layout fixed 2026-06-02. These
+mirror the `cv_qc.py` constants and must move with them):
+- Usable lines per page: ~47 (page 1, with the name and contact block) / ~50
   (later pages).
-- Characters per line at wrap: ~95 full-width; flat experience bullets ~90-95
-  (subheading-grouped bullets sit at a slightly deeper indent, nearer ~90).
+- Characters per line at wrap: ~100 full-width; bullets ~95 (bullets sit at a
+  0.25-inch indent).
 - Estimate each unit as ceil(characters / line capacity) and sum against the
   section's page budget. Guard only; the render stage is authoritative.
 

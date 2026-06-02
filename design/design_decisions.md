@@ -1209,15 +1209,19 @@ The render skill (`cv-render`): converts `cv_content.md` (the cv-targeted handof
 
 **Source of truth for formatting:** the three `temp/CV_example_for_specs{1,2,3}.docx` (the user's real CVs), confirmed 2026-06-02 ("examples win"). Where `format_spec.md` conflicts with the examples, the examples govern and the spec is corrected to match.
 
-**Decisions:**
-- **Bullets render as a native Word list** (numbering definition: middle-dot `·` U+00B7, Cambria, indent left=144 / hanging=144), not a literal `"· "` text run. The examples use a native list; the appearance matches the prior spec, only the method changed. One clean bullet indent (144/144) is used for every bulleted list; the examples' cert/tech bullets at left=360 are manual-editing artifacts, not replicated.
-- **Earlier Professional Roles render as plain 11pt black lines** (`Company | Title | Dates`), not the blue Calibri-Light `SectionHeading` / 9pt all-caps `Subsection` styles `format_spec.md` documented. Those styles appear in zero examples (resolves the conflict flagged at `cv-content-output-artifacts...` / design_decisions:1188).
-- **Input grammar** is the `cv_qc.py` + `cv-architect` contract: `# Name` + contact block above the first `##`; `## Section`; `### subheading` + `<!-- cr: CR-NNN -->`; `- bullet <!-- src: ... -->`; zoned competencies (`**Zone**` + pipe/comma run); plain-text header lines. **The renderer strips all HTML comments** (`<!-- ... -->`) so citations never reach the page.
-- **Build approach:** rewrite the parser and bullet logic against the `cv_qc` grammar; salvage the existing script's low-level docx helpers (page setup, spacing, indent, run builder). Paths resolve from `config.yaml` (no hardcoded defaults). Validated against a hand-authored `cv_content.md` fixture rendered and compared to the three examples.
+**Source of truth for formatting:** the three `temp/CV_example_for_specs{1,2,3}.docx` (the user's real CVs), confirmed 2026-06-02 ("examples win"). The examples govern over the prior spec; deliberate, user-confirmed deviations from them are noted below.
 
-**Open element-type gaps** (resolve one at a time as real CVs hit them): footer page numbering ("Page X of Y", present in examples 1 and 3, absent from the spec); Education entry bold-or-plain (spec says degree bold; example 1 renders plain).
+**Decisions (all confirmed with the user 2026-06-02):**
+- **Bullets render as a native Word list** (numbering definition referenced by `numPr`), not a literal bullet-character run. Glyph: round bullet, Symbol font (U+F0B7), 10pt (text stays 11pt). Indent left=360 / hanging=360 (0.25-inch gap between glyph and text). One indent for all bulleted lists.
+- **Bulleted sections:** Professional Experience, Core Competencies (one bullet per zone), Earlier Professional Roles, Education, Certifications & Training, Professional Affiliations, Technical Proficiencies, and Selected Projects description lines. Professional Summary is prose; company/role and project-name lines are headers, not bullets. Implemented as a renderer force-bullet rule (self-contained in cv-render; no dependence on what the architect emits).
+- **Margins 0.75-inch all sides** (deliberate deviation from the examples' 1-inch; within the 0.5-1-inch resume norm) to widen lines and add vertical room. The `cv_qc.py` length-guard constants and `cv-structure.md` calibration constants were recalibrated to this geometry (chars/line ~100 full / ~95 bullet; usable lines ~47 page 1 / ~50 later).
+- **Centered "Page X of Y" footer** (live PAGE/NUMPAGES fields, 10pt) on every page.
+- **Within-role subheadings:** bold 11pt, no indent, 6pt before. **Education and other `**bold**` labels render faithfully** (degree/company/zone/project labels bold), per markdown.
+- **Earlier Professional Roles render as plain 11pt black lines** (`Company | Title | Dates`), not the blue Calibri-Light `SectionHeading` / 9pt all-caps `Subsection` styles the prior spec documented (they appear in zero examples; resolves the conflict at design_decisions:1188).
+- **Input grammar** is the `cv_qc.py` + `cv-architect` contract: `# Name` + contact above the first `##`; `## Section`; `### subheading` + `<!-- cr: CR-NNN -->`; `- bullet <!-- src: ... -->`; zoned competencies; plain-text header lines. **The renderer strips all HTML comments** so citations never reach the page.
+- **Build approach:** rewrote the parser and bullet logic against the `cv_qc` grammar; salvaged the existing script's low-level docx helpers. Args `--cv-file` / `--out`; no hardcoded paths.
 
-**Reversibility:** two-way (git-tracked). **Success criterion:** the fixture renders to a `.docx` whose geometry, fonts, sizes, spacing, and bullet style match the examples on probe, with no citation comments visible.
+**Reversibility:** two-way (git-tracked). **Verified** against a hand-authored fixture: geometry/font/size/bullet match the examples on probe, no citation comments visible. Next validation is on a real `cv_content.md` (deferred to actual CV creation by the user).
 
 Refs: `format_spec.md`, `rules/cv/cv-structure.md`, `scripts/cv_qc.py`, `.claude/agents/cv-architect.md`, `cv-format-spec-from-axes`.
 

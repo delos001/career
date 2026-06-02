@@ -69,15 +69,15 @@ import _util
 # ---------------------------------------------------------------------------
 # Calibration and level constants
 # Geometry guard constants are the cv-structure.md "Calibration guard
-# constants" (US Letter, 1in margins, Calibri 11pt). They are a conservative
-# estimate only; the render stage is authoritative. Bullet capacity uses the
-# lower (~90) end since flat bullets sit at a small indent.
+# constants" (US Letter, 0.75in margins, Calibri 11pt). They are a conservative
+# estimate only; the render stage is authoritative. Bullet capacity is slightly
+# below full width since bullets sit at a 0.25in indent.
 # ---------------------------------------------------------------------------
 
-USABLE_LINES_PAGE_1 = 45      # name + contact block consume page 1's top
-USABLE_LINES_LATER = 48
-CHARS_PER_LINE_BULLET = 90    # indented list item
-CHARS_PER_LINE_FULL = 95      # full-width prose / competency line
+USABLE_LINES_PAGE_1 = 47      # name + contact block consume page 1's top
+USABLE_LINES_LATER = 50
+CHARS_PER_LINE_BULLET = 95    # indented list item (0.25in indent)
+CHARS_PER_LINE_FULL = 100     # full-width prose / competency line
 BULLET_LINE_MAX = 3           # cv-structure.md hard rule: 4+ lines never
 
 # Per-level Core Competencies item count range and page ceiling.

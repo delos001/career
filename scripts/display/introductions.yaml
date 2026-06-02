@@ -131,3 +131,30 @@ cv-targeted: |
 
   Operates under rules/global-rules.md - halts and asks for direction on any
   failure or ambiguity rather than guessing.
+
+cv-render: |
+  # cv-render - render the targeted CV to a formatted .docx
+
+  Runs after cv-targeted. Reads the cv_content.md that cv-targeted produced and
+  renders it to a formatted Word document matching your CV format spec (Calibri
+  11pt, native middle-dot bullets, US Letter with 1-inch margins, page-number
+  footer). Produces one artifact: the .docx CV.
+
+  Steps:
+    1. Locate the application folder (by APP-NNN) and confirm cv_content.md
+       exists (if not, you are directed to run cv-targeted first).
+    2. Build the output filename from your name, the company, the role, and the
+       month; you confirm or override it.
+    3. Render the .docx via scripts/cv_to_docx.py.
+    4. Report the output path. Open it in Word to confirm pagination (markdown
+       has no geometry, so the true page count is only knowable once rendered).
+
+  The render carries no judgment: it does not rewrite, re-order, or re-cite
+  content. cv_content.md is the sole input, and the citation comments in it are
+  stripped, never shown.
+
+  Have ready: a completed cv-targeted run for the role (the application folder
+  must contain cv_content.md).
+
+  Operates under rules/global-rules.md - halts and asks for direction on any
+  failure or ambiguity rather than guessing.
