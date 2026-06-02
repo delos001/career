@@ -26,9 +26,9 @@ The dispatching skill gives you the application folder path, the candidate `leve
 
 - **`rules/cv/cv-structure.md`** - the structure and writing rules. Authoritative. Read it in full.
 - **The classified axis files** - the value files for this role's industry / specialty / orientation / level / work-state (e.g. `rules/orientations/<value>.md`). They supply voice, verb vocabulary, summary lead, section emphasis, terminology, and Adjacency. Read each provided file.
-- **`research.md`** - critical requirements (with `CR-NNN` ids), axis classification, and role/company/industry context.
-- **`retrieval.md`** - the manifest: per-entry semantic score, axis exact-match count, axis adjacency-weighted score. This is your relevance signal.
-- **`gap_analysis.md`** - per-requirement coverage status and the **de-emphasize list**.
+- **`research.md`** - critical requirements (text and type) and role/company/industry context. Requirements carry no stable id here; their `CR-NNN` ids are assigned by gap-analysis (see `gap_analysis.md`), in the same order.
+- **`retrieval.md`** - the manifest: per-entry semantic score, axis exact-match count, axis adjacency-weighted score. This is your relevance signal. (Its Reason column refers to requirements by bare position, e.g. "requirement 4"; that position maps 1:1 to the `CR-NNN` ids in `gap_analysis.md`.)
+- **`gap_analysis.md`** - per-requirement coverage status keyed by `CR-NNN` (the authoritative requirement ids for the CV; each maps positionally to a `research.md` requirement) and the **de-emphasize list**.
 - **`inventory.md`** and **`narratives.md`** - the source content (entry bodies; narrative arcs with Linked Inventory).
 - **`user-info.md`** - the contact block (name, location, contact line, profile links).
 - **Revision mode only:** the structured contributions from the career-strategist, hiring-manager, and candidate-advocate and/or the QC findings, plus the existing `cv_content.md` and `drafting_plan.md`.
@@ -38,7 +38,7 @@ The dispatching skill gives you the application folder path, the candidate `leve
 ### Initial draft (mode = draft)
 
 1. **Write `drafting_plan.md` first.** Record: the chosen orientation/level framing and one-line summary thesis; the page budget (target pages for the level, with an approximate line allocation per section, within the `cv-structure.md` ceiling); the applied de-emphasize list copied from `gap_analysis.md`; and an empty arbitration log. This plan keeps later rounds globally coherent.
-2. **Compose `cv_content.md`** per `cv-structure.md`: the two-band section order; the summary; zoned Core Competencies; Professional Experience (flat by default; within-role thematic subheadings only when the rule's conditions hold, with CR-sourced labels; arc composition only via a backing narrative); relevance-gated work-output sections; the credentials tail.
+2. **Compose `cv_content.md`** per `cv-structure.md`: the two-band section order; the summary; zoned Core Competencies; Professional Experience (flat by default; within-role thematic subheadings only when the rule's conditions hold, with CR-sourced labels; arc composition only via a backing narrative); the Earlier Professional Roles section when roles fall outside the recency/relevance threshold (compressed `Company | Title | Dates` lines, per the rule's inclusion and threshold logic); relevance-gated work-output sections; the credentials tail.
 3. **Cite every unit at write time** (see Output contract). This is not a post-pass.
 4. **Apply the writing rules:** adjacency translation for transferable experience; impact-type preference order; one sentence per bullet; the bullet and summary line limits; no em dashes; no AI-tell phrasing; the acronym rule; the level's voice from the axis file.
 5. **Self-verify traceability** before returning: every bullet, competency block, and summary carries a citation, and every cited id exists in the source files.
@@ -60,6 +60,9 @@ The dispatching skill gives you the application folder path, the candidate `leve
 - Core Competencies are a single-level bulleted list or a pipe-delimited run; each zone (or the section, if unzoned) carries at least one `<!-- src: ... -->`.
 - The Professional Summary is prose carrying at least one `<!-- src: ... -->`.
 - Company / role header lines are plain text, not list items.
+- Earlier Professional Roles entries are plain-text `Company | Title | Dates`
+  lines (no bullets, no descriptions); they carry no claims, so no citation
+  marker is required, though the facts derive from the RL role records.
 
 ## Arbitration precedence (when stakeholder contributions genuinely conflict)
 

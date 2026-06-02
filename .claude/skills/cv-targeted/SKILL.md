@@ -68,7 +68,9 @@ Ask if this session is for a new CV or to resume a previous one.
 
 - Input: application folder path (from the resume check), APP-NNN, slug.
 - Read `research.md` from the application folder. Extract:
-  - the `## Critical Requirements` section (each requirement's `CR-NNN`, text, type),
+  - the `## Critical Requirements` section (each requirement's text and type;
+    research.md carries no stable id, the `CR-NNN` ids are assigned downstream by
+    gap-analysis, below),
   - the `## Role`, `## Company`, `## Industry` summary blocks (role context).
 - Read the session log at
   `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`. Extract the
@@ -77,8 +79,11 @@ Ask if this session is for a new CV or to resume a previous one.
   `leadership`, the level axis value). The session log is the authoritative
   source for the classification (per `retrieval-architecture-2026-05`); the same
   source retrieval reads.
-- Read `gap_analysis.md`. Extract the per-requirement coverage statuses and the
-  `## De-emphasize` list (entry ids to down-weight).
+- Read `gap_analysis.md`. Extract the per-requirement coverage statuses keyed by
+  `CR-NNN` and the `## De-emphasize` list (entry ids to down-weight). The
+  `CR-NNN` ids are gap-analysis's id space and are the authoritative requirement
+  ids for the CV; each maps positionally (same order) to a `research.md`
+  requirement, and to the bare "requirement N" references in `retrieval.md`.
 - Read `user-info.md` from the profile folder (`personal/profile/`). Extract the
   contact block (name, location, contact line, profile links) for the CV header.
 - **Resolve the axis value files.** For each classified axis value, resolve its
@@ -142,7 +147,11 @@ Ask if this session is for a new CV or to resume a previous one.
   - `candidate-advocate` gets: `cv_content.md`, `retrieval.md`, `gap_analysis.md`,
     `inventory.md`, `narratives.md`, `research.md`, and `level`.
   Each returns a verdict (`satisfied` or `contributions`) and any contributions
-  tagged `material` or `nit`.
+  tagged `material` or `nit`. The hiring-manager may additionally return
+  `suspected_extraction_misses[]` (a critical JD element absent from both the
+  requirements and the gap analysis). Collect these separately; they are NOT
+  contributions and do not enter the Phase 3c integrate loop or affect
+  convergence. They are surfaced as an advisory note at handoff (Phase 6).
 - **Step 3b - Convergence check.** If all three return `satisfied` (no material
   contributions), the loop has converged; carry any outstanding nits into one
   final integration and proceed to Phase 4.
@@ -162,7 +171,11 @@ Ask if this session is for a new CV or to resume a previous one.
   observation, direction, rationale), then the architect's disposition of every
   material contribution (integrated / partial / declined, with the reason given
   to the advisor) and any cross-advisor arbitration calls. Every material
-  contribution must appear with a disposition; none is dropped silently.
+  contribution must appear with a disposition; none is dropped silently. Also
+  record any `suspected_extraction_misses` the hiring-manager returned this round
+  (deduped by JD element across rounds) under a `Suspected extraction misses`
+  note; these carry forward to Phase 6 unchanged (the architect does not act on
+  them).
 - Narrate each round in plain English (what each stakeholder contributed and that
   the architect is integrating), not check ids or agent mechanics.
 - Context-safe: each round spawns fresh sub-agents and the architect revises from
@@ -183,7 +196,8 @@ Ask if this session is for a new CV or to resume a previous one.
   L1 page-length guard). A non-zero exit is a script error: halt per global rules.
 - **Step 4b - Judgment QC.** Dispatch `qc-cv-targeted` with `cv_content.md`,
   `inventory.md`, `narratives.md`, `research.md`, and `level`. It returns a verdict
-  and any semantic-traceability / acronym / summary-support findings.
+  and any semantic-traceability / acronym / summary-support / judgment-AI-tell
+  findings.
 - **Step 4c - Aggregate and log.** Combine the mechanical check failures and the
   judgment findings into one findings list. Append the QC verdict and findings to
   `cv_collaboration_log.md`.
@@ -232,6 +246,14 @@ Ask if this session is for a new CV or to resume a previous one.
   dispositions); add any provisional QC findings from Phase 4. This gives the user
   a precise, reviewable account of what was left unresolved and why, since the
   workflow proceeds without requiring full agreement. Render "none" if empty.
+- **Compose Possible missed requirements from `cv_collaboration_log.md`:** for
+  each suspected extraction miss the hiring-manager flagged (deduped by JD
+  element), state it as a plain advisory: the JD appears to emphasize this, it is
+  absent from the tracked requirements and gap analysis, so the pipeline never
+  evaluated it, and the user should address it upstream if it is a real
+  requirement. This is advisory only (a reading of the raw JD that may be a false
+  positive), kept separate from Open items, and does not block the run. Render
+  "none" if empty.
 - Present the summary block:
 
   ```
@@ -242,6 +264,9 @@ Ask if this session is for a new CV or to resume a previous one.
   Open items (or "none"):
     - <advisor>: <ask> | not fully integrated because: <architect's reason>
     - QC (if provisional): <finding>
+  Possible missed requirements (or "none"):
+    - The JD appears to emphasize <X>; it is not in your requirements or gap
+      analysis, so the pipeline never evaluated it. Address upstream if it is real.
   Notes: <best-practices staleness warning and/or deferred-axis note, if any>
   ```
 
@@ -264,8 +289,8 @@ the artifact ships provisional with the remaining items surfaced at handoff.
 | Length guard: estimated pages over the level ceiling | Phase 4 fix loop (cv-architect trim) |
 | Invalid CR-NNN on a within-role subheading | Phase 4 fix loop (cv-architect revise) |
 | Semantic-traceability finding: cited entry does not support its claim, overstatement beyond source, arc bullet exceeds its cited union, adjacency translation fabricates the domain | Phase 4 fix loop (cv-architect revise) |
-| Acronym-expansion or summary-support judgment finding | Phase 4 fix loop (cv-architect revise) |
+| Acronym-expansion, summary-support, or judgment-AI-tell finding | Phase 4 fix loop (cv-architect revise) |
 | Unresolved material stakeholder contribution | Phase 3 collaboration loop (cv-architect integrate) |
-| Hiring-manager suspected extraction miss (a critical JD element absent from the extracted requirements) | Surface at handoff; the user decides whether to re-run `/role-intake` or `/gap-analysis` (not fixable in this skill) |
+| Hiring-manager suspected extraction miss (a critical JD element absent from both the extracted requirements and the gap analysis) | Surface at handoff as an advisory note (not fixable in this skill; the user decides whether to address it upstream) |
 | `cv_qc.py` non-zero exit (script error) | Halt per `global-rules.md`; do not loop |
 | Required upstream artifact missing (research / retrieval / gap_analysis) | Resume-check halt; direct the user to the missing upstream skill |

@@ -91,6 +91,7 @@ EVIDENCE_BAND = [
     'professional summary',
     'core competencies',
     'professional experience',
+    'earlier professional roles',  # optional; compressed Company|Title|Dates tail of experience
     'work-output',          # Selected Projects / Publications / Research (matched loosely below)
 ]
 CREDENTIALS_TAIL = [

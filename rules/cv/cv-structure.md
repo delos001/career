@@ -131,10 +131,35 @@ bullets per role as a norm; a heavy recent senior role may run higher.
 (impact-first), not the role's chronological first task. The top of each entry is
 high-attention space.
 
-**Earlier Professional Roles.** Roles beyond the recency/relevance threshold move
-to a compressed "Earlier Professional Roles" treatment (summary-bullet, or
-Company | Title | Dates lines). The threshold and rendering are governed by
-`cv-section-structure-professional-vs-earlier-roles`, not restated here.
+**Earlier Professional Roles.** CV experience uses two sections: Professional
+Experience and Earlier Professional Roles. A role belongs in **Professional
+Experience** when any of these hold:
+1. It is currently active or ended within the last 10 years (threshold: current
+   year minus 10).
+2. It is older but directly closes a critical-requirement gap that would
+   otherwise be unaddressed.
+3. It is newer than any rule-2 inclusion, so no perceived gap opens between the
+   two sections.
+
+A within-threshold role kept only to prevent a perceived timeline gap (not for
+content) earns a 1-2 line scope summary, not detailed bullets. Whether an older
+role "closes a gap" (rule 2) and whether a role is content-relevant versus
+timeline-only come from the retrieval / gap-analysis relevance signal (the
+upstream-signal principle above), not a fresh judgment here. For
+transformation-strategy or process-operations applications, operational roles
+(e.g. project management, clinical monitoring) that predate the transformation
+work stay in Professional Experience when within threshold; their summary
+reflects operational breadth, establishing the foundation the transformation arc
+builds on, rather than matching a JD cluster.
+
+**Earlier Professional Roles** holds every role outside the threshold that does
+not meet rule 2. Format: Company | Title | Dates only; no bullets, no
+descriptions. The section sits immediately after Professional Experience.
+
+**Gap-prevention principle.** Account for every period of professional activity
+across the two sections; note concurrent roles as concurrent. A documented gap
+(e.g. full-time study) is preferable to filling it with a role that does not
+belong.
 
 ### Bullet rules
 
@@ -410,13 +435,14 @@ does not restate:
 - **Axis voice and vocabulary** - level voice and verb vocabulary, orientation
   summary-lead and section-emphasis, and industry/specialty terminology come from
   the five axis files and compose with this structure.
-- **Critical-requirements extraction** - produced by role-intake (CR-NNN), carried
-  through gap-analysis. This file consumes them; it does not derive them.
-- **Earlier Professional Roles threshold and density** - governed by
-  `cv-section-structure-professional-vs-earlier-roles`.
+- **Critical-requirements extraction** - produced by role-intake (as text and
+  type; the `CR-NNN` ids are assigned downstream by gap-analysis, in the same
+  order). This file consumes them; it does not derive them.
 - **Visual rendering** - styling, fonts, authoritative pagination and page count,
-  and Earlier Professional Roles rendering belong to cv-render (docx). The single
-  handoff is cv_content.md.
+  and the visual rendering of Earlier Professional Roles belong to cv-render
+  (docx). The single handoff is cv_content.md. (The Earlier Professional Roles
+  inclusion threshold and content density are owned by this file, above; only
+  their visual rendering is deferred.)
 - **No-fabrication, failure handling, partial-content discipline** -
   `global-rules.md`.
 - **Skill procedure** - the Drafter/reviewer/QC loop, orchestration, and citation

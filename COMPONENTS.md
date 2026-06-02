@@ -62,14 +62,17 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - role-intake
 - retrieval
 - gap-analysis
+- cv-render
 - industry-builder, level-builder, orientation-builder, specialty-builder, work-state-builder (axis-builder skill family; one per axis; create / refresh modes; user-invoked)
+
+**Built** (detailed entry pending):
+- cv-targeted (built end to end; see `.claude/skills/cv-targeted/SKILL.md`)
 
 **Drafted** (skeleton SKILL.md exists at `.claude/skills/<name>/`; full design pending; no detailed entry yet):
 - career_brief — placeholder holding the Recruiter Pitch Template Customization Instructions migrated from `personal/profile/positioning.md` per `positioning-schema`.
 - interview_prep — placeholder holding the "Why did you leave?" answer guidance migrated from `personal/profile/positioning.md` per `positioning-schema`.
 
 **Planned** (from `design/design_decisions.md`):
-- cv_targeted
 - cv_general
 - interview_capture
 - interview_followup
@@ -92,7 +95,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - User input: job description (paste / file / URL), role communications (optional), company slug, metadata confirmations (title/company/level/industry) at Phase 2.
 - **Outputs**:
   - Files: `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`; `personal/applications/<SLUG>_APP-NNN_YYYY-MM/research.md` (with `## Company`, `## Role`, `## Industry`, `## Critical Requirements`, and `## Axis Gaps` sections).
-  - Skills: hands off to the retrieval skill, then to gap analysis (not yet built).
+  - Skills: hands off to the retrieval skill, then to gap analysis.
   - Side effects: consumes the next APP-NNN.
 - **Triggers**:
   - User invocation: `/role-intake` when starting evaluation of a new role; also resumes an interrupted run (user supplies APP-NNN; the skill probes artifacts and lands at the appropriate phase per its resume ladder).
@@ -100,7 +103,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - When the five-axis rule files or their registries change (axis classification logic).
   - When `rules/global-rules.md` changes.
   - When any of its subagents or scripts change.
-  - When the downstream retrieval or gap-analysis skill is built (handoff contract).
+  - When the downstream retrieval or gap-analysis handoff contract changes.
 
 #### retrieval
 
@@ -115,7 +118,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - User input: APP-NNN (resume) or implicit (new run; folder must exist with role-intake output already in place).
 - **Outputs**:
   - Files: `personal/applications/<SLUG>_APP-NNN_YYYY-MM/retrieval.md` (the manifest).
-  - Skills: hands off to gap analysis (not yet built), CV creation, interview prep, career brief.
+  - Skills: hands off to gap analysis, then CV creation, interview prep, career brief.
   - Side effects: none (read-only against the profile and the role-intake artifacts).
 - **Triggers**:
   - User invocation: `/retrieval` after a role-intake run has completed for the same APP-NNN. Resumes prior runs via the APP-NNN probe.
@@ -165,6 +168,15 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - Side effects: `last_researched` stamped; `design/build_issues.md` appended on contract failure or provisional ship.
 - **Triggers**: User invocation; may be recommended by `role-intake` Phase 6 after an axis-gap flag for the matching axis.
 - **Update Triggers**: When the per-axis schema, the matching QC rule file, or any of the three agents / three scripts in the axis-builder ecosystem change.
+
+#### cv-render
+
+- **Purpose**: Render the targeted CV (`cv_content.md`) to a formatted `.docx` matching `design/format_spec.md`. Mechanical only: no content judgment, no rewriting, re-ordering, or re-citing. Final step of the CV pipeline.
+- **Status**: Built.
+- **Inputs**: User input (APP-NNN; output filename confirmation). Files: the application folder's `cv_content.md`; `personal/profile/user-info.md` (candidate name) and the folder's `research.md` (company, role) for the output filename. Rules: `rules/global-rules.md`. Script: `scripts/cv_to_docx.py`.
+- **Outputs**: `<application folder>/<CandidateName>_CV_<Company>_<Role>_<YYYY-MM>.docx`.
+- **Triggers**: User invocation (`/cv-render`) after cv-targeted produces `cv_content.md`.
+- **Update Triggers**: When `cv_content.md`'s grammar (the cv-architect / `cv_qc.py` contract) changes, or when `format_spec.md` changes.
 
 ---
 
@@ -326,7 +338,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - `scripts/gap_assemble.py`, `scripts/staging_append.py` (gap-analysis concern family)
 - `scripts/axis_registry.py`, `scripts/axis_qc.py`, `scripts/axis_apply.py` (axis-builder concern family)
 - `scripts/_config.py`, `scripts/_util.py`, `scripts/axis_utils.py` (shared helper modules; not standalone scripts, no separate entries)
-- `scripts/cv_to_docx.py` (pre-existing; detailed entry pending)
+- `scripts/cv_to_docx.py` (cv-render skill: renders cv_content.md to a formatted .docx)
 
 **Planned / referenced in design:**
 - `scripts/display/orient.py` (with `scripts/display/orientations.yaml` catalog)
@@ -334,7 +346,6 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - `scripts/registry/generate_vocabularies.py` (reads tag and registry sources across `rules/`, generates `VOCABULARIES.md` at repo root as a single read-only reference for human browsing; regenerated on demand after tag-source changes)
 - Document metadata header reconciliation script (sweeps in-scope docs, parses headers, cross-references against COMPONENTS.md and skill code; logged to Pending Follow-on Work)
 - Inventory validation script (validates Capability, Industry, Skill, Role, Purpose, Role Level, Org Context against tag/registry sources)
-- Format conversion scripts (python-docx CV rendering, per `format_spec.md` transfer note); partially built as `scripts/cv_to_docx.py`
 - Resolver scripts (rule lookup by category/slug, per Skill Stability via Loose Coupling)
 
 ### Generated Artifacts (outputs of scripts above, not standalone components)
@@ -459,6 +470,15 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Outputs**: Files: `rules/<axis>/<value>.md` (create/refresh); modified sibling files (create); updated `rules/<axis>/registry.md` (create); appended `design/build_issues.md` (provisional). Paths printed to stdout.
 - **Triggers**: Invoked by every axis-builder skill at Phase 6.
 - **Update Triggers**: When the value-file or registry format changes; when transactional semantics or the build-issues log format change.
+
+#### scripts/cv_to_docx.py
+
+- **Purpose**: Render `cv_content.md` to a formatted `.docx` per `design/format_spec.md`. Parses the cv-architect / `cv_qc.py` markdown grammar, strips all HTML citation comments, and applies the typography, spacing, native-list bullets (middle-dot U+00B7 in Cambria, 144/144 indent, injected as a numbering definition), and a centered "Page X of Y" footer. Distinguishes company header lines from role-title lines by a location token for per-block spacing.
+- **Status**: Built.
+- **Inputs**: Args (`--cv-file`, `--out`). Deps: python-docx. (No config dependency; the cv-render skill resolves the paths.)
+- **Outputs**: The `.docx` at `--out`; path echoed to stdout. Errors to stderr with exit 1 on a missing input file.
+- **Triggers**: Invoked by the `cv-render` skill Phase 3.
+- **Update Triggers**: When `format_spec.md` changes; when `cv_content.md`'s grammar (the cv-architect / `cv_qc.py` contract) changes.
 
 ---
 

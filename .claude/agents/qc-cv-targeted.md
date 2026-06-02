@@ -44,9 +44,14 @@ For each content unit in the draft, extract its cited ids, grep those ids in `in
 5. **Each distinct summary claim is backed.** Every substantive claim in the Professional Summary (scope, scale, a quantified achievement, a domain positioning) traces to a cited entry that supports it. A summary assertion with no supporting cited source is a finding.
    Route-back: cv-architect (revise).
 
+### AI-tell phrasing (judgment subset only)
+
+6. **No machine-written tells that a regex cannot catch.** `cv_qc.py` already flags the mechanical AI-tell subset (negation-contrast, marketing-copulas, vague-intensifiers, buzzwords); do **not** re-check those. You own only the judgment subset from the `cv-structure.md` "No AI-tell phrasing" rule: rule-of-three padding (a forced third item for rhythm), trailing significance clauses (the appended "..., driving efficiency" flourish asserting vague impact), and Title Case headings or decorative boldface. Flag any instance, naming the unit.
+   Route-back: cv-architect (revise).
+
 ## Out of scope (do not check)
 
-- Anything `cv_qc.py` checks mechanically (citations present, ids valid, one sentence, line limits, structure/banding, count, length guard, em dashes, AI-tell patterns).
+- Anything `cv_qc.py` checks mechanically (citations present, ids valid, one sentence, line limits, structure/banding, count, length guard, em dashes, and the mechanical AI-tell patterns). You cover only the judgment AI-tell subset in check 6, never the mechanical patterns.
 - Craft quality (the career-strategist's domain) and coverage / employer fit (the hiring-manager's domain). You are not a third opinion on quality; you are the correctness gate.
 
 ## Sufficiency, not vibes

@@ -255,29 +255,13 @@ Level lives only on EX/PR entries (effective level). Captures the pattern of doi
 Prior version had Level on both RL-NNN role records (titled level) and EX/PR entries (effective level), with EX/PR defaulting from RL when missing. Removed RL Level after per-entry Level became fully populated on every EX/PR entry: cv_targeted matches JD Level against entry effective level directly; RL Level was never read in retrieval and added no signal. If a future builder skill needs role-level defaulting for new EX entries, the field can be reintroduced.
 
 #### cv-section-structure-professional-vs-earlier-roles
-CV experience uses two sections: **Professional Experience** and **Earlier Professional Roles**.
-
-**Professional Experience inclusion rules:**
-1. Any role currently active or with an end date within the last 10 years (threshold: current year minus 10).
-2. Any older role that directly closes a gap between the candidate's experience and a specific JD competency cluster — but only when that gap would otherwise be unaddressed.
-3. If a newer role is included solely to prevent a perceived timeline gap (not for content), it earns 1-2 lines summarizing scope and responsibilities — not detailed bullets.
-4. Any role newer than an older rule-2 inclusion must also appear in Professional Experience to avoid a perceived gap between the two sections.
+CV experience uses two sections, **Professional Experience** and **Earlier Professional Roles**, split by a recency/relevance threshold: roles within ~10 years, plus older roles that close an otherwise-unaddressed critical-requirement gap, go in Professional Experience; the rest compress to `Company | Title | Dates` lines in Earlier Professional Roles. The operational spec (inclusion rules 1-4, the 10-year threshold, timeline-continuity treatment, the transformation/process-operations note, the Earlier format, and the gap-prevention principle) is the runtime rule the cv-architect applies, so it lives in `rules/cv/cv-structure.md` under **Earlier Professional Roles** and is not duplicated here, to avoid drift (moved there 2026-06 during the cv-targeted audit; cv-structure.md previously deferred back to this slug, which the skill does not load at runtime).
 
 **Relevance source.** Whether an older role "closes a gap" (rule 2) and whether a within-threshold role is "related" versus included only for timeline continuity (rule 3) are determined by the retrieval / gap-analysis relevance signal for the specific application — the role contributed evidence to a critical requirement, or its entries cleared the relevance threshold — not by a fresh subjective judgment in the CV skill. This keeps relatedness consistent across passes and traceable, per the no-drift constraint. (Binding added 2026-05 during cv-content design; see `cv-content-structure-decisions-2026-05`.)
 
-**Professional Experience treatment:**
-- Roles with strong JD alignment: full arc-level bullet treatment per role scope.
-- Roles included only for timeline continuity (rule 3 above): 1-2 line breadth summary only.
-- For transformation-strategy or process-operations oriented applications: operational roles (project management, clinical monitoring, site management) that predate the transformation work belong in Professional Experience if within threshold. They establish operational foundation that validates the transformation arc. Their 1-2 line summary should reflect operational breadth, not JD-cluster matching.
-
-**Earlier Professional Roles:**
-All roles outside the threshold that do not meet rule-2. Format: Company | Title | Dates only. No bullets, no descriptions.
-
-**Gap prevention principle:** Readers notice unexplained gaps. Every period of professional activity should be accounted for across the two sections. Concurrent roles (multiple employers simultaneously) should be noted as concurrent; low-allocation side engagements can appear as brief notes. A gap during a documented period (e.g., COVID, full-time study) is preferable to artificially filling it with a role that doesn't belong.
-
 **Traceability constraint:** Every claim in a Professional Experience entry must trace to a specific EX inventory entry or RL role record. Level-elevation language (reframing IC work as director-level framing) is valid only when the inventory entry itself supports the elevated framing — not as a general elevation pass. Claims that cannot be defended in interview are liabilities, not assets.
 
-Refs: `arc-composition-for-high-impact-roles`, `cv-targeted-retrieval-architecture-2026-05`.
+Refs: `rules/cv/cv-structure.md` (operational home), `arc-composition-for-high-impact-roles`, `cv-targeted-retrieval-architecture-2026-05`.
 
 ### Profile Documents (Schemas)
 
@@ -1219,6 +1203,23 @@ Rejected: option B (expanding career-strategist into advocate + craft) - blurs "
 **Paired hiring-manager strengthening (bundle with this build).** The advocate actively pushes to maximize the applicant's positioning, which creates overstatement pressure. The counterweight is an explicit **overreach / credibility** function in the hiring-manager, distinct from QC: QC verifies a claim against its cited source; the hiring-manager judges, from the skeptical employer's seat, whether a claim reads as inflated and would be distrusted or exposed in an interview or reference check (which hurts the applicant). Add it as a new hiring-manager domain plus a what-to-do step when building the advocate, completing the honesty triangle: advocate maximizes (truthfully), hiring-manager checks employer-credibility, QC verifies source. Today the hiring-manager only touches this tangentially via its `transferable-experience clarity` domain.
 
 Refs: `cv-targeted-name-and-structure-2026-05`, `cv-content-agent-architecture-2026-05`, `cv-content-collaboration-mechanism-2026-05`, `cv-targeted-reviewer-autonomy-reconciliation`.
+
+#### cv-render-build-2026-06
+The render skill (`cv-render`): converts `cv_content.md` (the cv-targeted handoff) to a formatted `.docx`. Thin SKILL.md orchestrator over a rewritten `scripts/cv_to_docx.py`.
+
+**Source of truth for formatting:** the three `temp/CV_example_for_specs{1,2,3}.docx` (the user's real CVs), confirmed 2026-06-02 ("examples win"). Where `format_spec.md` conflicts with the examples, the examples govern and the spec is corrected to match.
+
+**Decisions:**
+- **Bullets render as a native Word list** (numbering definition: middle-dot `·` U+00B7, Cambria, indent left=144 / hanging=144), not a literal `"· "` text run. The examples use a native list; the appearance matches the prior spec, only the method changed. One clean bullet indent (144/144) is used for every bulleted list; the examples' cert/tech bullets at left=360 are manual-editing artifacts, not replicated.
+- **Earlier Professional Roles render as plain 11pt black lines** (`Company | Title | Dates`), not the blue Calibri-Light `SectionHeading` / 9pt all-caps `Subsection` styles `format_spec.md` documented. Those styles appear in zero examples (resolves the conflict flagged at `cv-content-output-artifacts...` / design_decisions:1188).
+- **Input grammar** is the `cv_qc.py` + `cv-architect` contract: `# Name` + contact block above the first `##`; `## Section`; `### subheading` + `<!-- cr: CR-NNN -->`; `- bullet <!-- src: ... -->`; zoned competencies (`**Zone**` + pipe/comma run); plain-text header lines. **The renderer strips all HTML comments** (`<!-- ... -->`) so citations never reach the page.
+- **Build approach:** rewrite the parser and bullet logic against the `cv_qc` grammar; salvage the existing script's low-level docx helpers (page setup, spacing, indent, run builder). Paths resolve from `config.yaml` (no hardcoded defaults). Validated against a hand-authored `cv_content.md` fixture rendered and compared to the three examples.
+
+**Open element-type gaps** (resolve one at a time as real CVs hit them): footer page numbering ("Page X of Y", present in examples 1 and 3, absent from the spec); Education entry bold-or-plain (spec says degree bold; example 1 renders plain).
+
+**Reversibility:** two-way (git-tracked). **Success criterion:** the fixture renders to a `.docx` whose geometry, fonts, sizes, spacing, and bullet style match the examples on probe, with no citation comments visible.
+
+Refs: `format_spec.md`, `rules/cv/cv-structure.md`, `scripts/cv_qc.py`, `.claude/agents/cv-architect.md`, `cv-format-spec-from-axes`.
 
 ## Career Workflow Stage
 

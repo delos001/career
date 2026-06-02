@@ -4,6 +4,12 @@ When a deferral's trigger fires, promote to `open_questions.md`. Protocol in mem
 
 ## Build-Time Tasks
 
+### skills-config-driven-paths
+All built skills (role-intake, retrieval, gap-analysis, cv-targeted) hardcode repo path strings in SKILL.md prose (`personal/profile/`, `personal/sessions/<SLUG>...`, application-folder filenames) rather than resolving them from `config.yaml`. The `no-hardcoded-repo-values` rule was always intended to cover skill prose, not just scripts (confirmed 2026-06-01), but was never implemented for skills. The scripts already read paths from config via `_config.py`; skills should instruct the executor to resolve paths from config the same way. Cross-skill change; do in one pass.
+- Trigger: project bandwidth, or user direction.
+- Blocks: nothing currently (hardcoded prose works; it just breaks on repo reorg).
+- Refs: `config.yaml`, `.claude/skills/*/SKILL.md`, memory `no-hardcoded-repo-values`.
+
 ### session-log-parser-tests
 Tests verifying latest-wins per topic (decision entries) and per phase (phase_complete entries).
 - Trigger: parser implementation lands.
@@ -59,12 +65,10 @@ The acronym check in `scripts/axis_qc.py` flags ~70 mismatches across pharma, bi
 - Refs: `inventory-qc-findings-decision-log` (parallel mechanism), `scripts/axis_qc.py`, `rules/quality_control/qc-industry-builder.md`.
 
 ### design-decisions-audit-closure-bloat-cleanup
-**Resolved 2026-05-26.** Five audit-log entries removed from `design_decisions.md`: the three named audit-closure entries (`experience-inventory-final-audit-phases-1-2-and-3p-applied-2026-05`, `experience-inventory-final-audit-phase-5-applied-2026-05`, `experience-inventory-final-audit-step-0-and-phases-6-7-applied-2026-05`) plus two related apply-status entries (`specialty-retagging-applied-2026-05`, `specialty-training-entries-catch-all-cleanup-2026-05`). Genuine design changes from those entries live in their authoring slugs and rule files: QC rules in `design/inventory_builder_quality_checks.md`, the rl-allocation schema in `rl-allocation-field-schema-2026-05`, the orientation scope-qualifier change in `rules/orientations/transformation-strategy.md`, and the memory feedback entries in `memory/`. Broken slug refs cleaned up across `design_decisions.md`. Standing rule going forward: future audit closures stay as memory or session-log notes; only genuine design changes (rules, schemas, architectural shifts) go into `design_decisions.md`.
-- Refs: `design/design_decisions.md`, `design/inventory_builder_quality_checks.md`.
+**Resolved 2026-05-26.** Removed five audit-log entries from `design_decisions.md` (genuine design changes preserved in their authoring slugs and rule files). Standing rule (audit closures stay in memory/session-log; only design changes go in `design_decisions.md`) lives in the `feedback_design_decisions_design_only` memory.
 
 ### vacuous-design-decisions-cleanup
-**Resolved 2026-05-26.** `rule-builder-skills-inline-procedure` removed from `design_decisions.md`. Future vacuous entries surfaced during ongoing review get handled inline; no need for a perpetual parking-spot deferral.
-- Refs: `design/design_decisions.md`, `design-decisions-audit-closure-bloat-cleanup` (parallel cleanup deferral, still open).
+**Resolved 2026-05-26.** Removed `rule-builder-skills-inline-procedure` from `design_decisions.md`; future vacuous entries handled inline.
 
 ### registry-overlap-tracking
 Use `rules/industries/registry.md` (or an extension file) as a cross-reference of which terms appear in which industry files, so updates to shared regulatory/vocabulary terms (FDA guidance, ICH adoptions) can be propagated to all relevant files. Full-enumeration approach (`industry-files-full-enumeration`) duplicates shared terms across pharma/biotech/cro; redundancy is acceptable now but update-cost grows over time.
@@ -102,8 +106,7 @@ Audit all axes (industries, specialties, orientations, levels, work-states) to v
 ## Per-Skill Design Items
 
 ### cv-targeted-reviewer-autonomy-reconciliation
-**Resolved 2026-05-29 (b5).** Reviewers reframed as **stakeholders** in a DACI model (architect = decision-maker; advisors hold genuine, non-binding authority on their owned layers). Bidirectional loop: the architect returns a disposition (integrated / partial / declined + reason) for every material contribution, fed back next round; logged to `cv_collaboration_log.md`; unresolved items surfaced at handoff. The 2026-06-01 candidate-advocate build preserves this conclusion (third advisor, same DACI mechanics). Captured in `cv-targeted-name-and-structure-2026-05` and `cv-targeted-candidate-advocate-2026-05`.
-- Refs: `cv-content-agent-architecture-2026-05`, `cv-content-collaboration-mechanism-2026-05`, `cv-targeted-name-and-structure-2026-05`, `cv-targeted-candidate-advocate-2026-05`.
+**Resolved 2026-05-29** by `cv-targeted-name-and-structure-2026-05` and `cv-targeted-candidate-advocate-2026-05` (DACI stakeholder model). See those entries.
 
 ### cv-best-practices-refresh
 `rules/cv/cv-best-practices.md` is the vetted evidence base behind `cv-structure.md` and the grounding for the career-strategist stakeholder. It is static research and will go stale (the AI-tell guidance ages fastest). Refresh procedure: re-run the CV best-practice web research, reconcile against the current doc, bump `last_researched`, and cascade any rule changes into `cv-structure.md` (the rules are derived from this evidence).
@@ -112,12 +115,10 @@ Audit all axes (industries, specialties, orientations, levels, work-states) to v
 - Refs: `cv-targeted-name-and-structure-2026-05`, `rules/cv/cv-structure.md`, `rules/cv/cv-best-practices.md`.
 
 ### cv-content-within-entry-layout
-**Resolved 2026-05-29 by `cv-targeted-name-and-structure-2026-05`:** flat by default; thematic subheadings only on recent, accomplishment-heavy senior/leadership roles with CR-sourced labels (capped 3-6); IC always flat; arc rollups synthesize into one bullet via narratives. Bullet-capacity guard constant ~90-95 chars/line (flat).
-- Refs: `cv-content-output-and-length-2026-05`, `cv-content-structure-decisions-2026-05`, `cv-targeted-name-and-structure-2026-05`.
+**Resolved 2026-05-29** by `cv-targeted-name-and-structure-2026-05`. See that entry.
 
 ### gap-analysis-schema
-**Resolved 2026-05-27 by `gap-analysis-architecture-2026-05`.** Output schema settled: `gap_analysis.md` carries a header (APP-NNN, date, fit score, unmet must-haves count, recommendation label) and six sections (Eligibility Flags, Requirements, Language-Shift Cases, De-emphasize, Recommendation — optional sections render `_(none)_` when empty). Per-requirement records carry CR-NNN id, text, type, status from the locked taxonomy (covered / closed / language-shift / interview-deferred / unresolved), evidence IDs, and notes. The format does not depend on cv_targeted; cv_targeted reads `gap_analysis.md` as input.
-- Refs: `gap-analysis-architecture-2026-05`.
+**Resolved 2026-05-27** by `gap-analysis-architecture-2026-05`. Full schema lives there.
 
 ### introduction-roster-ambiguous-skills
 Introduction classification for `interview_capture`, `interview_followup`, `cv_general`, `inventory`, `narratives`.
@@ -144,8 +145,7 @@ Weighted matching by JD emphasis: industry-emphasis weights Industry higher; spe
 - Refs: `five-orthogonal-axes`, `experience-inventory-domain-scoping`, `axis-adjacency-weights-redefinition`.
 
 ### cv-targeted-hybrid-retrieval
-**Resolved 2026-05-26 by `retrieval-architecture-2026-05`.** All previously deferred implementation details settled: semantic pass is LLM-judgment (not RAG) on Description + Impact, chunked at ~50 entries per call; deterministic tag-pull pass is adjacency-aware with N≥1 inclusion floor; merge happens at manifest level with raw signals exposed (semantic score, axis exact-match count, axis adjacency-weighted score) for downstream tier derivation rather than pre-computed at retrieval. Reshaping moved retrieval out of cv_targeted into a standalone skill serving all downstream consumers.
-- Refs: `retrieval-architecture-2026-05`, `cv-targeted-retrieval-architecture-2026-05` (superseded).
+**Resolved 2026-05-26** by `retrieval-architecture-2026-05`. See that entry.
 
 ### cross-axis-composition-mechanism
 Mechanism by which cv_targeted reconciles per-axis composition outputs. Possibilities range from per-axis sub-agents proposing content for their owned surface and engaging in review/challenge rounds to converge, to rule-based application of default precedence with no cross-axis review. Specific implementation deferred to cv_targeted skill design.
@@ -154,8 +154,7 @@ Mechanism by which cv_targeted reconciles per-axis composition outputs. Possibil
 - Refs: `axes-composition-precedence`, `cv-targeted-content-rules-from-axes`, `cv-targeted-weighted-matching`.
 
 ### axis-adjacency-weights-redefinition
-**Resolved 2026-05-26 by `retrieval-architecture-2026-05`.** Adjacency weights drive retrieval-time axis scoring (exposed in the manifest as an adjacency-weighted float per entry) and feed downstream tier derivation by gap analysis and CV creation. Default semantics: exact axis-value match = 1.0, adjacent value per axis file's Adjacency section = 0.5. Per-axis-file Adjacency text remains authoritative; individual axis files may override the 0.5 default if their Adjacency section so specifies. Open follow-on for translation-strength behavior (CV bullet rewording vs filtering) reverts to `cv-targeted-content-rules-from-axes` and `cv-targeted-weighted-matching` at cv_targeted build time.
-- Refs: `retrieval-architecture-2026-05`, `cv-targeted-weighted-matching`, `cv-targeted-content-rules-from-axes`.
+**Resolved 2026-05-26** by `retrieval-architecture-2026-05` (exact axis match 1.0, adjacent 0.5; per-axis Adjacency may override). See that entry.
 
 ### level-axis-finer-grained-files
 Whether/when to split `leadership.md` into people manager, senior leadership, c-suite, etc.
@@ -198,6 +197,12 @@ Bullet formatting, section order, item counts, and page targets stripped from ax
 - Trigger: CV format spec authoring or refinement.
 - Blocks: CV format spec completion.
 - Refs: `design/format_spec.md`, `format-spec-cv-boundary`.
+
+### tenure-as-years-rendering
+`cv-best-practices.md:62` calls Kristal et al. (2022, Nature Human Behaviour, N≈9,022) the single strongest empirical finding in the brief: rendering tenure as years worked instead of date ranges raised callbacks ~15% vs gapped resumes and ~8% even vs gap-free ones, and line 63 names "a 'years of tenure' rendering option" an evidence-based design feature. But the rule it grounds does not reflect it: `cv-structure.md:117` mandates date-range headers only ("Company | Location | dates, then the role title and its dates") with no tenure-as-years option, and `cv_qc.py` N1 (lines 474-499) reads 4-digit year tokens from header lines to enforce reverse-chronological order and start<=end, i.e. it assumes and parses date ranges. Surfaced 2026-06-02 during the cv-targeted audit (F5). Direction: the finding has a trade-off the brief itself flags (line 63) - pure year-only headers can read evasive and break ATS date parsing; the study tested tenure framing, not removing chronology - so the fix is most likely additive (a "(N yrs)" annotation alongside the date range, or an architect-selectable mode when gaps exist), not replacing date ranges. Resolving it well is a CV-format design decision spanning three artifacts in concert: `cv-structure.md` (define the option), `cv_qc.py` N1 (tolerate the annotation), and the render skill (cv-render).
+- Trigger: investment in the additive tenure-as-years header option, OR a real application where employment-gap framing materially affects callbacks, OR user direction. (Note: the original "cv-render skill design" trigger fired 2026-06-02 when cv-render was built, but did not resolve this - cv-render is a judgment-free renderer that takes cv_content.md's date-range headers as-is, so its existence does not force the decision. Trigger reset to the real condition.)
+- Blocks: nothing currently; the skill produces correct CVs with date ranges today.
+- Refs: `rules/cv/cv-best-practices.md` (Kristal finding), `rules/cv/cv-structure.md` (entry header), `scripts/cv_qc.py` (N1), `.claude/agents/career-strategist.md` (owns the tenure-as-years gap-framing lever at its domain, but cannot apply it under the current structure rule), `cv-format-spec-from-axes`.
 
 ### role-evaluation-orientation-selection-from-axes
 Orientation selection logic and match criteria stripped from axis rule files. Belongs in role_evaluation, not rule files. Items to apply when designing role_evaluation:

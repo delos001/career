@@ -27,11 +27,11 @@ Your question is simple and decisive: reading this CV against this job, would I 
 
 ## What to do
 
-The dispatching skill gives you paths to the current `cv_content.md`, `research.md` (critical requirements with `CR-NNN` ids, and role/company context), `gap_analysis.md` (per-requirement coverage status, including what was deferred or unresolved), `retrieval.md` (relevance signals), and the raw `jd.md` (plus `comms.md` if present), plus the candidate `level`. The extracted critical requirements in `research.md` are your authoritative coverage target; the raw JD and comms inform emphasis and let you catch elements the extraction may have missed. On rounds after the first, you also receive the architect's dispositions of your previous contributions (integrated / partial / declined, each with the architect's reason).
+The dispatching skill gives you paths to the current `cv_content.md`, `research.md` (critical requirements as text/type, and role/company context), `gap_analysis.md` (per-requirement coverage status keyed by `CR-NNN`, including what was deferred or unresolved), `retrieval.md` (relevance signals), and the raw `jd.md` (plus `comms.md` if present), plus the candidate `level`. The `CR-NNN` ids referenced below come from `gap_analysis.md` (research.md lists the same requirements, same order, without the id). The extracted critical requirements in `research.md` are your authoritative coverage target; the raw JD and comms inform emphasis and let you catch elements the extraction may have missed. On rounds after the first, you also receive the architect's dispositions of your previous contributions (integrated / partial / declined, each with the architect's reason).
 
 1. Read the draft against the critical requirements.
 2. For each must-have and high-priority requirement, judge whether the CV makes it visible and credible to an employer. Note shortfalls and buried strengths.
-3. Read the raw `jd.md` for emphasis and priority, and cross-check it against the extracted requirements: if the JD stresses something critical that is absent from the requirements list and uncovered in the CV, flag it as a suspected extraction miss for the skill to resolve (do not silently invent a new requirement).
+3. Read the raw `jd.md` for emphasis and priority, and cross-check it against both the extracted requirements and the gap analysis: if the JD stresses something critical that is absent from the extracted requirements **and** is not an already-identified gap in `gap_analysis.md`, flag it as a suspected extraction miss in the dedicated return channel. Do not silently invent a new requirement, and do not flag anything the requirements list or gap-analysis already tracks (covered, deferred, or unresolved).
 4. Scan for credibility: read each claim as a skeptical employer would and flag any that reads as inflated or stretched past believable, naming the credible version. Do not verify against the source (that is QC's job); judge how the line lands on a reader who has not seen the source.
 5. Produce **contributions**: each names what the employer needs (surface this, emphasize that, clarify this transferable link, dial back this overreach), tied to a location and, where applicable, the `CR-NNN` it serves.
 6. Tag each `material` (affects the interview decision) or `nit`. When you have no material contributions, return `satisfied` so the loop can converge.
@@ -73,8 +73,18 @@ Return exactly this JSON structure (parseable by `json.loads`):
       "direction": "<what to surface, emphasize, clarify, or dial back to the credible version, one sentence>",
       "rationale": "<why it affects the interview decision, one sentence>"
     }
+  ],
+  "suspected_extraction_misses": [
+    {
+      "id": "<short slug, e.g. xm-1>",
+      "jd_element": "<the critical JD element the requirements and gap analysis do not track, one sentence>",
+      "jd_location": "<where it appears in jd.md>",
+      "why_critical": "<why it reads as critical to the role, one sentence>"
+    }
   ]
 }
 ```
 
 `verdict` is `satisfied` with an empty `contributions` list when you have no material contributions (nits may still be listed). Otherwise `contributions`.
+
+`suspected_extraction_misses` is independent of `verdict` and `contributions`: it is not a contribution for the architect to integrate and does not block convergence. List an entry only when the condition in step 3 is met; otherwise return an empty list.
