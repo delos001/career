@@ -39,6 +39,19 @@ targeted industry CV these read as demonstrated work product, not credentials.
 The class is extensible (e.g. Patents, Presentations) under the same relevance
 gate.
 
+## Header (name and contact)
+
+The CV opens with the candidate name, then the contact block on up to two
+centered lines:
+- Line 1: location | email | phone.
+- Line 2 (when profile links exist): the profile links, each shown as its bare
+  domain and path (strip the scheme, any `www.`, and any trailing slash) with no
+  platform label, since the domain identifies it (e.g. `linkedin.com/in/...`,
+  `github.com/...`).
+
+Keep links on their own second line, not appended to line 1 (long URLs wrap
+mid-link). The full URLs live in `user-info.md`; the header shows the compact form.
+
 ## Professional Summary
 
 The opening value proposition. It primes both the fast human skim and the
@@ -71,11 +84,16 @@ capabilities the candidate genuinely holds.
 
 **Count.** 8-10 items at IC; 8-12 at leadership. Each item is a concise
 capability phrase, not a sentence. Do not pad toward the ceiling or stuff a long
-keyword list; relevance to the target role governs inclusion.
+keyword list; relevance to the target role governs inclusion. A bare tool or
+keyword enumeration (e.g. `SQL, R, Python, SAS`) belongs in Technical
+Proficiencies, not crammed into a competency item.
 
-**Format (ATS-safe).** Single column. Items separated by a consistent delimiter
-(pipe or comma) or set as a simple single-level bulleted list. No multi-column
-layouts or tables - parsers read left-to-right and scramble columns.
+**Format (ATS-safe).** Single column. Items separated by the pipe delimiter
+(`|`), or set as a simple single-level bulleted list. The pipe (or bullet) is the
+only item separator; commas are within-item punctuation only (a parenthetical
+enumeration such as `(CDASH, SDTM, CDISC LAB)` stays part of its one item). Do
+not separate items with commas. No multi-column layouts or tables - parsers read
+left-to-right and scramble columns.
 
 **Zoning.** Group the items into 2-3 coherent zones rather than one flat list,
 so the block reads as a structured capability profile aligned to the target
@@ -104,6 +122,30 @@ exact-match, axis adjacency-weighted) and the gap-analysis per-requirement
 coverage, read together. The Drafter consumes those signals; it does not
 re-decide relevance ad hoc.
 
+**Selection under scarcity (tie-break).** When relevant entries compete for
+limited space (the page ceiling, or bullets-per-role), select deterministically
+in this order rather than by ad hoc judgment:
+1. **Coverage before duplication.** Every critical requirement keeps its single
+   strongest cited entry before any requirement receives a second. A scarce slot
+   never goes to a duplicate for an already-covered requirement while another
+   requirement would otherwise be thinly covered or uncovered. This can rank a
+   lower-semantic entry above a higher-semantic one when the lower entry is the
+   only strong evidence for its requirement: coverage overrides raw relevance
+   score.
+2. **Then by signal, in fixed order.** Among entries of equivalent coverage
+   contribution (choosing extra entries once coverage is met, or choosing which
+   of several entries on one requirement to keep), order by (a) semantic score,
+   then (b) axis-exact count, then (c) axis-adjacency score, then (d) recency of
+   the role.
+3. **Protected differentiator.** A genuinely differentiating, truthful strength
+   (candidate-advocate domain) is not dropped for a marginally higher-ranked but
+   generic entry; it earns space even if it sits slightly lower on the chain.
+
+This makes selection reproducible from the retrieval signals and the gap-analysis
+coverage map, and operationalizes the relevance-prioritized, no-pad principle
+below. The inputs are the upstream signals applied in this fixed order; it does
+not license re-judging relevance.
+
 **Adjacency translation (transferable experience).** Entries whose axis value is
 adjacent to the target (per the axis file's Adjacency section; adjacency weight
 ~0.5 in the manifest) are translated, not dropped: reworded toward the target
@@ -114,9 +156,34 @@ experience. Cross-cutting themes that are not domain-bound transfer regardless o
 axis distance. Translation rewords; it never fabricates a domain, metric, or
 scope the source entry does not support.
 
-**Entry header.** Company | Location (remote/onsite) | dates, then the role title
-and its dates. A single company spanning multiple roles groups those roles under
-one company line.
+**Entry header.** Each company is a `Company | Location | dates` line (company
+name bold), followed by its role(s). `dates` on the company line is the total
+span across the company's roles (multi-role) or that single role's dates
+(single-role). The hiring organization (the end client) is the company; a
+staffing agency is shown as a role qualifier (Type, below), not as the company.
+
+**Role line and qualifiers.** Each role is `Title (dates) | Style | Type |
+Allocation`. `Title` is bold. The `(dates)` parenthetical appears only when the
+company has more than one role (a single-role company carries the dates on the
+company line, so the role line omits them to avoid duplication). The qualifiers
+follow in this fixed order, and each appears only when it deviates from the
+standard role (Direct, On-site, non-concurrent, fully allocated):
+- **Style** (default On-site, hidden): `Remote` or `Hybrid`.
+- **Type** (default Direct, hidden): `Contract: <Agency>` (naming the staffing
+  agency) or `Freelance`.
+- **Allocation** (default 100%, hidden): when allocation is under 100%,
+  `Concurrent X%` if the role is concurrent, otherwise `X%`. A concurrent role at
+  100% allocation shows nothing.
+
+The qualifier values (Type, Style, Concurrent, Allocation, Agency) come from the
+inventory's Section 7 role records.
+
+**Date format.** Month and year: `Mon YYYY - Mon YYYY` (e.g. `Feb 2024 - Jan
+2026`), `Mon YYYY - Present` for an active role. Pull months from the role
+records; fall back to year-only when a record carries only a year. Applies to the
+company-line span, the role-line `(dates)`, and the `Company | Title | Dates`
+lines in Earlier Professional Roles. Do not collapse to year-only when the source
+carries months.
 
 **Default entry layout: flat.** Bullets sit directly under the role title as a
 single-level list. This is the default for every role and the only layout at IC
@@ -130,6 +197,23 @@ bullets per role as a norm; a heavy recent senior role may run higher.
 **Ordering.** Lead each role with its strongest, most role-relevant bullet
 (impact-first), not the role's chronological first task. The top of each entry is
 high-attention space.
+
+**Multiple roles at one company.** When a candidate held more than one role at
+the same company, never merge the titles onto one header line (no
+`Title A; Title B`). Order the roles reverse-chronologically. Choose the layout
+by bullet volume:
+- Stacked: when the roles together carry only a few bullets (roughly one or two
+  per role), stack the role titles, each with its own dates, directly under the
+  company line, then a single shared bullet list ordered impact-first. Qualifiers
+  shared by ALL the stacked roles (Style, Type/Agency) hoist to the company line
+  (`Company | Location | Style | Type | dates`); each stacked title then shows
+  only what differs (its allocation).
+- Separate sub-entries: when one or more roles carry enough substantial bullets
+  to stand on their own (about three or more), give each role its own title,
+  dates, bullets, and its own qualifiers (no hoisting, even when a qualifier
+  repeats across the roles).
+Pick the form that keeps impact density high without fragmenting a short
+engagement into thin one-bullet entries.
 
 **Earlier Professional Roles.** CV experience uses two sections: Professional
 Experience and Earlier Professional Roles. A role belongs in **Professional
@@ -154,7 +238,9 @@ builds on, rather than matching a JD cluster.
 
 **Earlier Professional Roles** holds every role outside the threshold that does
 not meet rule 2. Format: Company | Title | Dates only; no bullets, no
-descriptions. The section sits immediately after Professional Experience.
+descriptions. List each role on its own line; do not merge multiple or
+concurrent roles at the same company onto a single line. The section sits
+immediately after Professional Experience.
 
 **Gap-prevention principle.** Account for every period of professional activity
 across the two sections; note concurrent roles as concurrent. A documented gap
@@ -214,13 +300,18 @@ would be hard to skim. Lighter and older roles stay flat even on a leadership CV
 Typically only the one or two most recent senior roles qualify.
 
 **Labels come from the critical-requirements artifact, not the raw JD (hard
-rule).** Each subheading label is a critical requirement (CR-NNN) as produced by
-role-intake and carried through gap-analysis - the processed JD - in the
-requirement's vetted wording. The Drafter never re-parses the raw JD, and labels
-are never drawn from the candidate's narratives or inventory. The label cites its
-CR-NNN. Restrict labels to requirements this role has cited evidence for (per the
-retrieval manifest and gap-analysis coverage), so a subheading both mirrors a
-real JD priority and is genuinely backed by the role.
+rule).** Each subheading is a short descriptive phrase (a few words, not a
+sentence) naming the theme of one critical requirement (CR-NNN) produced by
+role-intake and carried through gap-analysis - the processed JD. Condense the
+requirement's vetted wording into a compact label in the Core Competencies label
+style (e.g. CR-015 "...FSP resource allocation and strategic vendor
+partnerships..." becomes `FSP and vendor oversight`); never reproduce the full
+requirement sentence - it wastes scarce vertical space and reads as over-specific.
+The Drafter never re-parses the raw JD, and labels are never drawn from the
+candidate's narratives or inventory. The `<!-- cr: CR-NNN -->` marker carries the
+requirement id. Restrict labels to requirements this role has cited evidence for
+(per the retrieval manifest and gap-analysis coverage), so a subheading both
+mirrors a real JD priority and is genuinely backed by the role.
 
 **Cap.** 3-6 subheadings per role. Fewer than 3 distinct JD-aligned themes ->
 stay flat (subheadings add clutter, not signal). More than 6 -> the role is

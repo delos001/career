@@ -70,8 +70,9 @@
 |---|---|---|
 | Name header | 0 | 0 |
 | Contact line | 0 | 0 |
-| Section header | 160 | 8 |
-| First company block header in section | 160 | 8 |
+| Section header | 280 | 14 |
+| First company block in a section | 0 | 0 |
+| Subsequent company blocks in a section | 160 | 8 |
 | First job title under a company | 0 | 0 |
 | Subsequent job titles under same company | 160 | 8 |
 | Within-role thematic subheading | 120 | 6 |
@@ -175,10 +176,14 @@ Section order is governed by `rules/cv/cv-structure.md`. This spec does not defi
 ## Output File Naming
 
 ```
-Jason_Delosh_CV_[CompanyName]_[AbbreviatedRole]_[YYYY-MM].docx
+[LastName]_CV_[CompanyName]_[AbbreviatedRole]_[YYYY-MM].docx
 ```
 
-Example: `Jason_Delosh_CV_Pfizer_VPDataOps_2026-03.docx`
+Example: `Delosh_CV_Pfizer_VPDataOps_2026-03.docx`
+
+`LastName` is the candidate's surname from the contact block in
+`personal/profile/user-info.md`. Use the surname only, not the full name and not
+initials.
 
 ---
 
@@ -189,10 +194,11 @@ These rules are the single source of truth for CV output. All rules below are de
 | Rule | Specification |
 |---|---|
 | Section header case | Mixed case bold; **never ALL CAPS** |
+| Company name | Bold; the location and dates after the first `\|` render regular (same as a job title) |
 | Font size | 11pt throughout the entire document, **except** the name header (18pt) and contact line (10pt) |
 | Space between job title and first bullet | **None** — zero space before first bullet under any job title |
-| Space before section headers | 8pt (160 DXA) |
-| Space before first company block element in a section | 8pt (160 DXA) |
+| Space before section headers | 14pt (280 DXA), about one blank line between sections |
+| Space before first company block in a section | None (binds to the section header); subsequent company blocks carry 8pt (160 DXA) |
 | Space before job titles (multiple roles under same company) | 8pt (160 DXA) before each title **except the first** title under a company |
 | Carriage returns | No unnecessary carriage returns anywhere — spacing is achieved via Space Before values only |
 | Name and contact alignment | Centered |

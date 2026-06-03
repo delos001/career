@@ -198,6 +198,12 @@ Bullet formatting, section order, item counts, and page targets stripped from ax
 - Blocks: nothing currently; the skill produces correct CVs with date ranges today.
 - Refs: `rules/cv/cv-best-practices.md` (Kristal finding), `rules/cv/cv-structure.md` (entry header), `scripts/cv_qc.py` (N1), `.claude/agents/career-strategist.md` (owns the tenure-as-years gap-framing lever at its domain, but cannot apply it under the current structure rule), `cv-format-spec-from-axes`.
 
+### cv-render-uppercase-section-headers
+User wants the `##` section headers (Professional Summary, Core Competencies, Professional Experience, Earlier Professional Roles, Education, Certifications & Training, Technical Proficiencies) rendered in ALL CAPS to break sections up for a reviewer. Scope: section headers only - NOT the name, NOT the `###` within-role subheadings, NOT company/job-title lines (all stay mixed case). This reverses an explicit, example-grounded rule (`format_spec.md`: "Section headers must be mixed case bold, never ALL CAPS", two places); flagged to and overridden by the user 2026-06-03. Implementation, both in lockstep: `cv_to_docx.py` `add_section_header` uppercases the display text (keep bold); flip the two "never ALL CAPS" rules in `format_spec.md` to "ALL CAPS". Render-only; `cv_content.md` stays mixed case. User deferred to "the end" of the 2026-06-03 render-tuning session, then closed before applying.
+- Trigger: user direction (next render-styling pass).
+- Blocks: nothing; CVs render with mixed-case headers today.
+- Refs: `design/format_spec.md`, `scripts/cv_to_docx.py`, `cv-render-build-2026-06`, `cv-targeted-render-refinements-2026-06`.
+
 ### role-evaluation-orientation-selection-from-axes
 Orientation selection logic and match criteria stripped from axis rule files. Belongs in role_evaluation, not rule files. Items to apply when designing role_evaluation:
 - Orientation match criteria split by IC vs leadership scope (e.g., transformation-strategy at leadership level requires enterprise-level organizational change; transformation-strategy at IC level requires execution within a transformation program).

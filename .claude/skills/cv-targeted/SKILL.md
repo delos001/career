@@ -91,7 +91,10 @@ Ask if this session is for a new CV or to resume a previous one.
   sub-agents; for any axis marked "File deferred" in the classification, note it
   (the architect proceeds without that axis's voice file and the gap is surfaced
   at handoff).
-- **CV best-practices staleness check.** Read the `last_researched` field from
+- **CV best-practices staleness check.** Narrate this in plain English before
+  running it, e.g. "Let me check that the CV best-practices guidance this skill
+  relies on is still current." Do not name the field or call it a "staleness
+  check" to the user. Read the `last_researched` field from
   `rules/cv/cv-best-practices.md`. If it is more than ~12 months older than today,
   surface a plain-English warning that the CV best-practices research may be due
   for a refresh (per the `cv-best-practices-refresh` process). Non-blocking; the
@@ -153,8 +156,9 @@ Ask if this session is for a new CV or to resume a previous one.
   contributions and do not enter the Phase 3c integrate loop or affect
   convergence. They are surfaced as an advisory note at handoff (Phase 6).
 - **Step 3b - Convergence check.** If all three return `satisfied` (no material
-  contributions), the loop has converged; carry any outstanding nits into one
-  final integration and proceed to Phase 4.
+  contributions), the loop has converged. If any nits remain, carry them into one
+  final integration; otherwise proceed directly to Phase 4. Do not run further
+  stakeholder rounds once converged, regardless of how many of the 3 rounds remain.
 - **Step 3c - Integrate.** If any has material contributions, dispatch
   `cv-architect` in `mode = revise` with the combined contributions and the
   existing draft/plan paths. The architect seeks good-faith compromise on each
@@ -204,7 +208,11 @@ Ask if this session is for a new CV or to resume a previous one.
 - **Step 4d - Fix loop.** If there are findings, dispatch `cv-architect` in
   `mode = revise` with them; the architect fixes `cv_content.md` and the fixes are
   appended to the log. Re-run 4a-4c. Cap at **3 iterations**; exit early when both
-  QC layers pass.
+  QC layers pass. On a length finding, pass the architect the measured page count
+  and the longest offending lines so it trims from real data, not a self-estimate.
+  Also pass the Phase-3 integrated/partial contributions from the log; the
+  architect returns `qc_regressions` for any fix that reverses or weakens one.
+  Append any `qc_regressions` to the log and carry them to handoff.
 - **Step 4e - Bounded-loop failure.** If findings remain after the third iteration,
   ship **provisional**: keep `cv_content.md`, append a provisional record to
   `design/build_issues.md` (per `artifact-skill-qc-internal`), write the final
@@ -254,6 +262,10 @@ Ask if this session is for a new CV or to resume a previous one.
   requirement. This is advisory only (a reading of the raw JD that may be a false
   positive), kept separate from Open items, and does not block the run. Render
   "none" if empty.
+- **Compose QC reversals from `cv_collaboration_log.md`:** for each
+  `qc_regression` the architect flagged, name the advisor, the contribution, and
+  the QC constraint that forced the reversal, so the user sees any stakeholder win
+  QC undid and why. Render "none" if empty.
 - Present the summary block:
 
   ```
@@ -264,6 +276,8 @@ Ask if this session is for a new CV or to resume a previous one.
   Open items (or "none"):
     - <advisor>: <ask> | not fully integrated because: <architect's reason>
     - QC (if provisional): <finding>
+  QC reversals (or "none"):
+    - <advisor>'s <contribution> reversed by a QC fix: <constraint>
   Possible missed requirements (or "none"):
     - The JD appears to emphasize <X>; it is not in your requirements or gap
       analysis, so the pipeline never evaluated it. Address upstream if it is real.
@@ -286,6 +300,7 @@ the artifact ships provisional with the remaining items surfaced at handoff.
 |---|---|
 | Mechanical QC failure: missing citation, multi-sentence bullet, bullet over line limit, section order / banding invalid, competency count out of range, em dash present, AI-tell phrasing flagged | Phase 4 fix loop (cv-architect revise) |
 | Cited id not found in inventory / narratives (fabricated id) | Phase 4 fix loop (cv-architect revise) |
+| Employer/role misattribution: a role block cites entries from more employers than it has role titles (C5) | Phase 4 fix loop (cv-architect revise) |
 | Length guard: estimated pages over the level ceiling | Phase 4 fix loop (cv-architect trim) |
 | Invalid CR-NNN on a within-role subheading | Phase 4 fix loop (cv-architect revise) |
 | Semantic-traceability finding: cited entry does not support its claim, overstatement beyond source, arc bullet exceeds its cited union, adjacency translation fabricates the domain | Phase 4 fix loop (cv-architect revise) |

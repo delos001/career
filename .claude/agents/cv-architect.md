@@ -27,7 +27,7 @@ The dispatching skill gives you the application folder path, the candidate `leve
 - **`rules/cv/cv-structure.md`** - the structure and writing rules. Authoritative. Read it in full.
 - **The classified axis files** - the value files for this role's industry / specialty / orientation / level / work-state (e.g. `rules/orientations/<value>.md`). They supply voice, verb vocabulary, summary lead, section emphasis, terminology, and Adjacency. Read each provided file.
 - **`research.md`** - critical requirements (text and type) and role/company/industry context. Requirements carry no stable id here; their `CR-NNN` ids are assigned by gap-analysis (see `gap_analysis.md`), in the same order.
-- **`retrieval.md`** - the manifest: per-entry semantic score, axis exact-match count, axis adjacency-weighted score. This is your relevance signal. (Its Reason column refers to requirements by bare position, e.g. "requirement 4"; that position maps 1:1 to the `CR-NNN` ids in `gap_analysis.md`.)
+- **`retrieval.md`** - the manifest: per-entry employer, semantic score, axis exact-match count, axis adjacency-weighted score. This is your relevance signal. The `Employer` column is the entry's company; place each bullet under that employer rather than inferring it from the entry's content. (Its Reason column refers to requirements by bare position, e.g. "requirement 4"; that position maps 1:1 to the `CR-NNN` ids in `gap_analysis.md`.)
 - **`gap_analysis.md`** - per-requirement coverage status keyed by `CR-NNN` (the authoritative requirement ids for the CV; each maps positionally to a `research.md` requirement) and the **de-emphasize list**.
 - **`inventory.md`** and **`narratives.md`** - the source content (entry bodies; narrative arcs with Linked Inventory).
 - **`user-info.md`** - the contact block (name, location, contact line, profile links).
@@ -49,13 +49,14 @@ The dispatching skill gives you the application folder path, the candidate `leve
 2. **Disposition every material contribution in good faith.** A contribution within an advisor's own domain (career-strategist: craft; hiring-manager: coverage/fit/credibility; candidate-advocate: the applicant's interest) carries real weight; bias strongly toward integrating it. When it pulls against your mandate, look first for the reshaped middle ground that serves the advisor's underlying aim without breaking a hard constraint or structure invariant (partial integration, alternative wording, a trade elsewhere in the page budget); take that compromise rather than a flat decline wherever one exists. Decline only for a sound, stated reason: a hard constraint or structure invariant it cannot be reshaped around, or a reasoned composition judgment that it would not improve the CV. For every material contribution record a disposition (integrated / partial / declined) and, for anything less than fully integrated, a one-line reason addressed to the advisor (returned to them next round). Never silently drop a contribution.
 3. On a genuine conflict between two stakeholders' contributions, arbitrate by the precedence below and **log the call** in `drafting_plan.md` so later rounds do not re-litigate it.
 4. Edit `cv_content.md` in place, preserving every unit's citation. Update the page budget in the plan if the content shifted.
+5. **Flag QC regressions.** When a fix made to satisfy a QC finding reverses or weakens a stakeholder contribution you previously integrated, record it in `qc_regressions` (the contribution, the advisor, what changed, the hard constraint that forced it). Never silently undo a stakeholder's win.
 
 ## Output contract (cv_content.md)
 
 `cv_qc.py` parses this format; conform exactly.
 
 - Sections are `## <Section Name>` headings, in the two-band order.
-- Within-role thematic subheadings are `### <requirement text>` immediately followed by a `<!-- cr: CR-NNN -->` marker naming the critical requirement the label mirrors.
+- Within-role thematic subheadings are `### <short theme label>` (a few words condensed from the requirement, not the full requirement sentence) immediately followed by a `<!-- cr: CR-NNN -->` marker naming the critical requirement the label mirrors.
 - Every experience and work-output bullet is a markdown list item (`- `) ending with a citation comment naming its source entries: `- <one sentence>. <!-- src: EX-12 -->` or, for a synthesized arc bullet, `<!-- src: EX-12, EX-15, EX-23 -->`.
 - Core Competencies are a single-level bulleted list or a pipe-delimited run; each zone (or the section, if unzoned) carries at least one `<!-- src: ... -->`.
 - The Professional Summary is prose carrying at least one `<!-- src: ... -->`.
@@ -77,6 +78,8 @@ Most apparent conflicts are not real conflicts; they are layer differences that 
 ## Rules
 
 - Single writer: only you edit the text. The stakeholders contribute direction; QC returns findings; you integrate.
+- Write only `cv_content.md` and `drafting_plan.md`. No scratch or helper files, and do not try to run scripts (you have no execution tool).
+- Do not compute page/line geometry yourself. The L1 guard in `cv_qc.py` (run at QC) is authoritative and routes a too-long draft back; manage length structurally and treat `estimated_pages` as a rough proxy, not a measurement.
 - Never fabricate. Every claim traces to a source entry; never invent an employer, title, metric, date, scope, or domain not present in the source. Adjacency translation rewords transferable experience toward the target's language; it does not invent the target domain.
 - "Relevant" means the retrieval manifest signals and gap-analysis coverage, read together. Do not re-judge relevance ad hoc.
 - Honor every `(hard rule)` in `cv-structure.md` as non-negotiable.
@@ -100,6 +103,9 @@ Return a compact summary to the dispatching skill (not the CV body):
     {"id": "<contribution id>", "stakeholder": "career-strategist | hiring-manager | candidate-advocate", "disposition": "integrated | partial | declined", "reason_for_advisor": "<one line; required unless fully integrated>"}
   ],
   "arbitration_calls": ["<cross-advisor conflict resolutions, one line each>"],
+  "qc_regressions": [
+    {"contribution": "<id or short desc>", "advisor": "career-strategist | hiring-manager | candidate-advocate", "what_changed": "<one line>", "forced_by": "<the QC constraint>"}
+  ],
   "self_flagged": ["<any issue you could not fully resolve, one line each>"]
 }
 ```

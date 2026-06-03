@@ -42,9 +42,10 @@ does not rewrite, re-order, re-cite, or trim. `cv_content.md` is the sole input.
 **Naming the output document.**
 
 - Build the default output filename per `design/format_spec.md`:
-  `<CandidateName>_CV_<Company>_<AbbreviatedRole>_<YYYY-MM>.docx`, where:
-  - `CandidateName` comes from the contact block in
-    `personal/profile/user-info.md` (e.g. `Jason_Delosh`), spaces to underscores.
+  `<LastName>_CV_<Company>_<AbbreviatedRole>_<YYYY-MM>.docx`, where:
+  - `LastName` is the candidate's surname from the contact block in
+    `personal/profile/user-info.md` (e.g. `Delosh`). Surname only, not the full
+    name and not initials.
   - `Company` and the role come from `## Company` / `## Role` in the
     application's `research.md`; abbreviate the role to a short token
     (e.g. "Associate Director, Operational Excellence" -> `AssocOpExDir`).

@@ -93,6 +93,13 @@ _TAG_RE = re.compile(r'^(Industry|Specialty|Orientation|Level|Work-state):\s*(.*
 # `retrieval-architecture-2026-05`.
 _FIELD_RE = re.compile(r'^(Description|Impact):\s*(.*)$')
 
+# Regex: the Role tag linking an entry to its RL role record (its employer).
+_ROLE_RE = re.compile(r'^Role:\s+(RL-\d+)\s*$')
+
+# Regexes for Section 7 role records: the RL id line and its employer (Company).
+_ROLE_ENTRY_RE = re.compile(r'^ID:\s+(RL-\d+)\s*$')
+_COMPANY_RE = re.compile(r'^Company:\s*(.+?)\s*$')
+
 # The five tag axes the retrieval pipeline cares about.
 _AXES = ('Industry', 'Specialty', 'Orientation', 'Level', 'Work-state')
 
@@ -147,6 +154,7 @@ def _parse_inventory_entries(inventory_text):
                 entries.append(_finalise_entry(current))
             current = {
                 'id': m.group(1),
+                'role': '',
                 'industry': [],
                 'specialty': [],
                 'orientation': [],
@@ -159,6 +167,10 @@ def _parse_inventory_entries(inventory_text):
         if current is None:
             # We are before the first entry under Section 8 (e.g. the '### RL-NNN'
             # role-grouping subheaders). Skip until the first entry begins.
+            continue
+        m = _ROLE_RE.match(line)
+        if m:
+            current['role'] = m.group(1)
             continue
         m = _TAG_RE.match(line)
         if m:
@@ -177,6 +189,34 @@ def _parse_inventory_entries(inventory_text):
     if current is not None:
         entries.append(_finalise_entry(current))
     return entries
+
+
+def _parse_role_companies(inventory_text):
+    """Walk Section 7 (Employment & Role History); return {RL-NNN: company}.
+
+    Each role record opens with 'ID: RL-NNN' and carries a 'Company:' line. This
+    resolves an entry's Role tag to its employer for the retrieval manifest. Empty
+    dict if the section is absent.
+    """
+    try:
+        sec_start, sec_end = _section_bounds(inventory_text, '## 7. ')
+    except ValueError:
+        return {}
+    lines = inventory_text.split('\n')
+    companies = {}
+    current_rl = None
+    for i in range(sec_start, sec_end):
+        line = lines[i]
+        m = _ROLE_ENTRY_RE.match(line)
+        if m:
+            current_rl = m.group(1)
+            continue
+        if current_rl is not None:
+            m = _COMPANY_RE.match(line)
+            if m:
+                companies[current_rl] = m.group(1).strip()
+                current_rl = None
+    return companies
 
 
 def _finalise_entry(entry):
@@ -445,6 +485,7 @@ def cmd_split(args, repo_root, cfg):
 # ---------------------------------------------------------------------------
 
 parse_inventory_entries = _parse_inventory_entries
+parse_role_companies = _parse_role_companies
 parse_narratives = _parse_narratives
 parse_themes = _parse_themes
 

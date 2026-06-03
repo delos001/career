@@ -200,11 +200,14 @@ def _compute_entry_axis_signals(repo_root, jd_axes, entry):
 # Themes uses the semantic scores directly (no deterministic supplement).
 # ---------------------------------------------------------------------------
 
-def _build_inventory_rows(repo_root, jd_axes, inventory_entries, semantic_scores):
+def _build_inventory_rows(repo_root, jd_axes, inventory_entries, semantic_scores,
+                          role_companies):
     """Build the inventory rows; returns list of dicts ready for table render.
 
-    Each row carries: id, semantic, exact_count, adjacency_score,
-    in_semantic, in_tag_pull, axis_match_summary, reason.
+    Each row carries: id, employer, semantic, exact_count, adjacency_score,
+    in_semantic, in_tag_pull, axis_match_summary, reason. `employer` resolves the
+    entry's Role tag to its company via role_companies so downstream consumers
+    (CV creation especially) place each entry under the right employer.
     """
     # Index entries by ID for fast lookup.
     by_id = {e['id']: e for e in inventory_entries}
@@ -223,6 +226,7 @@ def _build_inventory_rows(repo_root, jd_axes, inventory_entries, semantic_scores
         )
         rows.append({
             'id': eid,
+            'employer': role_companies.get(entry.get('role', ''), ''),
             'semantic': semantic_by_id[eid].get('score'),
             'exact_count': exact,
             'adjacency_score': weighted,
@@ -243,6 +247,7 @@ def _build_inventory_rows(repo_root, jd_axes, inventory_entries, semantic_scores
         if exact >= 1 or weighted >= _ADJACENCY_WEIGHT:
             rows.append({
                 'id': eid,
+                'employer': role_companies.get(entry.get('role', ''), ''),
                 'semantic': None,
                 'exact_count': exact,
                 'adjacency_score': weighted,
@@ -362,8 +367,8 @@ def _render_inventory_table(rows):
     if not rows:
         return '_(no inventory entries surfaced)_'
     lines = [
-        '| ID | Semantic | Axis exact | Axis adj | Source | Axis matches | Reason |',
-        '|----|----------|-----------|----------|--------|---------------|--------|',
+        '| ID | Employer | Semantic | Axis exact | Axis adj | Source | Axis matches | Reason |',
+        '|----|----------|----------|-----------|----------|--------|---------------|--------|',
     ]
     for r in rows:
         sources = []
@@ -372,7 +377,8 @@ def _render_inventory_table(rows):
         if r['in_tag_pull']:
             sources.append('tag-pull')
         lines.append(
-            f"| {r['id']} | {_fmt_score(r['semantic'])} | {r['exact_count']} | "
+            f"| {r['id']} | {_escape_pipe(r.get('employer', ''))} | "
+            f"{_fmt_score(r['semantic'])} | {r['exact_count']} | "
             f"{r['adjacency_score']:.2f} | {'+'.join(sources)} | "
             f"{r['axis_summary']} | {_escape_pipe(r['reason'])} |"
         )
@@ -444,7 +450,9 @@ def _render_manifest(slug, app_id, date, jd_axes, inventory_rows, narrative_rows
         '**JD axis classification (from research.md):**',
         axis_block,
         '',
-        '**Signal columns:** `Semantic` is the LLM-judgment score against the '
+        '**Signal columns:** `Employer` is the entry\'s company, resolved from its '
+        'Role tag, so each entry can be placed under the right employer without '
+        're-deriving it. `Semantic` is the LLM-judgment score against the '
         'critical requirements list (0.00 to 1.00; `-` means the entry was not '
         'in the semantic-scored set). `Axis exact` counts axes with an exact '
         'value match against the JD (0..5). `Axis adj` is the adjacency-weighted '
@@ -499,11 +507,12 @@ def cmd_assemble(args, repo_root, cfg):
         os.path.join(repo_root, cfg['paths']['profile'], cfg['filenames']['positioning_file'])
     )
     inventory_entries = retrieval_payload.parse_inventory_entries(inventory_text)
+    role_companies = retrieval_payload.parse_role_companies(inventory_text)
     narratives = retrieval_payload.parse_narratives(narratives_text)
     themes = retrieval_payload.parse_themes(positioning_text)
 
     inventory_rows = _build_inventory_rows(
-        repo_root, jd_axes, inventory_entries, inv_scores
+        repo_root, jd_axes, inventory_entries, inv_scores, role_companies
     )
     inv_ids_in_manifest = [r['id'] for r in inventory_rows]
     narrative_rows = _build_narrative_rows(

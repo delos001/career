@@ -88,8 +88,8 @@ def _replace_or_append_section(text, heading, new_section_body):
 # ---------------------------------------------------------------------------
 # Subcommand: append-section
 # Reads the section body from a file, applies replace-or-append, writes the
-# session log back. The body file is expected to start with the
-# '## <heading>' line; the script does not add or fabricate that line.
+# session log back. The body file holds the section content; the '## <heading>'
+# line is optional in it and is prepended from --heading when absent.
 # ---------------------------------------------------------------------------
 
 def cmd_append_section(args, repo_root, cfg):
@@ -101,16 +101,14 @@ def cmd_append_section(args, repo_root, cfg):
             '(role-intake must run first to create the log)'
         )
     body = _util.read(args.body_file).rstrip() + '\n'
-    # Sanity check: body should start with the '## <heading>' line; surfacing
-    # mismatches loudly prevents silently writing a body under the wrong
-    # heading.
-    first_line = body.split('\n', 1)[0].strip()
+    # The body file may be content-only or may already lead with its heading.
+    # Normalize to a full section: prepend '## <heading>' when absent, so callers
+    # never have to duplicate the heading they already pass via --heading. If the
+    # heading is present it is used as-is (no double heading).
     expected_first = f'## {args.heading}'
+    first_line = body.split('\n', 1)[0].strip()
     if first_line != expected_first:
-        raise ValueError(
-            f'body file does not start with {expected_first!r}; '
-            f'got {first_line!r}'
-        )
+        body = f'{expected_first}\n\n{body}'
     text = _util.read(log_path)
     text = _replace_or_append_section(text, args.heading, body)
     _util.write(log_path, text)
@@ -141,8 +139,9 @@ def main():
     p_app.add_argument('--heading', required=True,
                        help='section heading text (without the ## prefix)')
     p_app.add_argument('--body-file', required=True,
-                       help='path to a file holding the full section body, '
-                            'including the leading ## <heading> line')
+                       help='path to a file holding the section content; the '
+                            'leading ## <heading> line is optional and is added '
+                            'from --heading when absent')
     p_app.set_defaults(func=cmd_append_section)
 
     args = parser.parse_args()

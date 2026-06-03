@@ -51,9 +51,10 @@ SIZE_NAME = 18
 SIZE_CONTACT = 10
 SIZE_BULLET_GLYPH = 10           # bullet glyph size (text stays SIZE_BODY)
 
-SPACE_SECTION = 8                # pt before a section header
+SPACE_SECTION = 14               # pt before a section header (~one blank line, a clear break between sections)
 SPACE_COMPANY = 8                # pt before the first company block in a section
 SPACE_SUBSEQUENT_TITLE = 8       # pt before a 2nd+ role title under one company
+SPACE_STACKED_TITLE = 0          # pt before a stacked title sharing one bullet list
 SPACE_SUBHEADING = 6             # pt before a within-role thematic subheading
 
 BULLET_INDENT_LEFT = 360         # DXA: text starts 0.25" from the margin
@@ -343,6 +344,8 @@ def build_cv(md_path, out_path):
     saw_name = False            # have we emitted the name (h1) yet
     in_first_section = False    # have we passed the first '## '
     pending_first_title = False  # next title under the current company is the 1st
+    prev_was_title = False      # previous PE content line was a role-title line
+    section_just_started = False  # next content line is the first under a header
 
     for raw in lines:
         line = _strip_comments(raw)
@@ -364,17 +367,21 @@ def build_cv(md_path, out_path):
             section = re.sub(r'\s+', ' ', line[3:].strip()).lower()
             in_first_section = True
             pending_first_title = False
+            prev_was_title = False
+            section_just_started = True
             add_section_header(doc, line[3:].strip())
             continue
 
         # Within-role thematic subheading.
         if line.startswith('### '):
             add_subheading(doc, line[4:].strip())
+            prev_was_title = False
             continue
 
         # Bullet (explicit '- ' list item, in any section).
         if re.match(r'^\s*-\s+', line):
             add_bullet(doc, re.sub(r'^\s*-\s+', '', line).strip())
+            prev_was_title = False
             continue
 
         text = line.strip()
@@ -382,21 +389,41 @@ def build_cv(md_path, out_path):
         # Sections whose every content line renders as a bullet.
         if section in FORCE_BULLET_SECTIONS:
             add_bullet(doc, text)
+            prev_was_title = False
             continue
 
         # Non-list content line: spacing depends on the section.
         if section == 'professional experience':
             if _is_company_line(text):
-                add_line(doc, text, before_pt=SPACE_COMPANY)
+                # The first company line binds to the section header (no gap);
+                # later company blocks carry SPACE_COMPANY to separate them. Bold
+                # the company name (the segment before the first ' | '); the
+                # location and dates after it stay regular, matching how a job
+                # title renders (title bold, dates regular).
+                name, sep, rest = text.partition(' | ')
+                rendered = f'**{name}**' + (f' | {rest}' if sep else '')
+                add_line(doc, rendered,
+                         before_pt=0 if section_just_started else SPACE_COMPANY)
+                section_just_started = False
                 pending_first_title = True
+                prev_was_title = False
             elif pending_first_title:
+                # First role title under this company.
                 add_line(doc, text, before_pt=0)
                 pending_first_title = False
+                prev_was_title = True
+            elif prev_was_title:
+                # A stacked title: another title line with no bullets between it
+                # and the prior title, so the group shares one bullet list. Pack
+                # it tight rather than opening a full subsequent-role gap.
+                add_line(doc, text, before_pt=SPACE_STACKED_TITLE)
             else:
-                # A subsequent role title under the same company.
+                # A subsequent role sub-entry following the prior role's bullets.
                 add_line(doc, text, before_pt=SPACE_SUBSEQUENT_TITLE)
+                prev_was_title = True
         else:
             add_line(doc, text, before_pt=0)
+            prev_was_title = False
 
     doc.save(out_path)
     print(f'Saved: {out_path}')

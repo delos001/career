@@ -32,6 +32,8 @@ Checks (all report-only):
   C2   Core Competencies and the summary carry a src citation
   C3   every cited EX/PR/ST id is well-formed and exists in the corpus
   C4   (with --gap-analysis) subheading cr markers name a real CR-NNN
+  C5   experience bullets attributed to the right employer/role (per-block
+       distinct Role tags do not exceed the block's role-title count)
   B1   one sentence per bullet
   B2   bullet within the line limit (<=3 estimated rendered lines)
   S1   section order valid (evidence band, then credentials tail; Tech last)
@@ -61,6 +63,7 @@ import json
 import math
 import re
 import sys
+from collections import Counter
 
 import _config
 import _util
@@ -122,6 +125,16 @@ CR_ID_RE = re.compile(r'\bCR-\d+\b')
 ANY_COMMENT_RE = re.compile(r'<!--.*?-->')
 EM_DASH = '—'
 
+# C5 attribution. _EX_ROLE_RE maps an inventory EX/PR entry to its RL role record
+# (the Role tag sits on the line immediately after the ID line). The other two
+# detect Professional Experience company lines (a location token, not bold) and
+# role-title lines (bold) so bullets can be grouped into role blocks.
+_EX_ROLE_RE = re.compile(
+    r'^ID:\s+((?:EX|PR)-\d+)[ \t]*\n[ \t]*Role:\s+(RL-\d+)', re.MULTILINE)
+_PE_LOCATION_RE = re.compile(
+    r'\((?:remote|onsite|on-site|hybrid)\)|,\s*[A-Z]{2}\b', re.IGNORECASE)
+_BOLD_LINE_RE = re.compile(r'^\*\*.+\*\*')
+
 # Sentence-terminator heuristic: a '.', '!' or '?' followed by whitespace or
 # end-of-string. Common abbreviations and decimals are masked before counting
 # (see _sentence_count) so they do not inflate the count.
@@ -144,6 +157,16 @@ _AI_TELL_PATTERNS = [
         r"foster(?:ed|ing)?|underscore[ds]?|showcase[ds]?|groundbreaking|"
         r"world-class|cutting-edge|transformative)\b", re.IGNORECASE)),
 ]
+
+# Domain-legitimate uses of an AI-tell token: when the token appears in one of
+# these phrase contexts it is professional terminology, not marketing fluff, and
+# is not flagged. (E.g. "pivotal study/trial/Phase/program" is the registrational-
+# trial sense, not "pivotal" used as a synonym for "crucial".) A flagged match
+# whose position falls inside one of these spans is excluded. Extend as real
+# collisions surface; do not add speculative entries.
+_AI_TELL_DOMAIN_USES = re.compile(
+    r"\bpivotal[\s-]+(?:phase|stud(?:y|ies)|trials?|programs?|programmes?)\b",
+    re.IGNORECASE)
 
 
 # ---------------------------------------------------------------------------
@@ -300,6 +323,74 @@ def _check_c4_subheading_crs(text, valid_crs):
                    f'{len(cited)} subheading cr marker(s) reconcile with gap analysis')
 
 
+def _check_c5_role_attribution(sections, ex_to_rl):
+    """C5: experience bullets are attributed to the right employer/role.
+
+    Within each Professional Experience role block, the distinct Role tags of the
+    cited EX/PR entries must not exceed the number of role-title lines in that
+    block (1 for a normal role; N for a stacked multi-role block). An entry whose
+    Role tag belongs to a different employer than the block it sits under is the
+    misattribution this catches. ST narrative citations are ignored (cross-role
+    by design); entries with no resolvable Role are skipped.
+    """
+    pe_body = next((body for _, norm, body in sections
+                    if norm == 'professional experience'), None)
+    if pe_body is None:
+        return _record('C5', True, 'no Professional Experience section to check')
+
+    blocks = []      # closed role blocks: {'titles': int, 'rls': set, 'label': str}
+    cur = None       # block under construction
+    prev = None      # 'company' | 'title' | 'bullet'
+
+    def _close(block):
+        if block is not None and block['titles'] >= 1:
+            blocks.append(block)
+
+    for raw_line in pe_body.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if re.match(r'^-\s+', line):
+            if cur is not None:
+                for m in SRC_RE.finditer(raw_line):
+                    for cid in ENTRY_ID_RE.findall(m.group(1)):
+                        if cid.startswith('ST-'):
+                            continue
+                        rl = ex_to_rl.get(cid)
+                        if rl:
+                            cur['rls'].add(rl)
+            prev = 'bullet'
+            continue
+        visible = ANY_COMMENT_RE.sub('', line).strip()
+        if _BOLD_LINE_RE.match(visible):
+            # Role-title line. After bullets it opens a new block; consecutive
+            # titles (after a company or another title) stack into one block.
+            if prev == 'bullet' or cur is None:
+                _close(cur)
+                cur = {'titles': 1, 'rls': set(), 'label': visible[:40]}
+            else:
+                cur['titles'] += 1
+            prev = 'title'
+        elif _PE_LOCATION_RE.search(visible):
+            # Company line: closes the prior block; role titles follow.
+            _close(cur)
+            cur = None
+            prev = 'company'
+        # any other plain line (e.g. a '### CR' subheading) is ignored
+    _close(cur)
+
+    bad = [b for b in blocks if len(b['rls']) > b['titles']]
+    if bad:
+        sample = '; '.join(
+            f"{b['label']} ({len(b['rls'])} employers under {b['titles']} "
+            f"title{'s' if b['titles'] > 1 else ''})" for b in bad[:3])
+        return _record('C5', False,
+                       f'{len(bad)} role block(s) cite entries from more employers '
+                       f'than roles, likely misattribution: {sample}')
+    return _record('C5', True,
+                   'experience bullets attributed to the correct employer/role')
+
+
 # ---------------------------------------------------------------------------
 # Group B - Bullet rules
 # B1 (one sentence) and B2 (line limit) are cv-structure.md hard rules.
@@ -370,11 +461,14 @@ def _check_s2_required_sections(sections):
 
 
 def _count_competencies(body):
-    """Count Core Competencies items: bulleted items, else delimiter-split tokens.
+    """Count Core Competencies items: bulleted items, else pipe-delimited tokens.
 
-    A bulleted list counts list items. A pipe/comma-delimited run counts the
-    delimited tokens across the section's non-blank, non-heading lines (after
-    stripping comments and bold zone labels).
+    A bulleted list counts list items. A pipe-delimited run counts the pipe-
+    separated tokens across the section's non-blank, non-heading lines (after
+    stripping comments and bold zone labels). The pipe (or a bulleted list) is
+    the only item delimiter; commas are within-item punctuation (parenthetical
+    enumerations like "(CDASH, SDTM, CDISC LAB)", tool lists) and never separate
+    items, so a within-item comma cannot inflate the count.
     """
     bullet_items = [l for l in body.splitlines() if re.match(r'^\s*-\s+', l)]
     if bullet_items:
@@ -384,7 +478,7 @@ def _count_competencies(body):
         line = ANY_COMMENT_RE.sub('', line).strip()
         if not line or line.startswith('#') or re.fullmatch(r'\*\*.+\*\*', line):
             continue
-        tokens = [t for t in re.split(r'[|,]', line) if t.strip()]
+        tokens = [t for t in re.split(r'\|', line) if t.strip()]
         count += len(tokens)
     return count
 
@@ -453,14 +547,38 @@ def _check_f1_no_em_dash(text):
 
 
 def _check_f2_ai_tells(text):
-    """F2: flag mechanical AI-tell phrasing matches (report-only)."""
+    """F2: flag mechanical AI-tell phrasing matches (report-only).
+
+    Reports the actual matched terms (deduped, lowercased, with per-term counts)
+    rather than a bare category count, so a flagged finding is directly
+    actionable and a false positive (e.g. a domain term like "pivotal") is
+    visible in the output without re-grepping the document. Long spans (e.g. a
+    negation-contrast clause) are truncated to keep the line readable.
+    """
     # Strip comments so citation/cr markers do not get scanned for tells.
     visible = ANY_COMMENT_RE.sub('', text)
+    # Character spans covered by a domain-legitimate use (e.g. "pivotal trial");
+    # a flagged token whose start falls inside one of these is professional
+    # terminology, not fluff, and is excluded.
+    allow_spans = [m.span() for m in _AI_TELL_DOMAIN_USES.finditer(visible)]
+
+    def _allowed(start):
+        return any(s <= start < e for s, e in allow_spans)
+
     hits = []
     for label, pattern in _AI_TELL_PATTERNS:
-        found = pattern.findall(visible)
-        if found:
-            hits.append(f'{label} ({len(found)})')
+        # Collapse internal whitespace and lowercase so casing/spacing variants
+        # of the same term collapse into one count; drop domain-legitimate uses.
+        terms = [re.sub(r'\s+', ' ', m.group(0)).strip().lower()
+                 for m in pattern.finditer(visible) if not _allowed(m.start())]
+        if not terms:
+            continue
+        counts = Counter(terms)
+        parts = []
+        for term, n in counts.items():
+            shown = term if len(term) <= 40 else term[:40] + '...'
+            parts.append(f'{shown} x{n}' if n > 1 else shown)
+        hits.append(f'{label}: {", ".join(parts)}')
     if hits:
         return _record('F2', False, 'AI-tell phrasing flagged: ' + '; '.join(hits))
     return _record('F2', True, 'no mechanical AI-tell phrasing flagged')
@@ -531,8 +649,11 @@ def run_qc(args):
 
     # Valid id universe for C3: all EX/PR ids in the inventory plus all ST ids
     # in narratives. Membership only; references and definitions both count.
-    valid_ids = set(ENTRY_ID_RE.findall(_util.read(args.inventory)))
+    inv_text = _util.read(args.inventory)
+    valid_ids = set(ENTRY_ID_RE.findall(inv_text))
     valid_ids.update(ENTRY_ID_RE.findall(_util.read(args.narratives)))
+    # EX/PR -> RL map for C5 (employer/role attribution).
+    ex_to_rl = dict(_EX_ROLE_RE.findall(inv_text))
 
     checks = []
 
@@ -543,6 +664,7 @@ def run_qc(args):
     if args.gap_analysis:
         valid_crs = set(CR_ID_RE.findall(_util.read(args.gap_analysis)))
         checks.append(_check_c4_subheading_crs(text, valid_crs))
+    checks.append(_check_c5_role_attribution(sections, ex_to_rl))
 
     # --- Group B: bullet rules ---
     checks.append(_check_b1_one_sentence(sections))

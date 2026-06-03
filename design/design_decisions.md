@@ -1229,6 +1229,37 @@ The render skill (`cv-render`): converts `cv_content.md` (the cv-targeted handof
 
 Refs: `format_spec.md`, `rules/cv/cv-structure.md`, `scripts/cv_qc.py`, `.claude/agents/cv-architect.md`, `cv-format-spec-from-axes`.
 
+#### cv-targeted-render-refinements-2026-06
+First real-CV run of the full pipeline (APP-006 Takeda) drove a batch of user-confirmed refinements across cv-targeted, cv-render, and their QC. Rules live in the cited files; this logs the decisions.
+
+**cv-targeted skill / cv-architect:**
+- Phase 3 converges early: the stakeholder loop exits the moment all three return `satisfied` (it does not force 3 rounds); no integration dispatch when zero nits remain.
+- On a length finding the skill hands the architect the measured page count + the longest lines; the architect does not self-measure geometry or create scratch/helper files (it has no execution tool).
+- QC-regression disclosure: the architect flags any QC fix that reverses a prior stakeholder contribution (`qc_regressions` return field), surfaced at handoff as "QC reversals".
+- Selection-under-scarcity tie-break (`cv-structure.md`): coverage-before-duplication, then semantic > axis-exact > axis-adj > recency, with a protected differentiator. Coverage overrides raw relevance score.
+
+**Employer attribution (prevention + detection):**
+- `retrieval.md` gains an **Employer** column (resolved from each entry's Role tag via Section 7 role records) so the architect places bullets under the right company (`retrieval_payload.py`, `retrieval_apply.py`, `qc-retrieval.md` check 4).
+- New `cv_qc.py` **C5**: a role block may not cite entries from more employers than it has role titles (deterministically catches the employer misattribution that slipped through this run); routed to the Phase 4 fix loop.
+
+**Render / format (`cv-structure.md`, `format_spec.md`, `cv_to_docx.py`):**
+- Header: two centered lines; profile links as bare domain (no scheme/`www.`/trailing slash, no platform label), kept off the location/email/phone line.
+- Section headers: 14pt before (~one blank line), 0pt after (first content binds to the header); stacked-title spacing 0.
+- Company name bold (name segment only; location/dates regular).
+- Role qualifiers: company line `Company | Location | dates` (span = total for multi-role, role dates for single-role); role line `Title (dates) | Style | Type | Allocation`, each qualifier conditional (defaults Direct / On-site / non-concurrent / 100% hidden); `(dates)` only for multi-role; stacked groups hoist shared qualifiers to the company line. Supersedes the `(via Agency)` tag (now `Contract: <Agency>`).
+- Within-role subheadings are short theme labels (a few words), not the full requirement sentence; the `cr` marker carries traceability.
+- Output filename: `[LastName]_CV_[Company]_[AbbreviatedRole]_[YYYY-MM].docx`.
+
+**QC tooling (`cv_qc.py`):**
+- F2 AI-tell output enumerates the matched terms (not just a count); a domain-term allowlist exempts `pivotal <study/trial/Phase/program>` (clinical sense, not buzzword).
+- S3 competency count splits on pipe only (commas are within-item; parentheticals/tool lists no longer inflate); bare tool enumerations belong in Technical Proficiencies.
+
+**Other:** `session_log.py append-section` accepts a content-only body (prepends the heading from `--heading`); the CV best-practices staleness check is narrated in plain English.
+
+**Parked:** uppercase section headers (deferral `cv-render-uppercase-section-headers`).
+
+Refs: `rules/cv/cv-structure.md`, `design/format_spec.md`, `scripts/cv_qc.py`, `scripts/cv_to_docx.py`, `scripts/retrieval_payload.py`, `scripts/retrieval_apply.py`, `scripts/session_log.py`, `.claude/skills/cv-targeted/SKILL.md`, `.claude/skills/cv-render/SKILL.md`, `.claude/agents/cv-architect.md`, `.claude/agents/qc-retrieval.md`, `cv-render-build-2026-06`.
+
 ## Career Workflow Stage
 
 Empty. career_brief, cv_general, profile_update, positioning skill designed at their build time.

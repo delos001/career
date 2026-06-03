@@ -27,7 +27,7 @@ Read all three files in full before checking.
    Route-back: phase 1 (load context) - the manifest read the wrong artifact.
 3. **Inventory coverage** - the inventory table has at least one row for every entry that scored non-zero in the semantic pass (the activity record's inventory score count is the expected lower bound). Missing rows indicate a script merge bug.
    Route-back: phase 4 (assemble).
-4. **Signal column population** - every inventory row has populated values in `Semantic`, `Axis exact`, `Axis adj`, `Source`, `Axis matches`, `Reason`. `-` is acceptable for `Semantic` only when the entry is tag-pull-only. Axis columns are never empty.
+4. **Signal column population** - every inventory row has populated values in `Employer`, `Semantic`, `Axis exact`, `Axis adj`, `Source`, `Axis matches`, `Reason`. `-` is acceptable for `Semantic` only when the entry is tag-pull-only. `Employer` (resolved from the entry's Role tag) and the axis columns are never empty.
    Route-back: phase 4 (assemble).
 5. **Narrative integrity** - every narrative row's `Linked from` IDs (when populated) exist in the inventory table. A linked-from ID that does not appear in inventory means either the Linked-Inventory walk used the wrong inventory set or the inventory table dropped a row.
    Route-back: phase 4 (assemble).
