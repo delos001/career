@@ -17,8 +17,10 @@ and `critical-requirements-extractor`. Each block carries its own heading and bo
 - `{{company_block}}` - `## Company` with Summary / Key facts / Sources.
 - `{{role_block}}` - `## Role` with Summary / Key facts / Sources.
 - `{{industry_block}}` - `## Industry` with Summary / Key facts / Sources.
-- `{{critical_requirements_block}}` - `## Critical Requirements` with a list of
-  requirements, each Text / Type / Source.
+- `{{critical_requirements_block}}` - `## Critical Requirements` as a
+  `| # | Text | Type | Source |` table, one row per requirement; the `#` column
+  is a 1-based sequential index that maps to each requirement's downstream
+  `CR-NNN` id.
 
 ## Skeleton
 

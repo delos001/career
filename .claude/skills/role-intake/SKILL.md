@@ -126,13 +126,15 @@ Ask if this session is for a new role or to resume a previous one?
   should not treat it as the definitive sector if the company's actual business
   suggests otherwise.
 - For `critical-requirements-extractor`: pass the full JD text. The agent scans
-  every JD section (not just labeled "Requirements") and emits a list of
-  competency requirements as Text / Type / Source.
+  every JD section (not just labeled "Requirements") and emits a
+  `| # | Text | Type | Source |` table of competency requirements; the `#`
+  column is a 1-based sequential index that maps to each requirement's
+  downstream `CR-NNN` id.
 - Each returns a fixed block:
   - `company-research` -> `## Company` with Summary / Key facts / Sources.
   - `role-research` -> `## Role` with Summary / Key facts / Sources.
   - `industry-research` -> `## Industry` with Summary / Key facts / Sources.
-  - `critical-requirements-extractor` -> `## Critical Requirements` with Text / Type / Source per requirement.
+  - `critical-requirements-extractor` -> `## Critical Requirements` as a `| # | Text | Type | Source |` table.
   Scoped to what this skill needs to classify and characterize, not exhaustive
   dossiers.
 - Output: four structured findings blocks.

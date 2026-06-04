@@ -12,8 +12,8 @@ key gaps).
 
 `scripts/assemble.py gap-analysis` renders the skeleton below: tokens in
 `{{double braces}}` are substituted. Per-record blocks (Eligibility Flags,
-Requirements, Language-Shift Cases, De-emphasize) are rendered from structured
-inputs the skill passes to the script.
+Requirements, Language-Shift Cases, Partial-Match Cases, De-emphasize) are
+rendered from structured inputs the skill passes to the script.
 
 ## Skeleton
 
@@ -37,6 +37,10 @@ inputs the skill passes to the script.
 ## Language-Shift Cases
 
 {{language_shift_block}}
+
+## Partial-Match Cases
+
+{{partial_match_block}}
 
 ## De-emphasize
 
@@ -89,7 +93,21 @@ inputs the skill passes to the script.
   - **Entries to reframe for CV:** {{entries_to_reframe_comma_sep}}
   ```
 
-  Renders `_(none)_` when no language-shift cases.
+  Renders `_(none)_` when no language-shift cases. Only requirements with status
+  `language-shift` appear here; partial-match cases have their own section.
+
+- **{{partial_match_block}}** - one sub-section per requirement with status
+  `partial-match` (genuine transferable experience, but a real gap remains):
+
+  ```
+  ### {{requirement_id}} - {{requirement_text_short}}
+  - **Transferable evidence to cite:** {{entry_ids_comma_sep_or_none}}
+  - **Gap remaining:** {{notes}}
+  ```
+
+  Evidence to cite is the `entries_to_reframe` list when the case carries
+  language-shift framing, otherwise the requirement's evidence IDs. Renders
+  `_(none)_` when no partial-match cases.
 
 - **{{de_emphasize_block}}** - one bullet per item in the format
   `- **<entry_id>**: <rationale>.` Renders `_(none)_` when no items.

@@ -230,7 +230,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Purpose**: Extract a structured list of competency requirements from a JD for the role-intake skill. Comprehensive scan across all JD sections (not just labeled "Requirements"); each requirement carries Text / Type / Source for downstream use by retrieval, gap analysis, CV creation, and interview prep.
 - **Status**: Designed
 - **Inputs**: Skill-passed (by `role-intake`): JD text; optionally role title and company name for context. Tools: Read.
-- **Outputs**: Structured findings block (`## Critical Requirements` — list of Text / Type / Source per requirement) returned to the caller.
+- **Outputs**: Structured findings block (`## Critical Requirements` — a `| # | Text | Type | Source |` table, one row per requirement; the `#` column indexes CR-NNN) returned to the caller.
 - **Triggers**: Invoked by `role-intake` Phase 4, in parallel with `company-research`, `role-research`, and `industry-research`.
 - **Update Triggers**: When the three-field schema (Text / Type / Source) changes; when downstream consumers add new fields they need from extraction.
 

@@ -237,7 +237,7 @@ def _render_language_shift(requirements, req_lookup):
     cases = []
     for req in requirements:
         ls = req.get('language_shift')
-        if not ls or req.get('status') not in ('language-shift', 'partial-match'):
+        if not ls or req.get('status') != 'language-shift':
             continue
         rid = req.get('requirement_id', '')
         info = req_lookup.get(rid, {})
@@ -260,6 +260,43 @@ def _render_language_shift(requirements, req_lookup):
             f'- **Candidate terminology:** {c["candidate_terminology"]}\n'
             f'- **Entries to reframe for CV:** {entries_str}'
         )
+    return '\n\n'.join(parts)
+
+
+def _render_partial_match(requirements, req_lookup):
+    """Render the Partial-Match Cases block by filtering requirements.
+
+    A partial-match requirement has genuine transferable experience but a real
+    gap remaining. This block gives the CV architect, per case, the evidence to
+    cite and the gap to avoid overclaiming. Text is resolved from req_lookup;
+    inline requirement_text is a fallback. '_(none)_' when no cases.
+    """
+    parts = []
+    for req in requirements:
+        if req.get('status') != 'partial-match':
+            continue
+        rid = req.get('requirement_id', '')
+        info = req_lookup.get(rid, {})
+        rtext = (info.get('text') or req.get('requirement_text', rid))[:80]
+        # Evidence to cite: prefer language_shift.entries_to_reframe when present
+        # (partial-match downgraded from a language-shift), else the evidence IDs.
+        ls = req.get('language_shift') or {}
+        entries = list(ls.get('entries_to_reframe') or [])
+        if not entries:
+            for e in req.get('evidence', []) or []:
+                if isinstance(e, str):
+                    entries.append(e)
+                elif isinstance(e, dict) and e.get('id'):
+                    entries.append(e['id'])
+        evidence_str = ', '.join(entries) if entries else 'none'
+        gap = (req.get('notes') or '').strip() or '_(none)_'
+        parts.append(
+            f'### {rid} - {rtext}\n'
+            f'- **Transferable evidence to cite:** {evidence_str}\n'
+            f'- **Gap remaining:** {gap}'
+        )
+    if not parts:
+        return '_(none)_'
     return '\n\n'.join(parts)
 
 
@@ -333,6 +370,7 @@ def cmd_assemble(args, repo_root, cfg):
     eligibility_block = _render_eligibility(flags)
     requirements_block = _render_requirements(requirements, req_lookup)
     language_shift_block = _render_language_shift(requirements, req_lookup)
+    partial_match_block = _render_partial_match(requirements, req_lookup)
     de_emphasize_block = _render_de_emphasize(de_emphasize_items)
     cv_notes_block = _render_cv_notes(cv_notes_text)
     recommendation_block = _render_recommendation(args.recommendation_label, rationale)
@@ -351,6 +389,7 @@ def cmd_assemble(args, repo_root, cfg):
         'eligibility_flags_block': eligibility_block,
         'requirements_block': requirements_block,
         'language_shift_block': language_shift_block,
+        'partial_match_block': partial_match_block,
         'de_emphasize_block': de_emphasize_block,
         'cv_notes_block': cv_notes_block,
         'recommendation_block': recommendation_block,

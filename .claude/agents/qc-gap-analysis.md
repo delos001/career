@@ -25,7 +25,7 @@ Read all referenced files in full before checking.
 
 ### Structural
 
-1. **Section structure** - `gap_analysis.md` carries the six sections in order: `# Gap Analysis:` header, `## Eligibility Flags`, `## Requirements`, `## Language-Shift Cases`, `## De-emphasize`, `## Recommendation`. Optional sections (Eligibility Flags, Language-Shift Cases, De-emphasize) render `_(none)_` when empty rather than being omitted.
+1. **Section structure** - `gap_analysis.md` carries the eight sections in order: `# Gap Analysis:` header, `## Eligibility Flags`, `## Requirements`, `## Language-Shift Cases`, `## Partial-Match Cases`, `## De-emphasize`, `## CV Notes`, `## Recommendation`. Optional sections (Eligibility Flags, Language-Shift Cases, Partial-Match Cases, De-emphasize, CV Notes) render `_(none)_` when empty rather than being omitted.
    Route-back: phase 6 (assemble outputs).
 2. **Header completeness** - the header block carries every required field: `**APP-NNN:**`, `**Date:**`, `**Fit Score:**`, `**Unmet Must-Haves:**`, `**Recommendation:**`. Each field is non-empty.
    Route-back: phase 6 (assemble outputs).
