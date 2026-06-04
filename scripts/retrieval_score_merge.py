@@ -117,6 +117,7 @@ def main():
     args = parser.parse_args()
 
     try:
+        sys.stdout.reconfigure(encoding='utf-8')
         merge_scores(args.slug, args.app_id, args.temp_dir)
     except Exception as e:
         print(f'Error: {e}', file=sys.stderr)

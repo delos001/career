@@ -277,6 +277,13 @@ def cmd_finalize(args, repo_root, cfg):
     parts = split_pat.split(axis_text, maxsplit=1)
 
     classification_body = parts[0].strip()
+    # The classifier emits its own '## Axis Classification' heading; strip a
+    # leading one so the heading re-added below is not duplicated. (The gaps
+    # half needs no equivalent strip: the split above already consumed its
+    # 'Axis Gaps' heading.)
+    classification_body = re.sub(
+        r'(?i)\A##[ \t]+Axis[ \t]+Classification[ \t]*\n+', '', classification_body
+    ).strip()
     if len(parts) > 1:
         gaps_body = parts[1].strip()
         gaps_content = 'None' if not gaps_body or gaps_body.lower() == 'none' else gaps_body
