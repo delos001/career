@@ -52,16 +52,14 @@ Return exactly this structure:
 ```
 ## Critical Requirements
 
-- Text: <requirement statement>
-  Type: <must-have | preferred | duty-derived | contextual>
-  Source: <JD section reference>
-
-- Text: <next requirement>
-  Type: <type>
-  Source: <source>
-
+| # | Text | Type | Source |
+|---|------|------|--------|
+| 1 | <requirement statement> | <must-have \| preferred \| duty-derived \| contextual> | <JD section reference> |
+| 2 | <next requirement> | <type> | <source> |
 ...
 ```
+
+The `#` column is a sequential integer starting at 1. It determines the `CR-NNN` id the downstream gap-detector assigns (row 1 → CR-001, row 2 → CR-002, etc.). Do not skip or repeat numbers.
 
 If the JD is too thin to extract any requirements (e.g., a one-line role posting), return:
 

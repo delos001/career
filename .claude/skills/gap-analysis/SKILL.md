@@ -105,21 +105,33 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 - **Step 4a - Compact presentation.** Render the assessment list in plain English: per requirement, show `CR-NNN`, text (short), type, verdict, and a one-line of why. Skip rendering for `covered` requirements that need no user input.
 - **Step 4b - Initial categorization.** Ask the user to assign an initial intent to each non-covered item:
   - Gap items: `evidence?` (might have something) / `interview` (defer to interview) / `unresolved` (no plan to close).
-  - Language-shift items: `confirm` (re-frame for CV) / `no-shift-needed` (drop as not a real shift).
-- **Step 4c - Walk `evidence?` items one at a time.** For each, surface the requirement text and the sub-agent's `missing` field; the user provides clarifying information. Judge in main skill (no sub-agent) whether the information closes the gap. If closed: assign final status `closed` and capture the new information for the staging file per the [[respect-profile-doc-conventions]] rule (concise structured fields, not copy-paste content). If not closed: re-categorize as `interview` or `unresolved`.
+  - Language-shift items: for each, critically assess the strength of the translation before asking — is the underlying capability clearly present with only a vocabulary difference, or is it transferable but not a full match with a real gap underneath? State the assessment and rationale in one line, then ask: `strong-shift` (capability clearly present, vocabulary only) / `partial-match` (transferable but not a full match, real gap remains) / `no-shift-needed` (not a real shift, drop it).
+- **Step 4c - Walk `evidence?` items one at a time.** For each, surface the requirement text and the sub-agent's `missing` field; the user provides clarifying information. Judge critically in main skill — does the information fully close the gap, partially address it, or not close it? A full closure means the candidate can honestly claim the requirement on the CV without qualification. A partial match means genuine transferable experience exists but a real gap remains underneath. State the assessment and reasoning explicitly before assigning status. Do not accept context at face value; push back if coverage is thin. Outcomes:
+  - Fully closes the gap → assign `closed`; capture new information for the staging file per [[respect-profile-doc-conventions]].
+  - Partially addresses it (transferable but not a full match) → assign `partial-match`; note the transferable element and the gap that remains.
+  - Does not close it → re-categorize as `interview-deferred` or `unresolved`.
 - **Step 4d - Final statuses.** Map intents to final statuses per the locked taxonomy:
-  - `covered` (from Phase 3, no user input needed).
-  - `closed` (was a gap; closed via user input; staging entry queued).
-  - `language-shift` (from Phase 3, user confirmed).
-  - `interview-deferred` (gap carried into interview, not addressed in CV).
-  - `unresolved` (gap acknowledged, no plan to close).
+  - `covered` (from Phase 3, no user input needed; credit 1.0).
+  - `closed` (was a gap; closed via user input; staging entry queued; credit 1.0).
+  - `language-shift` (strong translation — capability clearly present, vocabulary mismatch only; credit 1.0).
+  - `partial-match` (transferable but not a full match — real gap underneath; CV cites the transferable experience; credit 0.5).
+  - `interview-deferred` (gap carried into interview, not addressed in CV; credit 0.0).
+  - `unresolved` (gap acknowledged, no plan to close; credit 0.0).
 - Initial categorizations from Step 4b are not binding; the user may re-categorize during the walk.
-- **Step 4e - Capture notes.** Compose a one-sentence `notes` string for every non-`covered`/non-`language-shift` requirement, recording the reasoning behind the final status:
+- **Step 4e - Capture notes.** Compose a one-sentence `notes` string for every requirement with status other than `covered` or `language-shift`:
   - `closed` - short paraphrase of what the user surfaced (e.g., "User cited 18 months of healthcare regulatory work at Acme"). The `Closure ref: PU-NNN` pointer is appended automatically by the renderer in Phase 6; do not add it here.
+  - `partial-match` - describe the transferable element and the gap that remains (e.g., "Spotfire and SQL Server dashboard experience is transferable but Power BI specifically has only sparse usage; CV cites dashboard expertise, gap visible at interview").
   - `interview-deferred` - user's stated reason for deferring (or default: "Deferred to interview; no CV-side evidence to cite").
   - `unresolved` - user's stated acknowledgment (or default: "Acknowledged gap; no plan to close").
   `covered` and `language-shift` requirements do not need notes.
-- Output: per-requirement final-record list (each carrying `requirement_id`, `requirement_text`, `requirement_type`, `status`, `evidence`, `notes`, and `language_shift` where applicable), and queued staging-file entries (held in memory; written in Phase 6).
+- **Step 4f - General CV notes.** Ask the user: "Before we score: any general CV framing guidance from this session that isn't tied to a specific requirement? For example, overall positioning cues, things the CV architect should avoid throughout, or cross-cutting narrative priorities. Reply with your notes, or say 'none' to continue." Capture the response as free-text general CV notes (empty string if the user says none).
+- **Step 4g - Write Phase 4 temp files.** Immediately after Step 4f, write three temp files to disk before proceeding to Phase 5:
+  - `temp/gap_requirements.json` — the per-requirement final records (each carrying `requirement_id` / `status` / `evidence` / `notes` / optional `closure_ref` / optional `language_shift` — omit `requirement_text` and `requirement_type`)
+  - `temp/gap_eligibility.json` — the Phase 2 eligibility flags
+  - `temp/gap_cv_notes.txt` — the general CV notes (write even if empty)
+
+  Writing here keeps the main context free of structured data through Phase 5 and 6. Only the staging queue and temp file paths are carried forward.
+- Output: `gap_requirements.json`, `gap_eligibility.json`, `gap_cv_notes.txt` written to temp; queued staging-file entries held in memory for Phase 6.
 
 ## Phase 5 - Fit scoring, de-emphasize, recommendation
 
@@ -128,23 +140,24 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 - Input: per-requirement final status list, Phase 2 flags + decisions.
 - **Step 5a - Fit score.** Compute deterministically (in skill body):
   - Per-requirement weight by Type: `must-have=3`, `preferred=2`, `contextual=1`, `duty-derived=1`.
-  - Per-requirement coverage credit by status: `covered | closed | language-shift = 1.0`; `interview-deferred | unresolved = 0.0`.
+  - Per-requirement coverage credit by status: `covered | closed | language-shift = 1.0`; `partial-match = 0.5`; `interview-deferred | unresolved = 0.0`.
   - Fit score = `sum(weight × credit) / sum(weight)`. Render as percentage with one decimal place (e.g., `78.3%`).
   - Count unmet must-haves: must-have requirements with status `interview-deferred` or `unresolved`.
-- **Step 5b - De-emphasize identification.** Dispatch `de-emphasize-identifier` sub-agent with role context (research summaries + axis classification), final per-requirement assessments, and paths to `retrieval.md` and `inventory.md`. Sub-agent returns a list of `{entry_id, rationale}` items.
+- **Step 5b - De-emphasize identification.** Dispatch `de-emphasize-identifier` sub-agent with role context (research summaries + axis classification), final per-requirement assessments, and paths to `retrieval.md` and `inventory.md`. Sub-agent returns a list of `{entry_id, rationale}` items. **Write `temp/gap_de_emphasize.json` to disk immediately when the sub-agent returns.**
 - **Step 5c - Recommendation.** Generate one of three labels in main skill, with a 1-2 sentence rationale:
   - **`Proceed`** - strong signals across fit, must-haves, eligibility (high fit, zero unmet must-haves, no overriding eligibility flag).
   - **`Proceed with caution`** - mixed signals (moderate fit, 1-2 unmet must-haves, or an overridden eligibility flag).
   - **`Do not pursue`** - weak signals (low fit, multiple unmet must-haves).
   - Soft anchors (consistency, not threshold): fit ≥ ~75% reads as high; 50-75% moderate; < 50% low. Adapt to role context.
-- Output: fit score (%), unmet must-haves count, de-emphasize list, recommendation label + rationale.
+  **Write `temp/gap_rationale.txt` to disk immediately when the recommendation is generated.**
+- Output: fit score (%), unmet must-haves count; `gap_de_emphasize.json` and `gap_rationale.txt` written to temp.
 
 ## Phase 6 - Assemble outputs
 
 **Writing the gap analysis artifact, session log section, and staging-file additions.**
 
-- Input: Phase 2 flags + decisions, Phase 4 per-requirement final status list, Phase 4 queued staging entries, Phase 5 fit score / unmet count / de-emphasize / recommendation.
-- **Step 6a - Write gap_analysis.md.** Write the structured inputs to temp files: the requirements list (each record carrying `requirement_id` / `status` / `evidence` / `notes` / optional `closure_ref` / optional `language_shift` — omit `requirement_text` and `requirement_type`, the script reads those from `research.md`); the eligibility-flags list; the de-emphasize list; the recommendation rationale text. Then run `python scripts/gap_assemble.py assemble --folder <app_folder> --app-id APP-NNN --date YYYY-MM-DD --company <company> --role <role> --fit-score <pct> --unmet-must-haves <count> --recommendation-label <label> --recommendation-rationale-file <path> --research-file <app_folder/research.md> --requirements-file <path> --eligibility-file <path> --de-emphasize-file <path>`. Renders `templates/gap_analysis.md` with substituted blocks. Language-shift cases are filtered from the requirements list internally; no separate file is passed. Capture the printed path. Non-zero exit = halt per global rules.
+- Input: temp file paths from Phase 4 (`gap_requirements.json`, `gap_eligibility.json`, `gap_cv_notes.txt`) and Phase 5 (`gap_de_emphasize.json`, `gap_rationale.txt`); Phase 4 queued staging entries; Phase 5 fit score and unmet must-haves count (for session log); APP-NNN, slug, company, role.
+- **Step 6a - Write gap_analysis.md.** All temp files were written during Phases 4 and 5. Run `python scripts/gap_assemble.py assemble --folder <app_folder> --app-id APP-NNN --date YYYY-MM-DD --company <company> --role <role> --fit-score <pct> --unmet-must-haves <count> --recommendation-label <label> --recommendation-rationale-file <temp/gap_rationale.txt> --research-file <app_folder/research.md> --requirements-file <temp/gap_requirements.json> --eligibility-file <temp/gap_eligibility.json> --de-emphasize-file <temp/gap_de_emphasize.json> --cv-notes-file <temp/gap_cv_notes.txt>`. Renders `templates/gap_analysis.md` with substituted blocks. Language-shift cases are filtered from the requirements list internally. Capture the printed path. Non-zero exit = halt per global rules.
 - **Step 6b - Append staging entries.** For each queued staging entry, run `python scripts/staging_append.py --captured YYYY-MM-DD --from-app APP-NNN --company <company> --role <role> --closed-requirement <CR-NNN> --requirement-text-short <text> --industry <value> --specialty <value> --orientation <value> --level <value> --work-state <value> --content-file <path> --label <short-label>`. Script assigns the next `PU-NNN` and prints the assigned ID. Capture each PU-NNN; the gap_analysis.md requirement Notes references it inline (Step 6a's `--requirements-file` carries the references).
 - **Step 6c - Write session log section.** Build the `## Gap Analysis` section body in a temp file with: Run date, Gap analysis file path, Fit score, QC verdict (filled after Phase 7). Run `python scripts/session_log.py append-section --slug <slug> --app-id APP-NNN --ym YYYY-MM --heading "Gap Analysis" --body-file <path>`. Script replaces the section on re-runs and appends it on first runs. Detail (requirements, language-shift cases, eligibility flags, de-emphasize, recommendation rationale) lives in `gap_analysis.md`; the session log section is a pointer + headline.
 - Output: gap_analysis.md written; staging entries appended; session log section written.
@@ -169,7 +182,8 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   Role: <title> at <company>
   Fit score: <score> (Recommendation: <label>)
   Eligibility flags: <listed in plain English, or "none">
-  Key gaps: <unmet must-haves listed with status; or "none">
+  Key gaps: <must-haves with status interview-deferred or unresolved; or "none">
+  Partial matches: <must-haves with status partial-match (transferable but not a full match); or "none">
   Unresolved QC findings: <listed in plain English, or "none">
   Gap analysis: <path>
 

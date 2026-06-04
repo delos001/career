@@ -42,6 +42,10 @@ inputs the skill passes to the script.
 
 {{de_emphasize_block}}
 
+## CV Notes
+
+{{cv_notes_block}}
+
 ## Recommendation
 
 {{recommendation_block}}
@@ -72,7 +76,9 @@ inputs the skill passes to the script.
   ```
 
   Closures via user input append `Closure ref: <staging_pointer>` to **Notes**.
-  Always rendered (every requirement appears, regardless of status).
+  Status values: `covered`, `closed`, `language-shift`, `partial-match`,
+  `interview-deferred`, `unresolved`. Always rendered (every requirement appears,
+  regardless of status).
 
 - **{{language_shift_block}}** - one sub-section per case:
 
@@ -87,6 +93,12 @@ inputs the skill passes to the script.
 
 - **{{de_emphasize_block}}** - one bullet per item in the format
   `- **<entry_id>**: <rationale>.` Renders `_(none)_` when no items.
+
+- **{{cv_notes_block}}** - free-text general framing guidance for the CV
+  architect captured during the Phase 4 gap-closure loop (not tied to any
+  specific requirement). Renders `_(none)_` when no general notes were
+  provided. Per-requirement Notes fields live inside `{{requirements_block}}`
+  and are not repeated here.
 
 - **{{recommendation_block}}** - paragraph in the format
   `**<recommendation_label>.** <1-2 sentence rationale>`.

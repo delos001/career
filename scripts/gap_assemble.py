@@ -97,11 +97,14 @@ def _fill(skeleton, values):
 # ---------------------------------------------------------------------------
 
 def _parse_requirements_from_research(research_path):
-    """Return {CR-NNN: {text, type}} parsed from the ## Critical Requirements table.
+    """Return {CR-NNN: {text, type}} parsed from the ## Critical Requirements section.
 
     Row position determines the CR-NNN key: row 1 -> CR-001, row 2 -> CR-002,
-    matching the gap-detector's positional ID assignment. The '#' column value
-    is used rather than row order so blank or separator lines do not shift IDs.
+    matching the gap-detector's positional ID assignment.
+
+    Handles two formats produced by different role-intake versions:
+    - Table format:  | # | Text | Type | Source |  (newer)
+    - Bullet format: - Text: ...\n  Type: ...      (older)
     """
     text = _util.read(research_path)
     # Capture the ## Critical Requirements section up to the next ## heading or EOF.
@@ -111,6 +114,8 @@ def _parse_requirements_from_research(research_path):
     if not section_match:
         raise ValueError('## Critical Requirements section not found in research file')
     section = section_match.group(1)
+
+    # --- Table format ---
     lookup = {}
     for line in section.splitlines():
         line = line.strip()
@@ -128,8 +133,30 @@ def _parse_requirements_from_research(research_path):
             continue
         cr_id = f'CR-{num:03d}'
         lookup[cr_id] = {'text': cells[1], 'type': cells[2]}
+    if lookup:
+        return lookup
+
+    # --- Bullet-list format ---
+    # Each entry: "- Text: <text>" followed by "  Type: <type>" (then "  Source: ...").
+    # A new "- Text:" line flushes the previous entry.
+    current = {}
+    num = 0
+    for line in section.splitlines():
+        stripped = line.strip()
+        if stripped.startswith('- Text:'):
+            if current.get('text') and current.get('type'):
+                num += 1
+                lookup[f'CR-{num:03d}'] = {'text': current['text'], 'type': current['type']}
+            current = {'text': stripped[len('- Text:'):].strip()}
+        elif stripped.startswith('Type:') and 'text' in current:
+            current['type'] = stripped[len('Type:'):].strip()
+    # Flush the last entry.
+    if current.get('text') and current.get('type'):
+        num += 1
+        lookup[f'CR-{num:03d}'] = {'text': current['text'], 'type': current['type']}
+
     if not lookup:
-        raise ValueError('no requirement rows parsed from ## Critical Requirements table')
+        raise ValueError('no requirement rows parsed from ## Critical Requirements section')
     return lookup
 
 
@@ -210,7 +237,7 @@ def _render_language_shift(requirements, req_lookup):
     cases = []
     for req in requirements:
         ls = req.get('language_shift')
-        if not ls or req.get('status') != 'language-shift':
+        if not ls or req.get('status') not in ('language-shift', 'partial-match'):
             continue
         rid = req.get('requirement_id', '')
         info = req_lookup.get(rid, {})
@@ -252,6 +279,17 @@ def _render_de_emphasize(items):
     return '\n'.join(lines)
 
 
+def _render_cv_notes(notes_text):
+    """Render the CV Notes block.
+
+    `notes_text` is free-form general framing guidance captured during the
+    gap-closure loop. Returns the text as-is (stripped), or '_(none)_' when
+    absent or empty.
+    """
+    notes = (notes_text or '').strip()
+    return notes if notes else '_(none)_'
+
+
 def _render_recommendation(label, rationale):
     """Render the Recommendation block: '**<label>.** <rationale>'."""
     rationale = (rationale or '').strip()
@@ -288,6 +326,7 @@ def cmd_assemble(args, repo_root, cfg):
     )
 
     rationale = _util.read(args.recommendation_rationale_file).strip()
+    cv_notes_text = _util.read(args.cv_notes_file).strip() if args.cv_notes_file else ''
     req_lookup = _parse_requirements_from_research(args.research_file)
 
     # Render the per-section blocks.
@@ -295,6 +334,7 @@ def cmd_assemble(args, repo_root, cfg):
     requirements_block = _render_requirements(requirements, req_lookup)
     language_shift_block = _render_language_shift(requirements, req_lookup)
     de_emphasize_block = _render_de_emphasize(de_emphasize_items)
+    cv_notes_block = _render_cv_notes(cv_notes_text)
     recommendation_block = _render_recommendation(args.recommendation_label, rationale)
 
     # Substitute tokens into the template skeleton.
@@ -312,6 +352,7 @@ def cmd_assemble(args, repo_root, cfg):
         'requirements_block': requirements_block,
         'language_shift_block': language_shift_block,
         'de_emphasize_block': de_emphasize_block,
+        'cv_notes_block': cv_notes_block,
         'recommendation_block': recommendation_block,
     })
 
@@ -347,6 +388,8 @@ def main():
                        choices=['Proceed', 'Proceed with caution', 'Do not pursue'])
     p_asm.add_argument('--recommendation-rationale-file', required=True,
                        help='path to a file holding the 1-2 sentence rationale text')
+    p_asm.add_argument('--cv-notes-file', required=False, default=None,
+                       help='path to a file holding general CV framing notes (optional; renders _(none)_ if absent)')
     p_asm.add_argument('--research-file', required=True,
                        help='path to research.md; provides requirement text and type keyed by CR-NNN')
     p_asm.add_argument('--requirements-file', required=True,

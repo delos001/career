@@ -36,9 +36,9 @@ Read all referenced files in full before checking.
 
 4. **Requirement coverage** - every `CR-NNN` requirement listed in `research.md`'s `## Critical Requirements` section appears as a sub-section under `## Requirements` in `gap_analysis.md`. No requirement is dropped.
    Route-back: phase 3 (gap detection).
-5. **Status taxonomy** - every requirement's `**Status:**` value is one of: `covered`, `closed`, `language-shift`, `interview-deferred`, `unresolved`. No other values, no missing status.
+5. **Status taxonomy** - every requirement's `**Status:**` value is one of: `covered`, `closed`, `language-shift`, `partial-match`, `interview-deferred`, `unresolved`. No other values, no missing status.
    Route-back: phase 4 (interactive gap closure loop).
-6. **Non-covered Notes populated** - every requirement with status not in `{covered, language-shift}` carries a non-empty `**Notes:**` field that names the reasoning (or, for closures via user input, references the staging entry).
+6. **Non-covered Notes populated** - every requirement with status not in `{covered, language-shift}` carries a non-empty `**Notes:**` field that names the reasoning (or, for closures via user input, references the staging entry). For `partial-match`, Notes must describe the transferable element and the gap that remains.
    Route-back: phase 4 (interactive gap closure loop).
 7. **Closure / staging linkage** - for each requirement with status `closed` whose closure came via user input (per the activity record), the requirement's `**Notes:**` field carries a `Closure ref: PU-NNN` pointer; the named `PU-NNN` entry exists in `profile_updates_pending.md`; that entry carries all required fields (Captured, From, Closed requirement, Role context, Content, Status). Inversely: every PU-NNN the activity record names as appended this run is referenced from `gap_analysis.md`.
    Route-back: phase 6 (assemble outputs).
@@ -49,7 +49,7 @@ Read all referenced files in full before checking.
    Route-back: the owning phase of the offending reference (phase 3 for evidence IDs in Requirements; phase 5 for de-emphasize entry IDs; phase 6 for PU-NNN references).
 9. **Session log mirroring** - the fit score in the session log `## Gap Analysis` section matches the fit score in `gap_analysis.md`'s header. No silent divergence.
    Route-back: phase 6 (assemble outputs).
-10. **Math correctness** - the fit score equals `sum(weight × credit) / sum(weight)` per the type-weighted formula (must-have=3, preferred=2, contextual=1, duty-derived=1; covered/closed/language-shift credit=1.0, interview-deferred/unresolved credit=0.0). The unmet must-haves count equals the count of must-have requirements with status in `{interview-deferred, unresolved}`.
+10. **Math correctness** - the fit score equals `sum(weight × credit) / sum(weight)` per the type-weighted formula (must-have=3, preferred=2, contextual=1, duty-derived=1; covered/closed/language-shift credit=1.0, partial-match credit=0.5, interview-deferred/unresolved credit=0.0). The unmet must-haves count equals the count of must-have requirements with status in `{interview-deferred, unresolved}` (partial-match is NOT counted as unmet).
    Route-back: phase 5 (fit scoring).
 
 ### Logic
