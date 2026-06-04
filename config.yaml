@@ -13,6 +13,7 @@ paths:
   templates: templates                   # artifact templates
   rules: rules                           # axis rule files (one folder per axis)
   design: design                         # design state and build issue logs
+  temp: temp                             # gitignored scratch for per-application run artifacts (cleaned by temp_cleanup.py)
 
 # Filenames.
 filenames:

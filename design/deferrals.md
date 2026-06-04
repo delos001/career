@@ -96,6 +96,12 @@ Audit all axes (industries, specialties, orientations, levels, work-states) to v
 - Blocks: section-level retrieval scripts; downstream skills depending on retrieval pattern.
 - Refs: `axes-file-schema`, `stack-retrieval`.
 
+### axis-classification-slot-count-beyond-two
+Axis classification records two values per axis (primary + secondary), and retrieval builds its deterministic axis-scoring signal from `{primary, secondary}` only - it reads the session log's `## Axis Classification` section, not `## Axis Gaps`. APP-007 (Senior Director, Data Intelligence; 2026-06-03) is the first observed role to legitimately span three values on one axis: specialty = operations-strategy + people-leadership + data-science. The third (data-science) was forced into `## Axis Gaps` and therefore excluded from the axis-scoring pass. Its underlying skills (Azure, Power BI, Databricks, advanced analytics) still surface via semantic scoring against the critical requirements, so the loss is only the deterministic axis exact-match/adjacency boost for data-science-tagged entries, not total exclusion. Hypothesis worth watching, raised by the user 2026-06-03: seniority correlates with axis breadth (a leadership role can own strategy AND people AND hands-on craft simultaneously), so the fixed two-slot cap may systematically under-weight senior/leadership roles. Options at trigger: (a) allow N ordered values per axis instead of fixed primary/secondary; (b) add a third slot only where a role demonstrably spans three; (c) keep two and accept semantic scoring as the compensation. Change spans role-intake (axis-classifier output format + session log axis section), retrieval Phase 1 (the `{primary, secondary}` JSON construction) and `scripts/retrieval_apply.py` (axis signal computation), plus any downstream consumer reading the two-slot shape (gap-analysis, cv-targeted).
+- Trigger: a second observed role spanning >2 values on any axis, OR evidence the lost axis weighting changed a retrieval/CV outcome, OR user direction.
+- Blocks: nothing currently (semantic scoring partially compensates).
+- Refs: `retrieval-architecture-2026-05`, `five-orthogonal-axes`, `dual-orientation-asymmetric-authority` (the primary/secondary asymmetry pattern), session log `wct_APP-007_2026-06` and its `## Axis Gaps`.
+
 
 ## Per-Skill Design Items
 

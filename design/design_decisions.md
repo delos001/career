@@ -898,6 +898,18 @@ Two-tier:
 
 Amended 2026-05-14: the original single-`personal/config.yaml` decision assumed the config would hold personal/absolute paths. With `__file__`-resolved root and relative paths, repo-structure config carries nothing clone-specific and belongs in the version-controlled career repo. See memory `feedback_no_hardcoded_repo_values`.
 
+#### temp-cleanup-script-2026-06
+`scripts/temp_cleanup.py` clears the gitignored `temp/` scratch dir of per-application run artifacts (the ~28 payload/chunk/score/axis/staging files the retrieval skill writes per run). One standalone tool, not a per-skill teardown step (the per-skill option was explicitly rejected 2026-06-03). Design:
+- **Allowlist, not denylist.** Deletes only top-level files matching retrieval's run-scratch signature: an `_APP-NNN_`/`_APP-NNN.` token, or `*_jd_axes.json`, or `*_retrieval_section.md`. Reference material co-located in `temp/` (spec docs, example .docx, probe scripts) and subdirectories (`support/`, `industry-builder-run/`) never match, so they are safe by construction, including files added later. Subdirectories are never recursed into or removed.
+- **Scope:** `--app-id APP-NNN` (one application) XOR `--all` (every application); the two are a required mutually-exclusive group.
+- **Dry-run by default;** `--apply` deletes. Preview prints names, count, total size.
+- **Config-driven path:** added `temp: temp` under `paths:` in `config.yaml`; the script resolves the temp dir to an absolute path from repo root via `_config`, so it is CWD-independent. This intentionally departs from the sibling retrieval temp scripts, which default `--temp-dir` to the relative string `temp`; the config-driven form is the one `no-hardcoded-repo-values` and the don't-rely-on-CWD project rule call for.
+
+Not auto-invoked (deletion stays manual, user-run). The pipeline's terminal skill `cv-render` (Phase 4 handoff) reminds the user the script exists and gives the `--app-id`-scoped command, so cleanup stays discoverable without any skill deleting scratch on the user's behalf. Decided 2026-06-03 (user: manual is fine, but the user must be prompted so they remember the tool exists). Trade-off accepted: an application abandoned before `cv-render` gets no reminder on that run; one reminder at the terminal step satisfies "know it exists."
+
+Verified 2026-06-03: scope precision, cross-app exclusion, both arg guards, and actual deletion all pass.
+Refs: `configuration-file`, `retrieval-architecture-2026-05`, `cv-render-build-2026-06`, `scripts-separate-by-concern` (memory), `feedback_no_hardcoded_repo_values` (memory).
+
 ### Operational Discipline
 
 #### approach-foundation-first
