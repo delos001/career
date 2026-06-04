@@ -114,6 +114,12 @@ Axis classification records two values per axis (primary + secondary), and retri
 - Blocks: nothing; the doc functions until stale.
 - Refs: `cv-targeted-name-and-structure-2026-05`, `rules/cv/cv-structure.md`, `rules/cv/cv-best-practices.md`.
 
+### cv-targeted-length-remediation-levers
+The cv-targeted L1 length guard auto-drops stakeholder-vetted content to satisfy a heuristic line-count estimate, inside the Phase 4 QC loop, upstream of cv-render (the only stage that measures real page geometry). On the APP-007 run (2026-06-04) it cut a real achievement bullet (AbbVie ARIMA) and a quantified figure (CA-7 "50 candidates") for a ~2-line overage on a 149-vs-147 estimate, after three stakeholder rounds had vetted that content as relevant. User flagged this as wrong: a small overage should surface to the user, not trigger content removal. The length norm itself is real (a senior CV over ~3 pages gets screened down), so the fix is to reorder the remediation levers, not remove the ceiling: (1) small overage on the estimate → surface a warning at handoff, do not cut; (2) prefer compression-by-elevation (merge granular bullets into one higher-altitude statement) over dropping; (3) drop content only as a last resort and only against a real render measurement. Open sub-question: whether L1 should stop gating content edits entirely and move length remediation downstream of cv-render (draft → traceability QC → render → measure → trim only if truly over), inverting the current order. Note: the Phase 4 3-iteration cap is the same arbitrary-threshold pattern (forcing "ship provisional" on a 1-line estimate); on APP-007 the cap was deliberately exceeded by one pass to fix two newly-surfaced overstatements, which was correct. User deferred the redesign (behind schedule, 2026-06-04).
+- Trigger: user direction; OR next cv-targeted run where L1 forces a content drop on a small overage.
+- Blocks: nothing currently (cv-targeted ships correct CVs; the cost is occasional over-aggressive trimming the user must manually reverse).
+- Refs: `.claude/skills/cv-targeted/SKILL.md` (Phase 4 L1 + fix loop + 3-iteration cap), `scripts/cv_qc.py` (L1 check), `cv-render-build-2026-06`, memory `feedback_cv_length_handling`, memory `feedback_no_arbitrary_length_targets` (parallel stance for docs).
+
 ### cv-content-within-entry-layout
 **Resolved 2026-05-29** by `cv-targeted-name-and-structure-2026-05`. See that entry.
 
