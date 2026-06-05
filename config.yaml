@@ -13,7 +13,7 @@ paths:
   templates: templates                   # artifact templates
   rules: rules                           # axis rule files (one folder per axis)
   design: design                         # design state and build issue logs
-  temp: temp                             # gitignored scratch for per-application run artifacts (cleaned by temp_cleanup.py)
+  temp: temp                             # shared dev-scratch / reference material; per-application run-scratch now lives in <app-folder>/scratch/ (see filenames.scratch_subdir)
 
 # Filenames.
 filenames:
@@ -36,6 +36,7 @@ filenames:
   cv_content_file: cv_content.md               # written into each application folder by the cv-targeted skill
   drafting_plan_file: drafting_plan.md          # cv-targeted internal working file (framing, page budget, de-emphasis, arbitration log); application folder
   cv_collaboration_log_file: cv_collaboration_log.md  # cv-targeted per-round record of stakeholder contributions, integration, and QC; application folder
+  scratch_subdir: scratch                      # run-scratch subfolder name; per-application pipeline scratch is <app-folder>/scratch/ (wiped at decline/close), axis-builder scratch is rules/scratch/ (wiped at end of build); both via scratch_cleanup.py
 
 # Per-axis schema. Consumed by scripts/axis_qc.py and by the axis-builder
 # skills. Each entry defines the value-file frontmatter key, the required

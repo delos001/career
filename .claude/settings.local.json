@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(awk '/^ID:/{id=$2} /^Role: RL-019/{flag=1} /^Description:/{if\\(flag\\){print id\": \"$0; flag=0}}' \"C:\\\\Users\\\\delos\\\\code\\\\career\\\\personal\\\\profile\\\\inventory.md\")"
+      "Bash(awk '/^ID:/{id=$2} /^Role: RL-019/{flag=1} /^Description:/{if\\(flag\\){print id\": \"$0; flag=0}}' \"C:\\\\Users\\\\delos\\\\code\\\\career\\\\personal\\\\profile\\\\inventory.md\")",
+      "PowerShell(python C:\\\\Users\\\\delos\\\\code\\\\career\\\\scripts\\\\display\\\\introduce.py gap-analysis)"
     ]
   }
 }

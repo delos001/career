@@ -30,6 +30,13 @@ this skill stops at the cited text and does not produce a .docx.
   only compact contributions, findings, and loop state.
 - Phase 3 (collaboration) and Phase 4 (QC) loop per their caps; on a bounded
   loop failure the artifact ships provisional with findings surfaced.
+- **Run-scratch goes in the application's scratch folder.** `<scratch>` denotes
+  `<app_folder>/scratch/`; create it if absent. Write every working file this
+  skill produces - and tell every sub-agent it spawns to write its output files -
+  under `<scratch>`, never the shared `temp/`. Scratch persists for the life of
+  the application (a resumed run reuses it); it is wiped in one shot by
+  `scratch_cleanup.py` when the application is declined (gap-analysis) or closed
+  (the `close-application` skill).
 
 ## Resume check - run before Phase 0
 
@@ -244,7 +251,7 @@ Ask if this session is for a new CV or to resume a previous one.
 
 - Input: APP-NNN, slug, ym; `cv_content.md`, `drafting_plan.md`, and
   `cv_collaboration_log.md` paths; estimated pages; QC verdict; role and company.
-- Build the `## Targeted CV (cv-targeted)` section body in a temp file with: Run
+- Build the `## Targeted CV (cv-targeted)` section body in a scratch file (`<scratch>/...`) with: Run
   date, Role and company, CV content file path, Drafting plan path, Collaboration
   log path, Estimated page count, QC verdict.
 - Run `python scripts/session_log.py append-section --slug <slug> --app-id APP-NNN

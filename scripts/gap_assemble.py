@@ -333,6 +333,31 @@ def _render_recommendation(label, rationale):
     return f'**{label}.** {rationale}'
 
 
+# Statuses whose evidence the CV actually cites. An entry serving as evidence for
+# one of these has a job in the CV, so it must never appear in the de-emphasize
+# list (de-emphasizing an entry the CV cites is contradictory). interview-deferred
+# and unresolved are excluded: the CV cites no evidence for them.
+_CV_CITED_STATUSES = {'covered', 'closed', 'language-shift', 'partial-match'}
+
+
+def _cited_evidence_ids(requirements):
+    """Return the set of inventory IDs cited as evidence by any CV-citing requirement.
+
+    Evidence is either a flat list of ID strings (compact shape) or a list of
+    {id, ...} dicts (full shape); both are normalized to plain IDs here.
+    """
+    cited = set()
+    for req in requirements:
+        if req.get('status') not in _CV_CITED_STATUSES:
+            continue
+        for e in req.get('evidence', []) or []:
+            if isinstance(e, str):
+                cited.add(e)
+            elif isinstance(e, dict) and e.get('id'):
+                cited.add(e['id'])
+    return cited
+
+
 # ---------------------------------------------------------------------------
 # Subcommand: assemble
 # Reads structured inputs, renders the artifact wholesale, writes to disk.
@@ -365,6 +390,21 @@ def cmd_assemble(args, repo_root, cfg):
     rationale = _util.read(args.recommendation_rationale_file).strip()
     cv_notes_text = _util.read(args.cv_notes_file).strip() if args.cv_notes_file else ''
     req_lookup = _parse_requirements_from_research(args.research_file)
+
+    # Deterministic safety net: an entry cited as CV evidence has a job in the CV,
+    # so it can never be de-emphasized. Drop any such collision regardless of what
+    # the de-emphasize-identifier returned - the sub-agent is an LLM and cannot be
+    # trusted to enforce this set-membership constraint perfectly (see design
+    # decision de-emphasize-cited-evidence-filter-2026-06).
+    cited_ids = _cited_evidence_ids(requirements)
+    dropped = [d.get('entry_id') for d in de_emphasize_items
+               if d.get('entry_id') in cited_ids]
+    if dropped:
+        de_emphasize_items = [d for d in de_emphasize_items
+                              if d.get('entry_id') not in cited_ids]
+        plural = 'y' if len(dropped) == 1 else 'ies'
+        print(f'Dropped {len(dropped)} de-emphasize entr{plural} also cited as '
+              f'CV evidence: {", ".join(dropped)}')
 
     # Render the per-section blocks.
     eligibility_block = _render_eligibility(flags)

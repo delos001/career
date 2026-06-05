@@ -30,6 +30,13 @@ prep, career brief) consume this artifact.
 - Heavy reading (retrieval manifest, inventory/narrative bodies) lives in
   sub-agents' isolated context, not the main skill's. The main skill
   receives only structured outcomes for the interactive loop.
+- **Run-scratch goes in the application's scratch folder.** `<scratch>` denotes
+  `<app_folder>/scratch/`; create it if absent. Write every working file this
+  skill produces - and tell every sub-agent it spawns to write its output files -
+  under `<scratch>`, never the shared `temp/`. Scratch persists for the life of
+  the application (a resumed run reuses it); it is wiped in one shot by
+  `scratch_cleanup.py` when the application is declined (gap-analysis) or closed
+  (the `close-application` skill).
 
 ## Resume check - run before Phase 0
 
@@ -125,13 +132,13 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - `unresolved` - user's stated acknowledgment (or default: "Acknowledged gap; no plan to close").
   `covered` and `language-shift` requirements do not need notes.
 - **Step 4f - General CV notes.** Ask the user: "Before we score: any general CV framing guidance from this session that isn't tied to a specific requirement? For example, overall positioning cues, things the CV architect should avoid throughout, or cross-cutting narrative priorities. Reply with your notes, or say 'none' to continue." Capture the response as free-text general CV notes (empty string if the user says none).
-- **Step 4g - Write Phase 4 temp files.** Immediately after Step 4f, write three temp files to disk before proceeding to Phase 5:
-  - `temp/gap_requirements.json` — the per-requirement final records (each carrying `requirement_id` / `status` / `evidence` / `notes` / optional `language_shift` — omit `requirement_text` and `requirement_type`; the `closure_ref` pointer is NOT set here, it is injected in Phase 6 after staging assigns each `PU-NNN`)
-  - `temp/gap_eligibility.json` — the Phase 2 eligibility flags
-  - `temp/gap_cv_notes.txt` — the general CV notes (write even if empty)
+- **Step 4g - Write Phase 4 scratch files.** Immediately after Step 4f, write three scratch files to disk before proceeding to Phase 5:
+  - `<scratch>/gap_requirements.json` — the per-requirement final records (each carrying `requirement_id` / `status` / `evidence` / `notes` / optional `language_shift` — omit `requirement_text` and `requirement_type`; the `closure_ref` pointer is NOT set here, it is injected in Phase 6 after staging assigns each `PU-NNN`)
+  - `<scratch>/gap_eligibility.json` — the Phase 2 eligibility flags
+  - `<scratch>/gap_cv_notes.txt` — the general CV notes (write even if empty)
 
-  Writing here keeps the main context free of structured data through Phase 5 and 6. Only the staging queue and temp file paths are carried forward.
-- Output: `gap_requirements.json`, `gap_eligibility.json`, `gap_cv_notes.txt` written to temp; queued staging-file entries held in memory for Phase 6.
+  Writing here keeps the main context free of structured data through Phase 5 and 6. Only the staging queue and scratch file paths are carried forward.
+- Output: `gap_requirements.json`, `gap_eligibility.json`, `gap_cv_notes.txt` written to `<scratch>`; queued staging-file entries held in memory for Phase 6.
 
 ## Phase 5 - Fit scoring, de-emphasize, recommendation
 
@@ -143,23 +150,23 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - Per-requirement coverage credit by status: `covered | closed | language-shift = 1.0`; `partial-match = 0.5`; `interview-deferred | unresolved = 0.0`.
   - Fit score = `sum(weight × credit) / sum(weight)`. Render as percentage with one decimal place (e.g., `78.3%`).
   - Count unmet must-haves: must-have requirements with status `interview-deferred` or `unresolved`.
-- **Step 5b - De-emphasize identification.** Dispatch `de-emphasize-identifier` sub-agent with role context (research summaries + axis classification), final per-requirement assessments, and paths to `retrieval.md` and `inventory.md`. Sub-agent returns a list of `{entry_id, rationale}` items. **Write `temp/gap_de_emphasize.json` to disk immediately when the sub-agent returns.**
+- **Step 5b - De-emphasize identification.** Dispatch `de-emphasize-identifier` sub-agent with role context (research summaries + axis classification), the final per-requirement records from `<scratch>/gap_requirements.json` (pass the actual records with their `status` + `evidence` IDs, **not** a prose summary, so the agent can exclude entries already cited as CV evidence), and paths to `retrieval.md` and `inventory.md`. Sub-agent returns a list of `{entry_id, rationale}` items. **Write `<scratch>/gap_de_emphasize.json` to disk immediately when the sub-agent returns.** Do not hand-reconcile the list against the evidence: `gap_assemble.py` (Phase 6b) deterministically drops any entry also cited as evidence for a covered/closed/language-shift/partial-match requirement, so a collision cannot reach the artifact even if the agent misses one.
 - **Step 5c - Recommendation.** Generate one of three labels in main skill, with a 1-2 sentence rationale:
   - **`Proceed`** - strong signals across fit, must-haves, eligibility (high fit, zero unmet must-haves, no overriding eligibility flag).
   - **`Proceed with caution`** - mixed signals (moderate fit, 1-2 unmet must-haves, or an overridden eligibility flag).
   - **`Do not pursue`** - weak signals (low fit, multiple unmet must-haves).
   - Soft anchors (consistency, not threshold): fit ≥ ~75% reads as high; 50-75% moderate; < 50% low. Adapt to role context.
-  **Write `temp/gap_rationale.txt` to disk immediately when the recommendation is generated.**
-- Output: fit score (%), unmet must-haves count; `gap_de_emphasize.json` and `gap_rationale.txt` written to temp.
+  **Write `<scratch>/gap_rationale.txt` to disk immediately when the recommendation is generated.**
+- Output: fit score (%), unmet must-haves count; `gap_de_emphasize.json` and `gap_rationale.txt` written to `<scratch>`.
 
 ## Phase 6 - Assemble outputs
 
 **Writing the gap analysis artifact, session log section, and staging-file additions.**
 
-- Input: temp file paths from Phase 4 (`gap_requirements.json`, `gap_eligibility.json`, `gap_cv_notes.txt`) and Phase 5 (`gap_de_emphasize.json`, `gap_rationale.txt`); Phase 4 queued staging entries; Phase 5 fit score and unmet must-haves count (for session log); APP-NNN, slug, company, role.
+- Input: scratch file paths from Phase 4 (`gap_requirements.json`, `gap_eligibility.json`, `gap_cv_notes.txt`) and Phase 5 (`gap_de_emphasize.json`, `gap_rationale.txt`); Phase 4 queued staging entries; Phase 5 fit score and unmet must-haves count (for session log); APP-NNN, slug, company, role.
 - **Step 6a - Append staging entries (assign PU-NNN).** For each queued staging entry, run `python scripts/staging_append.py --captured YYYY-MM-DD --from-app APP-NNN --company <company> --role <role> --closed-requirement <CR-NNN> --requirement-text-short <text> --industry <value> --specialty <value> --orientation <value> --level <value> --work-state <value> --content-file <path> --label <short-label>`. Script assigns the next `PU-NNN` and prints the assigned ID. Capture each `PU-NNN` paired with the `CR-NNN` it closes. This runs before the artifact is assembled so the closure pointers exist when the document is rendered.
-- **Step 6b - Inject closure refs, then write gap_analysis.md.** For each `PU-NNN` captured in Step 6a, set the `closure_ref` field to that `PU-NNN` on the matching `CR-NNN` record in `temp/gap_requirements.json`, and re-write the file. Then run `python scripts/gap_assemble.py assemble --folder <app_folder> --app-id APP-NNN --date YYYY-MM-DD --company <company> --role <role> --fit-score <pct> --unmet-must-haves <count> --recommendation-label <label> --recommendation-rationale-file <temp/gap_rationale.txt> --research-file <app_folder/research.md> --requirements-file <temp/gap_requirements.json> --eligibility-file <temp/gap_eligibility.json> --de-emphasize-file <temp/gap_de_emphasize.json> --cv-notes-file <temp/gap_cv_notes.txt>`. Renders `templates/gap_analysis.md` with substituted blocks; for each `closed` record carrying a `closure_ref`, the renderer appends `Closure ref: PU-NNN` to that requirement's Notes. Capture the printed path. Non-zero exit = halt per global rules.
-- **Step 6c - Write session log section.** Build the `## Gap Analysis` section body in a temp file with: Run date, Gap analysis file path, Fit score, QC verdict (filled after Phase 7). Run `python scripts/session_log.py append-section --slug <slug> --app-id APP-NNN --ym YYYY-MM --heading "Gap Analysis" --body-file <path>`. Script replaces the section on re-runs and appends it on first runs. Detail (requirements, language-shift cases, eligibility flags, de-emphasize, recommendation rationale) lives in `gap_analysis.md`; the session log section is a pointer + headline.
+- **Step 6b - Inject closure refs, then write gap_analysis.md.** For each `PU-NNN` captured in Step 6a, set the `closure_ref` field to that `PU-NNN` on the matching `CR-NNN` record in `<scratch>/gap_requirements.json`, and re-write the file. Then run `python scripts/gap_assemble.py assemble --folder <app_folder> --app-id APP-NNN --date YYYY-MM-DD --company <company> --role <role> --fit-score <pct> --unmet-must-haves <count> --recommendation-label <label> --recommendation-rationale-file <scratch>/gap_rationale.txt --research-file <app_folder/research.md> --requirements-file <scratch>/gap_requirements.json --eligibility-file <scratch>/gap_eligibility.json --de-emphasize-file <scratch>/gap_de_emphasize.json --cv-notes-file <scratch>/gap_cv_notes.txt`. Renders `templates/gap_analysis.md` with substituted blocks; for each `closed` record carrying a `closure_ref`, the renderer appends `Closure ref: PU-NNN` to that requirement's Notes. Capture the printed path. Non-zero exit = halt per global rules.
+- **Step 6c - Write session log section.** Build the `## Gap Analysis` section body in a scratch file (`<scratch>/...`) with: Run date, Gap analysis file path, Fit score, QC verdict (filled after Phase 7). Run `python scripts/session_log.py append-section --slug <slug> --app-id APP-NNN --ym YYYY-MM --heading "Gap Analysis" --body-file <path>`. Script replaces the section on re-runs and appends it on first runs. Detail (requirements, language-shift cases, eligibility flags, de-emphasize, recommendation rationale) lives in `gap_analysis.md`; the session log section is a pointer + headline.
 - Output: gap_analysis.md written; staging entries appended; session log section written.
 
 ## Phase 7 - QC
@@ -191,7 +198,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   ```
 
 - **On "yes"**: ask whether to run the profile-update skill now (process queued staging entries into inventory / positioning / narratives) or defer. State that CV creation and interview prep are ready to run.
-- **On "no"**: ask whether to record the role in `personal/do-not-pursue/` (per `do-not-pursue-folder`). State completion.
+- **On "no"**: ask whether to record the role in `personal/do-not-pursue/` (per `do-not-pursue-folder`). Then wipe the application's scratch - this is a terminal "declined" trigger: run `python scripts/scratch_cleanup.py --app-folder <app_folder> --apply`. State completion.
 
 ## Phase routing on failure
 
@@ -206,7 +213,7 @@ Consumed by Phase 7 (QC failures). Route back, fix, re-run forward (Phase 7 alwa
 | Requirement status missing or off-taxonomy | Phase 4 |
 | Non-covered requirement missing Notes | Phase 4 |
 | Closure / staging linkage broken | Phase 6 |
-| Fabricated EX/PR/ST/DC ID in Requirements evidence | Phase 3 |
+| Fabricated EX/PR/ED/CERT/AFF/TR/ST/DC ID in Requirements evidence | Phase 3 |
 | Fabricated EX/PR ID in De-emphasize | Phase 5 |
 | Fabricated PU-NNN reference | Phase 6 |
 | Session log mirroring divergence | Phase 6 |

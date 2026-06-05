@@ -23,7 +23,7 @@ Read `retrieval.md` and `inventory.md` in full before judging.
 
 For each inventory entry (EX-NNN / PR-NNN), decide whether it is a de-emphasize candidate. An entry is a de-emphasize candidate when **all** of the following hold:
 
-1. **Not already serving the CV.** The entry does NOT appear in the `evidence` list of any per-requirement assessment with verdict `covered`, `language-shift`, or `closed`. (If it's already evidence for a covered requirement, it has a job; it is not a de-emphasize candidate.)
+1. **Not already serving the CV.** The entry does NOT appear in the `evidence` list of any per-requirement assessment with status `covered`, `closed`, `language-shift`, or `partial-match` - i.e. any status whose evidence the CV cites (partial-match included: the CV cites its transferable evidence). If it's already evidence for one of these, it has a job; it is not a de-emphasize candidate.
 2. **Distant from the role's axes.** The entry's axis tags are largely non-matching against the role's classification (per retrieval.md's axis exact-match and axis-adjacency signals): low or zero axis exact-match count, and low axis-adjacency-weighted score.
 3. **Would dilute the role's narrative.** The entry's substance, read against the role context, would pull the CV reader's attention away from the role's competency focus rather than reinforcing it.
 
@@ -34,7 +34,7 @@ Scope: **entry-level only**. Do not return finer-grained items (specific bullets
 ## Rules
 
 - Return entries that meet all three criteria. Do not return entries that meet only one or two; partial mismatch is not a de-emphasize signal.
-- Do not return entries already serving as evidence for covered / closed / language-shift requirements.
+- Do not return entries already serving as evidence for covered / closed / language-shift / partial-match requirements. (The gap-analysis pipeline also enforces this deterministically downstream as a safety net, but apply it here too.)
 - Do not fabricate IDs. Every `entry_id` returned must exist in `inventory.md`.
 - One sentence per `rationale`. Plain English. Name the axis distance and the substantive mismatch.
 - Do not edit or rewrite source content; return the list only.

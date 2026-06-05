@@ -111,7 +111,7 @@ Collect the new bullets across all siblings.
 ### Create mode
 
 Return one JSON object on stdout. The dispatching skill writes the
-`sibling_edits` array to a temp file and passes it to
+`sibling_edits` array to a scratch file (`rules/scratch/`) and passes it to
 `scripts/axis_apply.py create --sibling-edits`.
 
 ```json
@@ -130,7 +130,7 @@ Return one JSON object on stdout. The dispatching skill writes the
 ### Refresh mode
 
 Return one JSON object on stdout. The dispatching skill writes the
-`changes` array to a temp file and passes it to `scripts/axis_qc.py
+`changes` array to a scratch file (`rules/scratch/`) and passes it to `scripts/axis_qc.py
 --changes` so the I3 no-op-refresh check can run against it. The change
 list is informational for QC and traceability only; `axis_apply.py refresh`
 writes the drafted file wholesale from `--value-file`, so the change list

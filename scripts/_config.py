@@ -33,4 +33,14 @@ def load():
     repo_root themselves.
     """
     with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
-        return REPO_ROOT, yaml.safe_load(f)
+        config = yaml.safe_load(f)
+    # Normalize the OS separator in the directory paths. config.yaml authors them
+    # with forward slashes for cross-platform readability, but on Windows joining
+    # an unnormalized value onto the backslash repo_root yields a mixed-separator
+    # path (e.g. 'C:\repo\personal/applications\...') - cosmetically wrong and it
+    # has tripped QC on stored path fields. normpath is a no-op on POSIX (keeps
+    # '/') and converts '/' to '\' on Windows, so joins downstream stay clean.
+    for key, value in config.get('paths', {}).items():
+        if isinstance(value, str):
+            config['paths'][key] = os.path.normpath(value)
+    return REPO_ROOT, config

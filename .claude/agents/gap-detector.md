@@ -25,11 +25,13 @@ Assign every critical requirement a sequential `CR-NNN` ID based on the order it
 
 For each requirement, decide one of three verdicts:
 
-- **`covered`** - evidence in the candidate's profile demonstrates the requirement directly. Evidence is a specific, named achievement, deliverable, or scope at an inventory entry (EX/PR) or narrative arc (ST/DC). General capability claims do not qualify.
+- **`covered`** - evidence in the candidate's profile demonstrates the requirement directly. Evidence is a specific, named achievement, deliverable, or scope at an inventory entry (EX/PR), a credential entry (ED degree in Section 1, CERT certification in Section 2, AFF affiliation in Section 3, or TR training in Section 4), or a narrative arc (ST/DC). General capability claims do not qualify.
 - **`gap`** - no evidence in the profile demonstrates the requirement, and no related framing reasonably maps to it.
 - **`language-shift`** - evidence exists that covers the requirement substantively, but the candidate's framing uses different terminology than the role's. The CV will need to re-frame the existing material to match the role's vocabulary.
 
 Apply the **arc-first rule** (per `arc-composition-for-high-impact-roles`): when judging coverage for any requirement at the scope of an arc-level achievement (a transformation, a multi-year strategic initiative, a multi-component build-out), check narratives (ST/DC) first. A narrative arc that aggregates several inventory entries is the right evidence unit for an arc-scope requirement; surfacing the constituent entries individually would undersell scope. Only fall back to entry-level evidence (EX/PR) when the requirement is itself atomic or when no narrative arc covers it.
+
+**Credential requirements.** A requirement for an academic degree, certification, license, or named training is matched against the candidate's credential records, NOT work entries. Cite the matching credential entry's ID: Section 1 Education -> `ED-NNN` (degree / education requirements, honoring any "related field" clause); Section 2 Professional Certifications -> `CERT-NNN` (certification / license requirements); Section 3 Professional Affiliations -> `AFF-NNN` (professional-membership / affiliation requirements); Section 4 Professional Training -> `TR-NNN` (named-training or professional-development requirements). **Never cite a work entry (EX/PR) or a narrative (ST/DC) as evidence for a credential requirement** - doing so produces a false trace (this is the exact defect that mis-cited a statistical-analysis EX entry for a degree requirement). If the candidate holds no credential that satisfies the requirement, return `gap`.
 
 For gaps, populate `missing` with a one-line description of what evidence would close the gap. This drives the user-loop prompt in the dispatching skill.
 
@@ -39,11 +41,12 @@ For language-shifts, populate `language_shift` with the role's terminology, the 
 
 - Score every requirement. Do not skip.
 - Score against the critical requirements; do not invent additional requirements from the role context or JD.
-- Do not fabricate IDs. Every ID in `evidence` and `language_shift.entries_to_reframe` must exist in `inventory.md` or `narratives.md`.
+- Do not fabricate IDs. Every ID in `evidence` and `language_shift.entries_to_reframe` must exist in `inventory.md` (EX/PR/ED/CERT/AFF/TR) or `narratives.md` (ST/DC).
 - For `covered`: return the compact shape (no relevance text, no reasoning). Top 1-3 evidence IDs only.
 - For `language-shift`: return the full shape with `evidence` (with relevance), `language_shift`, and `reasoning`.
 - For `gap`: return the full shape with `missing` and `reasoning`. `evidence` is `[]`.
 - Do not edit or rewrite source content; return the assessment structure only.
+- Return only the JSON wrapper. Do not append a free-text summary or an aggregate count tally (e.g. "covered: 15") after it - the dispatching skill derives all counts from the records, and a hand-written tally is error-prone (a prior run's prose said "15 covered" while the JSON listed 18). Per-requirement `reasoning` belongs inside each record, not in a trailing summary.
 
 ## Return format
 
@@ -61,7 +64,7 @@ Return exactly this JSON structure (parseable by `json.loads`). Two shapes depen
   "requirement_id": "CR-002",
   "verdict": "gap | language-shift",
   "evidence": [
-    {"id": "<EX-NNN | PR-NNN | ST-NNN | DC-NNN>", "relevance": "<one-line>"}
+    {"id": "<EX-NNN | PR-NNN | ED-NNN | CERT-NNN | AFF-NNN | TR-NNN | ST-NNN | DC-NNN>", "relevance": "<one-line>"}
   ],
   "missing": "<one-line, gap only; null for language-shift>",
   "language_shift": {

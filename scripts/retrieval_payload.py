@@ -430,6 +430,7 @@ def cmd_split(args, repo_root, cfg):
     """Split payload files into per-chunk and per-narrative files; print summary."""
     prefix = f"{args.slug}_{args.app_id}"
     temp_dir = args.temp_dir
+    os.makedirs(temp_dir, exist_ok=True)  # scratch dir may not exist yet on a fresh run
 
     inv_path = os.path.join(temp_dir, f"{prefix}_inventory_payload.json")
     nar_path = os.path.join(temp_dir, f"{prefix}_narratives_payload.json")

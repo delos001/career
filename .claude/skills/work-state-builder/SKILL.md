@@ -11,6 +11,14 @@ invoking it after flagging an axis gap.
 ## Operating rules
 
 - Read `rules/global-rules.md` first; operate under it throughout.
+- **Run-scratch goes in the builder scratch folder.** `<bscratch>` denotes
+  `rules/scratch/`; create it if absent. Write every working file this build
+  produces (the drafted value file, the reconciler's sibling-edit /
+  registry-entry / change-list JSON, and any other scratch) under `<bscratch>`,
+  never the shared `temp/`; the `<temp>` placeholders below denote files under
+  `<bscratch>`. Unlike the application pipeline, builder scratch is removed at
+  the end of this build (final phase) via `python scripts/scratch_cleanup.py
+  --builder --apply`.
 - Phases below run in order; each has a declared input and output.
 - Each phase opens with the bold lead line under its heading. Speak it verbatim
   before running the phase.
@@ -140,7 +148,7 @@ invoking it after flagging an axis gap.
 - The QC runs in two halves per `rules/quality_control/qc-work-state-builder.md`:
 
   **Script half - mechanical checks + auto-fix.** Write the drafted value
-  file to a temp file. Run:
+  file to a scratch file (`<bscratch>`). Run:
 
   ```
   python scripts/axis_qc.py work-states <value> \
@@ -203,3 +211,5 @@ python scripts/axis_apply.py refresh work-states <value> \
   - Provisional: `build completed (provisional, issues logged); <value file path>`.
 - For create mode, also state the sibling files modified and the registry
   entry's new state.
+- Remove the build scratch: run `python scripts/scratch_cleanup.py --builder --apply`
+  to delete `rules/scratch/`.

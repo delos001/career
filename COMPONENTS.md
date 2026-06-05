@@ -67,6 +67,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 **Built** (detailed entry pending):
 - cv-targeted (built end to end; see `.claude/skills/cv-targeted/SKILL.md`)
+- close-application (lean terminal close-out: records the final outcome + date in the session log, then wipes the application scratch folder; user-invoked; see `.claude/skills/close-application/SKILL.md`)
 
 **Drafted** (skeleton SKILL.md exists at `.claude/skills/<name>/`; full design pending; no detailed entry yet):
 - career_brief — placeholder holding the Recruiter Pitch Template Customization Instructions migrated from `personal/profile/positioning.md` per `positioning-schema`.
@@ -339,6 +340,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - `scripts/axis_registry.py`, `scripts/axis_qc.py`, `scripts/axis_apply.py` (axis-builder concern family)
 - `scripts/_config.py`, `scripts/_util.py`, `scripts/axis_utils.py` (shared helper modules; not standalone scripts, no separate entries)
 - `scripts/cv_to_docx.py` (cv-render skill: renders cv_content.md to a formatted .docx)
+- `scripts/scratch_cleanup.py` (deletes a per-application scratch folder via `--app-folder`, or the axis-builder scratch via `--builder`; the single cleanup call for the run-scratch lifecycle)
 
 **Planned / referenced in design:**
 - `scripts/display/orient.py` (with `scripts/display/orientations.yaml` catalog)
@@ -385,7 +387,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 - **Purpose**: Write role-intake's two artifacts (session log, research file) deterministically by rendering the templates, rather than having the skill hand-write files. Subcommands: `ingest` (Phase 3a), `init` (Phase 3b), `research` (Phase 5; writes all four research-block sections including Critical Requirements), `finalize` (Phase 7). Every write is section-scoped.
 - **Status**: Designed
-- **Inputs**: Skill-passed args (slug, APP-NNN, company, role, dates, paths) and, for `research`/`finalize`, temp files holding subagent output. Config: `config.yaml` (paths, filenames, naming patterns) via `scripts/_config.py`. Templates: `session_log.md`, `research_file.md` (read as the structure source).
+- **Inputs**: Skill-passed args (slug, APP-NNN, company, role, dates, paths) and, for `research`/`finalize`, scratch files holding subagent output. Config: `config.yaml` (paths, filenames, naming patterns) via `scripts/_config.py`. Templates: `session_log.md`, `research_file.md` (read as the structure source).
 - **Outputs**: `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`, the `personal/applications/<SLUG>_APP-NNN_YYYY-MM/` folder, and `<folder>/research.md`. Paths echoed to stdout.
 - **Triggers**: Invoked by `role-intake` Phases 3, 5, and 7.
 - **Update Triggers**: When `templates/session_log.md` or `templates/research_file.md` change shape; when the role-intake phase structure changes; when a new sub-agent's output becomes a new research.md section.
@@ -401,7 +403,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/profile_slice.py
 
-- **Purpose**: Deterministic slicer for the candidate profile documents. Subcommands: `id <ID>...` (fetch one or more entries by ID; ID prefix selects the file - EX/PR/RL from inventory.md, ST/DC from narratives.md, TH from positioning.md) and `section <file> <slug>` (fetch a named section from inventory, narratives, positioning, or user-info). Used by retrieval to fetch full content for IDs in its manifest, and by every downstream skill (gap analysis, CV creation, interview prep) that needs to load specific profile content on demand.
+- **Purpose**: Deterministic slicer for the candidate profile documents. Subcommands: `id <ID>...` (fetch one or more entries by ID; ID prefix selects the file - EX/PR/RL and credential entries ED/CERT/AFF/TR from inventory.md, ST/DC from narratives.md, TH from positioning.md) and `section <file> <slug>` (fetch a named section from inventory, narratives, positioning, or user-info). Used by retrieval to fetch full content for IDs in its manifest, and by every downstream skill (gap analysis, CV creation, interview prep) that needs to load specific profile content on demand.
 - **Status**: Designed
 - **Inputs**: Subcommand args (`<ID>...` or `<file> <slug>`). Config: `config.yaml` (profile path + per-file filenames) via `scripts/_config.py`. Filesystem: `personal/profile/inventory.md`, `narratives.md`, `positioning.md`, `user-info.md`.
 - **Outputs**: Raw text on stdout (block text for IDs separated by blank lines; section body for section subcommand). Errors to stderr with exit 1 on missing file or missing ID/section.

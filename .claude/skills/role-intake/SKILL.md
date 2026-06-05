@@ -20,6 +20,13 @@ file**.
   every finding, loop status, and error message to what the user needs to
   know to decide or act.
 - Phase 8 (QC) and Phase 9 (approval) loop back per *Phase routing on failure*.
+- **Run-scratch goes in the application's scratch folder.** `<scratch>` denotes
+  `<app_folder>/scratch/`; create it if absent. Write every working file this
+  skill produces - and tell every sub-agent it spawns to write its output files -
+  under `<scratch>`, never the shared `temp/`. Scratch persists for the life of
+  the application (a resumed run reuses it); it is wiped in one shot by
+  `scratch_cleanup.py` when the application is declined (gap-analysis) or closed
+  (the `close-application` skill).
 
 ## Resume check - run before Phase 0
 
@@ -96,7 +103,7 @@ Ask if this session is for a new role or to resume a previous one?
   (if any).
 - Run `python scripts/app_id.py` for the next APP-NNN. Ask the user for a short
   lowercase company slug. Determine the current `YYYY-MM`.
-- Write JD (and comms if present) to temp files.
+- Write JD (and comms if present) to scratch files under `<scratch>` (this first write creates the application folder; the `ingest` step in 3a tolerates the pre-existing folder).
 - **Step 3a - ingest (checkpoint):** Run `python scripts/assemble.py ingest`
   with `--slug`, `--app-id`, `--ym`, `--jd-text-file` (plus `--comms-text-file`
   if present). This creates the folder and writes `jd.md` and optionally
@@ -144,9 +151,9 @@ Ask if this session is for a new role or to resume a previous one?
 **Assembling the research findings into the research file.**
 
 - Input: four findings blocks.
-- Write each block to its own temp file, then run `python scripts/assemble.py
+- Write each block to its own scratch file under `<scratch>`, then run `python scripts/assemble.py
   research` with `--folder`, `--app-id`, `--company`, `--role`, `--date`, and
-  the four temp-file paths (`--company-file`, `--role-file`, `--industry-file`,
+  the four scratch-file paths (`--company-file`, `--role-file`, `--industry-file`,
   `--critical-requirements-file`). It section-replaces only role-intake's own
   sections so nothing else is clobbered.
 - Output: `research.md` written.
@@ -167,7 +174,7 @@ Ask if this session is for a new role or to resume a previous one?
 **Finalizing the session log with the classification results.**
 
 - Input: session log path, research file path, `axis-classifier` output, research-completed date.
-- Write the `axis-classifier` output to a temp file. Run
+- Write the `axis-classifier` output to a scratch file under `<scratch>`. Run
   `python scripts/assemble.py finalize` with `--session-log`, `--date`,
   `--axis-file`, and `--research-file` pointing to `research.md`. It fills the
   date, replaces the pending axis sections in the session log, and writes the
@@ -221,9 +228,9 @@ Ask if this session is for a new role or to resume a previous one?
     file.
 
   User chooses. Apply, re-QC, return to Phase 9.
-- On approval: delete any temp files written during the session (JD, comms,
-  research blocks, axis file) using the PowerShell tool (`Remove-Item`). Then
-  state completion. Artifacts are ready for the gap-analysis skill.
+- On approval: state completion. Artifacts are ready for the gap-analysis skill.
+  Run-scratch in `<scratch>` is left in place (it is wiped when the application
+  is closed or declined), not deleted here.
 
 ## Phase routing on failure
 

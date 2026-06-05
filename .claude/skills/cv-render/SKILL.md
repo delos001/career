@@ -73,12 +73,13 @@ does not rewrite, re-order, re-cite, or trim. `cv_content.md` is the sole input.
   conservative estimate; the user should open the `.docx` in Word to confirm the
   final page count, and if it exceeds the level's page ceiling, re-run
   `/cv-targeted` to trim (content edits belong to that skill, not this one).
-- Remind the user that this application's run left working files in the
-  scratch folder (`temp/`), and they can clear them once finished with this
-  role. Give the command scoped to this application: preview with
-  `python scripts/temp_cleanup.py --app-id APP-NNN`, then delete with the same
-  command plus `--apply`. This cleanup is optional; the files are gitignored
-  and harmless if left, so do not block or gate the handoff on it.
+- Prompt the user to close the application when it concludes: when this role
+  reaches a final outcome (offer accepted or declined, rejected, withdrawn, no
+  response, or a decision not to pursue), run `/close-application APP-NNN` to
+  record the outcome and its date in the session log and clear the run-scratch.
+  Name the skill explicitly so the user knows it exists. The run-scratch in
+  `<app_folder>/scratch/` is gitignored and harmless until then, so do not gate
+  the handoff on it.
 - End the run. This skill produces the formatted document only.
 
 ## Phase routing on failure

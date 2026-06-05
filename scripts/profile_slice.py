@@ -14,6 +14,7 @@ Two subcommands:
           separated by a blank line. ID prefix selects the file:
             EX-NNN, PR-NNN  -> inventory.md Section 8 entry blocks
             RL-NNN          -> inventory.md Section 7 role-record blocks
+            ED/CERT/AFF/TR  -> inventory.md Sections 1-4 credential blocks
             ST-NNN, DC-NNN  -> narratives.md '## Title' blocks
             TH-NNN          -> positioning.md '## TH-NNN ...' blocks
 
@@ -83,7 +84,8 @@ def _profile_file_path(repo_root, cfg, logical_name):
 # ID-prefix routing
 # The ID prefix tells us which profile file the entry lives in and which
 # block-extraction shape applies. Two shapes:
-#   metadata-block (inventory EX, PR, RL): begins at 'ID: <id>' on its own
+#   metadata-block (inventory EX, PR, RL, and credential entries ED, CERT, AFF,
+#       TR): begins at 'ID: <id>' on its own
 #       line; ends at the next 'ID: ' line or the next heading.
 #   heading-block (narratives ST, DC; positioning TH): begins at a '## ...'
 #       heading that either contains the ID directly (themes) or wraps a
@@ -96,6 +98,10 @@ _PREFIX_TO_FILE = {
     'EX': 'inventory',
     'PR': 'inventory',
     'RL': 'inventory',
+    'ED': 'inventory',
+    'CERT': 'inventory',
+    'AFF': 'inventory',
+    'TR': 'inventory',
     'ST': 'narratives',
     'DC': 'narratives',
     'TH': 'positioning',
@@ -206,7 +212,7 @@ def _fetch_id(entry_id, repo_root, cfg):
         raise FileNotFoundError(f'profile file missing: {file_path}')
     text = _util.read(file_path)
     prefix = entry_id.split('-', 1)[0]
-    if prefix in ('EX', 'PR', 'RL'):
+    if prefix in ('EX', 'PR', 'RL', 'ED', 'CERT', 'AFF', 'TR'):
         block = _extract_metadata_block(text, entry_id)
     else:
         block = _extract_heading_block_by_id(text, entry_id)
@@ -330,7 +336,7 @@ def main():
     # --- Subparser: id ---
     p_id = sub.add_parser(
         'id',
-        help='fetch one or more entries by ID (EX, PR, RL, ST, DC, TH prefixes)',
+        help='fetch one or more entries by ID (EX, PR, RL, ED, CERT, AFF, TR, ST, DC, TH prefixes)',
     )
     p_id.add_argument(
         'ids', nargs='+',

@@ -60,6 +60,7 @@ def _write_json(path, data):
 def merge_scores(slug, app_id, temp_dir):
     """Discover, validate, merge, and write all three corpora score files."""
     prefix = f"{slug}_{app_id}"
+    os.makedirs(temp_dir, exist_ok=True)  # scratch dir may not exist yet on a fresh run
 
     # --- Discover expected inventory chunks from payload file ---
     inv_payload_path = os.path.join(temp_dir, f"{prefix}_inventory_payload.json")
