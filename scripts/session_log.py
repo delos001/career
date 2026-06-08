@@ -2,12 +2,12 @@
 """
 session_log.py - shared session-log section manager across all skills
 
-The session log for an evaluated job is a multi-skill shared artifact at
-`personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`. role-intake
-creates it; every downstream skill (retrieval, gap analysis, CV creation,
-interview prep, career brief, follow-up) appends its own section recording
-what it did and when. This script owns the mechanics so each skill keeps
-its SKILL.md free of file-manipulation instructions.
+The session log for an evaluated job is a multi-skill shared artifact living
+in the application folder as `<app-folder>/session_log.md` (filename from
+config). role-intake creates it; every downstream skill (retrieval, gap
+analysis, CV creation, interview prep, career brief, follow-up) appends its
+own section recording what it did and when. This script owns the mechanics so
+each skill keeps its SKILL.md free of file-manipulation instructions.
 
 One subcommand:
 
@@ -18,14 +18,14 @@ One subcommand:
                   section at the end of the file with one preceding blank
                   line. Echoes the session log path on stdout.
 
-Nothing repo-dependent is hardcoded; folder, filename pattern, and naming
-template come from config.yaml.
+Nothing repo-dependent is hardcoded; the session-log filename comes from
+config.yaml and the application folder is passed in by the calling skill.
 
 Author    : Jason Delosh
 Created   : 2026-05-26
 Project   : career
 Usage     : python scripts/session_log.py append-section \\
-                --slug <slug> --app-id <APP-NNN> --ym <YYYY-MM> \\
+                --folder <app-folder> \\
                 --heading "Retrieval" --body-file <path-to-section-body>
 Depends   : pyyaml (via _config)
 """
@@ -41,18 +41,14 @@ import _util
 
 # ---------------------------------------------------------------------------
 # Path resolution
-# Build the session-log path from slug + app-id + ym using the naming
-# patterns in config.yaml. No path is hardcoded so a folder or naming
-# convention change is a config edit, not a code change.
+# The session log lives in the application folder under the fixed filename
+# from config.yaml. The folder is supplied by the caller, so no slug/app-id/ym
+# stem-building (and its casing pitfalls) is needed here.
 # ---------------------------------------------------------------------------
 
-def _session_log_path(repo_root, cfg, slug, app_id, ym):
-    """Return absolute path of the session log for this application."""
-    stem = cfg['naming']['application_stem'].format(
-        slug=slug, app_id=app_id, ym=ym
-    )
-    name = cfg['naming']['session_log_filename'].format(stem=stem)
-    return os.path.join(repo_root, cfg['paths']['sessions'], name)
+def _session_log_path(cfg, folder):
+    """Return absolute path of the session log inside the application folder."""
+    return os.path.join(folder, cfg['filenames']['session_log_file'])
 
 
 # ---------------------------------------------------------------------------
@@ -94,7 +90,7 @@ def _replace_or_append_section(text, heading, new_section_body):
 
 def cmd_append_section(args, repo_root, cfg):
     """Read body file, apply replace-or-append to the session log, write back."""
-    log_path = _session_log_path(repo_root, cfg, args.slug, args.app_id, args.ym)
+    log_path = _session_log_path(cfg, args.folder)
     if not os.path.exists(log_path):
         raise FileNotFoundError(
             f'session log not found: {log_path} '
@@ -130,12 +126,8 @@ def main():
         'append-section',
         help='replace (if exists) or append (if not) a section in the session log',
     )
-    p_app.add_argument('--slug', required=True,
-                       help='application slug, e.g. fortrea')
-    p_app.add_argument('--app-id', required=True,
-                       help='application ID, e.g. APP-005')
-    p_app.add_argument('--ym', required=True,
-                       help='year-month, e.g. 2026-05')
+    p_app.add_argument('--folder', required=True,
+                       help='the application folder containing session_log.md')
     p_app.add_argument('--heading', required=True,
                        help='section heading text (without the ## prefix)')
     p_app.add_argument('--body-file', required=True,

@@ -749,7 +749,7 @@ Cut fields: aliases, former_names, first_seen, applications list, access stamp.
 Refs: `application-id-script-implementation` (deferral).
 
 #### session-log-location-and-creation
-Created at start of role_evaluation regardless of apply decision. `personal/sessions/<slug>-NNN_session-log.md`.
+Created at start of role_evaluation regardless of apply decision. `personal/sessions/<slug>-NNN_session-log.md`. (Location superseded by `session-log-in-application-folder-2026-06-08`: the log now lives in the application folder.)
 
 #### session-log-frontmatter-schema
 YAML frontmatter, five fields:
@@ -766,7 +766,7 @@ state: evaluating
 - `company`: snapshot at creation. Denormalized for self-containment and historical accuracy under rebrand.
 - `role`: free-text.
 - `created`: YYYY-MM-DD.
-- `state`: enum `evaluating | applied | interviewing | do-not-pursue`. File location stays in `personal/sessions/`; closure signaled by state.
+- `state`: enum `evaluating | applied | interviewing | do-not-pursue`. (Location clause superseded by `session-log-in-application-folder-2026-06-08`: the log now lives in the application folder, not `personal/sessions/`.)
 Cut fields: role_slug, last_updated, outcome/fit_verdict, access stamps.
 Refs: `session-log-body-schema`, `session-log-parser-tests` (deferrals).
 
@@ -974,7 +974,7 @@ Research is three parallel subagents (company / role / industry), each in isolat
 Phase 6 dispatches the `axis-classifier` subagent, which classifies the job against the five axes (primary + secondary where applicable) in isolated context — keeping axis files out of the main session, consistent with research and QC. It is registry-first for every axis: read the axis registry, pick candidate value(s) from the one-line identities, read only the candidate value file(s), then confirm each pick against the value file's Identity / selection criteria before recording it. A pick that does not confirm is re-picked; if no registry value confirms, an axis gap is flagged (recorded in both artifacts, not blocked, not routed to the unbuilt builder skills). Three registries were created so this is consistent across all five axes — `rules/orientations/registry.md`, `rules/levels/registry.md`, `rules/work-states/registry.md` — matching the pre-existing `rules/industries/registry.md` and `rules/specialties/registry.md`.
 
 #### role-intake-artifacts
-- Session log → `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`: Metadata (APP-NNN, company, role, role level, session-start + research-completed dates), Axis Classification, Axis Gaps.
+- Session log → `personal/applications/<SLUG>_APP-NNN_YYYY-MM/session_log.md`: Metadata (APP-NNN, company, role, role level, session-start + research-completed dates), Axis Classification, Axis Gaps. (Relocated from `personal/sessions/` per `session-log-in-application-folder-2026-06-08`.)
 - Research file → `personal/applications/<SLUG>_APP-NNN_YYYY-MM/research.md`: the three research blocks. A current-state document; re-running research overwrites stale sections, it does not accumulate history.
 - APP-NNN is a global sequential counter derived from existing `personal/applications/` folders. No registry or slug-counter machinery.
 - Canonical schemas live in `templates/session_log.md` and `templates/research_file.md`. Skills reference the templates rather than inlining the schema, so it stays single-source across role-intake and downstream skills.
@@ -1305,6 +1305,16 @@ APP-008 (Medable) render pass drove two render-format fixes and re-confirmed the
 - **Regulatory pharma CV is a separate artifact.** The 15-20 page CVs in clinical research are qualification dossiers for the TMF / Form FDA 1572, driven by ICH GCP duty-delegation and training-verification requirements that attach to people performing delegated trial tasks (a task basis, not a seniority basis). That convention does not govern a leadership hiring CV and does not relax the 3-page rule. If a sponsor ever explicitly requests a full qualification CV, treat it as a different document with no page limit.
 
 Refs: `scripts/cv_to_docx.py`, `design/format_spec.md`, `rules/cv/cv-structure.md`, `cv-render-build-2026-06`, `cv-targeted-render-refinements-2026-06`, `cv-targeted-length-remediation-levers` (deferral), memory `feedback_cv_length_handling`.
+
+#### session-log-in-application-folder-2026-06-08
+Moved the session log out of its own `personal/sessions/` folder and into the application folder it belongs to: `personal/applications/<SLUG>_APP-NNN_YYYY-MM/session_log.md`. One folder now holds every artifact for a job (jd, comms, research, retrieval, gap analysis, cv, session log), so close-out and review touch a single location; the now-empty `sessions/` folder is removed. User-confirmed 2026-06-08.
+
+- Fixed filename `session_log.md` (config `filenames.session_log_file`), consistent with `research.md` / `gap_analysis.md`. Retired `naming.session_log_filename` and `paths.sessions`; this drops the stem-based filename and its latent slug-casing mismatch (the old files used `BeOne`/`IQVIA`/`PFM` against lowercase folders).
+- `scripts/session_log.py append-section` now takes `--folder <app_folder>` instead of `--slug`/`--app-id`/`--ym`, resolving `session_log.md` inside that folder. `assemble.py init` writes the log into the app folder it already creates.
+- The 8 existing logs were `git mv`'d into their app folders (history preserved).
+- Supersedes the location clauses in `session-log-location-and-creation` and `session-log-frontmatter-schema`.
+
+Refs: `config.yaml`, `scripts/assemble.py`, `scripts/session_log.py`, `templates/session_log.md`, `.claude/skills/role-intake/SKILL.md`, `.claude/skills/retrieval/SKILL.md`, `.claude/skills/gap-analysis/SKILL.md`, `.claude/skills/cv-targeted/SKILL.md`, `.claude/skills/close-application/SKILL.md`.
 
 ## Career Workflow Stage
 

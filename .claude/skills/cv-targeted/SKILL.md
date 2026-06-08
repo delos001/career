@@ -79,9 +79,8 @@ Ask if this session is for a new CV or to resume a previous one.
     research.md carries no stable id, the `CR-NNN` ids are assigned downstream by
     gap-analysis, below),
   - the `## Role`, `## Company`, `## Industry` summary blocks (role context).
-- Read the session log at
-  `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`. Extract the
-  `## Axis Classification` section (the five axis values, each with primary and
+- Read the session log (`session_log.md`) from the application folder. Extract
+  the `## Axis Classification` section (the five axis values, each with primary and
   optional secondary), and from it the candidate **level** (`ic` or
   `leadership`, the level axis value). The session log is the authoritative
   source for the classification (per `retrieval-architecture-2026-05`); the same
@@ -254,8 +253,8 @@ Ask if this session is for a new CV or to resume a previous one.
 - Build the `## Targeted CV (cv-targeted)` section body in a scratch file (`<scratch>/...`) with: Run
   date, Role and company, CV content file path, Drafting plan path, Collaboration
   log path, Estimated page count, QC verdict.
-- Run `python scripts/session_log.py append-section --slug <slug> --app-id APP-NNN
-  --ym YYYY-MM --heading "Targeted CV (cv-targeted)" --body-file <path>`. The
+- Run `python scripts/session_log.py append-section --folder <app_folder>
+  --heading "Targeted CV (cv-targeted)" --body-file <path>`. The
   script replaces the section on re-runs and appends it on first runs.
 - Detail lives in `cv_content.md`, `drafting_plan.md`, and `cv_collaboration_log.md`;
   the session log section is a pointer plus headline, consistent with the other

@@ -5,7 +5,7 @@ When a deferral's trigger fires, promote to `open_questions.md`. Protocol in mem
 ## Build-Time Tasks
 
 ### skills-config-driven-paths
-All built skills (role-intake, retrieval, gap-analysis, cv-targeted) hardcode repo path strings in SKILL.md prose (`personal/profile/`, `personal/sessions/<SLUG>...`, application-folder filenames) rather than resolving them from `config.yaml`. The `no-hardcoded-repo-values` rule was always intended to cover skill prose, not just scripts (confirmed 2026-06-01), but was never implemented for skills. The scripts already read paths from config via `_config.py`; skills should instruct the executor to resolve paths from config the same way. Cross-skill change; do in one pass.
+All built skills (role-intake, retrieval, gap-analysis, cv-targeted) hardcode repo path strings in SKILL.md prose (`personal/profile/`, application-folder filenames) rather than resolving them from `config.yaml`. The `no-hardcoded-repo-values` rule was always intended to cover skill prose, not just scripts (confirmed 2026-06-01), but was never implemented for skills. The scripts already read paths from config via `_config.py`; skills should instruct the executor to resolve paths from config the same way. Cross-skill change; do in one pass.
 - Trigger: project bandwidth, or user direction.
 - Blocks: nothing currently (hardcoded prose works; it just breaks on repo reorg).
 - Refs: `config.yaml`, `.claude/skills/*/SKILL.md`, memory `no-hardcoded-repo-values`.

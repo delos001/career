@@ -63,7 +63,7 @@ Ask if this session is for a new retrieval run or to resume a previous one?
 
 - Input: application folder path (from the resume check), APP-NNN, slug.
 - Read `research.md` from the application folder. Extract the `## Critical Requirements` section (the matching target for all three scoring passes).
-- Read the session log at `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`. Extract the `## Axis Classification` section (used for the deterministic axis-scoring pass). The session log is the authoritative source for the classification per `retrieval-architecture-2026-05`.
+- Read the session log (`session_log.md`) from the application folder. Extract the `## Axis Classification` section (used for the deterministic axis-scoring pass). The session log is the authoritative source for the classification per `retrieval-architecture-2026-05`.
 - Read `jd.md` from the application folder. The JD text is passed to the scorer subagent as supporting context.
 - Format the axis classification as a JSON object with one key per axis (`Industry`, `Specialty`, `Orientation`, `Level`, `Work-state`), each holding `{primary: <value>, secondary: <value or null>}`. Write to a scratch file (for example `<scratch>/<SLUG>_jd_axes.json`).
 - Output: critical-requirements text block, JD text, axis-classification JSON scratch-file path, session-log path (for Phase 5 QC cross-reference).
@@ -127,7 +127,7 @@ Ask if this session is for a new retrieval run or to resume a previous one?
 **Reviewing the manifest, recording the run in the session log, and confirming readiness for downstream skills.**
 
 - Input: manifest (QC-passed, or with unresolved findings).
-- Write the run record to a scratch file (`<scratch>/<SLUG>_retrieval_section.md`) starting with `## Retrieval` and carrying: run date, manifest path, item counts per corpus, QC verdict. Then run `python scripts/session_log.py append-section --slug <slug> --app-id APP-NNN --ym YYYY-MM --heading Retrieval --body-file <scratch path>`. The script replaces the section on re-runs and appends it on first runs. Non-zero exit = halt per global rules.
+- Write the run record to a scratch file (`<scratch>/<SLUG>_retrieval_section.md`) starting with `## Retrieval` and carrying: run date, manifest path, item counts per corpus, QC verdict. Then run `python scripts/session_log.py append-section --folder <app_folder> --heading Retrieval --body-file <scratch path>`. The script replaces the section on re-runs and appends it on first runs. Non-zero exit = halt per global rules.
 - Present a compact summary to the user:
 
   ```

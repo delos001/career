@@ -20,11 +20,11 @@ pursuing" path).
 **Identifying the application to close.**
 
 - Input: an APP-NNN (from the invocation, or ask for it).
-- Locate the application folder under `personal/applications/` and the session
-  log at `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`.
+- Locate the application folder under `personal/applications/`; the session log
+  is `session_log.md` inside that folder.
 - If the folder or the session log is missing, halt and report (the APP-NNN is
   likely wrong); ask for it again.
-- Output: application folder path, session log path, slug, ym.
+- Output: application folder path, session log path.
 
 ## Phase 2 - Capture the outcome
 
@@ -43,8 +43,8 @@ pursuing" path).
 - Write a `## Closed` section body to a scratch file
   (`<app_folder>/scratch/closed_section.md`) carrying: Outcome, Outcome date,
   Closed-out date (today).
-- Run `python scripts/session_log.py append-section --slug <slug> --app-id
-  APP-NNN --ym YYYY-MM --heading Closed --body-file <path>`. The script replaces
+- Run `python scripts/session_log.py append-section --folder <app_folder>
+  --heading Closed --body-file <path>`. The script replaces
   the section on re-runs and appends it on first runs.
 - Output: session log `## Closed` section written.
 

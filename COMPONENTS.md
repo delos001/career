@@ -95,7 +95,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - Templates: `templates/session_log.md`, `templates/research_file.md`.
   - User input: job description (paste / file / URL), role communications (optional), company slug, metadata confirmations (title/company/level/industry) at Phase 2.
 - **Outputs**:
-  - Files: `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`; `personal/applications/<SLUG>_APP-NNN_YYYY-MM/research.md` (with `## Company`, `## Role`, `## Industry`, `## Critical Requirements`, and `## Axis Gaps` sections).
+  - Files: in `personal/applications/<SLUG>_APP-NNN_YYYY-MM/`: `session_log.md`, and `research.md` (with `## Company`, `## Role`, `## Industry`, `## Critical Requirements`, and `## Axis Gaps` sections).
   - Skills: hands off to the retrieval skill, then to gap analysis.
   - Side effects: consumes the next APP-NNN.
 - **Triggers**:
@@ -388,18 +388,18 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Purpose**: Write role-intake's two artifacts (session log, research file) deterministically by rendering the templates, rather than having the skill hand-write files. Subcommands: `ingest` (Phase 3a), `init` (Phase 3b), `research` (Phase 5; writes all four research-block sections including Critical Requirements), `finalize` (Phase 7). Every write is section-scoped.
 - **Status**: Designed
 - **Inputs**: Skill-passed args (slug, APP-NNN, company, role, dates, paths) and, for `research`/`finalize`, scratch files holding subagent output. Config: `config.yaml` (paths, filenames, naming patterns) via `scripts/_config.py`. Templates: `session_log.md`, `research_file.md` (read as the structure source).
-- **Outputs**: `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`, the `personal/applications/<SLUG>_APP-NNN_YYYY-MM/` folder, and `<folder>/research.md`. Paths echoed to stdout.
+- **Outputs**: the `personal/applications/<SLUG>_APP-NNN_YYYY-MM/` folder and, inside it, `session_log.md` and `research.md`. Paths echoed to stdout.
 - **Triggers**: Invoked by `role-intake` Phases 3, 5, and 7.
 - **Update Triggers**: When `templates/session_log.md` or `templates/research_file.md` change shape; when the role-intake phase structure changes; when a new sub-agent's output becomes a new research.md section.
 
 #### scripts/session_log.py
 
-- **Purpose**: Shared session-log section manager for every skill that writes to the multi-skill session log artifact. Single subcommand `append-section`: locates the session log by slug + APP-NNN + YM, reads a caller-supplied section body from a file, and replaces the section in place if its heading already exists or appends it at the end otherwise (current-state discipline; re-runs overwrite rather than accumulate). Keeps file-manipulation instructions out of every consumer skill's SKILL.md.
+- **Purpose**: Shared session-log section manager for every skill that writes to the multi-skill session log artifact. Single subcommand `append-section`: locates `session_log.md` inside the application folder passed via `--folder`, reads a caller-supplied section body from a file, and replaces the section in place if its heading already exists or appends it at the end otherwise (current-state discipline; re-runs overwrite rather than accumulate). Keeps file-manipulation instructions out of every consumer skill's SKILL.md.
 - **Status**: Designed
-- **Inputs**: Subcommand args (`--slug`, `--app-id`, `--ym`, `--heading`, `--body-file`). Config: `config.yaml` (sessions path, application naming patterns) via `scripts/_config.py`. Filesystem: the named session log under `personal/sessions/`.
+- **Inputs**: Subcommand args (`--folder`, `--heading`, `--body-file`). Config: `config.yaml` (session-log filename) via `scripts/_config.py`. Filesystem: `session_log.md` inside the application folder.
 - **Outputs**: Session-log path printed to stdout on success. Errors to stderr with exit 1 (missing session log; body-file first line does not match the heading).
 - **Triggers**: Invoked by every downstream skill that appends a section to the session log. Currently called by `retrieval` Phase 6; future callers (gap analysis, CV creation, interview prep, follow-up) use the same script.
-- **Update Triggers**: When the session-log filename pattern in `config.yaml` changes; when the section-conflict semantics (current-state vs history-accumulating) change.
+- **Update Triggers**: When the session-log filename in `config.yaml` changes; when the section-conflict semantics (current-state vs history-accumulating) change.
 
 #### scripts/profile_slice.py
 

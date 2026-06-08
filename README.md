@@ -76,8 +76,7 @@ career/
 ├── support/                                       # scaffolding for fresh user setup (layout planned)
 ├── personal/                                      # nested private repo; not shared
 │   ├── profile/                                   # user-info, inventory, narratives, positioning
-│   ├── sessions/                                  # <SLUG>_APP-NNN_YYYY-MM_SessionLog.md
-│   ├── applications/                              # <SLUG>_APP-NNN_YYYY-MM/ (research.md, gap analysis, cv, ...)
+│   ├── applications/                              # <SLUG>_APP-NNN_YYYY-MM/ (session_log.md, research.md, gap analysis, cv, ...)
 │   ├── do-not-pursue/
 │   └── config.yaml                                # reserved for user-specific config; created when first needed
 ├── design/                                        # live design state
@@ -98,7 +97,7 @@ career/
 
 - **Five orthogonal axes.** Orientation, Industry, Specialty, Level, Work-state govern deliverable content and voice. Each axis is a discrete categorical dimension; partial-match scoring runs through adjacency maps in each value's frontmatter.
 - **Application ID.** Global counter `APP-NNN` (e.g. `APP-004`), embedded in the per-job stem `<SLUG>_APP-NNN_YYYY-MM`. `SLUG` is a short user-entered company tag.
-- **Session Log.** `personal/sessions/<SLUG>_APP-NNN_YYYY-MM_SessionLog.md`. Created by `role-intake`; the resume checkpoint is the research file being filed.
+- **Session Log.** `session_log.md` inside each application folder (`personal/applications/<SLUG>_APP-NNN_YYYY-MM/`). Created by `role-intake`; downstream skills append their own sections.
 - **Personal nested repo.** `personal/` holds PII and profile documents.
 - **COMPONENTS.md.** Single registry for every skill, sub-agent, and standalone script: inputs, outputs, triggers, update triggers.
 

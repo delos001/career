@@ -149,8 +149,9 @@ def cmd_init(args, repo_root, cfg):
     stem = cfg['naming']['application_stem'].format(
         slug=args.slug.lower(), app_id=args.app_id, ym=args.ym)
     app_folder = os.path.join(repo_root, cfg['paths']['applications'], stem)
-    session_log_name = cfg['naming']['session_log_filename'].format(stem=stem)
-    session_log = os.path.join(repo_root, cfg['paths']['sessions'], session_log_name)
+    # The session log is a per-application artifact living in the app folder
+    # alongside research.md / jd.md, under the fixed filename from config.
+    session_log = os.path.join(app_folder, cfg['filenames']['session_log_file'])
 
     # Fail loudly rather than overwrite: an existing session log means this is
     # really a resume, which the skill's resume check should have caught.
