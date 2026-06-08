@@ -277,8 +277,11 @@ def add_section_header(doc, text):
 
 
 def add_subheading(doc, text):
+    # Non-bold italic: distinguishes the within-role thematic category from the
+    # bold job-title lines above it without relying on indentation (which would
+    # cost line-width on an already page-tight CV).
     p = _para(doc, before_pt=SPACE_SUBHEADING)
-    _run(p, text, bold=True)
+    _run(p, text, bold=False, italic=True)
 
 
 def add_line(doc, text, before_pt=0):
@@ -401,6 +404,11 @@ def build_cv(md_path, out_path):
                 # location and dates after it stay regular, matching how a job
                 # title renders (title bold, dates regular).
                 name, sep, rest = text.partition(' | ')
+                # The name may arrive plain (older files) or already bold-wrapped
+                # (current cv-targeted output). Strip any bold markers, then apply
+                # bold uniformly so the name renders bold and the location/dates
+                # after the first '|' stay regular, per format_spec.
+                name = re.sub(r'\*\*', '', name.strip())
                 rendered = f'**{name}**' + (f' | {rest}' if sep else '')
                 add_line(doc, rendered,
                          before_pt=0 if section_just_started else SPACE_COMPANY)

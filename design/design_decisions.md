@@ -1292,6 +1292,20 @@ First real-CV run of the full pipeline (APP-006 Takeda) drove a batch of user-co
 
 Refs: `rules/cv/cv-structure.md`, `design/format_spec.md`, `scripts/cv_qc.py`, `scripts/cv_to_docx.py`, `scripts/retrieval_payload.py`, `scripts/retrieval_apply.py`, `scripts/session_log.py`, `.claude/skills/cv-targeted/SKILL.md`, `.claude/skills/cv-render/SKILL.md`, `.claude/agents/cv-architect.md`, `.claude/agents/qc-retrieval.md`, `cv-render-build-2026-06`.
 
+#### cv-render-refinements-2026-06-08
+APP-008 (Medable) render pass drove two render-format fixes and re-confirmed the CV length ceiling against fresh research. All user-confirmed 2026-06-08.
+
+**Render format (`scripts/cv_to_docx.py`, `design/format_spec.md`):**
+- **Within-role thematic subheadings: non-bold italic** (was bold). Bold made them hard to distinguish from the bold job-title lines above them given the lack of indentation; italic separates the two without indenting, which was held off deliberately to preserve bullet line-width on a page-tight CV. Supersedes the "Within-role subheadings: bold 11pt" decision in `cv-render-build-2026-06`. `format_spec.md` typography table gained an Italic column to express it.
+- **Company-name bold made idempotent.** `cv_to_docx.py`'s company-line branch strips any existing `**` from the name segment before re-bolding, so the name renders bold (location/dates regular) whether `cv_content.md` sends the name plain (older files, e.g. APP-006) or already `**`-wrapped (current cv-targeted output, e.g. APP-007/APP-008). Before the fix, an already-bold name double-wrapped to `****...****`, which the inline parser mis-tokenized, leaving literal `**` in the `.docx`. Extends the "Company name bold (name segment only)" decision in `cv-targeted-render-refinements-2026-06`.
+
+**Length ceiling re-confirmed (research 2026-06-08); no rule change.** `cv-structure.md:480` already sets a 3-page hard ceiling for leadership (4+ a flagged exception). Research confirmed this holds for all target levels including Senior/Executive Director: executive-resume norm is 2 pages, 3 only with justification and rigorous editing, and >3 pages is penalized (ATS pass-rate drop; reads as inability to prioritize). Two alternatives the user raised were rejected:
+- **CV appendix to exclude sections from the page count: rejected.** Readers and ATS count total pages regardless of an "appendix" label; the exemption exists only in the candidate's head. Relocating Certifications / Technical Proficiencies past page 3 also risks ATS parse-truncation of keyword-rich content. The appendix/addendum convention is for academic/federal CVs and supplementary material (publications, portfolios), not core sections.
+- **4-page tier for senior roles: rejected.** No evidence supports it for corporate leadership hiring CVs.
+- **Regulatory pharma CV is a separate artifact.** The 15-20 page CVs in clinical research are qualification dossiers for the TMF / Form FDA 1572, driven by ICH GCP duty-delegation and training-verification requirements that attach to people performing delegated trial tasks (a task basis, not a seniority basis). That convention does not govern a leadership hiring CV and does not relax the 3-page rule. If a sponsor ever explicitly requests a full qualification CV, treat it as a different document with no page limit.
+
+Refs: `scripts/cv_to_docx.py`, `design/format_spec.md`, `rules/cv/cv-structure.md`, `cv-render-build-2026-06`, `cv-targeted-render-refinements-2026-06`, `cv-targeted-length-remediation-levers` (deferral), memory `feedback_cv_length_handling`.
+
 ## Career Workflow Stage
 
 Empty. career_brief, cv_general, profile_update, positioning skill designed at their build time.

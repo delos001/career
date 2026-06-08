@@ -36,20 +36,22 @@
 
 ## Typography
 
-| Element | Font | Size (half-pts) | Size (pt) | Bold | Color |
-|---|---|---|---|---|---|
-| Default body | Calibri (minorHAnsi theme) | 22 | 11 | No | Black |
-| Name header | Calibri (minorHAnsi theme) | 36 | 18 | No | Black |
-| Contact line | Calibri (minorHAnsi theme) | 20 | 10 | No | Black |
-| Section headers | Calibri (minorHAnsi theme) | 22 | 11 | Yes | Black |
-| Company header | Calibri (minorHAnsi theme) | 22 | 11 | Yes | Black |
-| Job title | Calibri (minorHAnsi theme) | 22 | 11 | Yes | Black |
-| Body text / narrative | Calibri (minorHAnsi theme) | 22 | 11 | No | Black |
-| Bullet text | Calibri (minorHAnsi theme) | 22 | 11 | No | Black |
-| Within-role thematic subheading | Calibri (minorHAnsi theme) | 22 | 11 | Yes | Black |
-| Earlier Professional Roles entries | Calibri (minorHAnsi theme) | 22 | 11 | No | Black |
+| Element | Font | Size (half-pts) | Size (pt) | Bold | Italic | Color |
+|---|---|---|---|---|---|---|
+| Default body | Calibri (minorHAnsi theme) | 22 | 11 | No | No | Black |
+| Name header | Calibri (minorHAnsi theme) | 36 | 18 | No | No | Black |
+| Contact line | Calibri (minorHAnsi theme) | 20 | 10 | No | No | Black |
+| Section headers | Calibri (minorHAnsi theme) | 22 | 11 | Yes | No | Black |
+| Company header | Calibri (minorHAnsi theme) | 22 | 11 | Yes | No | Black |
+| Job title | Calibri (minorHAnsi theme) | 22 | 11 | Yes | No | Black |
+| Body text / narrative | Calibri (minorHAnsi theme) | 22 | 11 | No | No | Black |
+| Bullet text | Calibri (minorHAnsi theme) | 22 | 11 | No | No | Black |
+| Within-role thematic subheading | Calibri (minorHAnsi theme) | 22 | 11 | No | Yes | Black |
+| Earlier Professional Roles entries | Calibri (minorHAnsi theme) | 22 | 11 | No | No | Black |
 
 > **Note:** Section headers must be mixed case bold, never ALL CAPS.
+>
+> **Within-role thematic subheadings are non-bold italic** (changed 2026-06-08). Bold made them hard to distinguish from the bold job-title lines above them given the lack of indentation. Italic separates the two without indenting, which was held off deliberately to preserve bullet line-width on a page-tight CV.
 >
 > **Earlier Professional Roles render as plain 11pt black lines** (`Company | Title | Dates`), identical in typography to body text. The blue Calibri-Light `SectionHeading` and 9pt all-caps `Subsection` styles a prior version of this spec documented do **not** appear in any example CV and are not used (confirmed 2026-06-02, `cv-render-build-2026-06`).
 
