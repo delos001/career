@@ -1066,6 +1066,8 @@ Role-intake gains a critical-requirements extraction step. A new sub-agent `crit
 
 **Comprehensive JD scan.** The sub-agent reads the entire JD, not just sections labeled "Requirements" or "Qualifications." Duties, responsibilities, "about the role" paragraphs, and team/company-context language often carry competency signals the hiring panel will use even when not labeled as requirements. The `Type` field captures the source nature so downstream consumers can weigh accordingly.
 
+**Type validation guard (2026-06-09).** The extractor is an LLM and has been observed emitting an off-spec `Type` vocabulary (e.g., `Competency`/`Knowledge`/`Experience`/`Credential` describing the *kind* of requirement) instead of the four severity values above. Off-spec types carry no weight in the gap-analysis fit-score formula and silently corrupt scoring. `scripts/assemble.py` (the `research` write-point) now validates the `Type` column and fails loudly on any value outside `{must-have, preferred, duty-derived, contextual}`, so the deviation is caught at generation time rather than reaching gap analysis. Pre-existing `research.md` files written before the guard may carry off-spec types; they are corrected inline at gap-analysis time.
+
 **Downstream consumption:**
 - Retrieval: critical requirements are the matching target for the LLM-judgment passes (inventory entries, narratives, themes), replacing raw JD text as the matching target.
 - Gap analysis: `Type` drives severity. Unmet `must-have` = high severity; unmet `preferred` = low; unmet `contextual` may not constitute a real gap.
