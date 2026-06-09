@@ -92,7 +92,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - **Exclusions**: if the role's industry or company type matches a user exclusion, flag.
 - Present flags to the user in plain English (if any) with override option per flag: `override` (continue) or `stop` (end the skill). Non-flags are not surfaced.
 - Flags do NOT short-circuit the skill on their own. User chooses to continue or stop. Each flag's user decision is recorded for the gap analysis artifact and the recommendation logic in Phase 5.
-- If the user chose `stop` on any flag, exit the skill with a brief summary; record the decision in the do-not-pursue folder per Phase 8's "no" path.
+- If the user chose `stop` on any flag, exit the skill with a brief summary, recording the declined decision on the session log per Phase 8's "no" path.
 - Output: list of flags (type, evidence, user decision).
 
 ## Phase 3 - Gap detection
@@ -198,7 +198,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   ```
 
 - **On "yes"**: ask whether to run the profile-update skill now (process queued staging entries into inventory / positioning / narratives) or defer. State that CV creation and interview prep are ready to run.
-- **On "no"**: ask whether to record the role in `personal/do-not-pursue/` (per `do-not-pursue-folder`). Then wipe the application's scratch - this is a terminal "declined" trigger: run `python scripts/scratch_cleanup.py --app-folder <app_folder> --apply`. State completion.
+- **On "no"**: record the declined decision on the session log as a terminal outcome - write a `## Closed` section body (Outcome: `not-pursued`, Outcome date: today, Closed-out date: today) to `<scratch>/closed_section.md`, then run `python scripts/session_log.py append-section --folder <app_folder> --heading Closed --body-file <path>` (the same `## Closed` section the `close-application` skill writes). Then wipe the application's scratch - this is a terminal "declined" trigger: run `python scripts/scratch_cleanup.py --app-folder <app_folder> --apply`. State completion.
 
 ## Phase routing on failure
 

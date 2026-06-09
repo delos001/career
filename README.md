@@ -77,7 +77,6 @@ career/
 ├── personal/                                      # nested private repo; not shared
 │   ├── profile/                                   # user-info, inventory, narratives, positioning
 │   ├── applications/                              # <SLUG>_APP-NNN_YYYY-MM/ (session_log.md, research.md, gap analysis, cv, ...)
-│   ├── do-not-pursue/
 │   └── config.yaml                                # reserved for user-specific config; created when first needed
 ├── design/                                        # live design state
 │   ├── design_decisions.md

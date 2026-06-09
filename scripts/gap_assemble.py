@@ -242,12 +242,22 @@ def _render_language_shift(requirements, req_lookup):
         rid = req.get('requirement_id', '')
         info = req_lookup.get(rid, {})
         rtext = info.get('text') or req.get('requirement_text', rid)
+        # language_shift may be a plain string (translation note) or a dict
+        # with role_terminology / candidate_terminology / entries_to_reframe.
+        if isinstance(ls, str):
+            ls_role = ''
+            ls_candidate = ls
+            ls_entries = list(req.get('evidence') or [])
+        else:
+            ls_role = ls.get('role_terminology', '')
+            ls_candidate = ls.get('candidate_terminology', '')
+            ls_entries = ls.get('entries_to_reframe', []) or []
         cases.append({
             'requirement_id': rid,
-            'requirement_text_short': rtext[:80],
-            'role_terminology': ls.get('role_terminology', ''),
-            'candidate_terminology': ls.get('candidate_terminology', ''),
-            'entries_to_reframe': ls.get('entries_to_reframe', []) or [],
+            'requirement_text_short': rtext,
+            'role_terminology': ls_role,
+            'candidate_terminology': ls_candidate,
+            'entries_to_reframe': ls_entries,
         })
     if not cases:
         return '_(none)_'
@@ -277,7 +287,7 @@ def _render_partial_match(requirements, req_lookup):
             continue
         rid = req.get('requirement_id', '')
         info = req_lookup.get(rid, {})
-        rtext = (info.get('text') or req.get('requirement_text', rid))[:80]
+        rtext = info.get('text') or req.get('requirement_text', rid)
         # Evidence to cite: prefer language_shift.entries_to_reframe when present
         # (partial-match downgraded from a language-shift), else the evidence IDs.
         ls = req.get('language_shift') or {}

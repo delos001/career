@@ -106,6 +106,64 @@ def _replace_section(text, heading, new_section):
 
 
 # ---------------------------------------------------------------------------
+# Critical-requirements Type validation
+# The critical-requirements-extractor agent must tag each requirement's Type
+# with one of four controlled values (see the agent spec and design decision
+# role-intake-critical-requirements-extraction-2026-05). The agent is an LLM and
+# has been observed substituting an off-spec "kind of requirement" vocabulary
+# (Competency / Knowledge / Experience / Credential / Behavior), which carries no
+# weight in the gap-analysis fit-score formula and silently corrupts scoring
+# downstream. This guard fails the write loudly so the deviation is caught at
+# generation time instead of reaching gap-analysis unnoticed.
+# ---------------------------------------------------------------------------
+
+# The only Type values the downstream gap-analysis fit-score formula weights.
+ALLOWED_REQUIREMENT_TYPES = {'must-have', 'preferred', 'duty-derived', 'contextual'}
+
+
+def _validate_requirement_types(block):
+    """Raise ValueError if any requirement row carries an off-spec Type.
+
+    'block' is the critical-requirements-extractor output: a Markdown table
+    '| # | Text | Type | Source |', or the '(none extracted...)' sentinel when
+    the JD is too thin (no rows, nothing to validate). Parses each data row's
+    Type cell and checks it against ALLOWED_REQUIREMENT_TYPES, collecting every
+    offender so the error lists them all at once rather than failing on the first.
+    """
+    offenders = []
+    for line in block.splitlines():
+        line = line.strip()
+        # Data rows are pipe-delimited; skip anything that is not a table row.
+        if not line.startswith('|') or not line.endswith('|'):
+            continue
+        cells = [c.strip() for c in line.strip('|').split('|')]
+        # Need at least #, Text, Type. Structural malformation is the downstream
+        # parser's concern; this guard only checks the Type cell.
+        if len(cells) < 3:
+            continue
+        # Skip the header row ('#') and the '|---|---|' separator row.
+        if cells[0] == '#' or cells[0].startswith('---'):
+            continue
+        # A real requirement row has an integer in the '#' cell.
+        try:
+            int(cells[0])
+        except ValueError:
+            continue
+        type_value = cells[2]
+        if type_value not in ALLOWED_REQUIREMENT_TYPES:
+            offenders.append((cells[0], type_value))
+    if offenders:
+        listed = ', '.join(f'row {n}: "{t}"' for n, t in offenders)
+        allowed = ', '.join(sorted(ALLOWED_REQUIREMENT_TYPES))
+        raise ValueError(
+            f'critical-requirements Type column has off-spec values ({listed}); '
+            f'allowed: {allowed}. The critical-requirements-extractor must emit one '
+            'of those four values. Re-run the extractor or correct the Type cells '
+            'before assembling research.md.'
+        )
+
+
+# ---------------------------------------------------------------------------
 # Subcommand: ingest  (role-intake Phase 3a)
 # Creates the application folder and writes the JD (and comms if present) to
 # disk immediately. Run this before 'init' so raw inputs are persisted before
@@ -204,6 +262,10 @@ def cmd_research(args, repo_root, cfg):
     role_block = _util.read(args.role_file).strip()
     industry_block = _util.read(args.industry_file).strip()
     critical_requirements_block = _util.read(args.critical_requirements_file).strip()
+    # Guard: reject off-spec Type values before they reach research.md and
+    # silently corrupt gap-analysis scoring. Fails loudly (non-zero exit) so the
+    # role-intake skill halts per global-rules.md.
+    _validate_requirement_types(critical_requirements_block)
 
     if not os.path.exists(research_file):
         # First write: render the whole file from the template.

@@ -12,6 +12,8 @@ Input grammar (the cv_qc.py + cv-architect contract):
   - '## <Section>'           section heading.
   - '### <subheading text>'  within-role thematic subheading (its following
                              '<!-- cr: CR-NNN -->' marker line strips to empty).
+                             Any deeper level ('#### ', ...) renders the same, so
+                             an architect heading-level slip never renders raw hashes.
   - '- <text> <!-- src: ... -->'  bullet; the citation comment is stripped.
   - Company / role header lines are plain text (not list items); bold/italic are
     carried by markdown '**...**' / '*...*' and rendered faithfully.
@@ -375,9 +377,12 @@ def build_cv(md_path, out_path):
             add_section_header(doc, line[3:].strip())
             continue
 
-        # Within-role thematic subheading.
-        if line.startswith('### '):
-            add_subheading(doc, line[4:].strip())
+        # Within-role thematic subheading: any heading deeper than the '## '
+        # section ('### ', '#### ', ...). Tolerant of the heading level the
+        # cv-architect emits - a level slip (e.g. '####') must still render as a
+        # styled subheading, not fall through to a body line with literal hashes.
+        if re.match(r'^#{3,}\s', line):
+            add_subheading(doc, re.sub(r'^#{3,}\s+', '', line).strip())
             prev_was_title = False
             continue
 

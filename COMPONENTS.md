@@ -145,7 +145,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Outputs**:
   - Files: `personal/applications/<SLUG>_APP-NNN_YYYY-MM/gap_analysis.md` (the artifact); appended entries in `personal/profile/profile_updates_pending.md` (cross-application staging); `## Gap Analysis` section in the session log.
   - Skills: hands off to CV creation, interview prep, career brief (downstream readers of gap_analysis.md). At Phase 8, prompts user to run the separate profile-update skill now or defer.
-  - Side effects: assigns next `PU-NNN` per staging entry appended; records the role in `personal/do-not-pursue/` on a "no" decision (per `do-not-pursue-folder`).
+  - Side effects: assigns next `PU-NNN` per staging entry appended; on a "no" decision, records the `not-pursued` outcome in the session log's `## Closed` section and wipes the application scratch.
 - **Triggers**:
   - User invocation: `/gap-analysis` after a retrieval run has completed for the same APP-NNN. Resumes prior runs via the APP-NNN probe.
 - **Update Triggers**:

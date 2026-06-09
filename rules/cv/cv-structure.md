@@ -125,13 +125,21 @@ re-decide relevance ad hoc.
 **Selection under scarcity (tie-break).** When relevant entries compete for
 limited space (the page ceiling, or bullets-per-role), select deterministically
 in this order rather than by ad hoc judgment:
-1. **Coverage before duplication.** Every critical requirement keeps its single
-   strongest cited entry before any requirement receives a second. A scarce slot
-   never goes to a duplicate for an already-covered requirement while another
-   requirement would otherwise be thinly covered or uncovered. This can rank a
-   lower-semantic entry above a higher-semantic one when the lower entry is the
-   only strong evidence for its requirement: coverage overrides raw relevance
-   score.
+1. **Weighted coverage before duplication.** The coverage floor is guaranteed
+   only for the highest-weighted requirement types. Every **must-have and
+   preferred** requirement keeps its single strongest cited entry before any
+   requirement receives a second. **Contextual and duty-derived** requirements
+   earn no guaranteed slot; they are covered only when an entry already chosen
+   for a must-have/preferred requirement or a protected differentiator speaks to
+   them (ride-along coverage), reflected in that entry's framing rather than
+   claiming a dedicated bullet or subheading. A scarce slot never goes to a
+   duplicate for an already-covered must-have/preferred while another
+   must-have/preferred would otherwise be thinly covered or uncovered. This can
+   rank a lower-semantic entry above a higher-semantic one when the lower entry
+   is the only strong evidence for a must-have/preferred requirement: weighted
+   coverage overrides raw relevance score. Requirement type comes from the
+   gap-analysis requirement headers (per the upstream-signal principle); it is
+   not re-judged here.
 2. **Then by signal, in fixed order.** Among entries of equivalent coverage
    contribution (choosing extra entries once coverage is met, or choosing which
    of several entries on one requirement to keep), order by (a) semantic score,
