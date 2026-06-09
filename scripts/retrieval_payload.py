@@ -6,12 +6,12 @@ Reads the candidate profile documents (inventory.md, narratives.md,
 positioning.md) and emits the per-corpus payload that the retrieval-scorer
 subagent consumes alongside the critical requirements list. Three subcommands:
 
-  inventory   Read Section 8 of inventory.md and emit a JSON list of chunks,
-              each chunk containing up to N entries (default 50, configurable
-              via --chunk-size). Each entry carries its ID, tag axes, and a
-              concatenated 'Description + Impact' payload text. Chunking
-              mitigates attention degradation when the LLM ranks long lists
-              in a single prompt.
+  inventory   Read every EX/PR entry in inventory.md and emit a JSON list of
+              chunks, each chunk containing up to N entries (default 50,
+              configurable via --chunk-size). Each entry carries its ID, tag
+              axes, and a concatenated 'Description + Impact' payload text.
+              Chunking mitigates attention degradation when the LLM ranks long
+              lists in a single prompt.
   narratives  Read narratives.md and emit a JSON list of every narrative
               (ST-NNN and DC-NNN) with its ID, Linked Inventory IDs, and a
               concatenated body payload. One LLM call sees the whole list.
@@ -73,13 +73,15 @@ def _positioning_path(repo_root, cfg):
 
 
 # ---------------------------------------------------------------------------
-# Inventory Section 8 parsing
-# Section 8 contains every EX/PR entry. Each entry begins with 'ID: <id>' and
-# carries the axis-tag lines (Industry, Specialty, Orientation, Level,
-# Work-state), the Description, and the Impact. The entry block ends at the
-# next 'ID: ' line or the next heading (### or ##). This parser extracts the
-# fields we need (ID, axis tags, Description, Impact) and concatenates
-# Description + Impact into a 'payload' text the LLM judges semantically.
+# Inventory entry parsing
+# Retrievable entries (EX-NNN, PR-NNN) live in Section 8 (Experience Entries)
+# and Section 9 (Independent & Volunteer Projects). Each entry begins with
+# 'ID: <id>' and carries the axis-tag lines (Industry, Specialty, Orientation,
+# Level, Work-state), the Description, and the Impact; PR entries also carry a
+# 'Company:' line (no Role: RL reference). The parser scans the whole document
+# by the anchored 'ID:' marker rather than a hardcoded section number, so it
+# stays correct across section renumbering. It extracts the fields we need and
+# concatenates Description + Impact into a 'payload' text the LLM judges.
 # ---------------------------------------------------------------------------
 
 # Regex: a line that opens an inventory entry. Captures the ID.
@@ -135,18 +137,27 @@ def _section_bounds(text, heading_prefix):
 
 
 def _parse_inventory_entries(inventory_text):
-    """Walk Section 8 of inventory.md, returning a list of entry dicts.
+    """Walk every EX/PR entry in inventory.md, returning a list of entry dicts.
 
-    Each dict carries: id, industry (list), specialty (list), orientation
-    (list), level (list), work_state (list), description (str), impact (str),
-    payload (str = Description + ' ' + Impact, both trimmed).
+    Each dict carries: id, role (str; EX entries reference an RL record),
+    company (str; PR entries carry their employer directly), industry (list),
+    specialty (list), orientation (list), level (list), work_state (list),
+    description (str), impact (str), payload (str = Description + ' ' + Impact,
+    both trimmed).
+
+    Entries are matched anywhere in the document by their anchored
+    'ID: EX-NNN' / 'ID: PR-NNN' opener (currently Section 8 Experience Entries
+    and Section 9 Independent & Volunteer Projects). Scanning by entry marker
+    rather than a hardcoded section number keeps the parser stable across
+    section renumbering (cf. the 9<->10 swap in
+    `experience-inventory-section-ordering`). A new '## ' section heading
+    closes the open entry, so a non-entry section (e.g. Academic Coursework
+    Detail) cannot bleed into the last entry's fields.
     """
-    sec_start, sec_end = _section_bounds(inventory_text, '## 8. ')
     lines = inventory_text.split('\n')
     entries = []
     current = None
-    for i in range(sec_start, sec_end):
-        line = lines[i]
+    for line in lines:
         m = _ENTRY_RE.match(line)
         if m:
             # New entry starts; flush the previous one.
@@ -155,6 +166,7 @@ def _parse_inventory_entries(inventory_text):
             current = {
                 'id': m.group(1),
                 'role': '',
+                'company': '',
                 'industry': [],
                 'specialty': [],
                 'orientation': [],
@@ -164,13 +176,28 @@ def _parse_inventory_entries(inventory_text):
                 'impact': '',
             }
             continue
+        # A new section heading ('## ') closes the current entry and resets
+        # state, bounding each entry to its own section without hardcoding a
+        # section number. '### RL-NNN' role-grouping subheaders are h3 and do
+        # not match, so they leave the open entry untouched.
+        if line.startswith('## '):
+            if current is not None:
+                entries.append(_finalise_entry(current))
+                current = None
+            continue
         if current is None:
-            # We are before the first entry under Section 8 (e.g. the '### RL-NNN'
-            # role-grouping subheaders). Skip until the first entry begins.
+            # Before the first entry, or between an entry's section and the
+            # next (e.g. the '### RL-NNN' role-grouping subheaders). Skip.
             continue
         m = _ROLE_RE.match(line)
         if m:
             current['role'] = m.group(1)
+            continue
+        m = _COMPANY_RE.match(line)
+        if m:
+            # PR entries name their employer directly; EX entries have no
+            # Company line, so this only populates PR entries.
+            current['company'] = m.group(1).strip()
             continue
         m = _TAG_RE.match(line)
         if m:

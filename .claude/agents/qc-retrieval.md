@@ -17,7 +17,9 @@ The dispatching skill gives you:
 - the path to the session log (for cross-reference checks against the axis classification per `retrieval-architecture-2026-05`),
 - a brief activity record (which scoring passes ran, with item counts).
 
-Read all three files in full before checking.
+The source profile documents are the authoritative baseline for the coverage and fabrication checks; the activity record and the manifest are both derived and can agree with each other while still being wrong. The profile documents live in `personal/profile/`: `inventory.md` (`EX-`/`PR-` entries, across Section 8 Experience Entries and Section 9 Independent & Volunteer Projects), `narratives.md` (`ST-`/`DC-`), `positioning.md` (`TH-`).
+
+Read the manifest, `research.md`, and the session log in full before checking; grep the profile documents as the checks require.
 
 ## Checks
 
@@ -25,9 +27,10 @@ Read all three files in full before checking.
    Route-back: phase 4 (assemble).
 2. **Axis classification consistency** - the JD axis classification reported in the manifest header matches what the session log records as the role-intake classification. No silent divergence.
    Route-back: phase 1 (load context) - the manifest read the wrong artifact.
-3. **Inventory coverage** - the inventory table has at least one row for every entry that scored non-zero in the semantic pass (the activity record's inventory score count is the expected lower bound). Missing rows indicate a script merge bug.
-   Route-back: phase 4 (assemble).
-4. **Signal column population** - every inventory row has populated values in `Employer`, `Semantic`, `Axis exact`, `Axis adj`, `Source`, `Axis matches`, `Reason`. `-` is acceptable for `Semantic` only when the entry is tag-pull-only. `Employer` (resolved from the entry's Role tag) and the axis columns are never empty.
+3. **Inventory coverage against source** - the authoritative baseline is the SOURCE inventory file (`personal/profile/inventory.md`), never the activity record or the payload. Grep it for `^ID: (EX|PR)-` entry lines across every section (entries live in Section 8 Experience Entries and Section 9 Independent & Volunteer Projects) and count them. A clean PASS requires all three counts to agree: source entry count == activity-record inventory score count == manifest inventory row count. Checking the manifest only against the activity record (both derived) is insufficient: a parser or payload bug that drops a whole section makes them agree with each other while both fall short of the source.
+   - Manifest row count == activity-record count, but both fall short of the source count: entries were dropped before scoring (payload build / inventory parser). Route-back: phase 2 (build payloads).
+   - Manifest row count falls short of the activity-record count: entries were dropped at merge/assemble. Route-back: phase 4 (assemble).
+4. **Signal column population** - every inventory row has populated values in `Employer`, `Semantic`, `Axis exact`, `Axis adj`, `Source`, `Axis matches`, `Reason`. `-` is acceptable for `Semantic` only when the entry is tag-pull-only. `Employer` (resolved from the entry's Role tag, or for independent/volunteer `PR-` entries from the entry's own `Company` field) and the axis columns are never empty.
    Route-back: phase 4 (assemble).
 5. **Narrative integrity** - every narrative row's `Linked from` IDs (when populated) exist in the inventory table. A linked-from ID that does not appear in inventory means either the Linked-Inventory walk used the wrong inventory set or the inventory table dropped a row.
    Route-back: phase 4 (assemble).

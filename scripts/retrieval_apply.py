@@ -205,9 +205,10 @@ def _build_inventory_rows(repo_root, jd_axes, inventory_entries, semantic_scores
     """Build the inventory rows; returns list of dicts ready for table render.
 
     Each row carries: id, employer, semantic, exact_count, adjacency_score,
-    in_semantic, in_tag_pull, axis_match_summary, reason. `employer` resolves the
-    entry's Role tag to its company via role_companies so downstream consumers
-    (CV creation especially) place each entry under the right employer.
+    in_semantic, in_tag_pull, axis_match_summary, reason. `employer` resolves an
+    EX entry's Role tag to its company via role_companies, falling back to a PR
+    entry's own Company field (PR entries carry no Role reference), so downstream
+    consumers (CV creation especially) place each entry under the right employer.
     """
     # Index entries by ID for fast lookup.
     by_id = {e['id']: e for e in inventory_entries}
@@ -226,7 +227,7 @@ def _build_inventory_rows(repo_root, jd_axes, inventory_entries, semantic_scores
         )
         rows.append({
             'id': eid,
-            'employer': role_companies.get(entry.get('role', ''), ''),
+            'employer': role_companies.get(entry.get('role', ''), '') or entry.get('company', ''),
             'semantic': semantic_by_id[eid].get('score'),
             'exact_count': exact,
             'adjacency_score': weighted,
@@ -247,7 +248,7 @@ def _build_inventory_rows(repo_root, jd_axes, inventory_entries, semantic_scores
         if exact >= 1 or weighted >= _ADJACENCY_WEIGHT:
             rows.append({
                 'id': eid,
-                'employer': role_companies.get(entry.get('role', ''), ''),
+                'employer': role_companies.get(entry.get('role', ''), '') or entry.get('company', ''),
                 'semantic': None,
                 'exact_count': exact,
                 'adjacency_score': weighted,
@@ -451,7 +452,8 @@ def _render_manifest(slug, app_id, date, jd_axes, inventory_rows, narrative_rows
         axis_block,
         '',
         '**Signal columns:** `Employer` is the entry\'s company, resolved from its '
-        'Role tag, so each entry can be placed under the right employer without '
+        'Role tag (or, for independent/volunteer projects, the entry\'s own Company '
+        'field), so each entry can be placed under the right employer without '
         're-deriving it. `Semantic` is the LLM-judgment score against the '
         'critical requirements list (0.00 to 1.00; `-` means the entry was not '
         'in the semantic-scored set). `Axis exact` counts axes with an exact '

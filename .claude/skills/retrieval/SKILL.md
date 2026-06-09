@@ -151,7 +151,8 @@ Consumed by Phase 5 (QC failures). Route back, fix, re-run forward (Phase 5 alwa
 |---|---|
 | Manifest structure malformed | Phase 4 |
 | Axis classification inconsistent with session log | Phase 1 |
-| Inventory coverage missing rows | Phase 4 |
+| Inventory coverage short of source, manifest matches activity record (entries dropped before scoring) | Phase 2 |
+| Inventory coverage missing rows, manifest short of activity record (dropped at merge/assemble) | Phase 4 |
 | Signal column population incomplete | Phase 4 |
 | Narrative linked-from IDs not in inventory | Phase 4 |
 | Theme ID fabricated | Phase 3 (theme scoring) |

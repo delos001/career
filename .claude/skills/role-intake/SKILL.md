@@ -162,9 +162,15 @@ Ask if this session is for a new role or to resume a previous one?
 
 **Classifying the role against the five axes.**
 
-- Input: JD text, research findings.
-- Dispatch `axis-classifier` with the JD text and the research findings. It
-  works registry-first per axis: read the registry, pick candidate value(s),
+- Input: JD text, research findings, Phase 2 confirmed metadata (level, industry).
+- Dispatch `axis-classifier` with the JD text, the research findings, and the
+  Phase 2 user-confirmed level and industry values. Instruct it to treat these
+  as confirmed starting points: validate each against the registry and value
+  file, and adopt it if it confirms. If a confirmed value does not confirm
+  against the registry or value file, flag the disagreement with a
+  recommendation but do not silently override - surface it for user decision
+  before recording a different value.
+  It works registry-first per axis: read the registry, pick candidate value(s),
   read only the candidate value files, confirm each pick. Where no registry
   value confirms, flag an axis gap (not blocked, not routed to a builder).
 - Output: per-axis primary/secondary with one-line rationale each + a list of axis gaps.
@@ -228,7 +234,7 @@ Ask if this session is for a new role or to resume a previous one?
     file.
 
   User chooses. Apply, re-QC, return to Phase 9.
-- On approval: state completion. Artifacts are ready for the gap-analysis skill.
+- On approval: state completion. Artifacts are ready for the retrieval skill.
   Run-scratch in `<scratch>` is left in place (it is wiped when the application
   is closed or declined), not deleted here.
 
