@@ -205,7 +205,7 @@ Interview preparation splits into two discrete skills writing into ONE shared pe
 - **Eligibility constraints move upstream.** gap-analysis Phase 2 confirms modality/travel/availability/posted-comp constraints (user-info.md dated defaults) and records confirmed non-flags in gap_analysis.md's Eligibility Flags (`decision: confirmed` renders "Confirmed, no conflict"); preparation-screen reads instead of re-asking.
 - **QC split.** `scripts/prep_qc.py` owns mechanical checks (P1-P5, R1, S1-S2), scoped to prep-owned sections of shared files; `qc-preparation-screen` owns judgment checks (J1-J8). Bounded 3-iteration internal fix loop; provisional ship logs to `design/build_issues.md`.
 - **Session log convention.** Stage-scoped sections (`## Interview: Screen`, future `## Interview: Hiring Manager`), created when the stage begins, holding prep date, artifact pointer, interview events, outcome.
-Full conventions, section skeleton, chunk vocabulary, and interaction contract: `design/interview_prep_skill_notes.md`. Supersedes the `interview_prep` stub skill.
+Conventions live in their operational homes: section skeleton and body rules in `templates/interview_prep.md`; procedure and interaction contract in `.claude/skills/preparation-screen/SKILL.md`. `design/interview_prep_skill_notes.md` holds only the preparation-interview design inputs (trimmed 2026-06-11). Supersedes the `interview_prep` stub skill.
 Refs: `design/interview_prep_skill_notes.md`, `why-i-left-specifics-for-interview-prep` (resolved), `cv-qc-section-structure-single-source` (deferral), `gap-analysis-architecture-2026-05` (Phase 2 amended 2026-06-11).
 
 #### retrieval-architecture-2026-05
@@ -364,6 +364,8 @@ Refs: `maintained-by-metadata-field` (deferral); `competency-field-and-registry-
 - "Last Revised" line kept as plain text at top.
 - Typo fix: "INDUSTRY TRAGECTORY" → "INDUSTRY TRAJECTORY".
 - Header: `**Used by:** cv_targeted, cv_general, role_evaluation, interview_prep, career_brief`.
+
+**Amended 2026-06-11:** the Avoid-line relocation is reversed by user direction. The WHY I LEFT section now carries "The layer beneath (when probed for specifics)" plus the Avoid guard directly in positioning.md (see `preparation-screen-architecture-2026-06` and the resolved `why-i-left-specifics-for-interview-prep` deferral); the `interview_prep` stub that briefly held the Avoid line is deleted. The planned "interview_prep" skill named throughout this document is realized as the `preparation-screen` / `preparation-interview` skill family; the Used-by headers in positioning.md and user-info.md now name `preparation-screen`.
 
 #### experience-inventory-domain-scoping
 Every retrievable entry (EX-NNN, PR-NNN) carries `Industry:` and `Specialty:` fields. Multi-value, pipe-delimited. No document-level Active Domain.
