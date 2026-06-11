@@ -196,6 +196,18 @@ Supplemental tag selection is dynamic, not static — driven by role_evaluation'
 
 Refs: `competency-registry-runtime-value` (resolved here), `cv-targeted-hybrid-retrieval` (deferral, reshaped), `role-evaluation-axis-matching-protocol`, `axes-composition-precedence`, `cv-targeted-content-rules-from-axes` (deferral).
 
+#### interview-notes-architecture-2026-06
+One per-application note-capture file (`interview_notes.md`) replaces the prior repo's InterviewScratch + InterviewCompletion pair; the structured Q/A reconstruction layer (the old interview_capture writeback) is dropped. Raw hand-written notes plus a per-round debrief carry the follow-up skill's input load. Core decisions:
+- **Standalone skill** (`interview-notes`), one distinct action: scaffold the next round's section. Runs with or without a prep run; duplicate prompting is avoided by confirm-not-trust pre-fill from session_log.md / interview_prep.md.
+- **Template + renderer.** `templates/interview_notes.md` defines all three structural blocks (file shell, round block, interviewer block) as labeled fenced blocks; `scripts/notes_assemble.py` (`init` / `add-round`) parses them at run time, hardcoding nothing. Extends the gap_assemble precedent, which still rendered per-record blocks from Python literals.
+- **Append-and-amend, one round per run.** No pre-baked empty rounds. Section identity is the heading `## <stage> | <YYYY-MM-DD>`; stage labels are free text over a standard vocabulary (Recruiter Screen, Hiring Manager, Panel, Peer / Team, Executive, Final / Offer Discussion), matching session-log stage names where counterparts exist. Same stage + date: the skill amends the section directly; the script refuses duplicate headings and refuses init-overwrite.
+- **Questions in three tiers:** stage-matched prep section; carryover (unchecked checkbox questions from earlier rounds, prep questions held for later rounds); user-supplied. Copied as full text into the round section (live surface during the call; deliberate duplication).
+- **Self-cleaning payload.** add-round input is a one-shot JSON in the app's scratch/; deleted on success, left on failure for diagnosis.
+- **No QC layer** (artifact content is hand-written). Frontmatter carries `created` only; `last_updated` rejected because hand edits would keep it stale (mtime and round headings carry dates).
+- Debrief fields carried from the old Completion file, all six kept pending usage evidence: Impression, Interest level, Rough patches to address in follow-up, Personal connection threads, Next steps communicated, Aware I am pursuing other roles.
+Session-log coverage for unprepped rounds is deferred to the follow-up skill.
+Refs: `preparation-screen-architecture-2026-06` (session-log stage convention), deferral `followup-session-log-round-coverage`.
+
 #### preparation-screen-architecture-2026-06
 Interview preparation splits into two discrete skills writing into ONE shared per-application artifact (`interview_prep.md`): `preparation-screen` (recruiter/phone screens; built 2026-06-11) creates it, and the future `preparation-interview` (hiring-manager rounds; owns all format variation) appends and deepens. Core decisions:
 - **Structure authority is the template.** `templates/interview_prep.md`'s literal headings are the required set (comments are guidance); `scripts/prep_qc.py` parses the template at check time, hardcoding nothing (gap_assemble.py precedent; contrast `cv-qc-section-structure-single-source` deferral).
