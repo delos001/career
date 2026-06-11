@@ -99,22 +99,10 @@ rules; the ones that need judgment emphasis:
 - Logistics and Availability: conditional facts confirmed this run; static
   facts from user-info.md, shown for confirmation.
 
-## Phase 4: QC
-
-Internal loop; do not stall the user with check-by-check narration.
-
-1. Run:
-   `python <repo>/scripts/prep_qc.py check --folder <absolute application folder>`
-2. Dispatch `qc-preparation-screen` (judgment checks) with the application
-   folder and profile folder paths.
-3. Fix findings and re-run. Cap at 3 iterations; if findings remain, ship
-   provisional, summarize the residual in plain English, and log it to
-   `design/build_issues.md`.
-
-## Phase 5: close out
+## Phase 4: session log, then QC
 
 1. Session log: append the stage section (or a dated line item in UPDATE
-   mode):
+   mode) before QC runs, so the QC pass covers it:
 
    ```
    ## Interview: Screen
@@ -126,12 +114,23 @@ Internal loop; do not stall the user with check-by-check narration.
    - Outcome: pending
    ```
 
-2. Staging: if the prep surfaced new GENERAL facts about the candidate
+2. QC, an internal loop; do not stall the user with check-by-check
+   narration. Run:
+   `python <repo>/scripts/prep_qc.py check --folder <absolute application folder>`
+3. Dispatch `qc-preparation-screen` (judgment checks) with the application
+   folder and profile folder paths.
+4. Fix findings and re-run. Cap at 3 iterations; if findings remain, ship
+   provisional, summarize the residual in plain English, and log it to
+   `design/build_issues.md`.
+
+## Phase 5: close out
+
+1. Staging: if the prep surfaced new GENERAL facts about the candidate
    (role-independent), list them and ask the user which to stage; append
    approved items to `personal/profile/profile_updates_pending.md` following
    that file's existing entry format. Role-specific answers stay in the
    artifact only.
 
-3. Handoff, in plain English: where the artifact is, what the user should do
+2. Handoff, in plain English: where the artifact is, what the user should do
    before the call (read it once, speak the arcs aloud), and any provisional
    QC residual.

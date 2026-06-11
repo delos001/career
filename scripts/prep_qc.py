@@ -12,13 +12,15 @@ what the skill owns (other skills' sections of shared files are not checked):
 
 Checks
   P1  frontmatter present; key set matches the template's key set exactly
-  P2  every template heading present, in template order (extras allowed)
+  P2  every template heading present, in template order and at the
+      template's depth (extras allowed)
   P3  heading depth never exceeds four (####)
   P4  no em dashes in the artifact
   P5  every frontmatter `sources` file exists (app folder or profile folder)
-  R1  each prep-attributed research.md section has a dated 'Added' line and
-      at least one source URL
+  R1  each prep-attributed research.md section has a dated 'Added' line, at
+      least one source URL, and no em dashes
   S1  session log has '## Interview: Screen' with the required field labels
+      and no em dashes in the section
   S2  the Outcome field is non-empty
 
 Usage
@@ -127,22 +129,22 @@ def check_artifact(artifact_text, template_text, app_folder, profile_dir, findin
         else:
             findings.append(('P1', True, 'frontmatter keys match template'))
 
-    # P2: template headings present, in order. Extras are allowed; order is
-    # judged on the required subsequence only.
-    tpl_heads = [t for _, t in _headings(template_text)]
-    art_heads = [t for _, t in _headings(artifact_text)]
-    missing = [h for h in tpl_heads if h not in art_heads]
+    # P2: template headings present, in order, at the template's depth. Extras
+    # are allowed; order is judged on the required subsequence only. Headings
+    # compare as (depth, text) pairs so a required heading at the wrong level
+    # is a miss, not a match.
+    tpl_heads = _headings(template_text)
+    art_heads = _headings(artifact_text)
+    missing = ['#' * d + ' ' + t for d, t in tpl_heads if (d, t) not in art_heads]
     if missing:
         findings.append(('P2', False, f'missing required headings: {missing}'))
     else:
         # Walk the artifact headings; required ones must appear in template order.
-        order_ok = True
         idx = 0
         for h in art_heads:
             if idx < len(tpl_heads) and h == tpl_heads[idx]:
                 idx += 1
-        if idx != len(tpl_heads):
-            order_ok = False
+        order_ok = idx == len(tpl_heads)
         findings.append(('P2', order_ok,
                          'required headings present in template order' if order_ok
                          else 'required headings out of template order'))
@@ -192,16 +194,19 @@ def check_research(research_text, findings):
             bad.append(f'{heading}: missing dated **Added:** attribution')
         if not _URL_RE.search(body):
             bad.append(f'{heading}: no source URL')
+        if '—' in body:
+            bad.append(f'{heading}: em dash found')
     findings.append(('R1', not bad,
-                     f'{len(prep_sections)} prep ledger section(s) dated and sourced'
-                     if not bad else '; '.join(bad)))
+                     f'{len(prep_sections)} prep ledger section(s) dated, sourced, '
+                     f'em-dash-free' if not bad else '; '.join(bad)))
 
 
 # ---------------------------------------------------------------------------
 # Checks: session log 'Interview: Screen' section only
 # ---------------------------------------------------------------------------
 
-_SCREEN_FIELDS = ('Prep date:', 'Prep artifact:', 'Interview date:', 'Outcome:')
+_SCREEN_FIELDS = ('Prep date:', 'Prep artifact:', 'Research added:',
+                  'Interview date:', 'Outcome:')
 
 
 def check_session_log(log_text, findings):
@@ -213,9 +218,12 @@ def check_session_log(log_text, findings):
         findings.append(('S2', False, 'outcome not checkable (section missing)'))
         return
     missing = [f for f in _SCREEN_FIELDS if f not in section]
-    findings.append(('S1', not missing,
-                     'Interview: Screen fields present' if not missing
-                     else f'missing fields: {missing}'))
+    problems = [f'missing fields: {missing}'] if missing else []
+    if '—' in section:
+        problems.append('em dash found in section')
+    findings.append(('S1', not problems,
+                     'Interview: Screen fields present, em-dash-free' if not problems
+                     else '; '.join(problems)))
     m = re.search(r'Outcome:\s*(\S.*)', section)
     findings.append(('S2', bool(m),
                      f'outcome recorded: {m.group(1).strip()}' if m
