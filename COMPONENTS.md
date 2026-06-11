@@ -68,15 +68,19 @@ Schema discipline and reconciliation script details live in `design/design_decis
 **Built** (detailed entry pending):
 - cv-targeted (built end to end; see `.claude/skills/cv-targeted/SKILL.md`)
 - close-application (lean terminal close-out: records the final outcome + date in the session log, then wipes the application scratch folder; user-invoked; see `.claude/skills/close-application/SKILL.md`)
+- preparation-screen (detailed entry below)
 
 **Drafted** (skeleton SKILL.md exists at `.claude/skills/<name>/`; full design pending; no detailed entry yet):
 - career_brief — placeholder holding the Recruiter Pitch Template Customization Instructions migrated from `personal/profile/positioning.md` per `positioning-schema`.
-- interview_prep — placeholder holding the "Why did you leave?" answer guidance migrated from `personal/profile/positioning.md` per `positioning-schema`.
+
+**Retired:**
+- interview_prep — stub deleted 2026-06-11, superseded by preparation-screen; its "Why did you leave?" Avoid guidance lives in positioning.md's "layer beneath" block.
 
 **Planned** (from `design/design_decisions.md`):
 - cv_general
 - interview_capture
 - interview_followup
+- preparation-interview (hiring-manager rounds; design inputs in `design/interview_prep_skill_notes.md`)
 - profile_update (mode parameter: adhoc / inline)
 - positioning
 - inventory (profile-builder)
@@ -170,6 +174,23 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Triggers**: User invocation; may be recommended by `role-intake` Phase 6 after an axis-gap flag for the matching axis.
 - **Update Triggers**: When the per-axis schema, the matching QC rule file, or any of the three agents / three scripts in the axis-builder ecosystem change.
 
+#### preparation-screen
+
+- **Purpose**: Prepare the candidate for a recruiter / phone-screen interview — close purpose-fit research gaps via subagent research, then draft `interview_prep.md` section by section with user approval before every write. Design rationale and conventions in `design/interview_prep_skill_notes.md`.
+- **Status**: Designed
+- **Inputs**:
+  - Agents: `prep-research` (all research, including ad-hoc; foreground), `qc-preparation-screen`.
+  - Scripts: `scripts/prep_qc.py`, `scripts/session_log.py` (session-log append).
+  - Templates: `templates/interview_prep.md` (structure authority).
+  - Profile docs: `positioning.md` (incl. the "layer beneath" block), `user-info.md` (static facts + dated defaults, confirm-not-trust), `inventory.md` Section 7 (verify factual claims).
+  - Application artifacts: `research.md`, `gap_analysis.md` (incl. Eligibility Flags confirmed constraints), `session_log.md`, `jd.md`, `cv_content.md`.
+  - User input: screen facts (interviewer, date, duration, medium), per-gap research approvals, per-section content approvals, confirmations of pulled defaults.
+- **Outputs**:
+  - Files: `<application folder>/interview_prep.md`; dated prep sections appended to `research.md`; `## Interview: Screen` section in the session log; optional staged entries in `personal/profile/profile_updates_pending.md` (general facts only).
+  - Skills: feeds the interview itself, the future interview-followup skill, and preparation-interview (which appends to the same artifact).
+- **Triggers**: User invocation (`/preparation-screen`) after gap-analysis, when a screen is scheduled. UPDATE mode when `interview_prep.md` already exists.
+- **Update Triggers**: When `templates/interview_prep.md` changes (structure authority for artifact and `prep_qc.py` alike); when the gap-analysis Eligibility Flags contract changes; when `positioning.md`'s why-leave section or `user-info.md`'s default fields change shape; when either subagent's contract changes.
+
 #### cv-render
 
 - **Purpose**: Render the targeted CV (`cv_content.md`) to a formatted `.docx` matching `design/format_spec.md`. Mechanical only: no content judgment, no rewriting, re-ordering, or re-citing. Final step of the CV pipeline.
@@ -192,10 +213,11 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - industry-builder-research, level-builder-research, orientation-builder-research, specialty-builder-research, work-state-builder-research (axis-builder research agent family; one per axis)
 - industry-builder-reconciler, level-builder-reconciler, orientation-builder-reconciler, specialty-builder-reconciler, work-state-builder-reconciler (axis-builder reconciler agent family; one per axis)
 - qc-industry-builder, qc-level-builder, qc-orientation-builder, qc-specialty-builder, qc-work-state-builder (axis-builder QC agent family; one per axis)
+- prep-research, qc-preparation-screen (preparation-screen skill family; detailed entries below)
 
 **Planned** (from `design/design_decisions.md`):
-- qc_cv_format, qc_cv_structural, qc_cv_content, qc_interview_prep_coverage
-- (additional QC agents as new targets and aspects emerge)
+- qc_cv_format, qc_cv_structural, qc_cv_content
+- (additional QC agents as new targets and aspects emerge; the formerly-planned qc_interview_prep_coverage is realized as qc-preparation-screen check J3)
 
 ### Detailed Entries
 
@@ -298,6 +320,24 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Triggers**: Invoked by `gap-analysis` Phase 7.
 - **Update Triggers**: When the artifact / session log / staging-file schemas change; when the gap-analysis skill's phase structure changes (route-back map); when new sub-agent contracts get added that QC must validate.
 
+#### prep-research
+
+- **Purpose**: Research one target for the preparation-screen skill — comp-calibration, process-intel, reference-decode, interviewer-context, or ad-hoc. One target per invocation; fixed Summary / Key facts / Sources return with confidence hedges; never writes files.
+- **Status**: Designed
+- **Inputs**: Skill-passed (by `preparation-screen`): target type, company, role title, target-specific context. Tools: WebSearch, WebFetch.
+- **Outputs**: Structured findings block returned to the caller; the skill appends it to `research.md` as a dated prep section.
+- **Triggers**: Invoked by `preparation-screen` Phase 2 (planned gaps) and any time research is needed mid-run (ad-hoc; foreground only).
+- **Update Triggers**: When the target taxonomy or return structure changes; when the research-ledger section format changes.
+
+#### qc-preparation-screen
+
+- **Purpose**: Judgment QC for `interview_prep.md` — fact traceability (incl. welded facts), no overstatement beyond gap_analysis.md, gap coverage completeness (J3), single-home rule, spoken-cue format, hedge preservation, diplomatic guards, role-customization. Mechanical checks owned by `scripts/prep_qc.py`.
+- **Status**: Designed
+- **Inputs**: Skill-passed (by `preparation-screen`): application folder path, profile folder path. Tools: Read, Grep.
+- **Outputs**: JSON findings list (check / location / finding / route_back); empty when clean.
+- **Triggers**: Invoked by `preparation-screen` Phase 4, alongside `scripts/prep_qc.py`.
+- **Update Triggers**: When the template's content rules change; when gap_analysis.md's status taxonomy changes; when the check split with `prep_qc.py` moves.
+
 #### axis-builder research agent family (industry-builder-research, level-builder-research, orientation-builder-research, specialty-builder-research, work-state-builder-research)
 
 - **Purpose**: Research the target axis value in depth for the matching axis-builder skill — produces the per-axis schema content the builder needs to draft a `rules/<axis>/<value>.md` value file. Deeper than role-intake's classification-scope research family.
@@ -340,6 +380,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - `scripts/axis_registry.py`, `scripts/axis_qc.py`, `scripts/axis_apply.py` (axis-builder concern family)
 - `scripts/_config.py`, `scripts/_util.py`, `scripts/axis_utils.py` (shared helper modules; not standalone scripts, no separate entries)
 - `scripts/cv_to_docx.py` (cv-render skill: renders cv_content.md to a formatted .docx)
+- `scripts/prep_qc.py` (preparation-screen skill: deterministic QC; detailed entry below)
 - `scripts/scratch_cleanup.py` (deletes a per-application scratch folder via `--app-folder`, or the axis-builder scratch via `--builder`; the single cleanup call for the run-scratch lifecycle)
 
 **Planned / referenced in design:**
@@ -472,6 +513,15 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Outputs**: Files: `rules/<axis>/<value>.md` (create/refresh); modified sibling files (create); updated `rules/<axis>/registry.md` (create); appended `design/build_issues.md` (provisional). Paths printed to stdout.
 - **Triggers**: Invoked by every axis-builder skill at Phase 6.
 - **Update Triggers**: When the value-file or registry format changes; when transactional semantics or the build-issues log format change.
+
+#### scripts/prep_qc.py
+
+- **Purpose**: Deterministic QC for the preparation-screen artifacts, scoped to what that skill owns. Validates `interview_prep.md` structure against `templates/interview_prep.md` (the parsed structure authority; nothing hardcoded), the prep-attributed ledger sections of `research.md`, and the `## Interview: Screen` session-log section. Checks P1-P5, R1, S1-S2.
+- **Status**: Built (verified against the APP-008 specimen, 8/8 pass, plus challenge-data negative tests, all defects caught).
+- **Inputs**: Subcommand args (`check --folder <absolute application folder>`). Config: `config.yaml` (`interview_prep_file`, `interview_prep_template`, research/session-log filenames, profile/templates paths) via `scripts/_config.py`.
+- **Outputs**: Per-check PASS/FAIL lines + RESULT line to stdout; exit 0 on pass, 1 otherwise.
+- **Triggers**: Invoked by `preparation-screen` Phase 4.
+- **Update Triggers**: When `templates/interview_prep.md` changes (required headings and frontmatter keys are parsed from it); when the research-ledger attribution format or the session-log stage-section fields change.
 
 #### scripts/cv_to_docx.py
 

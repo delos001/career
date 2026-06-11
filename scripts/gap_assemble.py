@@ -173,7 +173,10 @@ def _render_eligibility(flags):
     """Render the Eligibility Flags block.
 
     `flags` is a list of {flag_type, evidence, decision} dicts. The block
-    renders one bullet per flag; '_(none)_' when the list is empty.
+    renders one bullet per flag; '_(none)_' when the list is empty. A decision
+    of 'confirmed' marks a constraint that was checked with the user and
+    cleared (recorded so downstream skills, e.g. preparation-screen, read it
+    instead of re-asking); it renders as a confirmation, not a flag.
     """
     if not flags:
         return '_(none)_'
@@ -182,7 +185,10 @@ def _render_eligibility(flags):
         flag_type = flag.get('flag_type', '')
         evidence = flag.get('evidence', '')
         decision = flag.get('decision', '')
-        lines.append(f'- **{flag_type}**: {evidence}. User chose: {decision}.')
+        if decision == 'confirmed':
+            lines.append(f'- **{flag_type}**: {evidence}. Confirmed, no conflict.')
+        else:
+            lines.append(f'- **{flag_type}**: {evidence}. User chose: {decision}.')
     return '\n'.join(lines)
 
 

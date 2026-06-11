@@ -196,6 +196,18 @@ Supplemental tag selection is dynamic, not static — driven by role_evaluation'
 
 Refs: `competency-registry-runtime-value` (resolved here), `cv-targeted-hybrid-retrieval` (deferral, reshaped), `role-evaluation-axis-matching-protocol`, `axes-composition-precedence`, `cv-targeted-content-rules-from-axes` (deferral).
 
+#### preparation-screen-architecture-2026-06
+Interview preparation splits into two discrete skills writing into ONE shared per-application artifact (`interview_prep.md`): `preparation-screen` (recruiter/phone screens; built 2026-06-11) creates it, and the future `preparation-interview` (hiring-manager rounds; owns all format variation) appends and deepens. Core decisions:
+- **Structure authority is the template.** `templates/interview_prep.md`'s literal headings are the required set (comments are guidance); `scripts/prep_qc.py` parses the template at check time, hardcoding nothing (gap_assemble.py precedent; contrast `cv-qc-section-structure-single-source` deferral).
+- **research.md is the application's research ledger.** Downstream skills append dated, attributed sections; prep artifacts cite the ledger rather than embed research. All research (planned gaps and ad-hoc) runs through the `prep-research` subagent, foreground, findings returned before any write.
+- **Purpose-fit gap pass.** Existing research is evaluated against the prep task's information needs, never artifact age; standard checklist: comp calibration, process intel, JD reference decode, interviewer context.
+- **Confirm-not-trust.** Every value pulled from profile defaults or upstream artifacts is shown to the user for currency confirmation before entering the artifact; profile docs hold dated defaults, not standing truth.
+- **Eligibility constraints move upstream.** gap-analysis Phase 2 confirms modality/travel/availability/posted-comp constraints (user-info.md dated defaults) and records confirmed non-flags in gap_analysis.md's Eligibility Flags (`decision: confirmed` renders "Confirmed, no conflict"); preparation-screen reads instead of re-asking.
+- **QC split.** `scripts/prep_qc.py` owns mechanical checks (P1-P5, R1, S1-S2), scoped to prep-owned sections of shared files; `qc-preparation-screen` owns judgment checks (J1-J8). Bounded 3-iteration internal fix loop; provisional ship logs to `design/build_issues.md`.
+- **Session log convention.** Stage-scoped sections (`## Interview: Screen`, future `## Interview: Hiring Manager`), created when the stage begins, holding prep date, artifact pointer, interview events, outcome.
+Full conventions, section skeleton, chunk vocabulary, and interaction contract: `design/interview_prep_skill_notes.md`. Supersedes the `interview_prep` stub skill.
+Refs: `design/interview_prep_skill_notes.md`, `why-i-left-specifics-for-interview-prep` (resolved), `cv-qc-section-structure-single-source` (deferral), `gap-analysis-architecture-2026-05` (Phase 2 amended 2026-06-11).
+
 #### retrieval-architecture-2026-05
 Retrieval is a standalone skill that runs after role-intake and serves multiple downstream consumers (gap analysis, CV creation, interview prep, career brief). It produces a single manifest at `personal/applications/<SLUG>_APP-NNN_YYYY-MM/retrieval.md` containing scored references to inventory entries, narratives, and triggered themes. Manifests do not embed full content; downstream consumers fetch entry bodies via `scripts/profile_slice.py` on demand.
 

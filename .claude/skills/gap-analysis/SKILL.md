@@ -76,7 +76,8 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 - Read the session log (`session_log.md`) from the application folder. Extract the `## Axis Classification` section (passed to `de-emphasize-identifier` as role-context input).
 - Read `user-info.md` from the profile folder. Extract the eligibility / fit-signal sections:
   - `## Work Authorization` (Status, Sponsorship Required).
-  - `## Geographic Preferences` (Modality, Willing to Relocate).
+  - `## Geographic Preferences` (Modality, Willing to Relocate, Travel).
+  - `## Availability` (Start).
   - `## Exclusions` (Industries / Company Types).
 - Note the corpus paths the downstream sub-agents will read (`retrieval.md` in the application folder; `inventory.md` and `narratives.md` in the profile folder). These files are NOT loaded into main skill context; the `gap-detector` and `de-emphasize-identifier` sub-agents read them in isolated context.
 - Output: critical-requirements block, role/company/industry summary, axis classification, user-info eligibility sections, paths to `retrieval.md`, `inventory.md`, `narratives.md`.
@@ -86,10 +87,14 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 **Flagging eligibility mismatches against the role for user review.**
 
 - Input: user-info eligibility sections, role/company/industry context.
+- The user-info values are dated defaults, not standing truth. Show the extracted values to the user in one short block and ask whether they are still current; apply any corrections before comparing (corrections also queue a user-info.md update at Phase 6).
 - Compare deterministically:
   - **Work Authorization**: if the role text suggests sponsorship is required and user requires sponsorship, flag.
-  - **Geographic Preferences**: if the role's modality (remote/hybrid/onsite) or location requirements conflict with user preferences, flag.
+  - **Geographic Preferences**: if the role's modality (remote/hybrid/onsite), location, or travel requirements conflict with user preferences, flag.
+  - **Availability**: if the role states a required start window the user cannot meet, flag.
+  - **Compensation**: if the role posts a compensation range, show it and ask the user whether it clears their floor for this role; if not, flag.
   - **Exclusions**: if the role's industry or company type matches a user exclusion, flag.
+  These confirmed constraints are recorded in the gap analysis artifact's Eligibility Flags section (including confirmed non-flags for modality, travel, availability, and any posted comp range), so downstream skills (preparation-screen) can read them instead of re-asking.
 - Present flags to the user in plain English (if any) with override option per flag: `override` (continue) or `stop` (end the skill). Non-flags are not surfaced.
 - Flags do NOT short-circuit the skill on their own. User chooses to continue or stop. Each flag's user decision is recorded for the gap analysis artifact and the recommendation logic in Phase 5.
 - If the user chose `stop` on any flag, exit the skill with a brief summary, recording the declined decision on the session log per Phase 8's "no" path.

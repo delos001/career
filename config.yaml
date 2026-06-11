@@ -34,6 +34,8 @@ filenames:
   positioning_file: positioning.md             # in the profile/ folder
   user_info_file: user-info.md                 # in the profile/ folder
   cv_content_file: cv_content.md               # written into each application folder by the cv-targeted skill
+  interview_prep_file: interview_prep.md       # written into each application folder by the preparation-screen skill (preparation-interview appends later)
+  interview_prep_template: interview_prep.md   # in the templates/ folder; structure authority parsed by prep_qc.py
   drafting_plan_file: drafting_plan.md          # cv-targeted internal working file (framing, page budget, de-emphasis, arbitration log); application folder
   cv_collaboration_log_file: cv_collaboration_log.md  # cv-targeted per-round record of stakeholder contributions, integration, and QC; application folder
   scratch_subdir: scratch                      # run-scratch subfolder name; per-application pipeline scratch is <app-folder>/scratch/ (wiped at decline/close), axis-builder scratch is rules/scratch/ (wiped at end of build); both via scratch_cleanup.py
