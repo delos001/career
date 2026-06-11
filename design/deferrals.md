@@ -152,7 +152,7 @@ APP-009 (BeOne, 2026-06-09) is a third data point and adds a distinct lever. (a)
 **Resolved 2026-05-27** by `gap-analysis-architecture-2026-05`. Full schema lives there.
 
 ### introduction-roster-ambiguous-skills
-Introduction classification for `interview_capture`, `interview_followup`, `cv_general`, `inventory`, `narratives`. (Resolved for the interview-prep family 2026-06-11: preparation-screen opens conversationally with intake, no introduce.py entry.)
+Introduction classification for `interview_followup`, `cv_general`, `inventory`, `narratives`. (Resolved for the interview-prep family 2026-06-11: preparation-screen and interview-notes open conversationally with intake, no introduce.py entry. `interview_capture` retired, superseded by interview-notes; see `interview-notes-architecture-2026-06`.)
 - Trigger: each skill at its design time.
 - Blocks: those skill builds.
 - Refs: `workflow-communication-conventions`.

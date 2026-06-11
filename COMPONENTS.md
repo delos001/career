@@ -64,21 +64,22 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - gap-analysis
 - cv-render
 - industry-builder, level-builder, orientation-builder, specialty-builder, work-state-builder (axis-builder skill family; one per axis; create / refresh modes; user-invoked)
+- preparation-screen
+- interview-notes
 
 **Built** (detailed entry pending):
 - cv-targeted (built end to end; see `.claude/skills/cv-targeted/SKILL.md`)
 - close-application (lean terminal close-out: records the final outcome + date in the session log, then wipes the application scratch folder; user-invoked; see `.claude/skills/close-application/SKILL.md`)
-- preparation-screen (detailed entry below)
 
 **Drafted** (skeleton SKILL.md exists at `.claude/skills/<name>/`; full design pending; no detailed entry yet):
 - career_brief — placeholder holding the Recruiter Pitch Template Customization Instructions migrated from `personal/profile/positioning.md` per `positioning-schema`.
 
 **Retired:**
 - interview_prep — stub deleted 2026-06-11, superseded by preparation-screen; its "Why did you leave?" Avoid guidance lives in positioning.md's "layer beneath" block.
+- interview_capture — never built; superseded 2026-06-11 by interview-notes (raw hand-written notes + per-round debrief replace the structured capture writeback; see `interview-notes-architecture-2026-06`).
 
 **Planned** (from `design/design_decisions.md`):
 - cv_general
-- interview_capture
 - interview_followup
 - preparation-interview (hiring-manager rounds; design inputs in `design/interview_prep_skill_notes.md`)
 - profile_update (mode parameter: adhoc / inline)
@@ -187,9 +188,24 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - User input: screen facts (interviewer, date, duration, medium), per-gap research approvals, per-section content approvals, confirmations of pulled defaults.
 - **Outputs**:
   - Files: `<application folder>/interview_prep.md`; dated prep sections appended to `research.md`; `## Interview: Screen` section in the session log; optional staged entries in `personal/profile/profile_updates_pending.md` (general facts only).
-  - Skills: feeds the interview itself, the future interview-followup skill, and preparation-interview (which appends to the same artifact).
+  - Skills: feeds the interview itself, interview-notes (tier-1 question sourcing), the future interview-followup skill, and preparation-interview (which appends to the same artifact).
 - **Triggers**: User invocation (`/preparation-screen`) after gap-analysis, when a screen is scheduled. UPDATE mode when `interview_prep.md` already exists.
 - **Update Triggers**: When `templates/interview_prep.md` changes (structure authority for artifact and `prep_qc.py` alike); when the gap-analysis Eligibility Flags contract changes; when `positioning.md`'s why-leave section or `user-info.md`'s default fields change shape; when either subagent's contract changes.
+
+#### interview-notes
+
+- **Purpose**: Scaffold one round's note-taking section in `interview_notes.md` — logistics, planned questions as checkboxes, a note space per interviewer, and the six-field debrief skeleton — so notes are typed straight in during the call. Scaffold-only; never writes into note spaces or hand-written content.
+- **Status**: Built
+- **Inputs**:
+  - Scripts: `scripts/notes_assemble.py`.
+  - Templates: `templates/interview_notes.md` (structure authority; all three blocks parsed from it).
+  - Application artifacts: `session_log.md`, `interview_prep.md` (confirm-not-trust pre-fill of round facts; tier-1 question sourcing), earlier round sections of `interview_notes.md` (tier-2 carryover questions).
+  - User input: application folder, round facts (stage label, date/time, medium, format, interviewers), question selections and additions.
+- **Outputs**:
+  - Files: `<application folder>/interview_notes.md` (shell created once; one round section appended per run; an existing stage+date section is amended in place instead).
+  - Skills: feeds the future interview-followup skill (raw notes + debrief).
+- **Triggers**: User invocation (`/interview-notes`) before each interview round, with or without a prep run.
+- **Update Triggers**: When `templates/interview_notes.md` changes; when the stage vocabulary or its session-log stage-name alignment changes; when the follow-up skill defines its read contract.
 
 #### cv-render
 
@@ -381,6 +397,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - `scripts/_config.py`, `scripts/_util.py`, `scripts/axis_utils.py` (shared helper modules; not standalone scripts, no separate entries)
 - `scripts/cv_to_docx.py` (cv-render skill: renders cv_content.md to a formatted .docx)
 - `scripts/prep_qc.py` (preparation-screen skill: deterministic QC; detailed entry below)
+- `scripts/notes_assemble.py` (interview-notes skill: shell init + round-section append; detailed entry below)
 - `scripts/scratch_cleanup.py` (deletes a per-application scratch folder via `--app-folder`, or the axis-builder scratch via `--builder`; the single cleanup call for the run-scratch lifecycle)
 
 **Planned / referenced in design:**
@@ -522,6 +539,15 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Outputs**: Per-check PASS/FAIL lines + RESULT line to stdout; exit 0 on pass, 1 otherwise.
 - **Triggers**: Invoked by `preparation-screen` Phase 4.
 - **Update Triggers**: When `templates/interview_prep.md` changes (required headings and frontmatter keys are parsed from it); when the research-ledger attribution format or the session-log stage-section fields change.
+
+#### scripts/notes_assemble.py
+
+- **Purpose**: Scaffold `interview_notes.md` for the interview-notes skill. Subcommands: `init` (create the file shell; refuses overwrite) and `add-round` (append one round section rendered from a JSON payload; refuses duplicate stage+date headings; deletes the payload on success, leaves it on failure for diagnosis). All structure parsed from `templates/interview_notes.md`'s three labeled fenced blocks; nothing hardcoded.
+- **Status**: Built (verified: init, single + 3-person panel rounds, duplicate-heading and init-overwrite rejection, payload self-clean; first production run APP-008 2026-06-11).
+- **Inputs**: Subcommand args (`init --folder --app-id --company --role`; `add-round --folder --payload`). Config: `config.yaml` (`interview_notes_file`, `interview_notes_template`, templates path) via `scripts/_config.py`.
+- **Outputs**: `<folder>/interview_notes.md` created or appended; path echoed to stdout. Errors to stderr with exit 1.
+- **Triggers**: Invoked by `interview-notes` Phase 1 (`init`) and Phase 3 (`add-round`).
+- **Update Triggers**: When `templates/interview_notes.md` changes (blocks are parsed from it); when the round payload schema changes.
 
 #### scripts/cv_to_docx.py
 
