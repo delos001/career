@@ -34,10 +34,12 @@ created: {{created}}
 ## Round block
 
 One appended per `add-round` run. `{{questions_block}}` renders one checkbox
-bullet per planned question (`- [ ] <question>`; `_(none)_` when empty); check
-a question off when asked, so unchecked questions are the carryover candidates
-for the next round. `{{interviewer_blocks}}` renders one interviewer block per
-attendee, in payload order.
+bullet per planned question, each followed by an indented answer line for
+typing the response directly during the call (`- [ ] <question>` then
+`    - Answer: `; `_(none)_` when empty); check a question off when asked, so
+unchecked questions are the carryover candidates for the next round.
+`{{interviewer_blocks}}` renders one interviewer block per attendee, in
+payload order.
 
 ```
 ## {{stage}} | {{date}}

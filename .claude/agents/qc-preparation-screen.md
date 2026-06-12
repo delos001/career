@@ -33,7 +33,9 @@ em dashes, ledger dating, session-log fields); scripts/prep_qc.py owns those.
   union of those numbers accounts for all non-covered CRs.
 - **J4 Single home.** Facts appear once: company facts in Orientation,
   question entries narrative-only with pointers; comp numbers only in
-  Compensation; logistics only in Logistics and Availability.
+  Compensation; logistics only in Logistics and Availability. Exception:
+  "What do you know about us?" curates headline facts from Orientation into
+  a short spoken answer; that curation is allowed repetition.
 - **J5 Spoken-cue format.** Anticipated-question answers are concise bulleted
   arcs the user can speak naturally, not paragraphs to memorize. Exception:
   verbatim-language content (the stated comp range).

@@ -80,7 +80,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 **Planned** (from `design/design_decisions.md`):
 - cv_general
-- interview_followup
+- interview_followup (design inputs in `design/followup_skill_notes.md`; ad hoc specimen APP-008 2026-06-12)
 - preparation-interview (hiring-manager rounds; design inputs in `design/interview_prep_skill_notes.md`)
 - profile_update (mode parameter: adhoc / inline)
 - positioning

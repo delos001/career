@@ -115,10 +115,14 @@ _PAYLOAD_KEYS = ('stage', 'date', 'datetime', 'medium', 'format',
 
 
 def _render_questions(questions):
-    """Render the planned questions as checkbox bullets; _(none)_ when empty."""
+    """Render the planned questions as checkbox bullets; _(none)_ when empty.
+
+    Each question carries an indented answer line so the response can be
+    typed directly beneath it during the call.
+    """
     if not questions:
         return '_(none)_'
-    return '\n'.join(f'- [ ] {q}' for q in questions)
+    return '\n'.join(f'- [ ] {q}\n    - Answer: ' for q in questions)
 
 
 def _render_interviewers(interviewers, interviewer_block):

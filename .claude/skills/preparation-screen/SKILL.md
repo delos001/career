@@ -28,9 +28,11 @@ folder, created from `templates/interview_prep.md` (the structure authority).
 ## Inputs
 
 From the application folder: `research.md`, `gap_analysis.md`,
-`session_log.md`, `jd.md`, `cv_content.md` (the CV the interviewer holds).
-From `personal/profile/`: `positioning.md` (including the "Why I Chose to
-Leave" section and its "layer beneath"), `user-info.md` (static facts and
+`session_log.md`, `jd.md`, `cv_content.md` (the CV the interviewer holds),
+and the Signature Theme score table in `retrieval.md` (targeted read of that
+table only, never the whole manifest).
+From `personal/profile/`: `positioning.md` (all sections; the routing rules
+in Phase 3 say where each lands), `user-info.md` (static facts and
 dated defaults), `inventory.md` Section 7 (authoritative role records; verify
 any date/scope/count claim here before writing it).
 
@@ -80,10 +82,13 @@ rules; the ones that need judgment emphasis:
 
 - Orientation: populate only chunks research supports. Capture the company's
   value-positioning axis (products/platform, therapeutic areas, service
-  lines), not just the strategic story. Talking Points is the deployable
-  "what do you know about us?" answer.
+  lines), not just the strategic story. Orientation is the reference
+  briefing; the deployable "what do you know about us?" answer is a question
+  entry that curates its headline facts.
 - Fit and Gaps: strengths lead with a memorable bold key phrase; career-span
-  numbers come from the profile, never the JD's minimum bar. Gap chunks
+  numbers come from the profile, never the JD's minimum bar. The top-scored
+  Signature Themes from the retrieval theme table contribute their core
+  message and proof point, mapped to the requirements they hit. Gap chunks
   cluster by underlying gap, carry their CR numbers, and must jointly cover
   every non-covered requirement in `gap_analysis.md`. Responses never
   overstate beyond the gap analysis notes.
@@ -93,6 +98,18 @@ rules; the ones that need judgment emphasis:
   you looking for" is drafted fresh for THIS role from positioning plus the
   role context. A generic or other-role-shaped answer reads as "this
   candidate is settling," which is disqualifying.
+- Positioning routing (compress to cue level, never import prose verbatim):
+  - "Walk me through your background" opens with the identity thesis from
+    the Positioning Statement / What Makes Me Unique / Elevator Statement,
+    with the Experience Profile selecting which 1-2 role identities lead.
+    Chronology is one compressed sweep beat, not a role-by-role tour; the
+    interviewer already holds the CV. Land on this role.
+  - "Why this company?" draws on Industry Trajectory and Where I Fit,
+    matched to the company's strategic thesis from research.
+  - A leadership-style or how-would-you-approach entry built from Core
+    Philosophy (Orient-Diagnose-Intervene-Stabilize-Scale) is a standard
+    optional add; its authority/matrix/hands-on flex line is the defense
+    layer for direct-reports probes.
 - Compensation: user's numbers (confirm current), scope-conditional stated
   range when the role's level is inferred, market data cited from the
   research ledger.

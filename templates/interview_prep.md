@@ -4,7 +4,7 @@ company: COMPANY
 role_title: ROLE TITLE
 created: YYYY-MM-DD
 last_updated: YYYY-MM-DD
-sources: [research.md, gap_analysis.md, positioning.md, cv_content.md, jd.md]
+sources: [research.md, gap_analysis.md, positioning.md, cv_content.md, jd.md, retrieval.md]
 ---
 
 # Interview Prep
@@ -32,12 +32,12 @@ Template rules (parsed by scripts/prep_qc.py; do not restate in SKILL.md):
 <!--
 Chunk vocabulary (#### headings; populate only what research supports):
 Identity | Ownership and Financials | Strategy | Products and Pipeline |
-Business Model | Leadership | Culture Signals | Recent Events | Talking Points
+Business Model | Leadership | Culture Signals | Recent Events
 - Products and Pipeline + Business Model capture the company's value-positioning
   axis whatever it is (platform/products, therapeutic areas/assets, service
   lines). Don't let one strategic story crowd out the installed-base offerings.
-- Talking Points is the deployable answer to "what do you know about us?";
-  fact-recall questions point here (single-home rule).
+- Orientation is the reference briefing, not a question answer. The deployable
+  "what do you know about us?" answer lives under Anticipated Questions.
 -->
 
 ### Role
@@ -54,8 +54,10 @@ Business Model | Leadership | Culture Signals | Recent Events | Talking Points
 
 <!--
 Bullets lead with a short memorable key phrase in bold, then supporting detail.
-Source: gap-analysis covered requirements + profile. State experience spans from
-the profile (career arc), never from the JD's minimum bar.
+Source: gap-analysis covered requirements + profile + the top-scored Signature
+Themes from retrieval.md's theme table (core message and proof point, mapped to
+the requirements they hit). State experience spans from the profile (career
+arc), never from the JD's minimum bar.
 -->
 
 ### Gaps They May Screen For
@@ -76,14 +78,24 @@ Responses never overstate; honest gap acknowledgment beats inflation.
 Question entries are #### headings with generic durable names, never
 application-specific ones. Each carries an answer layer and, where the answer
 is diplomatic, an "If probed" defense layer and an "Avoid" guard.
-Single-home rule: fact-recall answers point to Orientation; logistics and comp
-point to their sections. Role-specific extra questions are allowed as
-additional #### entries.
+Single-home rule: answers live here; logistics and comp point to their
+sections. "What do you know about us?" is the one entry that curates headline
+facts from Orientation (the reference briefing) into a short spoken answer;
+that curation is allowed repetition, not a single-home violation.
+Role-specific extra questions are allowed as additional #### entries.
+Positioning routing (SKILL.md Phase 3 carries the full map; compress to cue
+level, never verbatim prose): the background arc opens with the identity
+thesis (Positioning Statement / What Makes Me Unique / Elevator Statement,
+selected via Experience Profile) and compresses chronology to one sweep beat;
+"Why this company?" draws on Industry Trajectory; a leadership-style entry
+from Core Philosophy is a standard optional add.
 -->
 
 #### Walk me through your background
 
 #### Why this company?
+
+#### What do you know about us?
 
 #### Why did you leave / looking to leave?
 

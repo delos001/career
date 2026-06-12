@@ -113,9 +113,9 @@ Axis classification records two values per axis (primary + secondary), and retri
 
 ### followup-session-log-round-coverage
 Interview rounds scaffolded by interview-notes without a prep run leave no session-log section (the prep skills own stage-section creation, and the standalone interview-notes path deliberately does not duplicate that ownership). The follow-up skill is the one skill guaranteed to run after every round; when it reads interview_notes.md to draft the follow-up, it should verify the round has a session-log stage section and create or update it from the round's logistics if missing, making the session log self-healing.
-- Trigger: follow-up skill design.
+- Trigger: follow-up skill design (user-committed for the next session; spec started 2026-06-12).
 - Blocks: complete session-log interview record for unprepped rounds (notes file still carries the facts).
-- Refs: `interview-notes-architecture-2026-06`, `preparation-screen-architecture-2026-06` (session-log stage convention).
+- Refs: `interview-notes-architecture-2026-06`, `preparation-screen-architecture-2026-06` (session-log stage convention), `design/followup_skill_notes.md` (skill spec; names this deferral as build scope).
 
 ### cv-targeted-reviewer-autonomy-reconciliation
 **Resolved 2026-05-29** by `cv-targeted-name-and-structure-2026-05` and `cv-targeted-candidate-advocate-2026-05` (DACI stakeholder model). See those entries.
