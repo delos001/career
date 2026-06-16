@@ -196,6 +196,13 @@ Ask if this session is for a new role or to resume a previous one?
   to plain English for the user, then apply each per *Phase routing on
   failure* (or as a direct session-log edit where the finding specifies
   one), re-run forward, and return to Phase 8.
+- **Show every content edit as before/after.** Whenever a fix changes the
+  wording or substance of the session log or research file, present a
+  before/after table (one row per changed passage: location, before, after)
+  before re-running QC, so the user can spot-check the change. This covers
+  any edit that alters claims, framing, or text - including those a sub-agent
+  re-run produces. Skip the table only for purely mechanical fixes that have
+  no meaningful "before" (filling a blank required field, a date, a path).
 - Cap the loop at **3 iterations**. Exit earlier on **PASS**. If findings
   remain after the third iteration, stop looping and carry them into the
   Phase 9 approval block so the user decides whether to approve as-is or

@@ -482,6 +482,32 @@ clause breaks.
 level's voice (governed by the level axis file), no duty-list phrasing. Tailoring
 means genuine relevance and terminology alignment, not term dumping.
 
+**Achievement single-home (hard rule).** Each distinct achievement - a specific
+quantified result or named accomplishment (e.g. "200+ data transfers without
+headcount growth," "interim-analysis rework from ~60% to 0%," "selected Databricks
+as the enterprise platform") - has ONE home in Professional Experience: a single
+bullet, under the role that owns it. It is not restated as a second bullet under
+the same or another role. The Professional Summary may headline one to two
+signature achievements (per the Summary content rule); when it does, it states
+them at headline altitude (the outcome and why it matters), not as a verbatim
+repeat of the owning bullet's wording and number. Choose one: headline the metric
+in the summary and frame the owning bullet on the mechanism (how it was done), OR
+keep the metric in the bullet and lift the summary to scope and positioning;
+re-running the same sentence and number in both is duplication. Core Competencies
+are capability phrases only; a competency item never restates a metric or
+accomplishment carried by the summary or a bullet. The same number/metric
+surfacing in two places (other than the deliberate summary-headline-plus-owning-
+bullet pairing) is redundancy.
+
+**Protect the lead role (guideline).** The most recent senior role is the
+highest-attention block; each of its bullets must carry a distinct achievement.
+When one initiative (e.g. a greenfield function build) spans several related
+entries, do not spend one bullet per facet (operating model, team, throughput,
+roadmap) repeating a shared qualifier ("greenfield," "without proportional
+headcount"). Prefer the arc-composition synthesis, or consolidate the facets so
+the qualifier appears once. This is Arc composition's "do not over-synthesize"
+applied in the other direction: do not over-fragment the lead role either.
+
 ## Page length and line economy
 
 **Page targets.** Senior IC: target 2 pages, up to 3 for a deep history.
