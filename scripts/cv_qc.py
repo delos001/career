@@ -472,6 +472,18 @@ def _count_competencies(body):
     """
     bullet_items = [l for l in body.splitlines() if re.match(r'^\s*-\s+', l)]
     if bullet_items:
+        # Zone-bullets: when the bullet lines carry pipe-delimited items (2-3
+        # coherent zones, each a bullet, items separated by '|' per cv-structure
+        # Core Competencies), the items are the pipe tokens, not the bullets. Only
+        # when no bullet carries a pipe is each bullet itself a single item.
+        if any('|' in ANY_COMMENT_RE.sub('', l) for l in bullet_items):
+            count = 0
+            for line in bullet_items:
+                line = ANY_COMMENT_RE.sub('', line)
+                line = re.sub(r'^\s*-\s+', '', line).strip()
+                tokens = [t for t in re.split(r'\|', line) if t.strip()]
+                count += len(tokens)
+            return count
         return len(bullet_items)
     count = 0
     for line in body.splitlines():
