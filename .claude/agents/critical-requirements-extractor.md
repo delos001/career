@@ -35,6 +35,16 @@ Every requirement has exactly three fields:
   - `preferred`: explicit nice-to-have (the JD uses language like "preferred", "a plus", "bonus", "ideally").
   - `duty-derived`: implied by duties or responsibilities (the JD describes work the role does that requires this competency).
   - `contextual`: implied by company, role, or team context (the JD describes a setting that calls for this competency).
+
+  The Type cell is **exactly one** of those four tokens and nothing else. Do not
+  prefix, suffix, or annotate it. There is no field for the *kind* of requirement
+  (education, experience, skill, knowledge, competency, credential, behavior,
+  logistical), so do not record one - not as a compound like `education (must-have)`
+  and not as a substitute like `Competency`. If the JD groups a requirement under a
+  heading like "Education & Experience", that heading is context for the Source
+  cell, never part of the Type cell. When a requirement is a hard educational or
+  experiential qualification, its Type is simply `must-have` (or `preferred` if the
+  JD marks it optional).
 - **Source:** short pointer to where in the JD the signal came from, specific enough to be verified by reading that section. Examples: "Required Qualifications #2", "Day-to-day Responsibilities", "About the Team paragraph", "Role Summary".
 
 ## Rules

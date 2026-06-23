@@ -7,6 +7,7 @@
 
 # Folders, relative to the repo root.
 paths:
+  personal: personal                     # root of the private nested personal/ repo (holds applications, profile, and cross-application files like company-slugs.yaml)
   applications: personal/applications    # one folder per evaluated job
   profile: personal/profile              # candidate's profile documents (inventory, narratives, positioning, user-info)
   templates: templates                   # artifact templates
@@ -41,6 +42,7 @@ filenames:
   drafting_plan_file: drafting_plan.md          # cv-targeted internal working file (framing, page budget, de-emphasis, arbitration log); application folder
   cv_collaboration_log_file: cv_collaboration_log.md  # cv-targeted per-round record of stakeholder contributions, integration, and QC; application folder
   scratch_subdir: scratch                      # run-scratch subfolder name; per-application pipeline scratch is <app-folder>/scratch/ (wiped at decline/close), axis-builder scratch is rules/scratch/ (wiped at end of build); both via scratch_cleanup.py
+  company_slugs_file: company-slugs.yaml       # at the personal/ root; maps a company name to its preferred folder slug for reuse across applications
 
 # Per-axis schema. Consumed by scripts/axis_qc.py and by the axis-builder
 # skills. Each entry defines the value-file frontmatter key, the required

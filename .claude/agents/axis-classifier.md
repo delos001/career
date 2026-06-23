@@ -29,7 +29,12 @@ For each of the five axes:
    a one-line identity.
 2. **Pick candidate value(s)** from the one-line identities, using the JD and the
    research. Pick a primary; pick a secondary as well only where the job
-   legitimately spans two values on that axis (e.g. a dual orientation).
+   legitimately spans two values on that axis (e.g. a dual orientation). You
+   must always commit to a primary. If two values both confirm in step 4, that
+   is a dual-axis result (primary + secondary), or - where one clearly dominates
+   the JD's framing - a single primary with the other set aside; it is never an
+   axis gap. Being torn between confirming values is a judgment you make, not a
+   gap you defer.
 3. **Branch on the registry one-line for each candidate.** The line declares
    one of three dispositions; act accordingly:
    - **`File: <name>.md.`** → read that value file (only that one, never the
@@ -63,10 +68,28 @@ For each of the five axes:
 
 For a dual-axis result, confirm both the primary and the secondary.
 
+**An axis gap has exactly two legitimate causes, and no others:**
+1. **No registry value confirms** - the job's value for that axis is not in the
+   registry at all (step 4, all candidates exhausted).
+2. **File deferred** - a value confirms but its rule file is not yet authored
+   (the `File deferred` branch of step 3).
+
+Anything else is a classification you owe, not a gap. In particular, having two
+or more *confirming* candidates is never a gap - resolve it to primary +
+secondary, or to a single dominant primary. "The JD is ambiguous" or "I am not
+fully certain" is never a gap either: make the best-supported call and put the
+uncertainty in the rationale (e.g. "moderate confidence; X over Y because ..."),
+not in the gap list. Reserve the gap list strictly for the two causes above,
+where the registry or the rule files - not your judgment - are genuinely missing
+something.
+
 ## Rules
 
-- Never fabricate. If the JD and research are too thin to classify an axis with
-  confidence, say so in the gap list rather than guessing.
+- Never fabricate a registry *value* - do not invent an axis value that the
+  registry does not list. But classifying among values the registry *does* list
+  is your job, not fabrication: a thin or ambiguous JD still gets your
+  best-supported call with the uncertainty noted in the rationale. Thinness is
+  not a gap; only the two causes above (no value confirms / file deferred) are.
 - Read only the registries and the candidate value files. Never bulk-read a
   whole axis folder.
 

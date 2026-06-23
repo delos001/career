@@ -106,61 +106,110 @@ def _replace_section(text, heading, new_section):
 
 
 # ---------------------------------------------------------------------------
-# Critical-requirements Type validation
+# Critical-requirements Type normalization + validation
 # The critical-requirements-extractor agent must tag each requirement's Type
 # with one of four controlled values (see the agent spec and design decision
 # role-intake-critical-requirements-extraction-2026-05). The agent is an LLM and
-# has been observed substituting an off-spec "kind of requirement" vocabulary
-# (Competency / Knowledge / Experience / Credential / Behavior), which carries no
-# weight in the gap-analysis fit-score formula and silently corrupts scoring
-# downstream. This guard fails the write loudly so the deviation is caught at
-# generation time instead of reaching gap-analysis unnoticed.
+# deviates from that vocabulary in two distinct ways:
+#
+#   - Compound (recoverable): a category label is bolted onto a valid severity
+#     token, e.g. "education (must-have)". The severity is unambiguous; the
+#     decoration carries no weight in the gap-analysis fit-score formula and has
+#     no schema field, so it is stripped and the bare token kept. A warning is
+#     emitted so the deviation stays visible without halting the pipeline.
+#   - Substitution / ambiguous (unrecoverable): the cell carries a "kind of
+#     requirement" word with no severity token (Competency / Knowledge /
+#     Experience / Credential / Behavior), or two-plus severity tokens. Severity
+#     cannot be inferred without guessing, which would silently corrupt scoring,
+#     so the write still fails loudly - the deviation is caught at generation
+#     time instead of reaching gap-analysis unnoticed.
 # ---------------------------------------------------------------------------
 
 # The only Type values the downstream gap-analysis fit-score formula weights.
 ALLOWED_REQUIREMENT_TYPES = {'must-have', 'preferred', 'duty-derived', 'contextual'}
 
 
-def _validate_requirement_types(block):
-    """Raise ValueError if any requirement row carries an off-spec Type.
+def _normalize_requirement_types(block):
+    """Normalize recoverable off-spec Type cells; raise on unrecoverable ones.
 
     'block' is the critical-requirements-extractor output: a Markdown table
     '| # | Text | Type | Source |', or the '(none extracted...)' sentinel when
-    the JD is too thin (no rows, nothing to validate). Parses each data row's
-    Type cell and checks it against ALLOWED_REQUIREMENT_TYPES, collecting every
-    offender so the error lists them all at once rather than failing on the first.
+    the JD is too thin (no rows, nothing to normalize). Returns the block with
+    each requirement row's Type cell reduced to one of ALLOWED_REQUIREMENT_TYPES.
+
+    Per row Type cell (see the module-level comment for the two deviation modes):
+      - already valid                 -> left untouched.
+      - exactly one allowed token
+        present plus decoration       -> rewritten to the bare token (recovered);
+                                         the change is collected for a warning.
+      - zero or two-plus allowed
+        tokens present                -> collected as an offender.
+
+    All offenders are gathered before raising so the error lists them at once
+    rather than failing on the first.
     """
+    out_lines = []
     offenders = []
+    changes = []
     for line in block.splitlines():
-        line = line.strip()
-        # Data rows are pipe-delimited; skip anything that is not a table row.
-        if not line.startswith('|') or not line.endswith('|'):
+        stripped = line.strip()
+        # Data rows are pipe-delimited; pass anything else through unchanged.
+        if not stripped.startswith('|') or not stripped.endswith('|'):
+            out_lines.append(line)
             continue
-        cells = [c.strip() for c in line.strip('|').split('|')]
+        cells = [c.strip() for c in stripped.strip('|').split('|')]
         # Need at least #, Text, Type. Structural malformation is the downstream
-        # parser's concern; this guard only checks the Type cell.
+        # parser's concern; this guard only touches the Type cell.
         if len(cells) < 3:
+            out_lines.append(line)
             continue
-        # Skip the header row ('#') and the '|---|---|' separator row.
+        # Pass through the header row ('#') and the '|---|---|' separator row.
         if cells[0] == '#' or cells[0].startswith('---'):
+            out_lines.append(line)
             continue
         # A real requirement row has an integer in the '#' cell.
         try:
             int(cells[0])
         except ValueError:
+            out_lines.append(line)
             continue
         type_value = cells[2]
-        if type_value not in ALLOWED_REQUIREMENT_TYPES:
+        if type_value in ALLOWED_REQUIREMENT_TYPES:
+            out_lines.append(line)
+            continue
+        # Off-spec cell. Recover only when exactly one severity token is present
+        # (none of the four is a substring of another, so a substring scan is a
+        # safe whole-token test). Zero present = substitution; two-plus = ambiguous.
+        present = [tok for tok in sorted(ALLOWED_REQUIREMENT_TYPES)
+                   if tok in type_value.lower()]
+        if len(present) == 1:
+            normalized = present[0]
+            changes.append((cells[0], type_value, normalized))
+            cells[2] = normalized
+            out_lines.append('| ' + ' | '.join(cells) + ' |')
+        else:
             offenders.append((cells[0], type_value))
+            out_lines.append(line)
     if offenders:
         listed = ', '.join(f'row {n}: "{t}"' for n, t in offenders)
         allowed = ', '.join(sorted(ALLOWED_REQUIREMENT_TYPES))
         raise ValueError(
-            f'critical-requirements Type column has off-spec values ({listed}); '
-            f'allowed: {allowed}. The critical-requirements-extractor must emit one '
-            'of those four values. Re-run the extractor or correct the Type cells '
-            'before assembling research.md.'
+            f'critical-requirements Type column has unrecoverable off-spec values '
+            f'({listed}); allowed: {allowed}. No single severity token could be '
+            'recovered from these cells (substitution or ambiguous), so the severity '
+            'cannot be inferred without corrupting the fit score. Re-run the extractor '
+            'or correct the Type cells before assembling research.md.'
         )
+    if changes:
+        listed = '; '.join(f'row {n}: "{orig}" -> "{norm}"' for n, orig, norm in changes)
+        print(
+            f'WARNING: normalized {len(changes)} compound critical-requirements Type '
+            f'value(s) to the controlled vocabulary ({listed}). The extractor bolted a '
+            'category label onto a valid severity token; the token was kept and the '
+            'decoration stripped.',
+            file=sys.stderr,
+        )
+    return '\n'.join(out_lines)
 
 
 # ---------------------------------------------------------------------------
@@ -180,7 +229,19 @@ def cmd_ingest(args, repo_root, cfg):
 
     jd_file_name = cfg['filenames']['jd_file']
     jd_path = os.path.join(app_folder, jd_file_name)
-    _util.write(jd_path, _util.read(args.jd_text_file))
+    jd_text = _util.read(args.jd_text_file)
+    # Prepend an identity header when the JD body does not name the role and/or
+    # company. Some JDs carry no in-text identifiers; the header makes jd.md
+    # traceable to its application even when read in isolation. The skill decides
+    # presence (it read the JD) and passes only the missing value(s).
+    header_lines = []
+    if args.add_title:
+        header_lines.append(f'**Role:** {args.add_title}')
+    if args.add_company:
+        header_lines.append(f'**Company:** {args.add_company}')
+    if header_lines:
+        jd_text = '\n'.join(header_lines) + '\n\n---\n\n' + jd_text
+    _util.write(jd_path, jd_text)
 
     comms_file_name = cfg['filenames']['comms_file']
     comms_path = None
@@ -232,8 +293,10 @@ def cmd_init(args, repo_root, cfg):
         'role': args.role,
         'ym': args.ym,
         'app_id': args.app_id,
-        'role_level': args.level or '_(not stated)_',
-        'industry': args.industry,
+        # Level and industry are deferred to the axis-classifier (Phase 6) and
+        # written by finalize (Phase 7); init leaves them pending.
+        'role_level': args.level or '_(pending)_',
+        'industry': args.industry or '_(pending)_',
         'start_date': args.start_date,
         'jd_file': jd_file_name,
         'jd_source': args.jd_source,
@@ -262,10 +325,11 @@ def cmd_research(args, repo_root, cfg):
     role_block = _util.read(args.role_file).strip()
     industry_block = _util.read(args.industry_file).strip()
     critical_requirements_block = _util.read(args.critical_requirements_file).strip()
-    # Guard: reject off-spec Type values before they reach research.md and
-    # silently corrupt gap-analysis scoring. Fails loudly (non-zero exit) so the
-    # role-intake skill halts per global-rules.md.
-    _validate_requirement_types(critical_requirements_block)
+    # Guard: normalize recoverable off-spec Type values (compound cells like
+    # "education (must-have)") and reject unrecoverable ones before they reach
+    # research.md and silently corrupt gap-analysis scoring. Unrecoverable cases
+    # fail loudly (non-zero exit) so the role-intake skill halts per global-rules.md.
+    critical_requirements_block = _normalize_requirement_types(critical_requirements_block)
 
     if not os.path.exists(research_file):
         # First write: render the whole file from the template.
@@ -353,6 +417,29 @@ def cmd_finalize(args, repo_root, cfg):
     else:
         gaps_content = 'None'
 
+    # Fill the deferred Level and Industry metadata lines from the axis result.
+    # Level and industry are not inferred at JD read-in (unreliable from the JD
+    # alone); the axis-classifier decides them after research, so init left both
+    # '_(pending)_' and finalize writes the resolved axis values here.
+    def _axis_value(axis_name):
+        m = re.search(rf'(?mi)^-?[ \t]*{re.escape(axis_name)}:[ \t]*(.+)$',
+                      classification_body)
+        if not m:
+            return None
+        # The classifier line is '<value> - <rationale>'; keep only the value.
+        return re.split(r'[ \t]+-[ \t]+', m.group(1).strip(), maxsplit=1)[0].strip()
+
+    level_value = _axis_value('Level')
+    industry_value = _axis_value('Industry')
+    # Replacement via lambda so a value containing a backslash or group ref is
+    # not interpreted as a regex replacement template.
+    if level_value:
+        text = re.sub(r'(?m)^- Role Level: .*$',
+                      lambda _m: f'- Role Level: {level_value}', text)
+    if industry_value:
+        text = re.sub(r'(?m)^- Industry: .*$',
+                      lambda _m: f'- Industry: {industry_value}', text)
+
     # _replace_section replaces the whole matched block including its '## Heading'
     # line, so each new_section must carry the heading itself.
     classification_section = f'## Axis Classification\n\n{classification_body}'
@@ -389,6 +476,10 @@ def main():
                           help='path to a file holding the extracted JD text')
     p_ingest.add_argument('--comms-text-file', default=None,
                           help='path to a file holding the extracted comms text (optional)')
+    p_ingest.add_argument('--add-title', default=None,
+                          help='prepend a Role: header to jd.md (pass only when the JD body does not name the role)')
+    p_ingest.add_argument('--add-company', default=None,
+                          help='prepend a Company: header to jd.md (pass only when the JD body does not name the company)')
     p_ingest.set_defaults(func=cmd_ingest)
 
     p_init = sub.add_parser('init', help='Phase 3b: write initial session log (run after ingest)')
@@ -397,8 +488,10 @@ def main():
     p_init.add_argument('--ym', required=True, help='year-month, e.g. 2026-05')
     p_init.add_argument('--company', required=True)
     p_init.add_argument('--role', required=True)
+    # Level and industry are deferred to the axis-classifier (Phase 6) and filled
+    # by finalize (Phase 7); init writes them as pending if not supplied.
     p_init.add_argument('--level', default=None)
-    p_init.add_argument('--industry', required=True)
+    p_init.add_argument('--industry', default=None)
     p_init.add_argument('--start-date', required=True, help='YYYY-MM-DD')
     p_init.add_argument('--jd-source', required=True,
                         help='app-folder path to jd.md (from ingest output), or URL')

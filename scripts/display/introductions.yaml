@@ -16,8 +16,9 @@ role-intake: |
     3. Confirm role title and company (you are prompted if absent from the JD).
     4. Research the company, role, and industry - scoped to what the skill needs,
        not exhaustive dossiers.
-    5. Classify the job against the five axes. An axis with no rule file yet is
-       flagged and deferred, not blocked.
+    5. Classify the job against the five axes. Every axis must resolve to a value
+       with a rule file; if a value is new or its file is not yet written, the
+       skill pauses to build it before handing off.
     6. Write the session log and research file, then QC them.
 
   Have ready: the job description, and any recruiter / hiring-manager messages.

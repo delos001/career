@@ -774,6 +774,10 @@ pfizer:
 Cut fields: aliases, former_names, first_seen, applications list, access stamp.
 Refs: `application-id-script-implementation` (deferral).
 
+**Built, decoupled from the dead counter (2026-06-23).** This registry was specced but never built: it was tethered to `application-id-format` (the `<company-slug>-NNN` per-company counter), which was superseded by a single global `APP-NNN` counter (`app_id.py`). With the per-company counter gone, the `counter` field has no purpose and is dropped; the schema is now just `slug: {name: <full company name>}`. The registry's surviving job is slug *consistency* across applications for the same company. Implemented as `scripts/company_slug.py` with three subcommands: `lookup --company` (prints the mapped slug, or nothing on a miss - a miss is not an error, it means "ask the user"), `record --company --slug` (adds/updates a mapping; warns non-fatally on a slug/company collision), and `backfill` (seeds the registry from existing application folders - slug from the folder name, company from the session log's `- Company:` line; idempotent, first folder per slug wins). role-intake Phase 3 now calls `lookup` before prompting and `record` after a new slug is chosen. Path/filename come from config.yaml (`paths.organizations`, `filenames.company_slugs_file`). Limitation accepted per the original cut of `aliases`: lookup is exact-match on the company name (case-insensitive, trimmed), so company-name drift (e.g., "BeOne" vs "BeOne Medicines", observed during backfill) can cause a re-ask rather than a reuse; acceptable for a non-critical convenience.
+
+**Location: `personal/` root (2026-06-23).** The original spec put the registry under `rules/organizations/`, but `rules/` is tracked by the (shareable) career repo while application history is deliberately isolated in the gitignored nested `personal/` repo. A committed company list would leak which companies the user applied to, so the registry is application data and lives in `personal/`. It sits directly at the `personal/` root as `personal/company-slugs.yaml` (config `paths.personal` + `filenames.company_slugs_file`) - no `organizations/` subfolder; that folder was considered and dropped (see `organizations-folder`). The career repo ignores it (it commits only to the private nested `personal/` repo).
+
 #### session-log-location-and-creation
 Created at start of role_evaluation regardless of apply decision. `personal/sessions/<slug>-NNN_session-log.md`. (Location superseded by `session-log-in-application-folder-2026-06-08`: the log now lives in the application folder.)
 
@@ -888,10 +892,14 @@ Multiple stale rules at skill start: one grouped prompt, not a series.
 Refs: `staleness-threshold-revisit`, `staleness-per-axis-overrides` (deferrals).
 
 #### organizations-folder
-`rules/organizations/`:
-- `org_industry.md` (was `registry_company_type`): research scoping for interview_prep.
-- `company-slugs.yaml`: slug registry.
-Drop `registry_` prefix. Prior `org_maturity.md` plan superseded by Work-state axis (per-entry tagging supersedes org-level modifier).
+**Abandoned as a folder (2026-06-23).** Originally `rules/organizations/` was to hold two org-level reference files. Neither now lives there, and no `organizations/` folder exists in the repo:
+- `company-slugs.yaml` (slug registry) was built and placed at the `personal/` root instead, because it holds the user's actual company list and must stay private (see `company-slug-registry`).
+- `org_industry.md` (renamed from `registry_company_type`) is **planned but unbuilt**, and whether it should be built at all is undecided (see clarification below).
+- `org_maturity.md` was dropped earlier; the Work-state axis supersedes an org-level maturity modifier.
+
+Since the two intended occupants have different privacy classes and split across the `personal/` and (eventual) `rules/` trees, a shared `organizations/` folder buys nothing; the concept is retired. If `org_industry.md` is later built, it lives wherever fits its data class (generic taxonomy → committed `rules/`), not in a dedicated org folder.
+
+**What `org_industry.md` is for (clarification, 2026-06-23).** It is a *research-scoping* reference for the interview-prep skill, not stored research: a map from company type / industry to the org-specific things prep research should target, so the per-application research goes after the right things for that kind of organization. The distinction it captures: an asset-holding org (e.g., a biotech or pharma) should be researched for its major therapeutic areas, pipeline assets, and clinical-stage candidates; a services org with no drug/biologic assets of its own (e.g., a CRO) has nothing of that kind, so research instead targets its service model, client industries / therapeutic-area focus, and platform/technology investments. The draft branch list lives at `design/registry_company_type.md`. Open question: whether a static scoping checklist earns its keep, or the prep research agent can derive the right branches from company context on its own; settle when interview-prep is built.
 
 ### Templates & Format Specs
 
@@ -1039,6 +1047,8 @@ Reply with corrections or "confirmed".
 
 Universal gate — every value, not just conflicts. Reason: extraction can be wrong silently (multi-title JDs, ambiguous parent-vs-subsidiary names) and Phase 3 persists the values; better to confirm before persistence. Industry is confirmed here so Phase 4 `industry-research` runs against a user-approved target — a wrong industry inference wastes a parallel research pass.
 
+**Level and industry deferred to the axis pass (2026-06-23).** Phase 2 no longer infers or confirms level and industry — only title and company (the facts that are reliably extractable and needed early for the folder slug and session-log identity). Reason: inferring level and industry from the JD alone is unreliable — a JD's stated industry is often recruiter-facing or generic (APP-013: JD said "clinical research"; the real operating sector, CRO, only emerged from research), and level is a registry judgment better made against the value files. Both are now decided once, authoritatively, by the axis-classifier (Phase 6) after the research is done and the axis files are read, and written into the session-log metadata by `finalize` (Phase 7). The prior "user-approved research target" rationale is withdrawn: `industry-research` already determines the real sector from company + JD without a Phase 2 hint, and the user still validates everything at the Phase 9 approval gate. Mechanics: `assemble.py init` no longer requires `--industry` (both `--level` and `--industry` optional); init writes both metadata lines as `_(pending)_`; `finalize` parses the axis-classifier's Level and Industry results and fills them. The session-log metadata Level/Industry are now the Level-axis and Industry-axis values (canonical registry tokens), not a separate human-readable label.
+
 #### role-intake-jd-persistence-2026-05
 Phase 3 writes the JD into the application folder as `jd.md`. If the user supplied role communications in Phase 1, those are written as `comms.md`. Both files plus the initial session log are written atomically by `scripts/assemble.py init` — when the folder exists, all three exist.
 
@@ -1049,6 +1059,8 @@ Session log metadata block gains four fields:
 - `Comms source:` — URL, original file path, `"pasted"`, or blank
 
 Resume relies on this atomicity per `role-intake-resume-ladder-2026-05`. Source fields preserve traceability when the original file location is later cleared.
+
+**Identity header on `jd.md` (2026-06-23).** Some JDs carry no in-text identifiers (a pasted body with no role title or company name), which makes the `jd.md` file untraceable when read detached from its application folder. `assemble.py ingest` now optionally prepends an identity header (`**Role:** ... / **Company:** ...` followed by a `---` rule, then the verbatim JD) using the Phase 2 confirmed values. The skill passes `--add-title` / `--add-company` only for the value(s) the JD body does not already name (presence is the skill's judgment, since it read the JD); a value the JD already names gets no redundant header. Non-critical, traceability-only; the JD body is otherwise written verbatim as before.
 
 #### role-intake-user-approval-gate-2026-05
 Phase 9 grows from bare handoff into user-approval-and-handoff, running after Phase 8 PASS. Surfaces:
@@ -1080,6 +1092,12 @@ When Phase 6 flags an axis gap, the skill surfaces it at Phase 6 (not Phase 9) w
 Placement at Phase 6, not Phase 9, avoids running Phases 7-8 on a known-incomplete classification.
 Refs: `role-intake-axis-classification`, `builder-sequencing-industry-first`.
 
+**Hard resolution gate; option (b) removed (2026-06-23).** Option (b) is withdrawn. An axis is "resolved" only when it carries a confirmed registry value AND that value's rule file exists; all five axes must be resolved before role-intake advances to Phase 7. Reason: the cv-architect applies the per-value rule files at bullet-composition time (`role-intake-artifacts` / inventory framing: "Level / Orientation / Work-state drive voice-translation rules per the axis files"), so a value with a `File deferred` rule file cannot actually be handed off - the CV writer has no framing to apply. An axis gap therefore blocks at the Phase 6 gate and is resolved by running the relevant builder (to author the missing rule file, or to add a missing registry value), after which role-intake is re-invoked and the resume ladder returns to Phase 6. No gap is recorded-and-carried to Phase 7/8/9. The Phase 9 approval block's "Axis gaps" line becomes a backstop that must read "none."
+
+This was prompted by an observed failure (APP-013, 2026-06-23): the axis-classifier punted on work-state - where both `greenfield` and `scaling` confirmed and both files existed - by recording a fake "unresolved" gap "rather than guess," and the gap rode silently to the Phase 9 approval block (the built SKILL.md had never implemented the Phase-6 gate this decision specifies). Two fixes followed:
+- *Indecision is not a gap (`axis-classifier.md`).* An axis gap has exactly two legitimate causes: no registry value confirms, or a confirmed value's file is `File deferred`. Two confirming candidates resolve to primary + secondary (or a single dominant primary); a thin/ambiguous JD still gets the best-supported call with the uncertainty in the rationale, never in the gap list. "Never fabricate" was narrowed to mean never invent a registry *value*, not refuse to classify among existing ones.
+- *Phase-6 gate implemented (`SKILL.md`).* Phase 6 now halts on any gap and routes to the builder before proceeding, per this decision.
+
 #### role-intake-critical-requirements-extraction-2026-05
 Role-intake gains a critical-requirements extraction step. A new sub-agent `critical-requirements-extractor` reads the JD and writes a structured list of competency requirements into `research.md` as a new top-level `## Critical Requirements` section.
 
@@ -1093,6 +1111,11 @@ Role-intake gains a critical-requirements extraction step. A new sub-agent `crit
 **Comprehensive JD scan.** The sub-agent reads the entire JD, not just sections labeled "Requirements" or "Qualifications." Duties, responsibilities, "about the role" paragraphs, and team/company-context language often carry competency signals the hiring panel will use even when not labeled as requirements. The `Type` field captures the source nature so downstream consumers can weigh accordingly.
 
 **Type validation guard (2026-06-09).** The extractor is an LLM and has been observed emitting an off-spec `Type` vocabulary (e.g., `Competency`/`Knowledge`/`Experience`/`Credential` describing the *kind* of requirement) instead of the four severity values above. Off-spec types carry no weight in the gap-analysis fit-score formula and silently corrupt scoring. `scripts/assemble.py` (the `research` write-point) now validates the `Type` column and fails loudly on any value outside `{must-have, preferred, duty-derived, contextual}`, so the deviation is caught at generation time rather than reaching gap analysis. Pre-existing `research.md` files written before the guard may carry off-spec types; they are corrected inline at gap-analysis time.
+
+**Guard refined to recover-then-reject (2026-06-23).** The 2026-06-09 guard was a pure detector: it hard-failed every off-spec value and the orchestrator hand-corrected the table and re-ran on every occurrence. Practice showed two distinct deviation modes that warrant different handling, so the guard now distinguishes them (`_normalize_requirement_types` in `assemble.py`):
+- *Compound (recoverable):* a category label is bolted onto a valid severity token, e.g. `education (must-have)`. The severity is unambiguous and the category has no schema field, so the guard strips the decoration, keeps the bare token, and emits a stderr warning (the deviation stays visible without halting the pipeline). Recovery fires only when exactly one of the four tokens is present in the cell.
+- *Substitution / ambiguous (unrecoverable):* a "kind of requirement" word with no severity token (`Competency`), or two-plus tokens. Severity cannot be inferred without guessing, which is the exact corruption the 2026-06-09 guard protects against, so the write still fails loudly.
+The agent prompt (`critical-requirements-extractor.md`) was hardened in the same change to forbid compounding/substituting the Type cell at source (defense in depth; the guard remains the deterministic gate). No `Category` column was added: the *kind* of requirement has no downstream consumer (gap-analysis weights severity only), so carrying it would be the speculative optionality rejected elsewhere (cf. the dropped `Purpose` field).
 
 **Downstream consumption:**
 - Retrieval: critical requirements are the matching target for the LLM-judgment passes (inventory entries, narratives, themes), replacing raw JD text as the matching target.

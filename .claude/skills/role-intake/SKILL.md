@@ -72,46 +72,59 @@ Ask if this session is for a new role or to resume a previous one?
 
 ## Phase 2 - Metadata extraction + confirmation
 
-**Extracting role title, company, level, and industry from the JD.**
+**Extracting role title and company from the JD.**
 
 - Input: JD text + comms.
-- Read `rules/levels/registry.md` first. Use only values defined there when
-  inferring or presenting a level. Do not present a level value not in the
-  registry.
-- Infer title, company, level, industry. Infer level (it may appear in the
-  title, body, or be implicit from scope) rather than leaving blank.
-- Prompt the user for any value that cannot be inferred.
+- Infer title and company only. Do NOT infer level or industry here - inferring
+  them from the JD alone is unreliable (a JD's industry is often recruiter-facing
+  or generic, and level is a registry judgment). They are decided later, after
+  the research is done and the axis files are read, by the axis-classifier
+  (Phase 6) and written into the session log at finalize (Phase 7).
+- Prompt the user for title or company if either cannot be inferred.
 - Present for explicit confirmation:
 
   ```
   Confirm role metadata:
     Title:    <value>
     Company:  <value>
-    Level:    <value>
-    Industry: <value>
   Reply with corrections or "confirmed".
   ```
 
 - Re-present on corrections until confirmed.
-- Output: user-confirmed {title, company, role-level, industry}.
+- Output: user-confirmed {title, company}. Level and industry are deferred to
+  Phase 6/7.
 
 ## Phase 3 - Session init
 
 **Creating the application folder and starting the session log.**
 
-- Input: title, company, level, industry; JD text + source; comms text + source
-  (if any).
-- Run `python scripts/app_id.py` for the next APP-NNN. Ask the user for a short
-  lowercase company slug. Determine the current `YYYY-MM`.
+- Input: title, company; JD text + source; comms text + source (if any).
+  (Level and industry are not known yet - they are decided at Phase 6/7.)
+- Run `python scripts/app_id.py` for the next APP-NNN. Determine the current `YYYY-MM`.
+- **Resolve the company slug from the registry first.** Run
+  `python scripts/company_slug.py lookup --company "<confirmed company>"`.
+  - If it prints a slug, reuse it (do NOT ask). Tell the user which slug is being
+    reused, e.g. "Using the existing slug `thermofisher` for Thermo Fisher Scientific."
+  - If it prints nothing (company not seen before), ask the user for a short
+    lowercase slug, then record it for reuse:
+    `python scripts/company_slug.py record --company "<confirmed company>" --slug "<slug>"`.
 - Write JD (and comms if present) to scratch files under `<scratch>` (this first write creates the application folder; the `ingest` step in 3a tolerates the pre-existing folder).
 - **Step 3a - ingest (checkpoint):** Run `python scripts/assemble.py ingest`
   with `--slug`, `--app-id`, `--ym`, `--jd-text-file` (plus `--comms-text-file`
   if present). This creates the folder and writes `jd.md` and optionally
   `comms.md` immediately. Capture the printed paths: `app_folder`, `jd_path`,
   and optionally `comms_path`.
+  - **Identity header for unlabeled JDs.** Check whether the confirmed role
+    title and company each actually appear in the JD body. For any that do NOT,
+    pass it so ingest prepends an identity header to `jd.md`: `--add-title
+    "<title>"` and/or `--add-company "<company>"`. This keeps a JD that carries
+    no in-text identifiers traceable to its application when read in isolation.
+    Omit the flag for a value the JD already names (no redundant header).
 - **Step 3b - session log:** Run `python scripts/assemble.py init` with the
-  slug, APP-NNN, YM, confirmed metadata (company, role, level, industry),
-  `--start-date`, and `--jd-source`. For `--jd-source`: pass `jd_path` from Step 3a,
+  slug, APP-NNN, YM, confirmed metadata (company, role), `--start-date`, and
+  `--jd-source`. Do NOT pass `--level` or `--industry` - they are deferred to the
+  axis-classifier; init writes them as pending and finalize (Phase 7) fills them.
+  For `--jd-source`: pass `jd_path` from Step 3a,
   unless the original JD source was a URL (pass the URL instead). For
   `--comms-source`: pass `comms_path` from Step 3a if comms were written and
   the original source was a local file; pass `"pasted"` if comms were pasted;
@@ -122,16 +135,15 @@ Ask if this session is for a new role or to resume a previous one?
 
 **Researching the company, role, industry, and critical requirements in parallel.**
 
-- Input: JD text, company, role, role industry (per Phase 2 confirmation).
+- Input: JD text, company, role.
 - Dispatch four subagents **in parallel** - `company-research`,
   `role-research`, `industry-research`, and `critical-requirements-extractor` -
   giving each the JD text plus the company and role context they need.
-- For `industry-research`: pass the Phase 2 industry label as a starting hint,
-  but explicitly instruct the subagent to research the industry the company
-  *actually operates in* - using the company name and JD context to identify the
-  real sector. The Phase 2 label may be generic or recruiter-facing; the subagent
-  should not treat it as the definitive sector if the company's actual business
-  suggests otherwise.
+- For `industry-research`: instruct the subagent to identify and research the
+  industry the company *actually operates in*, using the company name and JD
+  context to determine the real sector. No industry label is inferred at Phase 2,
+  so the subagent establishes the sector from scratch rather than confirming a
+  prior guess.
 - For `critical-requirements-extractor`: pass the full JD text. The agent scans
   every JD section (not just labeled "Requirements") and emits a
   `| # | Text | Type | Source |` table of competency requirements; the `#`
@@ -162,18 +174,34 @@ Ask if this session is for a new role or to resume a previous one?
 
 **Classifying the role against the five axes.**
 
-- Input: JD text, research findings, Phase 2 confirmed metadata (level, industry).
-- Dispatch `axis-classifier` with the JD text, the research findings, and the
-  Phase 2 user-confirmed level and industry values. Instruct it to treat these
-  as confirmed starting points: validate each against the registry and value
-  file, and adopt it if it confirms. If a confirmed value does not confirm
-  against the registry or value file, flag the disagreement with a
-  recommendation but do not silently override - surface it for user decision
-  before recording a different value.
+- Input: JD text, research findings.
+- Dispatch `axis-classifier` with the JD text and the research findings. It
+  classifies all five axes - including level and industry - from scratch; no
+  level or industry is inferred earlier, so there are no "confirmed starting
+  points" to hand it. The classifier is the authoritative source for every axis.
   It works registry-first per axis: read the registry, pick candidate value(s),
-  read only the candidate value files, confirm each pick. Where no registry
-  value confirms, flag an axis gap (not blocked, not routed to a builder).
-- Output: per-axis primary/secondary with one-line rationale each + a list of axis gaps.
+  read only the candidate value files, confirm each pick. It must commit to a
+  value on every axis; an axis gap has only two legitimate causes - no registry
+  value confirms, or a value confirms but its rule file is not yet authored
+  (`File deferred`). Indecision between confirming values is never a gap.
+- **Resolution gate (checkpoint).** Every axis must carry a confirmed value AND
+  a present rule file before this skill proceeds to Phase 7. The CV writer
+  applies the per-value rule files, so a value with no file cannot be handed off.
+  If the classifier returns any axis gap, do NOT continue to Phase 7. Halt here,
+  state each gap to the user in plain English, and resolve it before moving on:
+  - **File deferred** (value confirmed, file missing) → run the matching builder
+    skill (`orientation-builder`, `industry-builder`, `specialty-builder`,
+    `level-builder`, or `work-state-builder`) to author the rule file, then
+    re-invoke role-intake; the resume ladder returns to Phase 6 (axis still
+    pending in the session log) and re-classifies against the now-complete rules.
+  - **No registry value confirms** → present the closest registry values; the
+    user either maps the role to an existing value (re-run the classifier with
+    that steer) or runs the builder to author a new registry value, after which
+    role-intake is re-invoked and re-classifies.
+  No axis gap is ever recorded-and-carried past this point. Only once all five
+  axes are fully resolved (value + file) does the skill advance to Phase 7.
+- Output: per-axis primary/secondary with one-line rationale each; zero
+  outstanding axis gaps.
 
 ## Phase 7 - Session log finalization
 
@@ -183,9 +211,11 @@ Ask if this session is for a new role or to resume a previous one?
 - Write the `axis-classifier` output to a scratch file under `<scratch>`. Run
   `python scripts/assemble.py finalize` with `--session-log`, `--date`,
   `--axis-file`, and `--research-file` pointing to `research.md`. It fills the
-  date, replaces the pending axis sections in the session log, and writes the
-  resolved `## Axis Gaps` section to `research.md`.
-- Output: session log complete; `research.md` Axis Gaps section filled.
+  date, fills the pending Level and Industry metadata lines from the axis result,
+  replaces the pending axis sections in the session log, and writes the resolved
+  `## Axis Gaps` section to `research.md`.
+- Output: session log complete (Level and Industry now filled from the axis
+  classification); `research.md` Axis Gaps section filled.
 
 ## Phase 8 - QC
 
@@ -225,7 +255,8 @@ Ask if this session is for a new role or to resume a previous one?
     Specialty:    <primary>[, <secondary>] - <rationale>
     Level:        <value> - <rationale>
     Work-state:   <value> - <rationale>
-  Axis gaps: <listed, or "none">
+  Axis gaps: none  (all five axes are resolved by the Phase 6 gate; this line is
+             a backstop and must read "none" - if it does not, return to Phase 6)
   Unresolved QC findings: <listed in plain English, or "none">
   Session log + Research file: <paths>
 
@@ -255,5 +286,5 @@ return to Phase 9 to re-present the block.
 |---|---|
 | Metadata wrong (title, company, level, industry) | Phase 2 |
 | Research incomplete or wrong | Phase 4 then 5 |
-| Axis classification wrong, or gap not recorded in both files | Phase 6 |
+| Axis classification wrong, or an axis gap reached handoff unresolved | Phase 6 (resolve the gap via the builder before proceeding; gaps must not pass the Phase 6 gate) |
 | Session log field missing | Phase 7 |

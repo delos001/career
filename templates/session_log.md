@@ -5,9 +5,9 @@ sections below role-intake's; each writing skill owns its own sections.
 
 One per evaluated job, written to `personal/applications/<SLUG>_APP-NNN_YYYY-MM/session_log.md`.
 `scripts/assemble.py` renders the skeleton below: tokens in `{{double braces}}` are
-substituted. The `{{research_completed_date}}` and `{{axis_*}}` tokens are set to a
-pending marker at `init` (Phase 3) and filled with real content at `finalize` (Phase 7).
-All other fields are populated at `init`.
+substituted. The `{{research_completed_date}}`, `{{role_level}}`, `{{industry}}`, and
+`{{axis_*}}` tokens are set to a pending marker at `init` (Phase 3) and filled with real
+content at `finalize` (Phase 7). All other fields are populated at `init`.
 
 ## Skeleton
 
@@ -35,11 +35,10 @@ All other fields are populated at `init`.
 ## Field notes
 
 - **{{app_id}}** - the global application counter, from `scripts/app_id.py`.
-- **{{role_level}}** - the level as titled, described, or inferred from the JD;
-  user-confirmed in Phase 2. Distinct from the Level-axis value recorded in the
-  axis classification section.
-- **{{industry}}** - the role's industry, inferred from the JD and user-confirmed
-  in Phase 2; consumed by `industry-research` in Phase 4.
+- **{{role_level}}** - the Level-axis value. NOT inferred at JD read-in; `_(pending)_`
+  at `init`, filled by `finalize` (Phase 7) from the axis-classifier's Level result.
+- **{{industry}}** - the Industry-axis value. NOT inferred at JD read-in; `_(pending)_`
+  at `init`, filled by `finalize` (Phase 7) from the axis-classifier's Industry result.
 - **{{jd_file}}** / **{{comms_file}}** - filenames within the application folder.
   `jd.md` always present after Phase 3; `comms.md` present only when role
   communications were ingested.
