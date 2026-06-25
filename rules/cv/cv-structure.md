@@ -395,6 +395,20 @@ supersedes the legacy "include whenever project entries exist" rule. Pure
 leadership roles default to omitting Selected Projects unless a specific project
 demonstrably evidences a JD requirement.
 
+**Independent / self-directed project work belongs here, not in Professional
+Experience (hard rule).** Self-employment or independent activity whose
+accomplishments are recorded only as independent-project entries (inventory
+Section 9, `PR-NNN`) is represented as Selected Projects entries in this
+work-output section, placed after Professional Experience, never as a role at the
+top of Professional Experience, regardless of recency. A role record carrying no
+employment (`EX-NNN`) accomplishments and only `PR-NNN` project content is
+project work, not an experience role; a between-roles personal build is the
+canonical case. Inclusion stays relevance-gated (above); this rule governs
+placement once included. The short Professional Experience gap this may leave is
+preferred to elevating off-experience project work above the role history (see
+the Gap-prevention principle under Professional Experience). `cv_qc.py` enforces
+this mechanically (a `PR-NNN` citation inside Professional Experience fails QC).
+
 **Placement.** Evidence band, not the credentials tail (rationale under Section
 order). Most defensible for senior-scientist / regulated-IC profiles.
 

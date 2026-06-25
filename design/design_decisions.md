@@ -287,6 +287,18 @@ CV experience uses two sections, **Professional Experience** and **Earlier Profe
 
 Refs: `rules/cv/cv-structure.md` (operational home), `arc-composition-for-high-impact-roles`, `cv-targeted-retrieval-architecture-2026-05`.
 
+#### cv-independent-project-placement-2026-06
+Independent / self-directed project work goes in the **Selected Projects** work-output section (placed after Professional Experience), never as a role at the top of Professional Experience, regardless of recency. The canonical case is a between-roles personal build: a role record (`RL-NNN`) carrying no employment (`EX-NNN`) accomplishments and only independent-project (`PR-NNN`) content is project work, not an experience role. Inclusion remains relevance-gated (pure-leadership targets omit Selected Projects unless a project demonstrably evidences a JD requirement); this decision governs *placement* once included. The short Professional Experience gap this may leave is preferred to elevating off-experience project work above the role history (gap-prevention principle).
+
+Trigger: on APP-013 (Thermo Fisher Innovation Director), the current independent role (`RL-021`, a self-built system during a between-roles period, content only `PR-*`) was rendered as the leading Professional Experience entry, ahead of the clinical-research role history, contradicting the work-output placement already specified in `cv-structure.md`. The placement rule existed but was not enforced and the build did not apply it.
+
+Resolution: (1) operational rule added to `rules/cv/cv-structure.md` under **Work-output sections** ("Independent / self-directed project work belongs here, not in Professional Experience"); (2) `cv_qc.py` check **C6** added, failing when a `PR-NNN` entry is cited inside Professional Experience.
+
+Refs: `cv-section-structure-professional-vs-earlier-roles`, `rules/cv/cv-structure.md` (operational home), `cv-content-qc-scope-2026-05`.
+
+#### cv-qc-role-title-presence-2026-06
+Every Professional Experience company block must carry its role title(s) (a `cv-structure.md` "Role line and qualifiers" hard rule). The cv-architect dropped the title when compressing within-threshold roles to scope summaries (company line + one bullet, no title line), and `cv_qc.py` had no check for it, so it passed. Added `cv_qc.py` check **C7**: a company block whose bullets precede any bold title line fails. Selected Projects / work-output entries are exempt (project-name header, not a job title). Trigger: APP-013, three scope-line roles (eClinical, AbbVie, Grifols) rendered without titles. Refs: `rules/cv/cv-structure.md`, `cv-content-qc-scope-2026-05`, `cv-independent-project-placement-2026-06`.
+
 ### Profile Documents (Schemas)
 
 #### knowledge-document-roster

@@ -34,6 +34,10 @@ Checks (all report-only):
   C4   (with --gap-analysis) subheading cr markers name a real CR-NNN
   C5   experience bullets attributed to the right employer/role (per-block
        distinct Role tags do not exceed the block's role-title count)
+  C6   independent project (PR-NNN) entries are not cited in Professional
+       Experience (they belong in the Selected Projects work-output section)
+  C7   every Professional Experience company block carries a role-title line
+       (Selected Projects / work-output project headers are exempt)
   B1   one sentence per bullet
   B2   bullet within the line limit (<=3 estimated rendered lines)
   S1   section order valid (evidence band, then credentials tail; Tech last)
@@ -391,6 +395,76 @@ def _check_c5_role_attribution(sections, ex_to_rl):
                    'experience bullets attributed to the correct employer/role')
 
 
+def _check_c6_no_project_in_experience(sections):
+    """C6: independent project (PR-NNN) entries are not cited in Professional Experience.
+
+    PR-NNN ids are inventory Section 9 independent / volunteer projects; per
+    cv-structure.md they belong in the work-output (Selected Projects) section,
+    placed after Professional Experience, not as roles or bullets inside it. A PR
+    citation in the Professional Experience body signals project work misplaced as
+    an experience role (e.g. a between-roles independent build elevated to the top
+    of the experience section). EX/ST citations are unaffected.
+    """
+    pe_body = next((body for _, norm, body in sections
+                    if norm == 'professional experience'), None)
+    if pe_body is None:
+        return _record('C6', True, 'no Professional Experience section to check')
+    pr_cited = set()
+    for line in _bullets(pe_body):
+        for m in SRC_RE.finditer(line):
+            pr_cited.update(re.findall(r'\bPR-\d+\b', m.group(1)))
+    if pr_cited:
+        return _record('C6', False,
+                       'independent project entr(y/ies) cited in Professional Experience '
+                       f'(belong in Selected Projects): {", ".join(sorted(pr_cited))}')
+    return _record('C6', True,
+                   'no independent project (PR) entries in Professional Experience')
+
+
+def _check_c7_role_titles_present(sections):
+    """C7: every Professional Experience company block carries a role-title line.
+
+    cv-structure.md requires each company entry to be followed by its role
+    title(s); a company line followed directly by bullets, with no bold title line
+    between them, is a missing-title defect (the case that slips through when a
+    within-threshold role is compressed to a scope summary). Company lines are
+    bold header lines carrying a location/date token; title lines are bold lines
+    without one (mirrors the C5 company-vs-title split). Selected Projects /
+    work-output entries are exempt (project voice uses a project-name header, not
+    a job title) and are not in this section.
+    """
+    pe_body = next((body for _, norm, body in sections
+                    if norm == 'professional experience'), None)
+    if pe_body is None:
+        return _record('C7', True, 'no Professional Experience section to check')
+    missing = []          # company labels whose bullets precede any title line
+    cur_company = None     # label of the company block under construction
+    has_title = False
+    for raw_line in pe_body.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if re.match(r'^-\s+', line):
+            if cur_company is not None and not has_title:
+                missing.append(cur_company)
+                cur_company = None   # report once per block
+            continue
+        visible = ANY_COMMENT_RE.sub('', line).strip()
+        if not _BOLD_LINE_RE.match(visible):
+            continue   # '### CR' subheadings and plain lines are not titles
+        if _PE_LOCATION_RE.search(visible):
+            cur_company = visible[:40]   # company line opens a new block
+            has_title = False
+        elif cur_company is not None:
+            has_title = True             # bold non-company line = role title
+    if missing:
+        return _record('C7', False,
+                       f'{len(missing)} company block(s) missing a role title: '
+                       f'{"; ".join(missing[:3])}')
+    return _record('C7', True,
+                   'every Professional Experience company has a role title')
+
+
 # ---------------------------------------------------------------------------
 # Group B - Bullet rules
 # B1 (one sentence) and B2 (line limit) are cv-structure.md hard rules.
@@ -677,6 +751,8 @@ def run_qc(args):
         valid_crs = set(CR_ID_RE.findall(_util.read(args.gap_analysis)))
         checks.append(_check_c4_subheading_crs(text, valid_crs))
     checks.append(_check_c5_role_attribution(sections, ex_to_rl))
+    checks.append(_check_c6_no_project_in_experience(sections))
+    checks.append(_check_c7_role_titles_present(sections))
 
     # --- Group B: bullet rules ---
     checks.append(_check_b1_one_sentence(sections))
