@@ -27,8 +27,8 @@ Author    : Jason Delosh
 Created   : 2026-05-14
 Project   : career
 Usage     : python scripts/assemble.py ingest   --slug ... --app-id ... --ym ... --jd-text-file ... [--comms-text-file ...]
-            python scripts/assemble.py init     --slug ... --app-id ... --ym ... --company ... --role ... [--level ...] --industry ... --start-date ... --jd-source ... [--comms-source ...]
-            python scripts/assemble.py research --folder ... --app-id ... --company ... --role ... --date ... --company-file ... --role-file ... --industry-file ...
+            python scripts/assemble.py init     --slug ... --app-id ... --ym ... --company ... --role ... [--level ...] [--industry ...] --start-date ... --jd-source ... [--comms-source ...]
+            python scripts/assemble.py research --folder ... --app-id ... --company ... --role ... --date ... --company-file ... --role-file ... --industry-file ... --critical-requirements-file ...
             python scripts/assemble.py finalize --session-log ... --date ... --axis-file ... [--research-file ...]
 Depends   : pyyaml (via _config)
 """

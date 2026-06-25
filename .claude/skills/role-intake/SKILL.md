@@ -184,10 +184,13 @@ Ask if this session is for a new role or to resume a previous one?
   value on every axis; an axis gap has only two legitimate causes - no registry
   value confirms, or a value confirms but its rule file is not yet authored
   (`File deferred`). Indecision between confirming values is never a gap.
-- **Resolution gate (checkpoint).** Every axis must carry a confirmed value AND
-  a present rule file before this skill proceeds to Phase 7. The CV writer
-  applies the per-value rule files, so a value with no file cannot be handed off.
-  If the classifier returns any axis gap, do NOT continue to Phase 7. Halt here,
+- **Resolution gate (checkpoint).** Every axis must carry a confirmed value
+  before this skill proceeds to Phase 7, and that value must be usable
+  downstream: either its rule file is present, or it is a `Registry-only` value
+  (no file by design). The only blocked states are the two the classifier flags
+  as an axis gap (a value confirms but its file is `File deferred`, or no
+  registry value confirms). If the classifier returns any axis gap, do NOT
+  continue to Phase 7. Halt here,
   state each gap to the user in plain English, and resolve it before moving on:
   - **File deferred** (value confirmed, file missing) → run the matching builder
     skill (`orientation-builder`, `industry-builder`, `specialty-builder`,
@@ -284,7 +287,8 @@ return to Phase 9 to re-present the block.
 
 | Finding type | Route back to |
 |---|---|
-| Metadata wrong (title, company, level, industry) | Phase 2 |
+| Title or company wrong | Phase 2 |
+| Level or industry wrong (both are axis-derived, not set at Phase 2) | Phase 6 (re-classify), then 7 |
 | Research incomplete or wrong | Phase 4 then 5 |
 | Axis classification wrong, or an axis gap reached handoff unresolved | Phase 6 (resolve the gap via the builder before proceeding; gaps must not pass the Phase 6 gate) |
 | Session log field missing | Phase 7 |

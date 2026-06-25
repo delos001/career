@@ -96,9 +96,9 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Inputs**:
   - Rules: `rules/global-rules.md`. (Axis registries and value files are read by `axis-classifier`, not by the skill directly.)
   - Agents: `company-research`, `role-research`, `industry-research`, `critical-requirements-extractor`, `axis-classifier`, `qc-role-intake`.
-  - Scripts: `scripts/display/introduce.py`, `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/assemble.py`.
+  - Scripts: `scripts/display/introduce.py`, `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/company_slug.py`, `scripts/assemble.py`.
   - Templates: `templates/session_log.md`, `templates/research_file.md`.
-  - User input: job description (paste / file / URL), role communications (optional), company slug, metadata confirmations (title/company/level/industry) at Phase 2.
+  - User input: job description (paste / file / URL), role communications (optional), company slug (reused from the registry or supplied if the company is new), metadata confirmations (title/company) at Phase 2.
 - **Outputs**:
   - Files: in `personal/applications/<SLUG>_APP-NNN_YYYY-MM/`: `session_log.md`, and `research.md` (with `## Company`, `## Role`, `## Industry`, `## Critical Requirements`, and `## Axis Gaps` sections).
   - Skills: hands off to the retrieval skill, then to gap analysis.
