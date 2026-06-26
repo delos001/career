@@ -62,6 +62,10 @@ Standard checklist (plus any role-specific gaps):
 2. Interview-process intel.
 3. JD internal-reference decode (company shorthand; one per phrase found).
 4. Interviewer context.
+5. Company mission and core values (normally already captured at role-intake in
+   research.md's Company section; add a top-up only if intake predated that
+   capture or left them blank). Some employers screen explicitly against their
+   values, so this grounds natural values-fit conversation.
 
 ALL research goes through the `prep-research` subagent, one target per
 invocation, foreground (background subagents cannot write under `personal/`,
@@ -82,9 +86,17 @@ rules; the ones that need judgment emphasis:
 
 - Orientation: populate only chunks research supports. Capture the company's
   value-positioning axis (products/platform, therapeutic areas, service
-  lines), not just the strategic story. Orientation is the reference
-  briefing; the deployable "what do you know about us?" answer is a question
-  entry that curates its headline facts.
+  lines), not just the strategic story. Add a Mission and Values chunk under
+  Company: consume the company's mission and core values from research.md's
+  Company section (role-intake captures them); if intake predated that capture
+  or left them blank, top up via the company-values prep-research fallback.
+  Present them in the company's own wording (bold labels for Mission, Core
+  Values, and Leadership Behaviors where they exist), then add brief "how to
+  speak to them" hooks tying 1-2 values to the candidate's themes (cue level,
+  not a scripted answer); behavioral "time you lived value X" answers stay under
+  Anticipated Questions. Some employers screen explicitly on values. Orientation
+  is the reference briefing; the deployable "what do you know about us?" answer
+  is a question entry that curates its headline facts.
 - Fit and Gaps: strengths lead with a memorable bold key phrase; career-span
   numbers come from the profile, never the JD's minimum bar. The top-scored
   Signature Themes from the retrieval theme table contribute their core

@@ -1,6 +1,6 @@
 ---
 name: company-research
-description: Researches a hiring company for the role-intake skill - what it is, its scale, ownership/funding stage, and recent leadership / M&A / strategic shifts that bear on a job's context. Scoped to decision-supporting facts, not an exhaustive dossier. Returns a fixed summary / key facts / sources structure.
+description: Researches a hiring company for the role-intake skill - what it is, its scale, ownership/funding stage, recent leadership / M&A / strategic shifts that bear on a job's context, and the company's stated mission and core values. Scoped to decision-supporting facts, not an exhaustive dossier. Returns a fixed summary / key facts / sources structure.
 tools: WebSearch, WebFetch
 ---
 
@@ -25,11 +25,18 @@ description text.
   mandates.
 - The posting's context where discoverable: is the function new, expanding, or a
   backfill?
+- The company's stated mission / purpose and core values, plus any named
+  leadership principles or behavioral competencies. Quote them as the company
+  states them, from the company's own materials (mission/values/careers page,
+  FAQ, annual report). If the company publishes none, say so; never invent them.
 
-This supports work-state classification (greenfield / scaling / mature /
-turnaround / etc.), industry classification, and the role's organizational
-framing. Stop once you have enough for those - do not chase company history, full
-financials, or employee-review sentiment.
+The first four bullets support work-state classification (greenfield / scaling /
+mature / turnaround / etc.), industry classification, and the role's
+organizational framing. Stop once you have enough for those - do not chase
+company history, full financials, or employee-review sentiment. Mission and
+values are different: they are stable company attributes captured here once and
+reused by every downstream skill (CV tone, interview prep, career brief), so
+record them even though they are not classification inputs.
 
 ## Rules
 

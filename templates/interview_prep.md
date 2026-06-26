@@ -32,10 +32,20 @@ Template rules (parsed by scripts/prep_qc.py; do not restate in SKILL.md):
 <!--
 Chunk vocabulary (#### headings; populate only what research supports):
 Identity | Ownership and Financials | Strategy | Products and Pipeline |
-Business Model | Leadership | Culture Signals | Recent Events
+Business Model | Leadership | Culture Signals | Mission and Values | Recent Events
 - Products and Pipeline + Business Model capture the company's value-positioning
   axis whatever it is (platform/products, therapeutic areas/assets, service
   lines). Don't let one strategic story crowd out the installed-base offerings.
+- Mission and Values: the company's stated mission/purpose and core values (plus
+  any named leadership principles), sourced. role-intake captures these in
+  research.md's Company section; consume them here, topping up via the
+  company-values prep-research fallback only if intake left them blank. Inside
+  the chunk use bold labels (Mission, Core Values, Leadership Behaviors where
+  they exist), then add brief "how to speak to them" hooks tying 1-2 values to
+  the candidate's themes (cue level, not scripted answers). Behavioral "time you
+  lived value X" answers are question entries, not here. Some employers screen
+  explicitly on values; if the company publishes none, say so and never invent
+  them.
 - Orientation is the reference briefing, not a question answer. The deployable
   "what do you know about us?" answer lives under Anticipated Questions.
 -->

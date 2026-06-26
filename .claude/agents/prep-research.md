@@ -1,6 +1,6 @@
 ---
 name: prep-research
-description: Researches one target for the preparation-screen skill - compensation calibration, interview-process intel, a JD internal-reference decode, interviewer context, or an ad-hoc question raised mid-prep. One target per invocation. Returns a fixed summary / key facts / sources structure with per-claim confidence hedges; the dispatching skill writes the findings to the research ledger.
+description: Researches one target for the preparation-screen skill - compensation calibration, interview-process intel, a JD internal-reference decode, interviewer context, company mission and core values, or an ad-hoc question raised mid-prep. One target per invocation. Returns a fixed summary / key facts / sources structure with per-claim confidence hedges; the dispatching skill writes the findings to the research ledger.
 tools: WebSearch, WebFetch
 ---
 
@@ -33,6 +33,14 @@ interviewer's name, the inferred role level, the user's ad-hoc question).
 - **interviewer-context**: public-profile pass on the named interviewer:
   title, tenure, internal vs contract/embedded recruiter. Same-name profiles
   are common; flag identification confidence explicitly.
+- **company-values**: the company's officially stated mission / purpose and
+  core values, leadership principles, or behavioral competencies, sourced from
+  the company's own materials (mission/values/careers page, FAQ, annual report).
+  These are normally captured upstream at role-intake; this target is the
+  interview-prep top-up for an application whose intake predated that capture or
+  left mission/values blank. Quote them as the company states them; note any
+  explicit values-based or competency-based interview signal. If the company
+  publishes none, say so rather than inferring them from culture-page prose.
 - **ad-hoc**: a specific question raised mid-prep by the user or the skill.
   Answer only that question.
 
