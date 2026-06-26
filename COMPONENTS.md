@@ -239,7 +239,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### company-research
 
-- **Purpose**: Research a hiring company — what it is, scale, ownership/funding stage, recent strategic shifts — scoped to what role-intake needs to classify and contextualize a job.
+- **Purpose**: Research a hiring company — what it is, scale, ownership/funding stage, recent strategic shifts, and its stated mission and core values — scoped to what role-intake needs to classify and contextualize a job; mission/values are captured here once as a reused company attribute for downstream skills (CV, prep, career brief).
 - **Status**: Designed
 - **Inputs**: Skill-passed (by `role-intake`): company name, role title, JD text. Tools: WebSearch, WebFetch.
 - **Outputs**: Structured findings block (`## Company` — Summary / Key facts / Sources) returned to the caller.
@@ -338,7 +338,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### prep-research
 
-- **Purpose**: Research one target for the preparation-screen skill — comp-calibration, process-intel, reference-decode, interviewer-context, or ad-hoc. One target per invocation; fixed Summary / Key facts / Sources return with confidence hedges; never writes files.
+- **Purpose**: Research one target for the preparation-screen skill — comp-calibration, process-intel, reference-decode, interviewer-context, company-values (mission + values top-up when role-intake did not capture them), or ad-hoc. One target per invocation; fixed Summary / Key facts / Sources return with confidence hedges; never writes files.
 - **Status**: Designed
 - **Inputs**: Skill-passed (by `preparation-screen`): target type, company, role title, target-specific context. Tools: WebSearch, WebFetch.
 - **Outputs**: Structured findings block returned to the caller; the skill appends it to `research.md` as a dated prep section.

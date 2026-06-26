@@ -86,17 +86,13 @@ rules; the ones that need judgment emphasis:
 
 - Orientation: populate only chunks research supports. Capture the company's
   value-positioning axis (products/platform, therapeutic areas, service
-  lines), not just the strategic story. Add a Mission and Values chunk under
-  Company: consume the company's mission and core values from research.md's
-  Company section (role-intake captures them); if intake predated that capture
-  or left them blank, top up via the company-values prep-research fallback.
-  Present them in the company's own wording (bold labels for Mission, Core
-  Values, and Leadership Behaviors where they exist), then add brief "how to
-  speak to them" hooks tying 1-2 values to the candidate's themes (cue level,
-  not a scripted answer); behavioral "time you lived value X" answers stay under
-  Anticipated Questions. Some employers screen explicitly on values. Orientation
-  is the reference briefing; the deployable "what do you know about us?" answer
-  is a question entry that curates its headline facts.
+  lines), not just the strategic story. The Mission and Values chunk consumes
+  the company's mission/values from research.md's Company section (top up via
+  the company-values prep-research fallback only if intake left them blank) and
+  adds "how to speak to them" hooks tying 1-2 values to the candidate's themes;
+  the template comment carries the full rule. Orientation is the reference
+  briefing; the deployable "what do you know about us?" answer is a question
+  entry that curates its headline facts.
 - Fit and Gaps: strengths lead with a memorable bold key phrase; career-span
   numbers come from the profile, never the JD's minimum bar. The top-scored
   Signature Themes from the retrieval theme table contribute their core
