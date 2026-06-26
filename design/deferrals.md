@@ -111,12 +111,6 @@ Axis classification records two values per axis (primary + secondary), and retri
 
 ## Per-Skill Design Items
 
-### followup-session-log-round-coverage
-Interview rounds scaffolded by interview-notes without a prep run leave no session-log section (the prep skills own stage-section creation, and the standalone interview-notes path deliberately does not duplicate that ownership). The follow-up skill is the one skill guaranteed to run after every round; when it reads interview_notes.md to draft the follow-up, it should verify the round has a session-log stage section and create or update it from the round's logistics if missing, making the session log self-healing.
-- Trigger: follow-up skill design (user-committed for the next session; spec started 2026-06-12).
-- Blocks: complete session-log interview record for unprepped rounds (notes file still carries the facts).
-- Refs: `interview-notes-architecture-2026-06`, `preparation-screen-architecture-2026-06` (session-log stage convention), `design/followup_skill_notes.md` (skill spec; names this deferral as build scope).
-
 ### cv-targeted-reviewer-autonomy-reconciliation
 **Resolved 2026-05-29** by `cv-targeted-name-and-structure-2026-05` and `cv-targeted-candidate-advocate-2026-05` (DACI stakeholder model). See those entries.
 
@@ -153,7 +147,7 @@ APP-009 (BeOne, 2026-06-09) is a third data point and adds a distinct lever. (a)
 **Resolved 2026-05-27** by `gap-analysis-architecture-2026-05`. Full schema lives there.
 
 ### introduction-roster-ambiguous-skills
-Introduction classification for `interview_followup`, `cv_general`, `inventory`, `narratives`. (Resolved for the interview-prep family 2026-06-11: preparation-screen and interview-notes open conversationally with intake, no introduce.py entry. `interview_capture` retired, superseded by interview-notes; see `interview-notes-architecture-2026-06`.)
+Introduction classification for `cv_general`, `inventory`, `narratives`. (Resolved for the interview family: preparation-screen and interview-notes 2026-06-11, followup 2026-06-26; all open conversationally with intake, no introduce.py entry. `interview_capture` retired, superseded by interview-notes; see `interview-notes-architecture-2026-06`.)
 - Trigger: each skill at its design time.
 - Blocks: those skill builds.
 - Refs: `workflow-communication-conventions`.

@@ -220,6 +220,15 @@ Interview preparation splits into two discrete skills writing into ONE shared pe
 Conventions live in their operational homes: section skeleton and body rules in `templates/interview_prep.md`; procedure and interaction contract in `.claude/skills/preparation-screen/SKILL.md`. `design/interview_prep_skill_notes.md` holds only the preparation-interview design inputs (trimmed 2026-06-11). Supersedes the `interview_prep` stub skill.
 Refs: `design/interview_prep_skill_notes.md`, `why-i-left-specifics-for-interview-prep` (resolved), `cv-qc-section-structure-single-source` (deferral), `gap-analysis-architecture-2026-05` (Phase 2 amended 2026-06-11).
 
+#### followup-architecture-2026-06
+The post-interview follow-up is a standalone skill (`followup`), built 2026-06-26 from the spec in `design/followup_skill_notes.md` and two ad-hoc specimens (APP-008 2026-06-12; APP-006 2026-06-26). It drafts a short follow-up message from the round's debrief in `interview_notes.md`, writes a `followup_<stage>_<date>.md` artifact, and keeps the session log current. Core decisions:
+- **Lean by design.** No QC script and no judgment subagent; the artifact is a short letter and does not warrant prep-family QC machinery. `templates/followup.md` is the structure and drafting authority; the SKILL holds procedure and the interaction contract. Add QC only if the artifact grows structure (user steer 2026-06-26: keep it light, tweak across follow-ups).
+- **Drafts only; user sends.** `sent: pending` in the artifact frontmatter until the user confirms the send, then the send date. The skill never writes into `interview_notes.md` (the user's hand-written note surface).
+- **Session-log self-heal.** The skill keeps the round's stage section current: adds a `Follow-up:` line and updates `Outcome:` if the user reports the result; if no prep run created the stage section, it creates one from the notes logistics in the shared `## Interview: <stage>` field shape. Resolves deferral `followup-session-log-round-coverage`.
+- **No introduce.py entry.** Opens conversationally with intake, like the prep family (resolves the followup slice of `introduction-roster-ambiguous-skills`).
+Drafting rules (short; one debrief-sourced substantive beat; one forwardable conviction line from positioning; trace "as we discussed" to notes; echo interviewer phrases; no model-memory facts; no overstatement; no "not X, it's Y"; no em dashes) live in `templates/followup.md`.
+Refs: `design/followup_skill_notes.md` (spec, now realized), `interview-notes-architecture-2026-06`, `preparation-screen-architecture-2026-06` (shared session-log stage convention).
+
 #### retrieval-architecture-2026-05
 Retrieval is a standalone skill that runs after role-intake and serves multiple downstream consumers (gap analysis, CV creation, interview prep, career brief). It produces a single manifest at `personal/applications/<SLUG>_APP-NNN_YYYY-MM/retrieval.md` containing scored references to inventory entries, narratives, and triggered themes. Manifests do not embed full content; downstream consumers fetch entry bodies via `scripts/profile_slice.py` on demand.
 

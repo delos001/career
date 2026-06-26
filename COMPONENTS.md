@@ -66,6 +66,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - industry-builder, level-builder, orientation-builder, specialty-builder, work-state-builder (axis-builder skill family; one per axis; create / refresh modes; user-invoked)
 - preparation-screen
 - interview-notes
+- followup
 
 **Built** (detailed entry pending):
 - cv-targeted (built end to end; see `.claude/skills/cv-targeted/SKILL.md`)
@@ -80,7 +81,6 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 **Planned** (from `design/design_decisions.md`):
 - cv_general
-- interview_followup (design inputs in `design/followup_skill_notes.md`; ad hoc specimen APP-008 2026-06-12)
 - preparation-interview (hiring-manager rounds; design inputs in `design/interview_prep_skill_notes.md`)
 - profile_update (mode parameter: adhoc / inline)
 - positioning
@@ -188,7 +188,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - User input: screen facts (interviewer, date, duration, medium), per-gap research approvals, per-section content approvals, confirmations of pulled defaults.
 - **Outputs**:
   - Files: `<application folder>/interview_prep.md`; dated prep sections appended to `research.md`; `## Interview: Screen` section in the session log; optional staged entries in `personal/profile/profile_updates_pending.md` (general facts only).
-  - Skills: feeds the interview itself, interview-notes (tier-1 question sourcing), the future interview-followup skill, and preparation-interview (which appends to the same artifact).
+  - Skills: feeds the interview itself, interview-notes (tier-1 question sourcing), the followup skill, and preparation-interview (which appends to the same artifact).
 - **Triggers**: User invocation (`/preparation-screen`) after gap-analysis, when a screen is scheduled. UPDATE mode when `interview_prep.md` already exists.
 - **Update Triggers**: When `templates/interview_prep.md` changes (structure authority for artifact and `prep_qc.py` alike); when the gap-analysis Eligibility Flags contract changes; when `positioning.md`'s why-leave section or `user-info.md`'s default fields change shape; when either subagent's contract changes.
 
@@ -203,9 +203,23 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - User input: application folder, round facts (stage label, date/time, medium, format, interviewers), question selections and additions.
 - **Outputs**:
   - Files: `<application folder>/interview_notes.md` (shell created once; one round section appended per run; an existing stage+date section is amended in place instead).
-  - Skills: feeds the future interview-followup skill (raw notes + debrief).
+  - Skills: feeds the followup skill (raw notes + debrief).
 - **Triggers**: User invocation (`/interview-notes`) before each interview round, with or without a prep run.
-- **Update Triggers**: When `templates/interview_notes.md` changes; when the stage vocabulary or its session-log stage-name alignment changes; when the follow-up skill defines its read contract.
+- **Update Triggers**: When `templates/interview_notes.md` changes; when the stage vocabulary or its session-log stage-name alignment changes.
+
+#### followup
+
+- **Purpose**: Draft a post-interview follow-up message for one application round from the round's debrief in `interview_notes.md`, write it as a followup artifact, and keep the session log current (creating the round's stage section if a prep run never made one). Drafts only; the user sends and reports back, then the skill records the send. Lean by design: no QC script or subagent (the artifact is a short letter); add them only if it grows.
+- **Status**: Built
+- **Inputs**:
+  - Templates: `templates/followup.md` (structure and drafting authority).
+  - Application artifacts: `interview_notes.md` (the round section is primary: questions/answers, General Notes, Round Debrief; the "rough patches to address in follow-up" field drives the substantive beat), `interview_prep.md` and `session_log.md` (context, stage facts).
+  - Profile: `personal/profile/positioning.md` (the conviction line).
+  - User input: application folder, round/stage, recipient, channel (email / LinkedIn), draft approvals, send confirmation.
+- **Outputs**:
+  - Files: `<application folder>/followup_<stage_snake_case>_<interview_date>.md` (`sent: pending` until the user confirms the send). Session-log stage section kept current: a `Follow-up:` line plus an `Outcome:` update; the section is created from the notes logistics if no prep run made one (resolves `followup-session-log-round-coverage`).
+- **Triggers**: User invocation (`/followup`) after an interview round, once the debrief is filled in.
+- **Update Triggers**: When `templates/followup.md` changes; when the session-log stage-section field shape (shared with preparation-screen) changes; when `positioning.md`'s shape changes.
 
 #### cv-render
 
