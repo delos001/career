@@ -22,6 +22,15 @@ Template rules (parsed by scripts/prep_qc.py; do not restate in SKILL.md):
 - Answers are spoken-cue arcs the user can speak naturally, not text to
   memorize. Exception: language whose exact wording is the point (e.g. the
   stated comp range) stays verbatim.
+- Substance vs coaching: plain text is substance (facts the user knows or lines
+  the user says). Put coaching asides in square brackets [like this]: your
+  interpretive notes on how to weigh or use the substance (why it matters, what
+  to emphasize, how it connects), which the user reads but never says aloud. The
+  named Cue / Avoid / If probed labels are coaching subtypes and keep their
+  labels. A coaching aside that is a full thought goes on its own offset
+  sub-bullet line in brackets (so it reads as meta, not part of the sentence); a
+  short tag may sit inline in brackets. Citations stay in italic-parens
+  *(CR-001)*, never brackets.
 - No em dashes anywhere in the artifact.
 -->
 

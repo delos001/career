@@ -51,6 +51,13 @@ em dashes, ledger dating, session-log fields); scripts/prep_qc.py owns those.
 - **J8 Role-customized, not generic.** "Why this company?" and "what are you
   looking for" content is specific to this role and company; an answer that
   could be pasted into another application is a finding.
+- **J9 Substance vs coaching marked.** Interpretive coaching asides (why-it-
+  matters, what-to-emphasize, how-it-connects notes the user would not say
+  aloud) are wrapped in square brackets; plain text is substance the user knows
+  or says. Flag a clear unbracketed coaching aside embedded in substance, or
+  clear substance wrongly bracketed. Judgment, not literal: the named Cue /
+  Avoid / If probed labels and italic-paren citations are not violations, and
+  borderline phrasings are not flagged. Flag only clear cases.
 
 ## Return format
 

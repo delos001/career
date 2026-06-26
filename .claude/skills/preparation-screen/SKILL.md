@@ -81,8 +81,16 @@ intact.
 Create the artifact by copying `templates/interview_prep.md` and filling the
 frontmatter (template comments are guidance for drafting; remove them from
 the artifact copy). Then draft one section per turn, present it, and write it
-only on approval. The template's comments define each section's content
-rules; the ones that need judgment emphasis:
+only on approval. The template's comments define each section's content rules.
+
+Across every section, separate substance from coaching. Substance is what the
+user knows or says; coaching is your interpretive steer on how to weigh or use
+it. Classification test: would the user ever say this aloud (substance), or are
+you steering them (coaching)? Mark every coaching aside in square brackets per
+the template's bracket rule; the named Cue / Avoid / If probed labels are
+coaching subtypes that keep their labels.
+
+The rules that need judgment emphasis:
 
 - Orientation: populate only chunks research supports. Capture the company's
   value-positioning axis (products/platform, therapeutic areas, service

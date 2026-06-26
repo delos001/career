@@ -347,7 +347,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### qc-preparation-screen
 
-- **Purpose**: Judgment QC for `interview_prep.md` — fact traceability (incl. welded facts), no overstatement beyond gap_analysis.md, gap coverage completeness (J3), single-home rule, spoken-cue format, hedge preservation, diplomatic guards, role-customization. Mechanical checks owned by `scripts/prep_qc.py`.
+- **Purpose**: Judgment QC for `interview_prep.md` — fact traceability (incl. welded facts), no overstatement beyond gap_analysis.md, gap coverage completeness (J3), single-home rule, spoken-cue format, hedge preservation, diplomatic guards, role-customization, substance/coaching bracket marking (J9). Mechanical checks owned by `scripts/prep_qc.py`.
 - **Status**: Designed
 - **Inputs**: Skill-passed (by `preparation-screen`): application folder path, profile folder path. Tools: Read, Grep.
 - **Outputs**: JSON findings list (check / location / finding / route_back); empty when clean.
