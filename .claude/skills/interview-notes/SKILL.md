@@ -44,10 +44,13 @@ it never writes into note spaces.
 Build the planned-questions list from three tiers, presenting candidates and
 letting the user pick, edit, add, or skip (an empty list is allowed):
 
-1. The stage-matched subsection of interview_prep.md's "Questions to Ask",
-   when one exists.
-2. Carryover: unchecked questions from earlier round sections of this file,
-   plus prep questions marked as held for later rounds.
+1. The round's Appendix block in interview_prep.md names which Question Bank
+   items to prioritize ('Prioritize from Question Bank: ...'); pull those items'
+   full text from the shared Question Bank. If no Appendix block or prep exists
+   yet, offer the whole Question Bank.
+2. Carryover: unchecked questions from earlier round sections of this file, and
+   any other Question Bank item (the bank is shared and reusable; the user may
+   deliberately re-ask one to compare answers across rounds).
 3. User-supplied additions.
 
 Selected questions are copied as full text (the file is the live surface

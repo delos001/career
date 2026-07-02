@@ -65,6 +65,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - cv-render
 - industry-builder, level-builder, orientation-builder, specialty-builder, work-state-builder (axis-builder skill family; one per axis; create / refresh modes; user-invoked)
 - preparation-screen
+- preparation-interview
 - interview-notes
 - followup
 
@@ -81,7 +82,6 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 **Planned** (from `design/design_decisions.md`):
 - cv_general
-- preparation-interview (hiring-manager rounds; design inputs in `design/interview_prep_skill_notes.md`)
 - profile_update (mode parameter: adhoc / inline)
 - positioning
 - inventory (profile-builder)
@@ -177,7 +177,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### preparation-screen
 
-- **Purpose**: Prepare the candidate for a recruiter / phone-screen interview — close purpose-fit research gaps via subagent research, then draft `interview_prep.md` section by section with user approval before every write. Design rationale and conventions in `design/interview_prep_skill_notes.md`.
+- **Purpose**: Prepare the candidate for a recruiter / phone-screen interview: close purpose-fit research gaps via subagent research, then draft the shared, cumulative `interview_prep.md` (main body + a Recruiter Screen Appendix block) section by section with user approval before every write. Per `preparation-screen-architecture-2026-06`; migrated to the shared architecture 2026-07-02 (`preparation-interview-architecture-2026-07`).
 - **Status**: Designed
 - **Inputs**:
   - Agents: `prep-research` (all research, including ad-hoc; foreground), `qc-preparation-screen`.
@@ -191,6 +191,24 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - Skills: feeds the interview itself, interview-notes (tier-1 question sourcing), the followup skill, and preparation-interview (which appends to the same artifact).
 - **Triggers**: User invocation (`/preparation-screen`) after gap-analysis, when a screen is scheduled. UPDATE mode when `interview_prep.md` already exists.
 - **Update Triggers**: When `templates/interview_prep.md` changes (structure authority for artifact and `prep_qc.py` alike); when the gap-analysis Eligibility Flags contract changes; when `positioning.md`'s why-leave section or `user-info.md`'s default fields change shape; when either subagent's contract changes.
+
+#### preparation-interview
+
+- **Purpose**: Prepare the candidate for a post-screen interview (hiring-manager, peer/team, or executive). Maintains the shared, cumulative `interview_prep.md` (a main body refined across interviews plus a thin per-interview Appendix block) and projects a live cue-card into `interview_notes.md`. Per `preparation-interview-architecture-2026-07`.
+- **Status**: Built
+- **Inputs**:
+  - Rules: `rules/interview-types/<audience>.md` (hiring-manager / peer-team / executive; sets the interview's emphasis and audience-specific research gaps).
+  - Agents: `prep-research` (per-interviewer intel + purpose-fit gaps; foreground), `qc-preparation-interview` (judgment QC).
+  - Scripts: `scripts/prep_interview_qc.py` (deterministic QC), `scripts/interview_lifecycle.py` (reschedule / cancel three-file sync), `scripts/notes_assemble.py` (cue-card scaffolding via the interview-notes flow).
+  - Templates: `templates/interview_prep.md` (the one canonical structure authority, shared with preparation-screen).
+  - Profile docs: `positioning.md`, `user-info.md`, `inventory.md` Section 7, `profile_updates_pending.md` (staged facts as a valid traceability source).
+  - Application artifacts: `research.md`, `gap_analysis.md`, `session_log.md`, `jd.md`, `cv_content.md`, existing `interview_prep.md` / `interview_notes.md`.
+  - User input: audience + format + purpose at intake, interviewer(s), logistics; per-gap research approvals; per-section content approvals.
+- **Outputs**:
+  - Files: extends `<application folder>/interview_prep.md` (main body + a per-interview Appendix block); dated prep sections appended to `research.md`; `## Interview: <audience>` section in the session log; a cue-card projected into `interview_notes.md`; optional staged entries in `personal/profile/profile_updates_pending.md`.
+  - Skills: feeds the interview itself, interview-notes (Appendix-priority question sourcing), and the followup skill.
+- **Triggers**: User invocation after a post-screen interview is scheduled. EXTEND mode when `interview_prep.md` already exists (reconciles a screen-era doc into the cumulative architecture).
+- **Update Triggers**: When `templates/interview_prep.md` changes (the shared structure authority); when a `rules/interview-types/` file changes; when either QC (`prep_interview_qc.py` / `qc-preparation-interview`) contract changes; when the lifecycle op or the interview-notes cue-card contract changes.
 
 #### interview-notes
 
@@ -244,6 +262,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - industry-builder-reconciler, level-builder-reconciler, orientation-builder-reconciler, specialty-builder-reconciler, work-state-builder-reconciler (axis-builder reconciler agent family; one per axis)
 - qc-industry-builder, qc-level-builder, qc-orientation-builder, qc-specialty-builder, qc-work-state-builder (axis-builder QC agent family; one per axis)
 - prep-research, qc-preparation-screen (preparation-screen skill family; detailed entries below)
+- qc-preparation-interview (preparation-interview skill family; shares prep-research; detailed entry below)
 
 **Planned** (from `design/design_decisions.md`):
 - qc_cv_format, qc_cv_structural, qc_cv_content
@@ -368,6 +387,15 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Triggers**: Invoked by `preparation-screen` Phase 4, alongside `scripts/prep_qc.py`.
 - **Update Triggers**: When the template's content rules change; when gap_analysis.md's status taxonomy changes; when the check split with `prep_qc.py` moves.
 
+#### qc-preparation-interview
+
+- **Purpose**: Judgment QC for the cumulative `interview_prep.md`: fact traceability (incl. staged facts from `profile_updates_pending.md` and the transient-current-activity exemption), no overstatement, gap coverage, inference-carries-a-confirmation-question (J4), confirm-vs-assume (J5), Appendix discipline (thin; points into the main body), Question-Bank-is-shared (J7), spoken-cue format, hedge preservation, diplomatic guards, role-customization, substance/coaching marking. Mechanical checks owned by `scripts/prep_interview_qc.py`.
+- **Status**: Built (verified on the APP-006 specimen: found two real findings, resolved, then clean).
+- **Inputs**: Skill-passed (by `preparation-interview`): application folder path, profile folder path (reads incl. `profile_updates_pending.md`). Tools: Read, Grep.
+- **Outputs**: JSON findings list (check / location / finding / route_back); empty when clean.
+- **Triggers**: Invoked by `preparation-interview` Phase 5, alongside `scripts/prep_interview_qc.py`.
+- **Update Triggers**: When the template's content rules change; when gap_analysis.md's status taxonomy changes; when the check split with `prep_interview_qc.py` moves.
+
 #### axis-builder research agent family (industry-builder-research, level-builder-research, orientation-builder-research, specialty-builder-research, work-state-builder-research)
 
 - **Purpose**: Research the target axis value in depth for the matching axis-builder skill — produces the per-axis schema content the builder needs to draft a `rules/<axis>/<value>.md` value file. Deeper than role-intake's classification-scope research family.
@@ -411,6 +439,8 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - `scripts/_config.py`, `scripts/_util.py`, `scripts/axis_utils.py` (shared helper modules; not standalone scripts, no separate entries)
 - `scripts/cv_to_docx.py` (cv-render skill: renders cv_content.md to a formatted .docx)
 - `scripts/prep_qc.py` (preparation-screen skill: deterministic QC; detailed entry below)
+- `scripts/prep_interview_qc.py` (preparation-interview skill: deterministic QC; detailed entry below)
+- `scripts/interview_lifecycle.py` (preparation-interview skill: reschedule / cancel three-file sync; detailed entry below)
 - `scripts/notes_assemble.py` (interview-notes skill: shell init + round-section append; detailed entry below)
 - `scripts/scratch_cleanup.py` (deletes a per-application scratch folder via `--app-folder`, or the axis-builder scratch via `--builder`; the single cleanup call for the run-scratch lifecycle)
 
@@ -553,6 +583,24 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Outputs**: Per-check PASS/FAIL lines + RESULT line to stdout; exit 0 on pass, 1 otherwise.
 - **Triggers**: Invoked by `preparation-screen` Phase 4.
 - **Update Triggers**: When `templates/interview_prep.md` changes (required headings and frontmatter keys are parsed from it); when the research-ledger attribution format or the session-log stage-section fields change.
+
+#### scripts/prep_interview_qc.py
+
+- **Purpose**: Deterministic QC for the preparation-interview artifacts, scoped to what that skill owns. Validates the cumulative `interview_prep.md` structure against `templates/interview_prep.md` (the parsed structure authority; `<...>` placeholder headings filtered), the prep-attributed ledger sections of `research.md`, and the post-screen `## Interview: <audience>` session-log sections. Checks P1-P5, X1 (Appendix present), X2 (Question Bank cross-ref integrity), R1, S1-S2.
+- **Status**: Built (verified against the APP-006 specimen, 10/10 pass, plus a negative test that caught the pre-template drift).
+- **Inputs**: Subcommand args (`check --folder <absolute application folder>`). Config: `config.yaml` (`interview_prep_file`, `interview_prep_template`, research/session-log filenames, profile/templates paths) via `scripts/_config.py`.
+- **Outputs**: Per-check PASS/FAIL lines + RESULT line to stdout; exit 0 on pass, 1 otherwise.
+- **Triggers**: Invoked by `preparation-interview` Phase 5.
+- **Update Triggers**: When `templates/interview_prep.md` changes; when the research-ledger attribution format or the session-log stage-section fields change; when the Question Bank / Appendix cross-reference shape changes.
+
+#### scripts/interview_lifecycle.py
+
+- **Purpose**: Reschedule / cancel sync for the preparation-interview skill. Subcommands `reschedule` and `cancel` annotate an interview's three homes (the `session_log.md` `## Interview: <stage>` section, the prep Appendix block, and the `interview_notes.md` round section) in one op, matched by the stage label; the session log also gets a dated audit bullet and a flipped Outcome. Never deletes a block (a cancelled interview may be rescheduled). Idempotent; `--date` disambiguates duplicate stages.
+- **Status**: Built (verified on APP-006 copies: reschedule, cancel, idempotent re-run, and the no-match error path).
+- **Inputs**: Subcommand args (`reschedule --folder --stage --new-datetime [--date] [--reason]`; `cancel --folder --stage [--date] [--reason]`). Config: `config.yaml` (`session_log_file`, `interview_prep_file`, `interview_notes_file`) via `scripts/_config.py`.
+- **Outputs**: Per-file status lines to stdout; exit 0 if at least one section updated, 1 on no match or error.
+- **Triggers**: Invoked by `preparation-interview` on a reschedule / cancel (interviewer-structural changes stay with the skill + interview-notes AMEND).
+- **Update Triggers**: When the three artifacts' interview-section heading shapes change.
 
 #### scripts/notes_assemble.py
 
