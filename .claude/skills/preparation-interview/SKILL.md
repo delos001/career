@@ -1,0 +1,167 @@
+---
+name: preparation-interview
+description: Prepare the candidate for a post-screen interview (hiring manager, peer/team, or executive). Maintains ONE cumulative interview_prep.md per application - a shared main body refined across interviews plus a thin per-interview Appendix block - and projects a live cue-card into interview_notes.md. Prompts audience + format at intake and reads the matching rules/interview-types file. QC is a deterministic script plus a judgment subagent (qc-preparation-interview). Run after a post-screen interview is scheduled. Recruiter screens are the separate preparation-screen skill; building a presentation deliverable is the separate presentation skill.
+---
+
+# preparation-interview
+
+Prepare the candidate for one post-screen interview: hiring manager, peer/team,
+or executive. The output artifact is `interview_prep.md` in the application
+folder, created from `templates/interview_prep.md` (the structure authority).
+
+Recruiter/phone screens are the separate `preparation-screen` skill. Both skills
+share the SAME `interview_prep.md`; this skill owns the cumulative architecture
+below and reconciles a screen-era doc into it. Building a presentation
+deliverable is a separate skill; here a presentation is only a flag in the
+Appendix.
+
+## Interaction contract (non-negotiable)
+
+- One item per turn: one research gap, one section, one question. State counts
+  up front, then wait. Never bundle.
+- Plain English at every step, including QC and decision points. No internal
+  check IDs or jargon to the user.
+- Scannable: short bullets and key words, never long paragraphs. The artifact
+  is used live; the user scans keywords and speaks from them.
+- Artifact formatting (QC-enforced by prep_interview_qc.py): no em dashes
+  anywhere (use commas or hyphens); use the template's headings verbatim with
+  all content and coaching in section bodies, never in a heading; the
+  frontmatter is the first line, so strip every template comment from the copy.
+- Confirm-not-trust, two layers: (a) every element pulled from another artifact
+  or a profile default is SHOWN with an "is this still accurate?" check before
+  it enters the doc; (b) every screen- or JD-sourced claim about the role/team/
+  interviewer is written as UNCONFIRMED and, if decision-critical, generates a
+  confirmation question (see Phase 3). Second-hand intel is never stated as fact.
+- Nothing enters the artifact before the user approves that section. Research
+  ledger appends and the session-log entry do not need per-write approval.
+
+## Doc architecture (what this skill maintains)
+
+ONE cumulative `interview_prep.md` per application:
+
+- MAIN BODY = shared, refined cumulatively, never duplicated per interview:
+  Company & Industry, Positioning & Approach, The Role, Fit and Gaps,
+  Anticipated Questions, Question Bank, Concerns to Resolve, Comp / Logistics.
+- APPENDIX = one thin block per interview: purpose + interviewer(s) + emphasis
+  (which Question Bank items to prioritize, which Concerns to raise here, what
+  to lead with) + presentation flag if any. Pointers into the main body, never
+  copies.
+- The interview's live cue-card is projected from its Appendix block into
+  `interview_notes.md`.
+
+## Inputs
+
+From the application folder: `research.md`, `gap_analysis.md`, `session_log.md`,
+`jd.md`, `cv_content.md`, the Signature Theme table in `retrieval.md` (that
+table only), and the existing `interview_prep.md` / `interview_notes.md` if
+present.
+From `personal/profile/`: `positioning.md`, `user-info.md`, `inventory.md`
+Section 7 (authoritative role records; verify any date/scope/count before
+writing it).
+Rule file: `rules/interview-types/<audience>.md` for the prompted audience; it
+sets this interview's emphasis and any audience-specific research gaps.
+
+## Phase 0: mode
+
+- If `interview_prep.md` exists: EXTEND the cumulative doc. Refresh main-body
+  sections only where something changed, then add-or-update this interview's
+  Appendix block. If the existing doc is screen-era structure (no main-body /
+  Appendix split), first reconcile it into this architecture, folding the
+  screen's specifics into a `Recruiter Screen` Appendix block.
+- Else: CREATE from `templates/interview_prep.md` (main body + first Appendix
+  block). Remove template comments from the copy.
+
+## Phase 1: intake (pin the interview)
+
+One question per turn:
+
+- Audience: hiring-manager | peer-team | executive.
+- Format: single | panel | presentation | technical (combine as needed; panel
+  drives per-interviewer blocks; presentation sets the Appendix flag).
+- Purpose/objective: use it if the user has one; otherwise run the audience's
+  standard prep. Never narrow to a stated purpose unless the user is certain
+  it is the only topic - the stated purpose can be wrong or change (prepare
+  for flex).
+- Interviewer(s): name + title each (empty allowed).
+- Logistics: date, time+tz, medium. These go to the session log, not the
+  frontmatter.
+
+Load the audience rule file, then read the inputs.
+
+## Phase 2: research gap pass
+
+Evaluate by PURPOSE-FIT, never by artifact age. Enumerate gaps, state the
+count, present one per turn (what it is, why this audience needs it, expected
+confidence, honest value), user approves or skips.
+
+- Per-interviewer intel is the primary gap: one `prep-research` invocation per
+  interviewer. Degrade gracefully when a footprint is empty - output
+  "confirm live" handling plus an opener question, do not pad guesses.
+- Plus any audience-specific gaps the rule file names.
+- All research via `prep-research`, one target per invocation, foreground.
+  Append to `research.md` dated `**Added:** YYYY-MM-DD (interview prep,
+  <audience>)` with Summary / Key facts / Sources; relay with hedges intact.
+
+## Phase 3: main body (build or refine)
+
+Build missing main-body sections; refine existing ones with what this interview
+added (cumulative). One section per turn, present it, write on approval.
+Scannable bullets. Separate substance from coaching (coaching in [brackets];
+Cue / Avoid / If probed keep their labels).
+
+- The Role, Concerns, and positioning are SHARED, not per-interview; refine in
+  place, do not copy into the Appendix.
+- Inference-triggers-a-question: any decision-critical item that is inferred or
+  unconfirmed (esp. The Role decision-rights map, stakeholder web) gets a
+  matching confirmation question in the Question Bank. Governor: decision-
+  critical only, or the bank bloats.
+- Question Bank is shared and reusable (the user may re-ask across interviews);
+  do not tailor phrasing per interview here - that is the Appendix's job.
+- Claims trace to the profile; never overstate beyond `gap_analysis.md` /
+  inventory. Career-span numbers from the profile, never the JD's minimum bar.
+
+## Phase 4: appendix block + cue-card
+
+1. Generate/refresh this interview's Appendix block: purpose; interviewer(s)
+   with researched intel and confirm-live handling; emphasis = the Question
+   Bank items to prioritize, the Concerns to raise here, the lead framing;
+   presentation flag if the format includes one (link to the presentation
+   skill). Pointers into the main body, never copies.
+2. Project the cue-card into `interview_notes.md`: interviewer + opener, the
+   prioritized questions (full text), top Concerns, the lead framing. If the
+   notes file lacks this interview's section, scaffold it via the
+   `interview-notes` flow first.
+
+## Phase 5: session log, then QC
+
+1. Append (or update, in EXTEND mode) the session-log section before QC:
+
+   ```
+   ## Interview: <Audience>
+
+   - Prep date: YYYY-MM-DD
+   - Prep artifact: <relative path to interview_prep.md>
+   - Research added: <sections added to research.md>
+   - Interview date: <date, time, format, interviewer(s) (role)>
+   - Outcome: pending
+   ```
+
+2. QC, an internal loop (no check-by-check narration): a deterministic script
+   (`scripts/prep_interview_qc.py` - cross-ref integrity across Concerns /
+   Question Bank / Appendix, citation IDs, no Appendix<->main-body duplication,
+   core-section length with Appendix exempt, format) plus the judgment subagent
+   `qc-preparation-interview`. QC is finalized once the doc + skill are stable;
+   run the available checks until then.
+3. Fix and re-run. Cap 3 iterations; else ship provisional, summarize the
+   residual in plain English, log it to `design/build_issues.md`.
+
+## Phase 6: close out
+
+- Lifecycle (separate op): reschedule / cancel / interviewer-structural-change
+  are applied by the amend-cancel operation, which keeps `session_log.md`, the
+  Appendix block, and the notes section in sync. Cancellations are recorded in
+  `session_log.md` with the date; blocks are tagged CANCELLED, not deleted.
+- Staging: new GENERAL (role-independent) candidate facts - list them, ask
+  which to stage, append approved to `profile_updates_pending.md`.
+- Handoff in plain English: where the doc is, read the main body plus this
+  interview's Appendix, speak the arcs aloud.

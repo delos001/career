@@ -153,10 +153,13 @@ Introduction classification for `cv_general`, `inventory`, `narratives`. (Resolv
 - Refs: `workflow-communication-conventions`.
 
 ### interview-prep-skill-build-notes
-Design inputs from the manual APP-008 phone-screen prep (2026-06-11), the worked specimen for the interview-prep skill build. Full content (skill split, artifact schema, section skeleton, research ledger pattern, research-gap procedure) lives in `design/interview_prep_skill_notes.md`; same precedent as `design/inventory_builder_quality_checks.md`.
-- Trigger: interview-prep skill design.
-- Blocks: nothing (manual prep proceeding); consolidate into the skill spec at build time.
-- Refs: `design/interview_prep_skill_notes.md`, `why-i-left-specifics-for-interview-prep`, `personal/applications/medable_APP-008_2026-06/` (specimen).
+**Resolved 2026-07-02** by `preparation-interview-architecture-2026-07`: the `preparation-interview` skill was built (SKILL, the canonical `templates/interview_prep.md`, `rules/interview-types/` audience rule files, `scripts/interview_lifecycle.py`, `scripts/prep_interview_qc.py` + `qc-preparation-interview`), and `preparation-screen` was migrated onto the shared cumulative architecture. The design inputs in `design/interview_prep_skill_notes.md` are realized and safe to delete (working-files-deleted-after-apply pattern).
+
+### presentation-build-skill
+A separate skill that builds an interview presentation DELIVERABLE (a work product authored FOR the employer to a brief), distinct from `preparation-interview` (which produces candidate coaching); in `preparation-interview` a presentation is only an Appendix flag that links out to this skill. Research verdict (2026-07-02): interview presentations are a recognized, standardized practice with prevalence rising by seniority, so build a PARAMETERIZED module (stable skeleton + swappable topic archetypes + a slot for the real brief), NOT a rigid single template and NOT a pure one-off. Produces a content/outline in markdown (narrative arc + per-slide content + speaker notes) tailored to the ACTUAL brief; researched conventions (~10 min, ~1 slide/2 min, recommendation-first pyramid vs 8-step topic structure, panel + Q&A defense) are DEFAULTS only, overridden by the real brief (a 2-slide high-level ask overrides the 5-10-slide default). Flexibility (intake the real brief) is a hard requirement. Rendering to `.pptx` is a separate concern (cv-render precedent), decided at build.
+- Trigger: an interview requires a presentation (the Appendix presentation flag is set), OR user direction.
+- Blocks: nothing (a presentation can be built manually until then).
+- Refs: `preparation-interview-architecture-2026-07`, memory `feedback_ground_domain_claims_in_research`.
 
 ### why-i-left-specifics-for-interview-prep
 **Resolved 2026-06-11.** The defense-layer specifics were captured from the user during the APP-008 phone-screen prep and, by the user's direction (superseding the 2026-05-25 "positioning stays diplomatic-only" choice), written into positioning.md's "Why I Chose to Leave BioMarin" section as "The layer beneath (when probed for specifics)" plus an Avoid guard. Prep skills consume it from positioning; the role-specific bridge stays per-application in interview_prep.md.

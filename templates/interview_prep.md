@@ -1,147 +1,124 @@
 ---
 application: APP-NNN
-company: COMPANY
-role_title: ROLE TITLE
+company: <company>
+role_title: <title>
 created: YYYY-MM-DD
 last_updated: YYYY-MM-DD
-sources: [research.md, gap_analysis.md, positioning.md, cv_content.md, jd.md, retrieval.md]
+sources: [research.md, gap_analysis.md, interview_notes.md, cv_content.md, jd.md, retrieval.md]
 ---
-
-# Interview Prep
-
 <!--
-Template rules (parsed by scripts/prep_qc.py; do not restate in SKILL.md):
-- Every literal heading in this template is REQUIRED in the artifact, in this order.
-- Extra headings are allowed between and within required ones (e.g. Orientation
-  chunks, role-specific question entries). Maximum heading depth is four (####).
-- Inside a #### entry use bold labels, never deeper headings.
-- Frontmatter keys must match this template's keys exactly. No interview-event
-  facts (type, round, schedule, interviewers) in the frontmatter; those belong
-  to the session log.
-- Headings stay concise. Content is short bullets, never long paragraphs.
-- Answers are spoken-cue arcs the user can speak naturally, not text to
-  memorize. Exception: language whose exact wording is the point (e.g. the
-  stated comp range) stays verbatim.
-- Substance vs coaching: plain text is substance (facts the user knows or lines
-  the user says). Put coaching asides in square brackets [like this]: your
-  interpretive notes on how to weigh or use the substance (why it matters, what
-  to emphasize, how it connects), which the user reads but never says aloud. The
-  named Cue / Avoid / If probed labels are coaching subtypes and keep their
-  labels. A coaching aside that is a full thought goes on its own offset
-  sub-bullet line in brackets (so it reads as meta, not part of the sentence); a
-  short tag may sit inline in brackets. Citations stay in italic-parens
-  *(CR-001)*, never brackets.
-- No em dashes anywhere in the artifact.
+TEMPLATE - structure authority for interview_prep.md (the cumulative, one-per-application
+interview prep doc), parsed by scripts/prep_qc.py and scripts/prep_interview_qc.py. Comments
+are drafting guidance; REMOVE them all from the artifact copy so the frontmatter above stays
+the first line of the file.
+
+Architecture:
+- MAIN BODY = shared across all interviews; refined cumulatively; never duplicated per interview.
+- APPENDIX = one thin block per interview; interview-specific only; points into the main body.
+
+Conventions:
+- Plain text = facts the candidate knows or lines they say. [bracketed] = coaching, never said aloud.
+  Named labels (Cue / Avoid / If probed / Note) keep their labels.
+- Scannable bullets and key words, NOT paragraphs. The doc is used live; answers are spoken-cue arcs,
+  not text to memorize (exception: verbatim content such as the comp range).
+- NO em dashes anywhere in the artifact (product doc; QC enforces). Use commas or hyphens.
+- Citations stay in italic-parens *(CR-001)*, never in brackets.
+- Headings are used VERBATIM from this template; put all content and coaching in section bodies, never
+  in a heading. Max heading depth four (####); inside a #### entry use bold labels, never deeper headings.
+- Frontmatter carries no interview-event facts (type, round, schedule, interviewers); those belong to
+  the session log and the Appendix.
+- Confirm-vs-assume: screen- or JD-sourced claims about role/team/interviewer are written as
+  UNCONFIRMED; decision-critical inferences generate a confirmation question in the Question Bank.
 -->
 
-## Orientation
+# Interview Prep - <company> | <role title>
 
-### Company
+# MAIN BODY (shared across all interviews)
 
-<!--
-Chunk vocabulary (#### headings; populate only what research supports):
-Identity | Ownership and Financials | Strategy | Products and Pipeline |
-Business Model | Leadership | Culture Signals | Mission and Values | Recent Events
-- Products and Pipeline + Business Model capture the company's value-positioning
-  axis whatever it is (platform/products, therapeutic areas/assets, service
-  lines). Don't let one strategic story crowd out the installed-base offerings.
-- Mission and Values: the company's stated mission/purpose and core values (plus
-  any named leadership principles), sourced. role-intake captures these in
-  research.md's Company section; consume them here, topping up via the
-  company-values prep-research fallback only if intake left them blank. Inside
-  the chunk use bold labels (Mission, Core Values, Leadership Behaviors where
-  they exist), then add brief "how to speak to them" hooks tying 1-2 values to
-  the candidate's themes (cue level, not scripted answers). Behavioral "time you
-  lived value X" answers are question entries, not here. Some employers screen
-  explicitly on values; if the company publishes none, say so and never invent
-  them.
-- Orientation is the reference briefing, not a question answer. The deployable
-  "what do you know about us?" answer lives under Anticipated Questions.
--->
+## Company & Industry - ready facts
+<!-- Interview-usable hooks only, NOT a research dump. Company value-positioning (products / TAs /
+platform / service lines); the strategic hook that bridges to the candidate; mission + values + any
+leadership/competency framework the employer screens on; 2-4 industry-timing facts. Depth stays in
+research.md; do not recite financials unless asked. -->
 
-### Role
+## Positioning & Approach
+<!-- SHARED framing, reusable every interview (NOT interview-specific): the dual goal (advance AND
+assess fit); the core reframe/stance for this role; title/level framing if the title is ambiguous;
+posture + avoids. Interview-specific "frame" material does NOT belong here - it goes in the Appendix. -->
 
-<!-- Chunk vocabulary: Mandate | Org Context | Accountability | Level -->
-
-### Industry
-
-<!-- Chunk vocabulary: Market | Competitors | Trends and Disruption | Regulatory -->
+## The Role
+<!-- The candidate's role understanding; shared, refined cumulatively, never copied per interview.
+- Decision rights: what the seat likely OWNS vs INFLUENCES-but-does-not-own. Frame as a hypothesis
+  to confirm when inferred from the JD, not as fact.
+- Stakeholder web (from the JD where named).
+- "What the JD doesn't say the role actually requires."
+Every decision-critical inference here MUST have a matching confirmation question in the Question Bank. -->
 
 ## Fit and Gaps
+<!-- The whole fit case in one place. -->
 
 ### Strengths to Lead With
-
-<!--
-Bullets lead with a short memorable key phrase in bold, then supporting detail.
-Source: gap-analysis covered requirements + profile + the top-scored Signature
-Themes from retrieval.md's theme table (core message and proof point, mapped to
-the requirements they hit). State experience spans from the profile (career
-arc), never from the JD's minimum bar.
--->
+<!-- Each a memorable bold key phrase + proof, with source IDs (CR-/TH-). Technical strengths
+distribute here. Career-span numbers come from the profile, never the JD's minimum bar. -->
 
 ### Gaps They May Screen For
+<!-- Cluster by underlying gap; carry CR numbers; jointly cover every non-covered requirement in
+gap_analysis.md. Responses never overstate beyond the gap analysis. Technical gaps distribute here. -->
 
-<!--
-One #### chunk per underlying gap, clustered; chunk title carries the CR numbers
-it covers so coverage is auditable against gap_analysis.md. Every non-covered
-requirement (partial-match, interview-deferred, unresolved) must land in a
-chunk. Each chunk: "- **Likely probe:**" and "- **Response:**" bullets.
-Responses never overstate; honest gap acknowledgment beats inflation.
--->
+### Proof points - STAR stories
+<!-- Mapped to the employer's competency/leadership framework. [A] line left open for the candidate.
+Anchor to sourced strengths; do not invent. Narrative answers (background, why-leave, gap) live under
+Anticipated Questions, not here. -->
 
-## Questions
+### Situational / hypothetical
+<!-- Insurance for competency-style prompts. Each prompt -> the STAR story / principle it anchors to.
+Anchor to the stories above; do not invent. -->
 
-### Anticipated Questions
+## Anticipated Questions
+<!-- Prepared answers to standard questions they ASK: walk-me-through-background, why-this-company,
+what-do-you-know, why-leave, what-are-you-looking-for, employment gap. Spoken-cue arcs, not paragraphs
+to memorize. Diplomatic answers carry If-probed + Avoid layers. "What are you looking for" is drafted
+fresh for THIS role from positioning - a generic answer reads as "settling." -->
 
-<!--
-Question entries are #### headings with generic durable names, never
-application-specific ones. Each carries an answer layer and, where the answer
-is diplomatic, an "If probed" defense layer and an "Avoid" guard.
-Single-home rule: answers live here; logistics and comp point to their
-sections. "What do you know about us?" is the one entry that curates headline
-facts from Orientation (the reference briefing) into a short spoken answer;
-that curation is allowed repetition, not a single-home violation.
-Role-specific extra questions are allowed as additional #### entries.
-Positioning routing (SKILL.md Phase 3 carries the full map; compress to cue
-level, never verbatim prose): the background arc opens with the identity
-thesis (Positioning Statement / What Makes Me Unique / Elevator Statement,
-selected via Experience Profile) and compresses chronology to one sweep beat;
-"Why this company?" draws on Industry Trajectory; a leadership-style entry
-from Core Philosophy is a standard optional add.
--->
+## Question Bank (questions to ask them)
+<!-- SHARED, reusable across interviews (the candidate may deliberately re-ask to compare answers).
+- Stable labels (Opener, Q1, Q1a, Q2, ...) so Concerns and the Appendix can cross-reference them.
+- Each: the question text + a short [listen-for].
+- Confirmation questions for inferred Role items live here (governor: decision-critical only).
+- Frame screen-sourced confirmations as "the recruiter mentioned..." - never as fact.
+- Per-interview PRIORITY is set in the Appendix, not here. -->
 
-#### Walk me through your background
+## Concerns to Resolve
+<!-- The candidate's decision checklist; shared, refined as interviews resolve items. Each concern ->
+the Question Bank Q(s) that resolve it, plus a [walk-out test] where one applies. -->
 
-#### Why this company?
+## Compensation / Logistics
+<!-- Comp: posted band; stated range (scope-conditional if level is inferred); private floor
+[never said aloud]; total-comp framing. Logistics: work auth, location/remote, relocation, travel,
+availability - conditional facts confirmed this run, static facts from user-info.md shown to confirm.
+Cue: usually defers past early rounds; do not volunteer. -->
 
-#### What do you know about us?
+# APPENDIX - Per-Interview Playbooks
+<!-- One thin block per interview, chronological. Interview-specific ONLY: purpose + interviewer(s) +
+emphasis/selection pointing INTO the main body. Never copies main-body content. The live cue-card is
+projected from each block into interview_notes.md. Copy the block below per interview. -->
 
-#### Why did you leave / looking to leave?
+## <Audience> - <Interviewer(s)> (<YYYY-MM-DD>, <scheduled | complete | rescheduled | CANCELLED>)
 
-#### Other Anticipated Questions
+**Purpose**
+<!-- What this interview is for. If only screen-sourced, tag [confirm]. Prepare for flex: do not
+narrow the whole prep to a stated purpose unless the user is certain it is the only topic. -->
+- <...>
 
-### Questions to Ask
+**Interviewer: <Name>** - <title / remit>
+<!-- Researched intel; tag single-source / "confirm live". If the public footprint is empty, give
+confirm-live handling + an opener, do not pad guesses. -->
+- <...>
 
-#### Recruiter Screen
-
-<!--
-Informed questions only (they should demonstrate research). Include unknowns
-research could not resolve. Note which questions to hold for later rounds if
-the recruiter's authority is limited (contract/embedded recruiter).
--->
-
-## Compensation
-
-<!--
-Verbatim language section. Strategy (ask for their band first), stated range
-(scope-conditional if level is inferred), private floor, equity stance.
-Numbers come from the user, confirmed each run; market data cites research.md's
-Compensation Calibration section.
--->
-
-## Logistics and Availability
-
-<!--
-Conditional facts confirmed with the user this run (availability, travel,
-work setup); static facts from user-info.md (work authorization, location).
--->
+**Emphasis for this interview** (pointers into the main body)
+- Primary goal: <...>
+- Lead with: <Positioning stance>
+- Prioritize from Question Bank: <Opener, Q#, Q#, ...>
+- Push these Concerns here: <...>
+- Presentation: <none | required -> build via the separate presentation skill>
+- Unique to this interview: <none | ...>

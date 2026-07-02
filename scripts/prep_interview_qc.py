@@ -1,36 +1,41 @@
 #!/usr/bin/env python3
 """
-prep_qc.py - deterministic QC for the preparation-screen skill's artifacts
+prep_interview_qc.py - deterministic QC for the preparation-interview skill
 
-Validates the three files the skill writes or appends to, scoped strictly to
-what the skill owns (other skills' sections of shared files are not checked):
+Validates the cumulative interview_prep.md (main body + per-interview Appendix)
+plus the prep-attributed research ledger and the post-screen session-log
+sections. Scoped to what this skill owns; the recruiter-screen '## Interview:
+Screen' section belongs to preparation-screen (prep_qc.py) and is not checked
+here.
 
-  interview_prep.md   structure against templates/interview_prep.md (the
-                      single structure authority; nothing is hardcoded here)
-  research.md         only the prep-attributed ledger sections
-  session_log.md      only the '## Interview: Screen' section
+Structure is judged against the preparation-interview template (the skill-local
+structure authority). Template headings that carry placeholder tokens (angle
+brackets, e.g. '## <Audience> - <Interviewer(s)>') are patterns, not required
+literals, and are excluded from the required-heading set.
 
 Checks
   P1  frontmatter present; key set matches the template's key set exactly
-  P2  every template heading present, in template order and at the
-      template's depth (extras allowed)
+  P2  every non-placeholder template heading present, in template order, at
+      the template's depth (extras allowed)
   P3  heading depth never exceeds four (####)
   P4  no em dashes in the artifact
   P5  every frontmatter `sources` file exists (app folder or profile folder)
-  R1  each prep-attributed research.md section has a dated 'Added' line, at
-      least one source URL, and no em dashes
-  S1  session log has '## Interview: Screen' with the required field labels
-      and no em dashes in the section
-  S2  the Outcome field is non-empty
+  X1  an APPENDIX region exists with at least one per-interview block
+  X2  cross-ref integrity: every Q-label referenced anywhere (Q1, Q1a, ...)
+      is defined in the Question Bank
+  R1  each prep-attributed research.md section is dated, sourced, em-dash-free
+  S1  each post-screen '## Interview: <audience>' session-log section has the
+      required field labels and no em dashes
+  S2  each such section's Outcome field is non-empty
 
 Usage
-  python prep_qc.py check --folder <absolute-path-to-application-folder>
+  python prep_interview_qc.py check --folder <absolute-path-to-application-folder>
 
 Exit code 0 when all checks pass, 1 otherwise. Findings print one per line as
 'CHECK  PASS|FAIL  detail'.
 
 Author    : Jason Delosh
-Created   : 2026-06-11
+Created   : 2026-07-02
 Project   : career
 Depends   : pyyaml (via _config)
 """
@@ -44,22 +49,12 @@ import _config
 
 
 # ---------------------------------------------------------------------------
-# Markdown parsing helpers
+# Markdown parsing helpers (self-contained; mirror prep_qc.py conventions)
 # ---------------------------------------------------------------------------
 
-# HTML comments in the template carry guidance, not structure. Strip them
-# (multiline, non-greedy) before reading headings so commented examples are
-# never treated as requirements.
 _COMMENT_RE = re.compile(r'<!--.*?-->', re.DOTALL)
-
-# A heading line: 1+ '#' then a space then text. Captured as (hashes, text).
 _HEADING_RE = re.compile(r'^(#{1,6})\s+(.*\S)\s*$', re.MULTILINE)
-
-# Frontmatter: the block between the first two '---' lines at file start.
 _FRONTMATTER_RE = re.compile(r'\A---\s*\n(.*?)\n---\s*\n', re.DOTALL)
-
-# A top-level frontmatter key (simple 'key: value' lines; nested keys are not
-# used by this artifact's schema).
 _FM_KEY_RE = re.compile(r'^([A-Za-z_][A-Za-z0-9_]*)\s*:', re.MULTILINE)
 
 
@@ -80,9 +75,7 @@ def _headings(text):
 def _frontmatter_keys(text):
     """Return the set of top-level frontmatter keys, or None if no block."""
     m = _FRONTMATTER_RE.match(text)
-    if not m:
-        return None
-    return set(_FM_KEY_RE.findall(m.group(1)))
+    return set(_FM_KEY_RE.findall(m.group(1))) if m else None
 
 
 def _frontmatter_sources(text):
@@ -91,9 +84,7 @@ def _frontmatter_sources(text):
     if not m:
         return []
     sm = re.search(r'^sources\s*:\s*\[(.*?)\]', m.group(1), re.MULTILINE)
-    if not sm:
-        return []
-    return [s.strip() for s in sm.group(1).split(',') if s.strip()]
+    return [s.strip() for s in sm.group(1).split(',') if s.strip()] if sm else []
 
 
 def _sections(text):
@@ -107,14 +98,17 @@ def _sections(text):
     return out
 
 
+def _is_placeholder(heading_text):
+    """True when a heading carries an angle-bracket token, i.e. it is a pattern."""
+    return '<' in heading_text and '>' in heading_text
+
+
 # ---------------------------------------------------------------------------
 # Checks: interview_prep.md against the template
 # ---------------------------------------------------------------------------
 
 def check_artifact(artifact_text, template_text, app_folder, profile_dir, findings):
     """Run P1-P5. Appends (check, ok, detail) tuples to findings."""
-
-    # P1: frontmatter key parity with the template.
     art_keys = _frontmatter_keys(artifact_text)
     tpl_keys = _frontmatter_keys(template_text)
     if art_keys is None:
@@ -122,37 +116,28 @@ def check_artifact(artifact_text, template_text, app_folder, profile_dir, findin
     else:
         missing = sorted(tpl_keys - art_keys)
         extra = sorted(art_keys - tpl_keys)
-        if missing or extra:
-            findings.append(('P1', False,
-                             f'frontmatter keys differ from template; '
-                             f'missing={missing} extra={extra}'))
-        else:
-            findings.append(('P1', True, 'frontmatter keys match template'))
+        findings.append(('P1', not (missing or extra),
+                         'frontmatter keys match template' if not (missing or extra)
+                         else f'frontmatter keys differ; missing={missing} extra={extra}'))
 
-    # P2: template headings present, in order, at the template's depth. Extras
-    # are allowed; order is judged on the required subsequence only. Headings
-    # compare as (depth, text) pairs so a required heading at the wrong level
-    # is a miss, not a match.
-    # Template headings carrying '<...>' placeholder tokens are patterns, not
-    # required literals (e.g. the Appendix block heading); exclude them.
-    tpl_heads = [(d, t) for d, t in _headings(template_text) if '<' not in t]
+    # P2: required = template headings WITHOUT placeholder tokens.
+    tpl_heads = [(d, t) for d, t in _headings(template_text) if not _is_placeholder(t)]
     art_heads = _headings(artifact_text)
     missing = ['#' * d + ' ' + t for d, t in tpl_heads if (d, t) not in art_heads]
     if missing:
         findings.append(('P2', False, f'missing required headings: {missing}'))
     else:
-        # Walk the artifact headings; required ones must appear in template order.
         idx = 0
         for h in art_heads:
             if idx < len(tpl_heads) and h == tpl_heads[idx]:
                 idx += 1
-        order_ok = idx == len(tpl_heads)
-        findings.append(('P2', order_ok,
-                         'required headings present in template order' if order_ok
+        ok = idx == len(tpl_heads)
+        findings.append(('P2', ok,
+                         'required headings present in template order' if ok
                          else 'required headings out of template order'))
 
     # P3: depth cap at four.
-    too_deep = [t for d, t in _headings(artifact_text) if d > 4]
+    too_deep = [t for d, t in art_heads if d > 4]
     findings.append(('P3', not too_deep,
                      'heading depth capped at ####' if not too_deep
                      else f'headings deeper than ####: {too_deep}'))
@@ -162,29 +147,61 @@ def check_artifact(artifact_text, template_text, app_folder, profile_dir, findin
                      'no em dashes' if '—' not in artifact_text
                      else 'em dash found in artifact'))
 
-    # P5: frontmatter sources resolve to real files (app folder or profile).
-    bad = []
-    for src in _frontmatter_sources(artifact_text):
-        if not (os.path.isfile(os.path.join(app_folder, src))
-                or os.path.isfile(os.path.join(profile_dir, src))):
-            bad.append(src)
+    # P5: frontmatter sources resolve to real files.
+    bad = [s for s in _frontmatter_sources(artifact_text)
+           if not (os.path.isfile(os.path.join(app_folder, s))
+                   or os.path.isfile(os.path.join(profile_dir, s)))]
     findings.append(('P5', not bad,
                      'all frontmatter sources exist' if not bad
                      else f'frontmatter sources not found: {bad}'))
 
 
 # ---------------------------------------------------------------------------
+# Checks: architecture integrity (Appendix presence, Q-label cross-refs)
+# ---------------------------------------------------------------------------
+
+_APPENDIX_RE = re.compile(r'^#\s+APPENDIX\b', re.MULTILINE)
+_QLABEL_REF_RE = re.compile(r'\bQ\d+[a-z]?\b')
+# A Question Bank entry defines its label as '- **Q1 ...' / '- **Q1a ...'.
+_QLABEL_DEF_RE = re.compile(r'^-\s+\*\*(Q\d+[a-z]?)\b', re.MULTILINE)
+
+
+def check_xrefs(artifact_text, findings):
+    """Run X1 (Appendix block present) and X2 (Q-label cross-ref integrity)."""
+    m = _APPENDIX_RE.search(artifact_text)
+    if not m:
+        findings.append(('X1', False, "no '# APPENDIX' region"))
+    else:
+        after = artifact_text[m.end():]
+        blocks = [h for h, _ in _sections(after)]
+        findings.append(('X1', bool(blocks),
+                         f'{len(blocks)} per-interview block(s)' if blocks
+                         else 'APPENDIX region has no per-interview block'))
+
+    bank_body = next((b for h, b in _sections(artifact_text)
+                      if h.startswith('Question Bank')), None)
+    if bank_body is None:
+        findings.append(('X2', False, 'no Question Bank section to resolve Q-labels against'))
+        return
+    defined = set(_QLABEL_DEF_RE.findall(bank_body))
+    referenced = set(_QLABEL_REF_RE.findall(artifact_text))
+    dangling = sorted(referenced - defined)
+    findings.append(('X2', not dangling,
+                     f'all Q-label references resolve ({len(defined)} defined)'
+                     if not dangling
+                     else f'Q-labels referenced but not defined in Question Bank: {dangling}'))
+
+
+# ---------------------------------------------------------------------------
 # Checks: research.md prep-attributed ledger sections only
 # ---------------------------------------------------------------------------
 
-# A section belongs to this skill when its body carries the attribution line
-# written by the prep ledger pattern, e.g. '**Added:** 2026-06-11 (interview prep...'.
 _ADDED_RE = re.compile(r'\*\*Added:\*\*\s*(\d{4}-\d{2}-\d{2})\s*\(interview prep')
 _URL_RE = re.compile(r'https?://\S+')
 
 
 def check_research(research_text, findings):
-    """Run R1 on the prep-attributed sections. Other sections are out of scope."""
+    """Run R1 on the prep-attributed sections. Other sections out of scope."""
     prep_sections = [(h, b) for h, b in _sections(research_text)
                      if '(interview prep' in b]
     if not prep_sections:
@@ -199,37 +216,43 @@ def check_research(research_text, findings):
         if '—' in body:
             bad.append(f'{heading}: em dash found')
     findings.append(('R1', not bad,
-                     f'{len(prep_sections)} prep ledger section(s) dated, sourced, '
-                     f'em-dash-free' if not bad else '; '.join(bad)))
+                     f'{len(prep_sections)} prep ledger section(s) dated, sourced, em-dash-free'
+                     if not bad else '; '.join(bad)))
 
 
 # ---------------------------------------------------------------------------
-# Checks: session log 'Interview: Screen' section only
+# Checks: post-screen session-log interview sections
 # ---------------------------------------------------------------------------
 
-_SCREEN_FIELDS = ('Prep date:', 'Prep artifact:', 'Research added:',
-                  'Interview date:', 'Outcome:')
+_INTERVIEW_FIELDS = ('Prep date:', 'Prep artifact:', 'Research added:',
+                     'Interview date:', 'Outcome:')
 
 
 def check_session_log(log_text, findings):
-    """Run S1-S2 on the Interview: Screen section. Other sections out of scope."""
-    section = next((b for h, b in _sections(log_text) if h == 'Interview: Screen'),
-                   None)
-    if section is None:
-        findings.append(('S1', False, "no '## Interview: Screen' section"))
-        findings.append(('S2', False, 'outcome not checkable (section missing)'))
+    """Run S1-S2 on '## Interview: <audience>' sections (Screen excluded)."""
+    sections = [(h, b) for h, b in _sections(log_text)
+                if h.startswith('Interview: ') and h != 'Interview: Screen']
+    if not sections:
+        findings.append(('S1', False, "no post-screen '## Interview: <audience>' section"))
+        findings.append(('S2', False, 'outcome not checkable (no section)'))
         return
-    missing = [f for f in _SCREEN_FIELDS if f not in section]
-    problems = [f'missing fields: {missing}'] if missing else []
-    if '—' in section:
-        problems.append('em dash found in section')
+    problems = []
+    outcomes_ok = True
+    for h, b in sections:
+        missing = [f for f in _INTERVIEW_FIELDS if f not in b]
+        if missing:
+            problems.append(f'{h}: missing {missing}')
+        if '—' in b:
+            problems.append(f'{h}: em dash found')
+        m = re.search(r'Outcome:\s*(\S.*)', b)
+        if not m:
+            outcomes_ok = False
+            problems.append(f'{h}: Outcome empty')
     findings.append(('S1', not problems,
-                     'Interview: Screen fields present, em-dash-free' if not problems
-                     else '; '.join(problems)))
-    m = re.search(r'Outcome:\s*(\S.*)', section)
-    findings.append(('S2', bool(m),
-                     f'outcome recorded: {m.group(1).strip()}' if m
-                     else 'Outcome field empty'))
+                     f'{len(sections)} interview section(s) complete, em-dash-free'
+                     if not problems else '; '.join(problems)))
+    findings.append(('S2', outcomes_ok,
+                     'outcome(s) recorded' if outcomes_ok else 'an Outcome is empty'))
 
 
 # ---------------------------------------------------------------------------
@@ -237,10 +260,11 @@ def check_session_log(log_text, findings):
 # ---------------------------------------------------------------------------
 
 def cmd_check(args, repo_root, cfg):
-    """Validate one application folder's prep artifacts. Returns exit code."""
+    """Validate one application folder's interview-prep artifacts."""
     fn = cfg['filenames']
     app_folder = os.path.abspath(args.folder)
     profile_dir = os.path.join(repo_root, cfg['paths']['profile'])
+    # Structure authority: the shared repo-root template (config-driven).
     template_path = os.path.join(repo_root, cfg['paths']['templates'],
                                  fn['interview_prep_template'])
 
@@ -256,20 +280,18 @@ def cmd_check(args, repo_root, cfg):
         findings.append(('P1', False,
                          f"{fn['interview_prep_file']} not found in {app_folder}"))
     else:
-        check_artifact(artifact_text, template_text, app_folder, profile_dir,
-                       findings)
+        check_artifact(artifact_text, template_text, app_folder, profile_dir, findings)
+        check_xrefs(artifact_text, findings)
 
     research_text = _read(os.path.join(app_folder, fn['research_file']))
     if research_text is None:
-        findings.append(('R1', False,
-                         f"{fn['research_file']} not found in {app_folder}"))
+        findings.append(('R1', False, f"{fn['research_file']} not found"))
     else:
         check_research(research_text, findings)
 
     log_text = _read(os.path.join(app_folder, fn['session_log_file']))
     if log_text is None:
-        findings.append(('S1', False,
-                         f"{fn['session_log_file']} not found in {app_folder}"))
+        findings.append(('S1', False, f"{fn['session_log_file']} not found"))
     else:
         check_session_log(log_text, findings)
 
@@ -283,13 +305,14 @@ def cmd_check(args, repo_root, cfg):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Deterministic QC for preparation-screen artifacts.")
+        description='Deterministic QC for preparation-interview artifacts.')
     sub = parser.add_subparsers(dest='command', required=True)
     p_check = sub.add_parser('check', help='validate one application folder')
     p_check.add_argument('--folder', required=True,
                          help='absolute path to the application folder')
     args = parser.parse_args()
 
+    sys.stdout.reconfigure(encoding='utf-8')
     repo_root, cfg = _config.load()
     if args.command == 'check':
         sys.exit(cmd_check(args, repo_root, cfg))

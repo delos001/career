@@ -1,13 +1,16 @@
 ---
 name: preparation-screen
-description: Prepare for a recruiter / phone-screen interview. Reads the application's existing artifacts (research, gap analysis, session log) and the profile, closes purpose-fit research gaps via the prep-research subagent, then drafts interview_prep.md section by section with user approval before every write. QC is a deterministic script (prep_qc.py) plus a judgment subagent (qc-preparation-screen). Run after gap-analysis, when a screen is scheduled. Hiring-manager rounds are the separate preparation-interview skill (not yet built).
+description: Prepare for a recruiter / phone-screen interview. Reads the application's existing artifacts (research, gap analysis, session log) and the profile, closes purpose-fit research gaps via the prep-research subagent, then drafts interview_prep.md section by section with user approval before every write. QC is a deterministic script (prep_qc.py) plus a judgment subagent (qc-preparation-screen). Run after gap-analysis, when a screen is scheduled. Post-screen rounds are the separate preparation-interview skill, which extends the same interview_prep.md.
 ---
 
 # preparation-screen
 
 Prepare the candidate for a recruiter or phone-screen interview for one
 application. The output artifact is `interview_prep.md` in the application
-folder, created from `templates/interview_prep.md` (the structure authority).
+folder, created from `templates/interview_prep.md` (the structure authority):
+the shared, cumulative doc's main body plus a Recruiter Screen Appendix block.
+Later rounds are the separate preparation-interview skill, which extends the
+same file.
 
 ## Interaction contract (non-negotiable)
 
@@ -90,47 +93,49 @@ you steering them (coaching)? Mark every coaching aside in square brackets per
 the template's bracket rule; the named Cue / Avoid / If probed labels are
 coaching subtypes that keep their labels.
 
-The rules that need judgment emphasis:
+The rules that need judgment emphasis (the template comments carry the rest):
 
-- Orientation: populate only chunks research supports. Capture the company's
-  value-positioning axis (products/platform, therapeutic areas, service
-  lines), not just the strategic story. The Mission and Values chunk consumes
-  the company's mission/values from research.md's Company section (top up via
-  the company-values prep-research fallback only if intake left them blank) and
-  adds "how to speak to them" hooks tying 1-2 values to the candidate's themes;
-  the template comment carries the full rule. Orientation is the reference
-  briefing; the deployable "what do you know about us?" answer is a question
-  entry that curates its headline facts.
-- Fit and Gaps: strengths lead with a memorable bold key phrase; career-span
-  numbers come from the profile, never the JD's minimum bar. The top-scored
-  Signature Themes from the retrieval theme table contribute their core
-  message and proof point, mapped to the requirements they hit. Gap chunks
-  cluster by underlying gap, carry their CR numbers, and must jointly cover
-  every non-covered requirement in `gap_analysis.md`. Responses never
-  overstate beyond the gap analysis notes.
-- Questions: generic durable entry names; spoken-cue arcs, not paragraphs to
-  memorize; If-probed and Avoid layers on diplomatic answers (pull the
-  "layer beneath" from positioning and confirm it with the user); "what are
-  you looking for" is drafted fresh for THIS role from positioning plus the
-  role context. A generic or other-role-shaped answer reads as "this
-  candidate is settling," which is disqualifying.
-- Positioning routing (compress to cue level, never import prose verbatim):
-  - "Walk me through your background" opens with the identity thesis from
-    the Positioning Statement / What Makes Me Unique / Elevator Statement,
-    with the Experience Profile selecting which 1-2 role identities lead.
-    Chronology is one compressed sweep beat, not a role-by-role tour; the
-    interviewer already holds the CV. Land on this role.
-  - "Why this company?" draws on Industry Trajectory and Where I Fit,
-    matched to the company's strategic thesis from research.
-  - A leadership-style or how-would-you-approach entry built from Core
-    Philosophy (Orient-Diagnose-Intervene-Stabilize-Scale) is a standard
-    optional add; its authority/matrix/hands-on flex line is the defense
-    layer for direct-reports probes.
-- Compensation: user's numbers (confirm current), scope-conditional stated
-  range when the role's level is inferred, market data cited from the
-  research ledger.
-- Logistics and Availability: conditional facts confirmed this run; static
-  facts from user-info.md, shown for confirmation.
+- Company & Industry: interview-usable hooks only. Consume the company's
+  mission/values from research.md's Company section (top up via the
+  company-values prep-research fallback only if intake left them blank); add
+  "how to speak to them" hooks tying 1-2 values to the candidate's themes. The
+  deployable "what do you know about us?" answer is an Anticipated Questions
+  entry that curates these headline facts (allowed repetition).
+- Positioning & Approach: the screen's posture and any role stance/reframe;
+  shared framing, kept general.
+- The Role and Concerns to Resolve: SEED lightly at screen stage (the role read
+  is mostly JD-inferred and to-confirm; concerns are nascent). Later interviews
+  refine them; do not force depth the screen cannot support.
+- Fit and Gaps: the top-scored Signature Themes from the retrieval theme table
+  contribute their core message and proof point, mapped to the requirements they
+  hit. Gap chunks must jointly cover every non-covered requirement in
+  `gap_analysis.md`. Proof-point STAR stories and Situational are optional at
+  screen stage.
+- Anticipated Questions, positioning routing (compress to cue level, never
+  verbatim prose):
+  - "Walk me through your background" opens with the identity thesis (Positioning
+    Statement / What Makes Me Unique / Elevator Statement; Experience Profile
+    selects the 1-2 lead identities); chronology is one compressed sweep beat,
+    land on this role.
+  - "Why this company?" draws on Industry Trajectory and Where I Fit, matched to
+    the company's strategic thesis.
+  - "What are you looking for" is drafted fresh for THIS role; a generic answer
+    reads as settling.
+  - A Core-Philosophy leadership-style entry is a standard optional add; its
+    authority/matrix/hands-on flex line is the defense layer for direct-reports
+    probes.
+- Question Bank: the screen's informed questions become shared, reusable entries
+  with stable labels; flag which to hold for later rounds when the recruiter's
+  authority is limited.
+- Compensation / Logistics (one section): numbers confirmed this run,
+  scope-conditional stated range, market data cited from the research ledger;
+  logistics conditional facts confirmed this run, static facts from user-info.md
+  shown to confirm.
+
+After the main body, add this screen's **Recruiter Screen Appendix block** (the
+template's per-interview block): purpose + interviewer(s) + emphasis pointing
+INTO the main body (which Question Bank items to prioritize, what to lead with).
+Pointers, never copies.
 
 ## Phase 4: session log, then QC
 
