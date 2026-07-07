@@ -212,7 +212,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### interview-notes
 
-- **Purpose**: Scaffold one round's note-taking section in `interview_notes.md` — logistics (including an optional hand-filled `Schedule changes` line for reschedules), planned questions as checkboxes, a note space per interviewer, and the six-field debrief skeleton — so notes are typed straight in during the call. Scaffold-only; never writes into note spaces or hand-written content.
+- **Purpose**: Scaffold one round's note-taking section in `interview_notes.md` — logistics (including optional hand-filled `Schedule changes` and `Duration` lines), planned questions as checkboxes, a note space per interviewer, and the six-field debrief skeleton — so notes are typed straight in during the call. Scaffold-only; never writes into note spaces or hand-written content.
 - **Status**: Built
 - **Inputs**:
   - Scripts: `scripts/notes_assemble.py`.

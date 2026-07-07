@@ -50,6 +50,7 @@ payload order.
 
 - Date / Time: {{datetime}}
 - Schedule changes:
+- Duration:
 - Medium: {{medium}}
 - Format: {{format}}
 
@@ -93,6 +94,10 @@ for what that person says.
   note the original and new date(s) here (e.g. `originally 2026-07-02; moved to
   2026-07-07`); left blank when nothing moved. The heading keeps its identity
   date; this line carries the reschedule history.
+- **Duration** - optional, hand-filled. Planned vs actual length and any
+  over/underrun (e.g. `planned 25 min; ran ~15 over`); left blank unless
+  noteworthy. A slot that runs long or ends early is an interest signal for the
+  debrief.
 - **{{medium}}** - phone | video | in-person.
 - **{{format}}** - single | panel | sequential.
 - **{{number}}** - the round's ordinal, the count of existing round headings + 1
