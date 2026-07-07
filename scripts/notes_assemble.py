@@ -146,6 +146,35 @@ def _render_interviewers(interviewers, interviewer_block):
 
 
 # ---------------------------------------------------------------------------
+# Round identity
+# A round heading is a level-2 line ending in a date, optionally prefixed with
+# the ordinal ('## 2. ') and optionally suffixed with a bracketed status
+# ('... [CANCELLED 2026-07-03]', written later by interview_lifecycle.py). The
+# ordinal is derived here, never taken from the payload, so numbers are assigned
+# in append order and never shift.
+# ---------------------------------------------------------------------------
+
+_ROUND_HEADING_RE = re.compile(r'^## .+ \| \d{4}-\d{2}-\d{2}\b', re.MULTILINE)
+
+
+def _next_round_number(artifact):
+    """Return the ordinal for the next appended round: existing count + 1."""
+    return len(_ROUND_HEADING_RE.findall(artifact)) + 1
+
+
+def _duplicate_exists(artifact, stage, date):
+    """True if a round heading already carries this stage + date.
+
+    Ignores the numeric prefix and any trailing status suffix so a re-run, or a
+    cancelled-then-reused stage+date, is still caught.
+    """
+    pattern = re.compile(
+        r'^## (?:\d+\.\s+)?' + re.escape(stage) + r' \| ' + re.escape(date)
+        + r'\b', re.MULTILINE)
+    return pattern.search(artifact) is not None
+
+
+# ---------------------------------------------------------------------------
 # Subcommand: init
 # ---------------------------------------------------------------------------
 
@@ -184,13 +213,16 @@ def cmd_add_round(args, repo_root, cfg):
         raise ValueError(f'payload missing keys: {missing}')
 
     artifact = _util.read(out_path)
-    heading = f"## {payload['stage']} | {payload['date']}"
-    if heading in artifact:
-        raise ValueError(f'section already exists: "{heading}" '
-                         f'(amend it directly instead of re-running add-round)')
+    if _duplicate_exists(artifact, payload['stage'], payload['date']):
+        raise ValueError(
+            f"section already exists: \"{payload['stage']} | {payload['date']}\" "
+            f'(amend it directly instead of re-running add-round)')
+
+    number = str(_next_round_number(artifact))
 
     template = _load_template(repo_root, cfg)
     section = _fill(_block(template, 'Round block'), {
+        'number': number,
         'stage': payload['stage'],
         'date': payload['date'],
         'datetime': payload['datetime'],
@@ -209,6 +241,7 @@ def cmd_add_round(args, repo_root, cfg):
     # further use and a stale copy could confuse a later run. On failure we
     # never reach this line, so the payload survives for diagnosis.
     os.remove(args.payload)
+    heading = f"## {number}. {payload['stage']} | {payload['date']}"
     print(f'{out_path}  appended: "{heading}"')
 
 

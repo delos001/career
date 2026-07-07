@@ -34,7 +34,8 @@ it never writes into note spaces.
      (single | panel | sequential).
    - Interviewers: name and title each; an empty list is allowed (renders a
      TBD note block).
-4. If a section headed `## <stage> | <date>` already exists, switch to AMEND:
+4. If a section headed `## <N>. <stage> | <date>` already exists (match on
+   stage + date; the leading number is a cosmetic ordinal), switch to AMEND:
    walk that section's logistics, interviewer blocks, and questions with the
    user and edit it directly; do not run add-round. Never touch hand-written
    note content while amending.
@@ -63,9 +64,11 @@ during the call; no pointers to other documents).
    "interviewers": [{"name", "title"}], "questions": [..]}`.
 2. Run:
    `python <repo>/scripts/notes_assemble.py add-round --folder <absolute app folder> --payload <absolute payload path>`
-   The script appends the section and deletes the payload on success; on
-   failure it leaves the payload for diagnosis. It refuses duplicate
-   stage + date headings; that case should have been caught in Phase 1.
+   The script appends the section, assigning the round number automatically
+   from append order, and deletes the payload on success; on failure it leaves
+   the payload for diagnosis. It refuses duplicate stage + date headings (the
+   number and any status suffix are ignored when matching); that case should
+   have been caught in Phase 1.
 3. Show the user the appended section.
 
 ## Close

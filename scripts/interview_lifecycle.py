@@ -20,7 +20,8 @@ file matches the label, pass --date to disambiguate, or edit that file by hand.
 
 Subcommands
   reschedule  record a new date/time across the three files.
-  cancel      mark the interview cancelled across the three files.
+  cancel      mark the interview cancelled across the three files, and tag the
+              notes round heading [CANCELLED <date>] so it is visible in outline.
 
 Usage
   python interview_lifecycle.py reschedule --folder <app-folder>
@@ -113,6 +114,32 @@ def _annotate(folder, filename, stage, date, annotation,
     return (label, 'annotated')
 
 
+def _tag_notes_heading(folder, filename, stage, date, tag):
+    """Append a bracketed status tag to the notes round heading.
+
+    Outline view shows only heading lines, so the bold annotation under a
+    heading is invisible when navigating by outline; this puts the status in the
+    heading itself (e.g. '## 1. Hiring Manager | 2026-07-02 [CANCELLED ...]').
+    Idempotent: a heading already carrying a bracketed tag is left untouched.
+    """
+    path = os.path.join(folder, filename)
+    if not os.path.isfile(path):
+        return (filename, 'skipped (file missing)')
+    lines = _util.read(path).split('\n')
+    hits = _heading_matches(lines, stage, date)
+    if not hits:
+        return (filename, 'section not found')
+    if len(hits) > 1:
+        return (filename, f'{len(hits)} sections match "{stage}"; '
+                          f'pass --date or edit manually')
+    h = hits[0]
+    if '[' in lines[h]:
+        return (filename, 'heading already tagged (skipped)')
+    lines[h] = lines[h].rstrip() + f' {tag}'
+    _util.write(path, '\n'.join(lines))
+    return (filename, 'heading tagged')
+
+
 def _edit_session_log(folder, cfg, stage, outcome_line, audit_bullet):
     """Update Outcome and add an audit bullet in '## Interview: <stage>'."""
     label = cfg['filenames']['session_log_file']
@@ -161,10 +188,12 @@ def _apply(action, args, cfg):
                         f'(rescheduled {today} to {args.new_datetime})')
         audit_bullet = (f'- Lifecycle ({today}): rescheduled to '
                         f'{args.new_datetime}{suffix}')
+        heading_tag = None
     else:  # cancel
         annotation = f'**CANCELLED {today}{suffix}**'
         outcome_line = f'- Outcome: cancelled {today}{suffix}'
         audit_bullet = f'- Lifecycle ({today}): cancelled{suffix}'
+        heading_tag = f'[CANCELLED {today}]'
 
     results = [
         _edit_session_log(folder, cfg, args.stage, outcome_line, audit_bullet),
@@ -176,8 +205,16 @@ def _apply(action, args, cfg):
                   label=cfg['filenames']['interview_notes_file']),
     ]
 
-    changed = {'annotated', 'updated',
-               'already annotated (skipped)', 'already recorded (skipped)'}
+    # On cancel, also tag the notes round heading so the status is visible in
+    # outline view (the bold annotation above lives below the heading line).
+    if heading_tag is not None:
+        results.append(_tag_notes_heading(
+            folder, cfg['filenames']['interview_notes_file'],
+            args.stage, args.date, heading_tag))
+
+    changed = {'annotated', 'updated', 'heading tagged',
+               'already annotated (skipped)', 'already recorded (skipped)',
+               'heading already tagged (skipped)'}
     any_changed = False
     for name, status in results:
         print(f'  {name}: {status}')

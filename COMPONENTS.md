@@ -212,7 +212,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### interview-notes
 
-- **Purpose**: Scaffold one round's note-taking section in `interview_notes.md` — logistics, planned questions as checkboxes, a note space per interviewer, and the six-field debrief skeleton — so notes are typed straight in during the call. Scaffold-only; never writes into note spaces or hand-written content.
+- **Purpose**: Scaffold one round's note-taking section in `interview_notes.md` — logistics (including an optional hand-filled `Schedule changes` line for reschedules), planned questions as checkboxes, a note space per interviewer, and the six-field debrief skeleton — so notes are typed straight in during the call. Scaffold-only; never writes into note spaces or hand-written content.
 - **Status**: Built
 - **Inputs**:
   - Scripts: `scripts/notes_assemble.py`.
@@ -220,7 +220,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - Application artifacts: `session_log.md`, `interview_prep.md` (confirm-not-trust pre-fill of round facts; tier-1 question sourcing), earlier round sections of `interview_notes.md` (tier-2 carryover questions).
   - User input: application folder, round facts (stage label, date/time, medium, format, interviewers), question selections and additions.
 - **Outputs**:
-  - Files: `<application folder>/interview_notes.md` (shell created once; one round section appended per run; an existing stage+date section is amended in place instead).
+  - Files: `<application folder>/interview_notes.md` (shell created once; one round section appended per run under a numbered heading `## <N>. <stage> | <date>`, N assigned in append order; an existing stage+date section is amended in place instead; a round heading may carry a bracketed status suffix, e.g. `[CANCELLED <date>]`, for outline visibility).
   - Skills: feeds the followup skill (raw notes + debrief).
 - **Triggers**: User invocation (`/interview-notes`) before each interview round, with or without a prep run.
 - **Update Triggers**: When `templates/interview_notes.md` changes; when the stage vocabulary or its session-log stage-name alignment changes.
@@ -595,7 +595,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/interview_lifecycle.py
 
-- **Purpose**: Reschedule / cancel sync for the preparation-interview skill. Subcommands `reschedule` and `cancel` annotate an interview's three homes (the `session_log.md` `## Interview: <stage>` section, the prep Appendix block, and the `interview_notes.md` round section) in one op, matched by the stage label; the session log also gets a dated audit bullet and a flipped Outcome. Never deletes a block (a cancelled interview may be rescheduled). Idempotent; `--date` disambiguates duplicate stages.
+- **Purpose**: Reschedule / cancel sync for the preparation-interview skill. Subcommands `reschedule` and `cancel` annotate an interview's three homes (the `session_log.md` `## Interview: <stage>` section, the prep Appendix block, and the `interview_notes.md` round section) in one op, matched by the stage label; the session log also gets a dated audit bullet and a flipped Outcome. On cancel it also tags the notes round heading `[CANCELLED <date>]` so the status shows in outline view. Never deletes a block (a cancelled interview may be rescheduled). Idempotent; `--date` disambiguates duplicate stages.
 - **Status**: Built (verified on APP-006 copies: reschedule, cancel, idempotent re-run, and the no-match error path).
 - **Inputs**: Subcommand args (`reschedule --folder --stage --new-datetime [--date] [--reason]`; `cancel --folder --stage [--date] [--reason]`). Config: `config.yaml` (`session_log_file`, `interview_prep_file`, `interview_notes_file`) via `scripts/_config.py`.
 - **Outputs**: Per-file status lines to stdout; exit 0 if at least one section updated, 1 on no match or error.
@@ -604,7 +604,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/notes_assemble.py
 
-- **Purpose**: Scaffold `interview_notes.md` for the interview-notes skill. Subcommands: `init` (create the file shell; refuses overwrite) and `add-round` (append one round section rendered from a JSON payload; refuses duplicate stage+date headings; deletes the payload on success, leaves it on failure for diagnosis). All structure parsed from `templates/interview_notes.md`'s three labeled fenced blocks; nothing hardcoded.
+- **Purpose**: Scaffold `interview_notes.md` for the interview-notes skill. Subcommands: `init` (create the file shell; refuses overwrite) and `add-round` (append one round section rendered from a JSON payload under a numbered heading, the ordinal derived from append order not the payload; refuses duplicate stage+date headings, ignoring the number and any status suffix; deletes the payload on success, leaves it on failure for diagnosis). All structure parsed from `templates/interview_notes.md`'s three labeled fenced blocks; nothing hardcoded.
 - **Status**: Built (verified: init, single + 3-person panel rounds, duplicate-heading and init-overwrite rejection, payload self-clean; first production run APP-008 2026-06-11).
 - **Inputs**: Subcommand args (`init --folder --app-id --company --role`; `add-round --folder --payload`). Config: `config.yaml` (`interview_notes_file`, `interview_notes_template`, templates path) via `scripts/_config.py`.
 - **Outputs**: `<folder>/interview_notes.md` created or appended; path echoed to stdout. Errors to stderr with exit 1.
