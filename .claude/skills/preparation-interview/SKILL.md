@@ -23,10 +23,14 @@ Appendix.
   check IDs or jargon to the user.
 - Scannable: short bullets and key words, never long paragraphs. The artifact
   is used live; the user scans keywords and speaks from them.
-- Artifact formatting (QC-enforced by prep_interview_qc.py): no em dashes
-  anywhere (use commas or hyphens); use the template's headings verbatim with
-  all content and coaching in section bodies, never in a heading; the
-  frontmatter is the first line, so strip every template comment from the copy.
+- Artifact formatting (QC-enforced by prep_interview_qc.py; full rules in the
+  template's Conventions comment): no em dashes (commas or hyphens); headings are
+  short labels from the template's allowed set only, never coaching / citations /
+  sentences in a heading; one weight-bearing element per bullet (expand discrete-
+  element series to sub-bullets); no bold connector tokens (**plus** / **and**)
+  welding list items; no build/process narration in the body; no redundant
+  restatement (single-home, cross-refs link by label); frontmatter is the first
+  line, so strip every template comment from the copy.
 - Confirm-not-trust, two layers: (a) every element pulled from another artifact
   or a profile default is SHOWN with an "is this still accurate?" check before
   it enters the doc; (b) every screen- or JD-sourced claim about the role/team/
@@ -112,11 +116,17 @@ Cue / Avoid / If probed keep their labels).
 - The Role, Concerns, and positioning are SHARED, not per-interview; refine in
   place, do not copy into the Appendix.
 - Inference-triggers-a-question: any decision-critical item that is inferred or
-  unconfirmed (esp. The Role decision-rights map, stakeholder web) gets a
-  matching confirmation question in the Question Bank. Governor: decision-
-  critical only, or the bank bloats.
+  unconfirmed (esp. The Role decision-rights map, stakeholder web) is framed as a
+  flagged hypothesis, never stated as fact, and gets a matching confirmation
+  question in the Question Bank that REFERENCES the map, not re-lists it. Governor:
+  decision-critical only, or the bank bloats.
 - Question Bank is shared and reusable (the user may re-ask across interviews);
-  do not tailor phrasing per interview here - that is the Appendix's job.
+  order it in topical clusters, insert a later interview's new question into its
+  cluster via a sub-label (Q1b, Q4a) rather than appending, and never renumber. Do
+  not tailor phrasing per interview here - that is the Appendix's job.
+- No build/process narration in the artifact, and no redundant restatement: each
+  content unit has one home, other sections point by label; the walk-out crux lives
+  in Concerns, not The Role.
 - Claims trace to the profile; never overstate beyond `gap_analysis.md` /
   inventory. Career-span numbers from the profile, never the JD's minimum bar.
 
@@ -126,11 +136,13 @@ Cue / Avoid / If probed keep their labels).
    with researched intel and confirm-live handling; emphasis = the Question
    Bank items to prioritize, the Concerns to raise here, the lead framing;
    presentation flag if the format includes one (link to the presentation
-   skill). Pointers into the main body, never copies.
+   skill). Pointers into the main body, never copies. Prep-forward only: no
+   outcomes, no asked/debrief content, no post-interview status beyond the
+   heading tag; those live in session_log.md and interview_notes.md.
 2. Project the cue-card into `interview_notes.md`: interviewer + opener, the
-   prioritized questions (full text), top Concerns, the lead framing. If the
-   notes file lacks this interview's section, scaffold it via the
-   `interview-notes` flow first.
+   questions in the bank's topical order with priority items prefixed (P), top
+   Concerns, the lead framing. If the notes file lacks this interview's section,
+   scaffold it via the `interview-notes` flow first.
 
 ## Phase 5: session log, then QC
 

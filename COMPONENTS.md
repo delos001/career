@@ -389,7 +389,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### qc-preparation-interview
 
-- **Purpose**: Judgment QC for the cumulative `interview_prep.md`: fact traceability (incl. staged facts from `profile_updates_pending.md` and the transient-current-activity exemption), no overstatement, gap coverage, inference-carries-a-confirmation-question (J4), confirm-vs-assume (J5), Appendix discipline (thin; points into the main body), Question-Bank-is-shared (J7), spoken-cue format, hedge preservation, diplomatic guards, role-customization, substance/coaching marking. Mechanical checks owned by `scripts/prep_interview_qc.py`.
+- **Purpose**: Judgment QC for the cumulative `interview_prep.md`: fact traceability (incl. staged facts from `profile_updates_pending.md` and the transient-current-activity exemption), no overstatement, gap coverage, inference-carries-a-confirmation-question (J4), confirm-vs-assume (J5), Appendix discipline (thin; points into the main body), Question-Bank-is-shared (J7), spoken-cue format, hedge preservation, diplomatic guards, role-customization, substance/coaching marking, Company & Industry self-sufficiency (J13), no build/process narration (J14), single-home / no restatement (J15). Mechanical checks owned by `scripts/prep_interview_qc.py`.
 - **Status**: Built (verified on the APP-006 specimen: found two real findings, resolved, then clean).
 - **Inputs**: Skill-passed (by `preparation-interview`): application folder path, profile folder path (reads incl. `profile_updates_pending.md`). Tools: Read, Grep.
 - **Outputs**: JSON findings list (check / location / finding / route_back); empty when clean.
@@ -586,12 +586,12 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/prep_interview_qc.py
 
-- **Purpose**: Deterministic QC for the preparation-interview artifacts, scoped to what that skill owns. Validates the cumulative `interview_prep.md` structure against `templates/interview_prep.md` (the parsed structure authority; `<...>` placeholder headings filtered), the prep-attributed ledger sections of `research.md`, and the post-screen `## Interview: <audience>` session-log sections. Checks P1-P5, X1 (Appendix present), X2 (Question Bank cross-ref integrity), R1, S1-S2.
+- **Purpose**: Deterministic QC for the preparation-interview artifacts, scoped to what that skill owns. Validates the cumulative `interview_prep.md` structure against `templates/interview_prep.md` (the parsed structure authority; `<...>` placeholder headings filtered), the prep-attributed ledger sections of `research.md`, and the post-screen `## Interview: <audience>` session-log sections. Checks P1-P8 (frontmatter, heading structure + allow-set + no coaching/citations in a heading, em dashes, sources, no bold connector tokens), X1-X3 (Appendix present, Question Bank cross-ref, Appendix block schema fields), R1, S1-S2, plus advisory W1-W2 warnings (prose under a heading, multi-element bullets).
 - **Status**: Built (verified against the APP-006 specimen, 10/10 pass, plus a negative test that caught the pre-template drift).
 - **Inputs**: Subcommand args (`check --folder <absolute application folder>`). Config: `config.yaml` (`interview_prep_file`, `interview_prep_template`, research/session-log filenames, profile/templates paths) via `scripts/_config.py`.
 - **Outputs**: Per-check PASS/FAIL lines + RESULT line to stdout; exit 0 on pass, 1 otherwise.
 - **Triggers**: Invoked by `preparation-interview` Phase 5.
-- **Update Triggers**: When `templates/interview_prep.md` changes; when the research-ledger attribution format or the session-log stage-section fields change; when the Question Bank / Appendix cross-reference shape changes.
+- **Update Triggers**: When `templates/interview_prep.md` changes; when the research-ledger attribution format or the session-log stage-section fields change; when the Question Bank / Appendix cross-reference shape changes; when the heading allow-set, Appendix block schema, or a formatting-convention check (connector tokens, coaching/citations in headings) changes.
 
 #### scripts/interview_lifecycle.py
 

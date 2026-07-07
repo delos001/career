@@ -13,20 +13,32 @@ structure authority). Template headings that carry placeholder tokens (angle
 brackets, e.g. '## <Audience> - <Interviewer(s)>') are patterns, not required
 literals, and are excluded from the required-heading set.
 
-Checks
+Checks (FAIL blocks the build; WARN is advisory and leaves the exit code alone)
   P1  frontmatter present; key set matches the template's key set exactly
   P2  every non-placeholder template heading present, in template order, at
       the template's depth (extras allowed)
   P3  heading depth never exceeds four (####)
   P4  no em dashes in the artifact
   P5  every frontmatter `sources` file exists (app folder or profile folder)
+  P6  no bold connector tokens (**plus** / **and** / **+** / **&**) welding
+      list items; use bullets
+  P7  every heading is in the allowed set: the fixed template headings plus the
+      three dynamic families (Appendix per-interview '##' blocks, one '###' per
+      Anticipated Question, one '#### Story ...' per Proof-points story). A
+      promoted sub-topic (decision rights, a gap cluster) fails here
+  P8  no coaching brackets or citations inside a heading line
   X1  an APPENDIX region exists with at least one per-interview block
   X2  cross-ref integrity: every Q-label referenced anywhere (Q1, Q1a, ...)
       is defined in the Question Bank
+  X3  each Appendix block carries only schema fields (Purpose / Interviewer /
+      Emphasis); Outcome, Asked and other post-interview content fail here
   R1  each prep-attributed research.md section is dated, sourced, em-dash-free
   S1  each post-screen '## Interview: <audience>' session-log section has the
       required field labels and no em dashes
   S2  each such section's Outcome field is non-empty
+  W1  (warn) no prose line directly under a heading (meta-narration proxy)
+  W2  (warn) no single bullet packing a ';'-series that also carries its own
+      bracket or citation (should expand to sub-bullets)
 
 Usage
   python prep_interview_qc.py check --folder <absolute-path-to-application-folder>
@@ -256,6 +268,156 @@ def check_session_log(log_text, findings):
 
 
 # ---------------------------------------------------------------------------
+# Checks: formatting conventions (connector tokens, heading discipline)
+# ---------------------------------------------------------------------------
+
+_CONNECTOR_RE = re.compile(r'\*\*(plus|and|\+|&)\*\*')
+
+
+def check_connectors(artifact_text, findings):
+    """P6: no bold connector tokens welding list items (use bullets instead)."""
+    clean = _COMMENT_RE.sub('', artifact_text)
+    hits = sorted(set(_CONNECTOR_RE.findall(clean)))
+    findings.append(('P6', not hits,
+                     'no bold connector tokens'
+                     if not hits
+                     else 'bold connector tokens welding list items: '
+                          + ', '.join(f'**{h}**' for h in hits)))
+
+
+def check_headings(artifact_text, template_text, findings):
+    """P7 (heading whitelist) and P8 (no coaching/citations in a heading).
+
+    Allowed headings = every non-placeholder template heading, plus three
+    dynamic families: any '##' block inside the APPENDIX region, one '###' per
+    Anticipated Question, one '#### Story ...' per Proof-points story. Depth-1
+    headings (title / MAIN BODY / APPENDIX) are always allowed.
+    """
+    tpl_fixed = {t for d, t in _headings(template_text) if not _is_placeholder(t)}
+    in_appendix = False
+    parent2 = parent3 = None
+    bad_wl = []
+    bad_content = []
+    for depth, text in _headings(artifact_text):
+        # P8: a heading is a short label; coaching brackets and citations belong
+        # in the body, never the heading line.
+        if any(tok in text for tok in ('[', ']', '(CR-', '(TH-', '*(')):
+            bad_content.append('#' * depth + ' ' + text)
+        # Region / parent tracking for the whitelist.
+        if depth == 1:
+            parent2 = parent3 = None
+            if text.strip().upper().startswith('APPENDIX'):
+                in_appendix = True
+        elif depth == 2:
+            parent2, parent3 = text, None
+        elif depth == 3:
+            parent3 = text
+        # P7: whitelist.
+        allowed = (
+            depth == 1
+            or text in tpl_fixed
+            or (in_appendix and depth == 2)
+            or (depth == 3 and parent2 is not None
+                and parent2.startswith('Anticipated Questions'))
+            or (depth == 4 and parent3 is not None
+                and parent3.startswith('Proof points'))
+        )
+        if not allowed:
+            bad_wl.append('#' * depth + ' ' + text)
+    findings.append(('P7', not bad_wl,
+                     'all headings in the allowed set'
+                     if not bad_wl
+                     else 'headings outside the allowed set (make these bullets?): '
+                          + '; '.join(bad_wl)))
+    findings.append(('P8', not bad_content,
+                     'no coaching/citations in headings'
+                     if not bad_content
+                     else 'coaching/citations in a heading (move to the body): '
+                          + '; '.join(bad_content)))
+
+
+# ---------------------------------------------------------------------------
+# Checks: Appendix block schema (prep-forward only)
+# ---------------------------------------------------------------------------
+
+_BLOCK_FIELD_RE = re.compile(r'^\*\*([^*]+?)\*\*', re.MULTILINE)
+_ALLOWED_BLOCK_FIELDS = ('Purpose', 'Interviewer', 'Emphasis')
+
+
+def check_appendix_fields(artifact_text, findings):
+    """X3: Appendix blocks carry only schema fields (prep-forward only).
+
+    Outcome, Asked and other post-interview content belong in session_log.md
+    and interview_notes.md, not the prep Appendix.
+    """
+    m = _APPENDIX_RE.search(artifact_text)
+    if not m:
+        findings.append(('X3', True, 'no APPENDIX region (nothing to check)'))
+        return
+    bad = []
+    for h, body in _sections(artifact_text[m.end():]):
+        for label in _BLOCK_FIELD_RE.findall(body):
+            first = label.strip().split()[0].rstrip(':') if label.strip() else ''
+            if first not in _ALLOWED_BLOCK_FIELDS:
+                bad.append(f'{h}: **{label.strip()}**')
+    findings.append(('X3', not bad,
+                     'Appendix blocks carry only schema fields'
+                     if not bad
+                     else 'non-schema Appendix fields (belong in session_log/notes): '
+                          + '; '.join(bad)))
+
+
+# ---------------------------------------------------------------------------
+# Soft checks (advisory WARN; do not change the exit code)
+# ---------------------------------------------------------------------------
+
+def check_leading_prose(artifact_text, findings):
+    """W1: warn on a prose line directly under a heading (meta-narration proxy).
+
+    A heading should be followed by bullets, a bold label, or another heading;
+    a leading prose sentence is usually build/process narration.
+    """
+    lines = _COMMENT_RE.sub('', artifact_text).split('\n')
+    warns = []
+    for i, line in enumerate(lines):
+        hm = re.match(r'^(#{1,6})\s+(.*\S)\s*$', line)
+        if not hm:
+            continue
+        j = i + 1
+        while j < len(lines) and not lines[j].strip():
+            j += 1
+        if j < len(lines) and lines[j].strip()[:1] not in ('-', '*', '#', '<', '[', '>', ''):
+            warns.append(f'{hm.group(2)}: "{lines[j].strip()[:48]}"')
+    findings.append(('W1', True if not warns else 'warn',
+                     'no prose preambles under headings'
+                     if not warns
+                     else 'prose directly under a heading (meta-narration?): '
+                          + '; '.join(warns)))
+
+
+_SRCID_RE = re.compile(r'\((?:CR|TH)-\d+')
+
+
+def check_bullet_packing(artifact_text, findings):
+    """W2: warn on a single bullet packing a ';'-series that also carries its
+    own bracket or source ID (an element with its own weight belongs on its own
+    sub-bullet)."""
+    warns = []
+    for line in _COMMENT_RE.sub('', artifact_text).split('\n'):
+        s = line.strip()
+        if not (s.startswith('- ') and ';' in s):
+            continue
+        ids = len(_SRCID_RE.findall(s))
+        if (ids >= 1 and '[' in s) or ids >= 2:
+            warns.append(s[:60] + ('...' if len(s) > 60 else ''))
+    findings.append(('W2', True if not warns else 'warn',
+                     'no obvious multi-element bullets'
+                     if not warns
+                     else 'bullet may pack discrete elements (expand?): '
+                          + '; '.join(warns)))
+
+
+# ---------------------------------------------------------------------------
 # Subcommand: check
 # ---------------------------------------------------------------------------
 
@@ -281,7 +443,12 @@ def cmd_check(args, repo_root, cfg):
                          f"{fn['interview_prep_file']} not found in {app_folder}"))
     else:
         check_artifact(artifact_text, template_text, app_folder, profile_dir, findings)
+        check_connectors(artifact_text, findings)
+        check_headings(artifact_text, template_text, findings)
         check_xrefs(artifact_text, findings)
+        check_appendix_fields(artifact_text, findings)
+        check_leading_prose(artifact_text, findings)
+        check_bullet_packing(artifact_text, findings)
 
     research_text = _read(os.path.join(app_folder, fn['research_file']))
     if research_text is None:
@@ -295,11 +462,15 @@ def cmd_check(args, repo_root, cfg):
     else:
         check_session_log(log_text, findings)
 
-    failed = [f for f in findings if not f[1]]
+    failed = [f for f in findings if f[1] is False]
+    warned = [f for f in findings if f[1] == 'warn']
     for check, ok, detail in findings:
-        print(f"{check}  {'PASS' if ok else 'FAIL'}  {detail}")
+        status = 'PASS' if ok is True else ('WARN' if ok == 'warn' else 'FAIL')
+        print(f"{check}  {status}  {detail}")
+    passed = len(findings) - len(failed) - len(warned)
     print(f"RESULT  {'PASS' if not failed else 'FAIL'}  "
-          f"{len(findings) - len(failed)}/{len(findings)} checks passed")
+          f"{passed}/{len(findings)} checks passed"
+          + (f", {len(warned)} warning(s)" if warned else ""))
     return 0 if not failed else 1
 
 

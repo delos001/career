@@ -55,7 +55,11 @@ letting the user pick, edit, add, or skip (an empty list is allowed):
 3. User-supplied additions.
 
 Selected questions are copied as full text (the file is the live surface
-during the call; no pointers to other documents).
+during the call; no pointers to other documents). Order the final list in the
+shared Question Bank's topical order so related questions sit adjacent, and
+prefix each priority item (named in the Appendix 'Prioritize from Question
+Bank') with "(P) " so priorities are scannable at a glance. Carryover and
+user-added items outside the priority set carry no prefix.
 
 ## Phase 3: scaffold
 
