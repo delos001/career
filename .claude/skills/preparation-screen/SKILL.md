@@ -135,22 +135,18 @@ The rules that need judgment emphasis (the template comments carry the rest):
 After the main body, add this screen's **Recruiter Screen Appendix block** (the
 template's per-interview block): purpose + interviewer(s) + emphasis pointing
 INTO the main body (which Question Bank items to prioritize, what to lead with).
-Pointers, never copies.
+Pointers, never copies. The heading is `## Recruiter Screen - <Interviewer(s)>`,
+with no date and no status: scheduling metadata lives only in `session_log.md`.
 
 ## Phase 4: session log, then QC
 
-1. Session log: append the stage section (or a dated line item in UPDATE
-   mode) before QC runs, so the QC pass covers it:
-
-   ```
-   ## Interview: Screen
-
-   - Prep date: YYYY-MM-DD
-   - Prep artifact: <relative path to interview_prep.md>
-   - Research added: <prep section names added to research.md>
-   - Interview date: <date, duration, interviewer (role)>
-   - Outcome: pending
-   ```
+1. Session log: append the `## Interview: Screen` section (or update its fields in
+   UPDATE mode) before QC runs, so the QC pass covers it. Use the field shape
+   defined by the `## Interview section` block of `templates/session_log.md` (the
+   single authority; read it, do not reproduce it from memory). `Interview date:`
+   is a bare `YYYY-MM-DD`; time, duration, medium, and interviewers each have
+   their own field. `Status: scheduled`, `Outcome: pending`. This section is the
+   ONE home for the screen's scheduling metadata; the prep doc records none of it.
 
 2. QC, an internal loop; do not stall the user with check-by-check
    narration. Run:

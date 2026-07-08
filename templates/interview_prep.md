@@ -41,8 +41,9 @@ Conventions:
   other sub-topic (decision rights, a gap cluster, a stakeholder list) to a heading; those are bullets.
   STAR heading = "Story X - <short title>"; competency-framework mapping goes in the first bullet.
   Max depth four (####); inside a #### entry use bold labels, not headings.
-- Frontmatter carries no interview-event facts (type, round, schedule, interviewers); those belong to
-  the session log and the Appendix.
+- This doc carries NO interview-event facts anywhere: no dates, times, or event status, in the
+  frontmatter, the body, or an Appendix heading. Scheduling metadata has one home, session_log.md.
+  Appendix headings name the round and its interviewer(s), nothing more.
 - Confirm-vs-assume: screen- or JD-sourced claims about role/team/interviewer are written as
   UNCONFIRMED; decision-critical inferences generate a confirmation question in the Question Bank.
 -->
@@ -131,13 +132,14 @@ Cue: usually defers past early rounds; do not volunteer. -->
 
 # APPENDIX - Per-Interview Playbooks
 <!-- One thin block per interview, chronological. PREP-FORWARD ONLY: purpose + interviewer(s) +
-emphasis pointing INTO the main body. No outcomes, no "asked"/debrief content, no post-interview
-status beyond the heading tag; those live in session_log.md and interview_notes.md. Carry-forward
-that affects future prep flows into the main body's cumulative refinement, not here. Never copies
-main-body content. The live cue-card is projected from each block into interview_notes.md. Copy the
-block below per interview. -->
+emphasis pointing INTO the main body. No outcomes, no "asked"/debrief content, and NO SCHEDULING
+METADATA: no date, no time, no event status. Those live in session_log.md (the record) and
+interview_notes.md (the capture surface). A date here goes stale the moment the interview moves,
+in the one doc read immediately before the interview. Carry-forward that affects future prep flows
+into the main body's cumulative refinement, not here. Never copies main-body content. The live
+cue-card is projected from each block into interview_notes.md. Copy the block below per interview. -->
 
-## <Audience> - <Interviewer(s)> (<YYYY-MM-DD>, <scheduled | complete | rescheduled | CANCELLED>)
+## <Audience> - <Interviewer(s)>
 
 **Purpose**
 <!-- What this interview is for. If only screen-sourced, tag [confirm]. Prepare for flex: do not

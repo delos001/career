@@ -36,6 +36,32 @@ pursuing" path).
 - Outcome date: ask; default to today only if the user declines to specify.
 - Output: outcome value, outcome date.
 
+## Phase 2b - Reconcile the interview record
+
+The session log is the one home for each round's scheduling metadata, and a
+cancelled or rescheduled round may never have reached a skill that recorded it.
+Close-out is the last chance to make the record true. This is a backstop, not the
+capture mechanism: an accurate record depends on the lifecycle op or the follow-up
+skill having run at the time.
+
+Do not ask an open "is everything accurate?" question; the user will not remember.
+Read `interview_notes.md` and each `## Interview: <stage>` section, then surface
+only what is provably unresolved, one item per turn:
+
+- A round whose `Outcome:` still reads `pending`. Ask what happened.
+- A round whose `Interview date:` is in the future, or whose `Status:` is still
+  `scheduled`. It never happened; ask whether it was cancelled or moved.
+- A round tagged `[CANCELLED ...]` in `interview_notes.md` whose session-log
+  `Status:` does not say cancelled. Propose the correction.
+- A round whose notes `- Schedule changes:` line disagrees with the session-log
+  `Schedule history:` / `Interview date:` fields. Show both, confirm, write.
+
+Apply confirmed corrections to the round's fields in place, in the shape defined
+by the `## Interview section` block of `templates/session_log.md`. Never rewrite a
+section wholesale; the fields you are not correcting stay as they are.
+
+If nothing is unresolved, say so in one line and move on.
+
 ## Phase 3 - Record the outcome
 
 **Recording the outcome in the session log.**

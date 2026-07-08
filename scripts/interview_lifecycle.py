@@ -2,26 +2,46 @@
 """
 interview_lifecycle.py - reschedule / cancel sync for the preparation-interview skill
 
-An interview lives in three files: session_log.md (the event record), the prep
-Appendix block in interview_prep.md, and the round section in interview_notes.md.
-A reschedule or cancellation must reach all three or they drift. This script is
-the small deterministic op that keeps them in sync.
+An interview's scheduling metadata has ONE home: the `## Interview: <stage>`
+section of session_log.md, whose field set is defined by templates/session_log.md.
+The notes file carries a capture line and an outline-visible tag; the prep doc
+carries no scheduling facts at all. This script keeps the two files that hold
+event state in sync when an interview moves or dies.
 
-Scope is deliberately narrow (no bloat): it ANNOTATES an existing interview's
-section in each file and, in the session log, flips the Outcome line and adds a
-dated audit bullet. It never deletes a block - a cancelled interview may be
-rescheduled and the history matters. Interviewer name/title tweaks are trivial
-manual edits; structural changes (single -> panel, add/remove interviewer) are
-handled by the skill plus the interview-notes AMEND flow, not here.
+  session_log.md      the record. Reschedule rewrites 'Interview date:', 'Time:'
+                      (when a time is given) and the one-line 'Schedule history:'
+                      field. Cancel sets 'Status:' and 'Outcome:'. Sections hold
+                      current state, never an accumulating audit trail.
+  interview_notes.md  the capture surface. Reschedule appends to the round's
+                      '- Schedule changes:' line; cancel tags the round heading
+                      '[CANCELLED <date>]' so an empty section explains itself in
+                      outline view. The round heading's date is the section's
+                      identity for duplicate detection and amend, never rewritten.
+  interview_prep.md   NOT TOUCHED. Prep content does not change when a date moves,
+                      and a stale date in the doc the candidate reads before an
+                      interview is worse than no date.
+
+Scope is deliberately narrow (no bloat). It never deletes a block; a cancelled
+interview may be rescheduled and the history matters. Interviewer name/title
+tweaks are trivial manual edits; structural changes (single -> panel,
+add/remove interviewer) are handled by the skill plus the interview-notes AMEND
+flow, not here.
+
+Cancel has no downstream skill to catch it (a cancelled round never reaches the
+follow-up skill), so running `cancel` at the time is the accurate capture path;
+`close-application` verifies the record at close-out as a backstop. Reschedule is
+a convenience: the follow-up skill reconciles the date from the notes round's
+'Schedule changes:' line if this was never run.
 
 Sections are matched by the human stage label (e.g. "Hiring Manager"), which is
-the one key common to all three files' headings. If more than one section in a
-file matches the label, pass --date to disambiguate, or edit that file by hand.
+the one key common to both files' headings. If more than one section in a file
+matches the label, pass --date to disambiguate, or edit that file by hand.
 
 Subcommands
-  reschedule  record a new date/time across the three files.
-  cancel      mark the interview cancelled across the three files, and tag the
-              notes round heading [CANCELLED <date>] so it is visible in outline.
+  reschedule  rewrite the session-log date/time and schedule-history fields, and
+              append to the notes round's 'Schedule changes:' line.
+  cancel      set the session-log Status and Outcome, and tag the notes round
+              heading [CANCELLED <date>].
 
 Usage
   python interview_lifecycle.py reschedule --folder <app-folder>
@@ -39,32 +59,34 @@ Depends   : pyyaml (via _config)
 
 import argparse
 import os
+import re
 import sys
 
 import _config
 import _util
 
 
+# An ISO date anywhere in a line (the identity date of a notes round heading).
+_DATE_RE = re.compile(r'\d{4}-\d{2}-\d{2}')
+
+# '--new-datetime' is "<YYYY-MM-DD> [HH:MM tz...]"; the date is required, the
+# rest is an optional time that lands in the session log's 'Time:' field.
+_DATETIME_RE = re.compile(r'^\s*(\d{4}-\d{2}-\d{2})\s*(.*?)\s*$')
+
+
 # ---------------------------------------------------------------------------
 # Section location
 # Every heading of interest is a level-2 '## ' line containing the stage label.
-# restrict_after limits the search to lines after a marker line (used to scope
-# interview_prep.md matching to the '# APPENDIX' region, so a main-body heading
-# can never match). date, when given, must also appear in the heading text
-# (present in the notes '## <stage> | <date>' and prep '(<date>, ...)' headings).
+# date, when given, must also appear in the heading text (present in the notes
+# '## <N>. <stage> | <date>' heading). require_token scopes the session-log
+# match to '## Interview: <stage>' so a same-named non-interview heading cannot
+# match.
 # ---------------------------------------------------------------------------
 
-def _heading_matches(lines, stage, date, restrict_after=None, require_token=None):
+def _heading_matches(lines, stage, date, require_token=None):
     """Return the indices of '## ' heading lines that identify the interview."""
-    start = 0
-    if restrict_after is not None:
-        start = next((i for i, l in enumerate(lines)
-                      if l.strip().startswith(restrict_after)), None)
-        if start is None:
-            return []  # marker absent -> region does not exist yet
     out = []
-    for i in range(start, len(lines)):
-        line = lines[i]
+    for i, line in enumerate(lines):
         if not line.startswith('## ') or stage not in line:
             continue
         if date is not None and date not in line:
@@ -83,138 +105,205 @@ def _section_end(lines, heading_idx):
     return len(lines)
 
 
-# ---------------------------------------------------------------------------
-# Per-file edits
-# _annotate inserts a bold status line just under a section heading (prep and
-# notes). _edit_session_log flips the Outcome line and adds a dated audit
-# bullet inside the '## Interview: <stage>' section. Both are idempotent: a
-# re-run that would repeat the same annotation is skipped, not duplicated.
-# ---------------------------------------------------------------------------
+def _locate(folder, filename, stage, date, require_token=None):
+    """Resolve one interview's heading line in one file.
 
-def _annotate(folder, filename, stage, date, annotation,
-              restrict_after=None, label=None):
-    """Insert a bold status line under the interview's heading in one file."""
-    label = label or filename
+    Returns (lines, heading_index, None) on a unique match, or
+    (None, None, status_string) describing why no edit can be made.
+    """
     path = os.path.join(folder, filename)
     if not os.path.isfile(path):
-        return (label, 'skipped (file missing)')
+        return (None, None, 'skipped (file missing)')
     lines = _util.read(path).split('\n')
-    hits = _heading_matches(lines, stage, date, restrict_after=restrict_after)
+    hits = _heading_matches(lines, stage, date, require_token=require_token)
     if not hits:
-        return (label, 'section not found')
+        return (None, None, 'section not found')
     if len(hits) > 1:
-        return (label, f'{len(hits)} sections match "{stage}"; '
-                       f'pass --date or edit manually')
-    h = hits[0]
+        return (None, None, f'{len(hits)} sections match "{stage}"; '
+                            f'pass --date or edit manually')
+    return (lines, hits[0], None)
+
+
+def _field_index(lines, start, end, label):
+    """Index of the '- <label>:' line within [start, end), or None."""
+    return next((k for k in range(start, end)
+                 if lines[k].strip().startswith(f'- {label}:')), None)
+
+
+def _field_value(line):
+    """The text after '- Label:' on a field line."""
+    return line.split(':', 1)[1].strip()
+
+
+# ---------------------------------------------------------------------------
+# Per-file edits
+# Idempotent: a re-run that would produce identical content reports 'skipped'.
+# ---------------------------------------------------------------------------
+
+_CANCELLED_OUTCOME = 'n/a (round cancelled)'
+_CANCELLED_TAG_RE = re.compile(r'\s*\[CANCELLED[^\]]*\]')
+
+
+def _edit_session_log(folder, cfg, stage, updates, appends, revive_outcome=False):
+    """Set the given session-log fields on the round's '## Interview: <stage>'.
+
+    updates: {label: new_value}   replace the field's value outright.
+    appends: {label: fragment}    append '; fragment' to the field's current
+                                  value (used for the current-state one-line
+                                  'Schedule history:' field), or set it when blank.
+    Fields named here must exist in the section; the template defines the set, so
+    a missing field means the section was written against an older shape.
+    """
+    label_name = cfg['filenames']['session_log_file']
+    lines, h, err = _locate(folder, label_name, stage, None,
+                            require_token='Interview:')
+    if err:
+        return (label_name, err)
     end = _section_end(lines, h)
-    if any(annotation == lines[k].strip() for k in range(h, end)):
-        return (label, 'already annotated (skipped)')
-    lines[h + 1:h + 1] = ['', annotation]
-    _util.write(path, '\n'.join(lines))
-    return (label, 'annotated')
+
+    missing = [lbl for lbl in list(updates) + list(appends)
+               if _field_index(lines, h, end, lbl) is None]
+    if missing:
+        return (label_name, f'section missing field(s) {missing}; '
+                            f'convert it to the current template shape')
+
+    changed = False
+    # Rescheduling a cancelled round revives it. Clear the cancellation marker in
+    # Outcome, but only that exact marker: a real recorded outcome is never
+    # overwritten by a scheduling operation.
+    if revive_outcome:
+        k = _field_index(lines, h, end, 'Outcome')
+        if k is not None and _field_value(lines[k]).startswith(_CANCELLED_OUTCOME):
+            lines[k] = '- Outcome: pending'
+            changed = True
+
+    for lbl, value in updates.items():
+        k = _field_index(lines, h, end, lbl)
+        new = f'- {lbl}: {value}'
+        if lines[k].rstrip() != new:
+            lines[k] = new
+            changed = True
+    for lbl, fragment in appends.items():
+        k = _field_index(lines, h, end, lbl)
+        current = _field_value(lines[k])
+        if fragment in current:
+            continue
+        lines[k] = (f'- {lbl}: {current}; {fragment}' if current
+                    else f'- {lbl}: {fragment}')
+        changed = True
+
+    if not changed:
+        return (label_name, 'already current (skipped)')
+    _util.write(os.path.join(folder, label_name), '\n'.join(lines))
+    return (label_name, 'updated')
+
+
+def _note_schedule_change(folder, filename, stage, date, moved_to, suffix):
+    """Append to the notes round block's '- Schedule changes:' capture line.
+
+    The round heading's date stays frozen as the section's identity; this line
+    carries the move. Appends to any text the user hand-filled rather than
+    replacing it.
+    """
+    lines, h, err = _locate(folder, filename, stage, date)
+    if err:
+        return (filename, err)
+    end = _section_end(lines, h)
+    idx = _field_index(lines, h, end, 'Schedule changes')
+    if idx is None:
+        return (filename, 'no "- Schedule changes:" line in the round block')
+
+    existing = _field_value(lines[idx])
+    # Name the original date only on the first entry; once the line carries
+    # history, "originally" has already been stated.
+    original = _DATE_RE.search(lines[h])
+    entry = f'moved to {moved_to}{suffix}'
+    if not existing and original:
+        entry = f'originally {original.group(0)}; {entry}'
+    if entry in existing:
+        return (filename, 'already recorded (skipped)')
+    lines[idx] = (f'- Schedule changes: {existing}; {entry}' if existing
+                  else f'- Schedule changes: {entry}')
+    _util.write(os.path.join(folder, filename), '\n'.join(lines))
+    return (filename, 'schedule change recorded')
 
 
 def _tag_notes_heading(folder, filename, stage, date, tag):
     """Append a bracketed status tag to the notes round heading.
 
-    Outline view shows only heading lines, so the bold annotation under a
-    heading is invisible when navigating by outline; this puts the status in the
-    heading itself (e.g. '## 1. Hiring Manager | 2026-07-02 [CANCELLED ...]').
-    Idempotent: a heading already carrying a bracketed tag is left untouched.
+    Outline view shows only heading lines, and a cancelled round leaves an empty
+    section; the tag explains the emptiness. Idempotent.
     """
-    path = os.path.join(folder, filename)
-    if not os.path.isfile(path):
-        return (filename, 'skipped (file missing)')
-    lines = _util.read(path).split('\n')
-    hits = _heading_matches(lines, stage, date)
-    if not hits:
-        return (filename, 'section not found')
-    if len(hits) > 1:
-        return (filename, f'{len(hits)} sections match "{stage}"; '
-                          f'pass --date or edit manually')
-    h = hits[0]
+    lines, h, err = _locate(folder, filename, stage, date)
+    if err:
+        return (filename, err)
     if '[' in lines[h]:
         return (filename, 'heading already tagged (skipped)')
     lines[h] = lines[h].rstrip() + f' {tag}'
-    _util.write(path, '\n'.join(lines))
+    _util.write(os.path.join(folder, filename), '\n'.join(lines))
     return (filename, 'heading tagged')
 
 
-def _edit_session_log(folder, cfg, stage, outcome_line, audit_bullet):
-    """Update Outcome and add an audit bullet in '## Interview: <stage>'."""
-    label = cfg['filenames']['session_log_file']
-    path = os.path.join(folder, label)
-    if not os.path.isfile(path):
-        return (label, 'skipped (file missing)')
-    lines = _util.read(path).split('\n')
-    # Session-log interview headings are '## Interview: <stage>'; require the
-    # 'Interview:' token so a same-named non-interview heading cannot match.
-    hits = _heading_matches(lines, stage, None, require_token='Interview:')
-    if not hits:
-        return (label, 'section not found')
-    if len(hits) > 1:
-        return (label, f'{len(hits)} interview sections match "{stage}"; '
-                       f'edit manually')
-    h = hits[0]
-    end = _section_end(lines, h)
-    if any(audit_bullet == lines[k].strip() for k in range(h, end)):
-        return (label, 'already recorded (skipped)')
-    outcome_idx = next((k for k in range(h, end)
-                        if lines[k].startswith('- Outcome:')), None)
-    if outcome_idx is not None:
-        lines[outcome_idx] = outcome_line          # flip current state
-        lines[outcome_idx:outcome_idx] = [audit_bullet]  # audit above it
-    else:
-        # No Outcome line: append audit + outcome after the last content line.
-        last = max((k for k in range(h, end) if lines[k].strip()), default=h)
-        lines[last + 1:last + 1] = [audit_bullet, outcome_line]
-    _util.write(path, '\n'.join(lines))
-    return (label, 'updated')
+def _untag_cancelled(folder, filename, stage, date):
+    """Strip a '[CANCELLED ...]' tag from the notes round heading on a reschedule.
+
+    A revived round is no longer cancelled. Only that tag is removed; hand-added
+    tags such as [NO-SHOW] are left alone.
+    """
+    lines, h, err = _locate(folder, filename, stage, date)
+    if err:
+        return (filename, err)
+    if not _CANCELLED_TAG_RE.search(lines[h]):
+        return (filename, 'no cancellation tag (skipped)')
+    lines[h] = _CANCELLED_TAG_RE.sub('', lines[h]).rstrip()
+    _util.write(os.path.join(folder, filename), '\n'.join(lines))
+    return (filename, 'cancellation tag cleared')
 
 
 # ---------------------------------------------------------------------------
-# Apply an action across the three files
+# Apply an action across the two files that hold event state
 # ---------------------------------------------------------------------------
 
 def _apply(action, args, cfg):
-    """Build the action's text and edit session log, prep Appendix, and notes."""
+    """Build the action's field values and edit the session log and the notes."""
     folder = os.path.abspath(args.folder)
+    fn = cfg['filenames']
     today = _util.today_iso()
     suffix = f' ({args.reason})' if args.reason else ''
 
     if action == 'reschedule':
-        annotation = f'**RESCHEDULED {today}: now {args.new_datetime}{suffix}**'
-        outcome_line = (f'- Outcome: pending '
-                        f'(rescheduled {today} to {args.new_datetime})')
-        audit_bullet = (f'- Lifecycle ({today}): rescheduled to '
-                        f'{args.new_datetime}{suffix}')
-        heading_tag = None
+        m = _DATETIME_RE.match(args.new_datetime)
+        if not m:
+            raise ValueError('--new-datetime must start with YYYY-MM-DD, '
+                             f'got "{args.new_datetime}"')
+        new_date, new_time = m.group(1), m.group(2)
+        updates = {'Interview date': new_date, 'Status': 'scheduled'}
+        if new_time:
+            updates['Time'] = new_time
+        results = [
+            _edit_session_log(folder, cfg, args.stage, updates,
+                              appends={'Schedule history':
+                                       f'moved to {new_date}{suffix}'},
+                              revive_outcome=True),
+            _note_schedule_change(folder, fn['interview_notes_file'], args.stage,
+                                  args.date, args.new_datetime, suffix),
+            _untag_cancelled(folder, fn['interview_notes_file'], args.stage,
+                             args.date),
+        ]
     else:  # cancel
-        annotation = f'**CANCELLED {today}{suffix}**'
-        outcome_line = f'- Outcome: cancelled {today}{suffix}'
-        audit_bullet = f'- Lifecycle ({today}): cancelled{suffix}'
-        heading_tag = f'[CANCELLED {today}]'
+        results = [
+            _edit_session_log(folder, cfg, args.stage,
+                              updates={'Status': f'cancelled {today}{suffix}',
+                                       'Outcome': _CANCELLED_OUTCOME},
+                              appends={}),
+            _tag_notes_heading(folder, fn['interview_notes_file'], args.stage,
+                               args.date, f'[CANCELLED {today}]'),
+        ]
 
-    results = [
-        _edit_session_log(folder, cfg, args.stage, outcome_line, audit_bullet),
-        _annotate(folder, cfg['filenames']['interview_prep_file'], args.stage,
-                  args.date, annotation, restrict_after='# APPENDIX',
-                  label=cfg['filenames']['interview_prep_file']),
-        _annotate(folder, cfg['filenames']['interview_notes_file'], args.stage,
-                  args.date, annotation,
-                  label=cfg['filenames']['interview_notes_file']),
-    ]
-
-    # On cancel, also tag the notes round heading so the status is visible in
-    # outline view (the bold annotation above lives below the heading line).
-    if heading_tag is not None:
-        results.append(_tag_notes_heading(
-            folder, cfg['filenames']['interview_notes_file'],
-            args.stage, args.date, heading_tag))
-
-    changed = {'annotated', 'updated', 'heading tagged',
-               'already annotated (skipped)', 'already recorded (skipped)',
-               'heading already tagged (skipped)'}
+    changed = {'updated', 'heading tagged', 'schedule change recorded',
+               'cancellation tag cleared', 'already current (skipped)',
+               'already recorded (skipped)', 'heading already tagged (skipped)',
+               'no cancellation tag (skipped)'}
     any_changed = False
     for name, status in results:
         print(f'  {name}: {status}')
@@ -244,7 +333,7 @@ def main():
     p_re.add_argument('--new-datetime', required=True, dest='new_datetime',
                       help='the new date/time, e.g. "2026-07-10 14:00 EST"')
     p_re.add_argument('--date', default=None,
-                      help='current date of the target section, to disambiguate duplicates')
+                      help='current date of the target notes section, to disambiguate duplicates')
     p_re.add_argument('--reason', default=None)
     p_re.set_defaults(action='reschedule')
 
@@ -254,7 +343,7 @@ def main():
     p_ca.add_argument('--stage', required=True,
                       help='stage label as it appears in the headings, e.g. "Hiring Manager"')
     p_ca.add_argument('--date', default=None,
-                      help='current date of the target section, to disambiguate duplicates')
+                      help='current date of the target notes section, to disambiguate duplicates')
     p_ca.add_argument('--reason', default=None)
     p_ca.set_defaults(action='cancel', new_datetime=None)
 

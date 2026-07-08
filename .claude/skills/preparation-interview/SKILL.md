@@ -137,8 +137,10 @@ Cue / Avoid / If probed keep their labels).
    Bank items to prioritize, the Concerns to raise here, the lead framing;
    presentation flag if the format includes one (link to the presentation
    skill). Pointers into the main body, never copies. Prep-forward only: no
-   outcomes, no asked/debrief content, no post-interview status beyond the
-   heading tag; those live in session_log.md and interview_notes.md.
+   outcomes, no asked/debrief content, and no scheduling metadata at all (no
+   date, time, or event status, including in the block heading); those live in
+   session_log.md and interview_notes.md. The heading is
+   `## <Audience> - <Interviewer(s)>`, nothing more.
 2. Project the cue-card into `interview_notes.md`: interviewer + opener, the
    questions in the bank's topical order with priority items prefixed (P), top
    Concerns, the lead framing. If the notes file lacks this interview's section,
@@ -146,17 +148,13 @@ Cue / Avoid / If probed keep their labels).
 
 ## Phase 5: session log, then QC
 
-1. Append (or update, in EXTEND mode) the session-log section before QC:
-
-   ```
-   ## Interview: <Audience>
-
-   - Prep date: YYYY-MM-DD
-   - Prep artifact: <relative path to interview_prep.md>
-   - Research added: <sections added to research.md>
-   - Interview date: <date, time, format, interviewer(s) (role)>
-   - Outcome: pending
-   ```
+1. Append (or update, in EXTEND mode) the session-log section before QC, in the
+   field shape defined by the `## Interview section` block of
+   `templates/session_log.md` (the single authority; read it, do not reproduce it
+   from memory). `Interview date:` is a bare `YYYY-MM-DD`; time, duration, medium,
+   and interviewers each have their own field. `Status: scheduled`, `Outcome: pending`.
+   This section is the ONE home for the interview's scheduling metadata; the prep
+   doc records none of it.
 
 2. QC, an internal loop (no check-by-check narration): a deterministic script
    (`scripts/prep_interview_qc.py` - cross-ref integrity across Concerns /
@@ -169,10 +167,35 @@ Cue / Avoid / If probed keep their labels).
 
 ## Phase 6: close out
 
-- Lifecycle (separate op): reschedule / cancel / interviewer-structural-change
-  are applied by the amend-cancel operation, which keeps `session_log.md`, the
-  Appendix block, and the notes section in sync. Cancellations are recorded in
-  `session_log.md` with the date; blocks are tagged CANCELLED, not deleted.
+- Lifecycle (separate op, only when an interview moves or dies). Run
+  `scripts/interview_lifecycle.py`, which updates `session_log.md` (the record)
+  and `interview_notes.md` (the capture surface). It never touches
+  `interview_prep.md`: prep content does not change when a date moves.
+
+  ```
+  python <repo>/scripts/interview_lifecycle.py reschedule --folder <abs app folder>
+      --stage "<stage label>" --new-datetime "<YYYY-MM-DD HH:MM tz>" [--date <YYYY-MM-DD>] [--reason "<why>"]
+  python <repo>/scripts/interview_lifecycle.py cancel --folder <abs app folder>
+      --stage "<stage label>" [--date <YYYY-MM-DD>] [--reason "<why>"]
+  ```
+
+  `--stage` is the label as it appears in the headings, e.g. "Hiring Manager".
+  `--date` is only needed when two notes rounds share a stage label.
+
+  Reschedule rewrites the session log's `Interview date:` / `Time:` / `Schedule
+  history:` fields and appends to the notes round's `Schedule changes:` line.
+  Cancel sets the session log's `Status:` and `Outcome:` and tags the notes round
+  heading `[CANCELLED <date>]`. The notes round heading's date is that section's
+  identity and is never rewritten; a move is recorded, not overwritten. Blocks are
+  tagged, never deleted.
+
+  Running the op is optional for a reschedule (the `followup` skill reconciles the
+  date from the notes round's `Schedule changes:` line) but is the accurate capture
+  path for a cancel, which no downstream skill sees. `close-application` verifies
+  the record at close-out either way.
+
+  Interviewer-structural changes (single to panel, add/remove a person) are the
+  skill plus the `interview-notes` AMEND flow, not this op.
 - Staging: new GENERAL (role-independent) candidate facts - list them, ask
   which to stage, append approved to `profile_updates_pending.md`.
 - Handoff in plain English: where the doc is, read the main body plus this

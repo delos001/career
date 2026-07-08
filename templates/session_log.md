@@ -32,6 +32,57 @@ content at `finalize` (Phase 7). All other fields are populated at `init`.
 {{axis_gaps}}
 ```
 
+## Interview section
+
+The single authority for the shape of an interview round's session-log section,
+parsed by `scripts/prep_qc.py` and `scripts/prep_interview_qc.py` (the `- Label:`
+lines below are the required field set) and written by the prep skills, the
+follow-up skill, `scripts/interview_lifecycle.py`, and `close-application`. One
+section per round. `{{stage}}` is the round's stage label (Screen, Hiring Manager,
+Peer / Team, Executive, ...), matching the `interview_notes.md` round label.
+
+The session log is the ONE home for an interview's scheduling metadata. Each fact
+is its own field so a program can update one without rewriting the others; the
+prep doc and the notes file never restate a date. Sections hold CURRENT STATE, not
+an accumulating audit trail (`Schedule history` is one line, rewritten in place).
+
+```
+## Interview: {{stage}}
+
+- Prep date: {{prep_date}}
+- Prep artifact: {{prep_artifact}}
+- Research added: {{research_added}}
+- Interview date: {{interview_date}}
+- Time: {{time}}
+- Duration: {{duration}}
+- Medium: {{medium}}
+- Interviewers: {{interviewers}}
+- Schedule history: {{schedule_history}}
+- Status: {{status}}
+- Outcome: {{outcome}}
+```
+
+## Interview field notes
+
+- **{{prep_date}}** / **{{prep_artifact}}** / **{{research_added}}** - `n/a` when the
+  round ran with no prep skill run.
+- **{{interview_date}}** - `YYYY-MM-DD`, bare. The current date, rewritten on a
+  reschedule. Never prose; the other facts have their own fields.
+- **{{time}}** - `HH:MM <tz>` (e.g. `12:30 EST`). Blank when not yet known.
+- **{{duration}}** - planned, or planned vs actual (`30 min`; `planned 25 min; ran 15 over`).
+- **{{medium}}** - phone | video | in-person.
+- **{{interviewers}}** - `<name> (<title>)`, comma-separated; `TBD` when unknown.
+- **{{schedule_history}}** - blank when nothing moved; otherwise one current-state
+  line, e.g. `originally 2026-07-02; moved to 2026-07-20`. Written by
+  `scripts/interview_lifecycle.py reschedule`, or reconciled from the notes round's
+  `Schedule changes:` line by the follow-up skill.
+- **{{status}}** - `scheduled` | `held` | `cancelled <YYYY-MM-DD>` | `no-show`.
+  Distinct from Outcome: status is what happened to the *event*, outcome is its result.
+- **{{outcome}}** - `pending` until resolved; `n/a (round cancelled)` for a cancelled
+  round. A `pending` outcome at close-out time is what `close-application` queries on.
+- **Optional extra fields** may follow `Outcome` (e.g. `Follow-up:` written by the
+  follow-up skill; `Notes artifact:`; a `Role note:`). Only the fields above are required.
+
 ## Field notes
 
 - **{{app_id}}** - the global application counter, from `scripts/app_id.py`.

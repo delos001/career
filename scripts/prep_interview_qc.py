@@ -32,6 +32,9 @@ Checks (FAIL blocks the build; WARN is advisory and leaves the exit code alone)
       is defined in the Question Bank
   X3  each Appendix block carries only schema fields (Purpose / Interviewer /
       Emphasis); Outcome, Asked and other post-interview content fail here
+  X4  no Appendix block heading carries a date or an event-status token. An
+      interview's scheduling metadata lives only in session_log.md; a date in
+      the prep doc goes stale the moment the interview moves
   R1  each prep-attributed research.md section is dated, sourced, em-dash-free
   S1  each post-screen '## Interview: <audience>' session-log section has the
       required field labels and no em dashes
@@ -58,6 +61,7 @@ import re
 import sys
 
 import _config
+import _util
 
 
 # ---------------------------------------------------------------------------
@@ -236,12 +240,17 @@ def check_research(research_text, findings):
 # Checks: post-screen session-log interview sections
 # ---------------------------------------------------------------------------
 
-_INTERVIEW_FIELDS = ('Prep date:', 'Prep artifact:', 'Research added:',
-                     'Interview date:', 'Outcome:')
+# A bare ISO date is the only legal value of the 'Interview date:' field; the
+# other scheduling facts each have their own field (templates/session_log.md).
+_BARE_DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 
 
-def check_session_log(log_text, findings):
-    """Run S1-S2 on '## Interview: <audience>' sections (Screen excluded)."""
+def check_session_log(log_text, required_fields, findings):
+    """Run S1-S2 on '## Interview: <audience>' sections (Screen excluded).
+
+    required_fields comes from templates/session_log.md's '## Interview section'
+    block, so adding a field to the schema is a template edit, not a code edit.
+    """
     sections = [(h, b) for h, b in _sections(log_text)
                 if h.startswith('Interview: ') and h != 'Interview: Screen']
     if not sections:
@@ -251,11 +260,16 @@ def check_session_log(log_text, findings):
     problems = []
     outcomes_ok = True
     for h, b in sections:
-        missing = [f for f in _INTERVIEW_FIELDS if f not in b]
+        missing = [f for f in required_fields if f not in b]
         if missing:
             problems.append(f'{h}: missing {missing}')
         if '—' in b:
             problems.append(f'{h}: em dash found')
+        dm = re.search(r'^-\s+Interview date:\s*(.*)$', b, re.MULTILINE)
+        if dm and not _BARE_DATE_RE.match(dm.group(1).strip()):
+            problems.append(f'{h}: Interview date must be a bare YYYY-MM-DD '
+                            f'(time / medium / interviewers have their own fields), '
+                            f'got "{dm.group(1).strip()}"')
         m = re.search(r'Outcome:\s*(\S.*)', b)
         if not m:
             outcomes_ok = False
@@ -367,6 +381,39 @@ def check_appendix_fields(artifact_text, findings):
                           + '; '.join(bad)))
 
 
+_HEADING_DATE_RE = re.compile(r'\d{4}-\d{2}-\d{2}')
+_EVENT_STATUS_RE = re.compile(
+    r'\b(scheduled|complete|rescheduled|cancelled|no-show)\b', re.IGNORECASE)
+
+
+def check_appendix_status(artifact_text, findings):
+    """X4: Appendix headings carry no scheduling metadata.
+
+    The prep doc is prep-forward: an Appendix heading names the round and its
+    interviewer(s), nothing more. Dates and event statuses live in session_log.md
+    (the record) and interview_notes.md (the capture surface). A date here goes
+    stale the moment the interview moves, in the one doc the candidate reads
+    immediately before walking into the room.
+    """
+    m = _APPENDIX_RE.search(artifact_text)
+    if not m:
+        findings.append(('X4', True, 'no APPENDIX region (nothing to check)'))
+        return
+    bad = []
+    blocks = _sections(artifact_text[m.end():])
+    for heading, _ in blocks:
+        if _HEADING_DATE_RE.search(heading):
+            bad.append(f'{heading}: carries a date (belongs in session_log.md)')
+        sm = _EVENT_STATUS_RE.search(heading)
+        if sm:
+            bad.append(f'{heading}: carries event status "{sm.group(1)}" '
+                       f'(belongs in session_log.md)')
+    findings.append(('X4', not bad,
+                     f'{len(blocks)} Appendix heading(s) free of scheduling metadata'
+                     if not bad
+                     else 'scheduling metadata in an Appendix heading: ' + '; '.join(bad)))
+
+
 # ---------------------------------------------------------------------------
 # Soft checks (advisory WARN; do not change the exit code)
 # ---------------------------------------------------------------------------
@@ -447,6 +494,7 @@ def cmd_check(args, repo_root, cfg):
         check_headings(artifact_text, template_text, findings)
         check_xrefs(artifact_text, findings)
         check_appendix_fields(artifact_text, findings)
+        check_appendix_status(artifact_text, findings)
         check_leading_prose(artifact_text, findings)
         check_bullet_packing(artifact_text, findings)
 
@@ -460,7 +508,14 @@ def cmd_check(args, repo_root, cfg):
     if log_text is None:
         findings.append(('S1', False, f"{fn['session_log_file']} not found"))
     else:
-        check_session_log(log_text, findings)
+        # The interview-section field set is defined once, in the session-log
+        # template; both prep QC scripts read it from there.
+        log_tpl = _read(os.path.join(repo_root, cfg['paths']['templates'],
+                                     fn['session_log_template']))
+        if log_tpl is None:
+            print(f"FATAL  session log template not found")
+            return 1
+        check_session_log(log_text, _util.interview_section_fields(log_tpl), findings)
 
     failed = [f for f in findings if f[1] is False]
     warned = [f for f in findings if f[1] == 'warn']

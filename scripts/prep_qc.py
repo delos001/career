@@ -20,7 +20,8 @@ Checks
   R1  each prep-attributed research.md section has a dated 'Added' line, at
       least one source URL, and no em dashes
   S1  session log has '## Interview: Screen' with the required field labels
-      and no em dashes in the section
+      (read from templates/session_log.md's '## Interview section' block, the
+      single authority), a bare YYYY-MM-DD 'Interview date:', and no em dashes
   S2  the Outcome field is non-empty
 
 Usage
@@ -41,6 +42,7 @@ import re
 import sys
 
 import _config
+import _util
 
 
 # ---------------------------------------------------------------------------
@@ -207,22 +209,31 @@ def check_research(research_text, findings):
 # Checks: session log 'Interview: Screen' section only
 # ---------------------------------------------------------------------------
 
-_SCREEN_FIELDS = ('Prep date:', 'Prep artifact:', 'Research added:',
-                  'Interview date:', 'Outcome:')
+# A bare ISO date is the only legal value of the 'Interview date:' field; the
+# other scheduling facts each have their own field (templates/session_log.md).
+_BARE_DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 
 
-def check_session_log(log_text, findings):
-    """Run S1-S2 on the Interview: Screen section. Other sections out of scope."""
+def check_session_log(log_text, required_fields, findings):
+    """Run S1-S2 on the Interview: Screen section. Other sections out of scope.
+
+    required_fields comes from templates/session_log.md's '## Interview section'
+    block, the single authority for an interview round's field set.
+    """
     section = next((b for h, b in _sections(log_text) if h == 'Interview: Screen'),
                    None)
     if section is None:
         findings.append(('S1', False, "no '## Interview: Screen' section"))
         findings.append(('S2', False, 'outcome not checkable (section missing)'))
         return
-    missing = [f for f in _SCREEN_FIELDS if f not in section]
+    missing = [f for f in required_fields if f not in section]
     problems = [f'missing fields: {missing}'] if missing else []
     if '—' in section:
         problems.append('em dash found in section')
+    dm = re.search(r'^-\s+Interview date:\s*(.*)$', section, re.MULTILINE)
+    if dm and not _BARE_DATE_RE.match(dm.group(1).strip()):
+        problems.append('Interview date must be a bare YYYY-MM-DD (time / medium / '
+                        f'interviewers have their own fields), got "{dm.group(1).strip()}"')
     findings.append(('S1', not problems,
                      'Interview: Screen fields present, em-dash-free' if not problems
                      else '; '.join(problems)))
@@ -271,7 +282,14 @@ def cmd_check(args, repo_root, cfg):
         findings.append(('S1', False,
                          f"{fn['session_log_file']} not found in {app_folder}"))
     else:
-        check_session_log(log_text, findings)
+        # The interview-section field set is defined once, in the session-log
+        # template; both prep QC scripts read it from there.
+        log_tpl = _read(os.path.join(repo_root, cfg['paths']['templates'],
+                                     fn['session_log_template']))
+        if log_tpl is None:
+            print('FATAL  session log template not found')
+            return 1
+        check_session_log(log_text, _util.interview_section_fields(log_tpl), findings)
 
     failed = [f for f in findings if not f[1]]
     for check, ok, detail in findings:

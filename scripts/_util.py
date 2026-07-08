@@ -20,6 +20,7 @@ Depends   : none (stdlib only)
 import datetime
 import json
 import os
+import re
 
 
 # ---------------------------------------------------------------------------
@@ -66,3 +67,32 @@ def today_ym():
 def today_iso():
     """Return the current date as YYYY-MM-DD."""
     return datetime.date.today().strftime('%Y-%m-%d')
+
+
+# ---------------------------------------------------------------------------
+# Session-log interview section schema
+# templates/session_log.md's '## Interview section' fenced block is the single
+# authority for an interview round's field set. The prep QC scripts, the
+# lifecycle op, and close-application all read it from there rather than
+# carrying their own copy, so adding a field is a template edit.
+# ---------------------------------------------------------------------------
+
+_INTERVIEW_BLOCK_RE = re.compile(
+    r'^##\s+Interview section\s*$.*?^```\s*$(.*?)^```\s*$',
+    re.MULTILINE | re.DOTALL)
+_FIELD_LABEL_RE = re.compile(r'^-\s+([^:]+):', re.MULTILINE)
+
+
+def interview_section_fields(session_log_template_text):
+    """Return the required '<Label>:' field labels of an interview section.
+
+    Parsed in template order from the '## Interview section' fenced block of
+    templates/session_log.md. Raises ValueError when that block is absent, so a
+    template edit that removes it fails loudly rather than silently checking
+    nothing.
+    """
+    m = _INTERVIEW_BLOCK_RE.search(session_log_template_text)
+    if not m:
+        raise ValueError("session_log template has no '## Interview section' "
+                         "fenced block to read the field set from")
+    return [f'{label.strip()}:' for label in _FIELD_LABEL_RE.findall(m.group(1))]

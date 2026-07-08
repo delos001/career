@@ -55,14 +55,23 @@ claims must be literally true); no "not X, it's Y"; no em dashes.
    `<app folder>/followup_<stage_snake_case>_<interview_date>.md`, fill the
    frontmatter (`sent: pending`) and the body.
 2. Keep the session log current. Touch only this round's stage section, never
-   rewrite the file.
-   - If `## Interview: <stage>` already exists (a prep run created it), add a
-     `Follow-up:` line to it and update `Outcome:` if the user reports the
-     round's result.
+   rewrite the file. The section's field shape is defined by the
+   `## Interview section` block of `templates/session_log.md` (the single
+   authority; read it, do not reproduce it from memory).
+   - If `## Interview: <stage>` already exists (a prep run created it): add a
+     `Follow-up:` line, update `Outcome:` if the user reports the round's result,
+     and set `Status: held`.
    - If it is missing (the round ran with no prep run), append a new
-     `## Interview: <stage>` section in the same field shape the
-     preparation-screen skill uses (Prep date / Prep artifact / Research added
-     marked `n/a`; Interview date from the notes logistics; Outcome; Follow-up).
+     `## Interview: <stage>` section in that field shape, with Prep date / Prep
+     artifact / Research added marked `n/a`.
+   - Reconcile the scheduling fields against the notes round, EVERY run, not only
+     when creating the section. The session log is the one home for this metadata
+     and a rescheduled round may never have had a lifecycle run. Read the round's
+     `- Date / Time:`, `- Duration:`, `- Medium:` and `- Schedule changes:` lines,
+     and if any disagree with the session log's `Interview date:` / `Time:` /
+     `Duration:` / `Medium:` / `Schedule history:` fields, SHOW the user both
+     versions and confirm before writing. `Interview date:` is a bare
+     `YYYY-MM-DD`: the date the round was actually held.
 
 ## Phase 4: close
 
