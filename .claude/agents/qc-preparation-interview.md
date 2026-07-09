@@ -57,7 +57,9 @@ fields); scripts/prep_interview_qc.py owns those.
   main-body content copied into a block (strengths, full answers, the role read)
   instead of referenced, and any durable positioning that belongs in the main
   body. A presentation is a flag/link to the separate presentation skill, never
-  a built deck here.
+  a built deck here. Scheduling metadata (dates, times, event status) belongs in
+  session_log.md and interview_notes.md, never in an Appendix block: the script
+  catches it in a heading, you catch it in a block body.
 - **J7 Question Bank is shared, not per-interview.** Question Bank entries are
   reusable and interviewer-agnostic; per-interview prioritization lives only in
   the Appendix. Flag a Question Bank entry hard-wired to one interviewer.

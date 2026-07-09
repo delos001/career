@@ -142,8 +142,9 @@ with no date and no status: scheduling metadata lives only in `session_log.md`.
 
 1. Session log: append the `## Interview: Screen` section (or update its fields in
    UPDATE mode) before QC runs, so the QC pass covers it. Use the field shape
-   defined by the `## Interview section` block of `templates/session_log.md` (the
-   single authority; read it, do not reproduce it from memory). `Interview date:`
+   defined by the `## Interview section` and `## Interview field notes` blocks of
+   `templates/session_log.md` (the single authority; read it, do not reproduce it
+   from memory). `Interview date:`
    is a bare `YYYY-MM-DD`; time, duration, medium, and interviewers each have
    their own field. `Status: scheduled`, `Outcome: pending`. This section is the
    ONE home for the screen's scheduling metadata; the prep doc records none of it.

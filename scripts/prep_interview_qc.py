@@ -251,6 +251,15 @@ def check_session_log(log_text, required_fields, findings):
     required_fields comes from templates/session_log.md's '## Interview section'
     block, so adding a field to the schema is a template edit, not a code edit.
     """
+    # 'Interview date' and 'Outcome' get value-level validation below via
+    # hardcoded labels. The field SET is template-driven; guard that these labels
+    # still exist in it so a template rename fails loud here instead of silently
+    # skipping the value check.
+    for lbl in ('Interview date:', 'Outcome:'):
+        if lbl not in required_fields:
+            raise ValueError(
+                f"session-log validator references '{lbl}' but the template's "
+                f"interview field set no longer contains it; update this check.")
     sections = [(h, b) for h, b in _sections(log_text)
                 if h.startswith('Interview: ') and h != 'Interview: Screen']
     if not sections:
@@ -270,10 +279,11 @@ def check_session_log(log_text, required_fields, findings):
             problems.append(f'{h}: Interview date must be a bare YYYY-MM-DD '
                             f'(time / medium / interviewers have their own fields), '
                             f'got "{dm.group(1).strip()}"')
+        # Outcome presence is S2's concern (below), not S1's; keeping it out of
+        # `problems` leaves S1 = fields present + em-dash-free, matching prep_qc.py.
         m = re.search(r'Outcome:\s*(\S.*)', b)
         if not m:
             outcomes_ok = False
-            problems.append(f'{h}: Outcome empty')
     findings.append(('S1', not problems,
                      f'{len(sections)} interview section(s) complete, em-dash-free'
                      if not problems else '; '.join(problems)))
@@ -382,8 +392,11 @@ def check_appendix_fields(artifact_text, findings):
 
 
 _HEADING_DATE_RE = re.compile(r'\d{4}-\d{2}-\d{2}')
+# Status vocabulary per templates/session_log.md ("scheduled | held |
+# cancelled <date> | no-show"). Keep in sync with that line; a later change may
+# derive this from the template so it cannot drift.
 _EVENT_STATUS_RE = re.compile(
-    r'\b(scheduled|complete|rescheduled|cancelled|no-show)\b', re.IGNORECASE)
+    r'\b(scheduled|held|cancelled|no-show)\b', re.IGNORECASE)
 
 
 def check_appendix_status(artifact_text, findings):

@@ -68,6 +68,8 @@ payload order.
 
 - Impression:
 - Interest level:
+- Gate: opened? when / what opened it:
+- Format dynamic: scripted | conversational | shifted (when):
 - Rough patches to address in follow-up:
 - Personal connection threads:
 - Next steps communicated:
@@ -96,8 +98,9 @@ for what that person says.
   date; this line carries the reschedule history.
 - **Duration** - optional, hand-filled. Planned vs actual length and any
   over/underrun (e.g. `planned 25 min; ran ~15 over`); left blank unless
-  noteworthy. A slot that runs long or ends early is an interest signal for the
-  debrief.
+  noteworthy. An over/underrun is ambiguous on its own; note the cause (their
+  engagement extending it vs. my question backlog cramming the end), which is
+  what the debrief scores.
 - **{{medium}}** - phone | video | in-person.
 - **{{format}}** - single | panel | sequential.
 - **{{number}}** - the round's ordinal, the count of existing round headings + 1

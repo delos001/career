@@ -156,5 +156,5 @@ confirm-live handling + an opener, do not pad guesses. -->
 - Lead with: <Positioning stance>
 - Prioritize from Question Bank: <Opener, Q#, Q#, ...> <!-- project to interview_notes.md with a (P) prefix; keep the bank's topical order -->
 - Push these Concerns here: <...>
-- Presentation: <none | required -> build via the separate presentation skill>
+- Presentation: <none | required -> skill not yet built; prepare manually>
 - Unique to this interview: <none | ...>

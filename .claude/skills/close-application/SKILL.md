@@ -52,12 +52,14 @@ only what is provably unresolved, one item per turn:
 - A round whose `Interview date:` is in the future, or whose `Status:` is still
   `scheduled`. It never happened; ask whether it was cancelled or moved.
 - A round tagged `[CANCELLED ...]` in `interview_notes.md` whose session-log
-  `Status:` does not say cancelled. Propose the correction.
+  `Status:` does not say cancelled. Propose the correction (`Status: cancelled
+  <YYYY-MM-DD>`, `Outcome: n/a (round cancelled)`).
 - A round whose notes `- Schedule changes:` line disagrees with the session-log
   `Schedule history:` / `Interview date:` fields. Show both, confirm, write.
 
 Apply confirmed corrections to the round's fields in place, in the shape defined
-by the `## Interview section` block of `templates/session_log.md`. Never rewrite a
+by the `## Interview section` and `## Interview field notes` blocks of
+`templates/session_log.md`. Never rewrite a
 section wholesale; the fields you are not correcting stay as they are.
 
 If nothing is unresolved, say so in one line and move on.

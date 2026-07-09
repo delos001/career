@@ -135,8 +135,9 @@ Cue / Avoid / If probed keep their labels).
 1. Generate/refresh this interview's Appendix block: purpose; interviewer(s)
    with researched intel and confirm-live handling; emphasis = the Question
    Bank items to prioritize, the Concerns to raise here, the lead framing;
-   presentation flag if the format includes one (link to the presentation
-   skill). Pointers into the main body, never copies. Prep-forward only: no
+   presentation flag if the format includes one (the presentation skill is not
+   yet built; note the flag and prepare the deliverable manually). Pointers into
+   the main body, never copies. Prep-forward only: no
    outcomes, no asked/debrief content, and no scheduling metadata at all (no
    date, time, or event status, including in the block heading); those live in
    session_log.md and interview_notes.md. The heading is
@@ -149,19 +150,22 @@ Cue / Avoid / If probed keep their labels).
 ## Phase 5: session log, then QC
 
 1. Append (or update, in EXTEND mode) the session-log section before QC, in the
-   field shape defined by the `## Interview section` block of
-   `templates/session_log.md` (the single authority; read it, do not reproduce it
-   from memory). `Interview date:` is a bare `YYYY-MM-DD`; time, duration, medium,
+   field shape defined by the `## Interview section` and `## Interview field notes`
+   blocks of `templates/session_log.md` (the single authority; read it, do not
+   reproduce it from memory). `Interview date:` is a bare `YYYY-MM-DD`; time, duration, medium,
    and interviewers each have their own field. `Status: scheduled`, `Outcome: pending`.
    This section is the ONE home for the interview's scheduling metadata; the prep
    doc records none of it.
 
 2. QC, an internal loop (no check-by-check narration): a deterministic script
-   (`scripts/prep_interview_qc.py` - cross-ref integrity across Concerns /
-   Question Bank / Appendix, citation IDs, no Appendix<->main-body duplication,
-   core-section length with Appendix exempt, format) plus the judgment subagent
-   `qc-preparation-interview`. QC is finalized once the doc + skill are stable;
-   run the available checks until then.
+   (`scripts/prep_interview_qc.py`) plus the judgment subagent
+   `qc-preparation-interview`. The script owns structure and format (frontmatter,
+   headings and their allow-set, no em dashes / bold connectors / coaching or
+   citations in headings), the Appendix (present, schema-only fields, no date or
+   event-status token in headings), Question-Bank cross-ref resolution, and the
+   research-ledger and session-log interview fields. The subagent owns what a
+   script cannot judge: that each citation supports its claim and that no
+   main-body content is copied into an Appendix block.
 3. Fix and re-run. Cap 3 iterations; else ship provisional, summarize the
    residual in plain English, log it to `design/build_issues.md`.
 

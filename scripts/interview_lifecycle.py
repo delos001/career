@@ -34,8 +34,11 @@ a convenience: the follow-up skill reconciles the date from the notes round's
 'Schedule changes:' line if this was never run.
 
 Sections are matched by the human stage label (e.g. "Hiring Manager"), which is
-the one key common to both files' headings. If more than one section in a file
-matches the label, pass --date to disambiguate, or edit that file by hand.
+the one key common to both files' headings. If more than one section matches, pass
+--date to disambiguate the notes file, whose '## <N>. <stage> | <date>' headings
+carry the round date. The session-log '## Interview: <stage>' headings carry no
+date, so a session-log collision cannot be resolved with --date and must be edited
+by hand.
 
 Subcommands
   reschedule  rewrite the session-log date/time and schedule-history fields, and
@@ -58,6 +61,7 @@ Depends   : pyyaml (via _config)
 """
 
 import argparse
+import datetime
 import os
 import re
 import sys
@@ -144,13 +148,22 @@ _CANCELLED_OUTCOME = 'n/a (round cancelled)'
 _CANCELLED_TAG_RE = re.compile(r'\s*\[CANCELLED[^\]]*\]')
 
 
-def _edit_session_log(folder, cfg, stage, updates, appends, revive_outcome=False):
+def _edit_session_log(folder, cfg, stage, updates, appends, revive_outcome=False,
+                      seed_history=False, refuse_if_resolved=False):
     """Set the given session-log fields on the round's '## Interview: <stage>'.
 
     updates: {label: new_value}   replace the field's value outright.
     appends: {label: fragment}    append '; fragment' to the field's current
                                   value (used for the current-state one-line
                                   'Schedule history:' field), or set it when blank.
+    seed_history: on the first move of a round, prefix a blank 'Schedule history'
+                  with 'originally <current Interview date>; ' so the record keeps
+                  the date being moved away from (the 'Interview date' field is
+                  about to be overwritten). Mirrors the notes '_note_schedule_change'
+                  seeding so both files carry the same current-state history line.
+    refuse_if_resolved: raise rather than write when the round already holds a real
+                  result (a happened-event Status or a non-pending Outcome). A
+                  scheduling op must never bury a recorded outcome; cancel sets this.
     Fields named here must exist in the section; the template defines the set, so
     a missing field means the section was written against an older shape.
     """
@@ -167,6 +180,38 @@ def _edit_session_log(folder, cfg, stage, updates, appends, revive_outcome=False
         return (label_name, f'section missing field(s) {missing}; '
                             f'convert it to the current template shape')
 
+    # A cancel must never bury a real recorded result. If the round already holds
+    # a real Outcome or a happened-event Status, refuse outright rather than
+    # overwrite (a partial write would leave Status/Outcome incoherent). Raising
+    # here also stops the caller before it tags the notes heading [CANCELLED].
+    if refuse_if_resolved:
+        ko = _field_index(lines, h, end, 'Outcome')
+        ks = _field_index(lines, h, end, 'Status')
+        cur_out = _field_value(lines[ko]) if ko is not None else ''
+        cur_stat = _field_value(lines[ks]) if ks is not None else ''
+        real_outcome = (bool(cur_out) and cur_out != 'pending'
+                        and not cur_out.startswith(_CANCELLED_OUTCOME))
+        happened = cur_stat in ('held', 'no-show')
+        if real_outcome or happened:
+            raise ValueError(
+                f'round "{stage}" is already resolved (Status: '
+                f'{cur_stat or "blank"} / Outcome: {cur_out or "blank"}); '
+                f'refusing to cancel over a real result. Edit the session log '
+                f'by hand if this is truly intended.')
+
+    # Seed the current-state Schedule history with the date being moved away
+    # from, but only on the first move (blank history) and before the updates
+    # loop overwrites Interview date. Once history carries text, "originally"
+    # has already been stated.
+    if seed_history and 'Schedule history' in appends:
+        sh = _field_index(lines, h, end, 'Schedule history')
+        di = _field_index(lines, h, end, 'Interview date')
+        if sh is not None and di is not None and not _field_value(lines[sh]):
+            old_date = _field_value(lines[di])
+            if old_date:
+                appends = {**appends, 'Schedule history':
+                           f'originally {old_date}; {appends["Schedule history"]}'}
+
     changed = False
     # Rescheduling a cancelled round revives it. Clear the cancellation marker in
     # Outcome, but only that exact marker: a real recorded outcome is never
@@ -180,6 +225,12 @@ def _edit_session_log(folder, cfg, stage, updates, appends, revive_outcome=False
     for lbl, value in updates.items():
         k = _field_index(lines, h, end, lbl)
         new = f'- {lbl}: {value}'
+        # A round already cancelled keeps its original cancellation date: a cancel
+        # re-run on a later day must not rewrite it. Skip when Status is already
+        # in the cancelled state.
+        if (lbl == 'Status' and value.startswith('cancelled ')
+                and _field_value(lines[k]).startswith('cancelled ')):
+            continue
         if lines[k].rstrip() != new:
             lines[k] = new
             changed = True
@@ -237,7 +288,7 @@ def _tag_notes_heading(folder, filename, stage, date, tag):
     lines, h, err = _locate(folder, filename, stage, date)
     if err:
         return (filename, err)
-    if '[' in lines[h]:
+    if _CANCELLED_TAG_RE.search(lines[h]):
         return (filename, 'heading already tagged (skipped)')
     lines[h] = lines[h].rstrip() + f' {tag}'
     _util.write(os.path.join(folder, filename), '\n'.join(lines))
@@ -264,6 +315,19 @@ def _untag_cancelled(folder, filename, stage, date):
 # Apply an action across the two files that hold event state
 # ---------------------------------------------------------------------------
 
+# The session log is the authoritative record. If its edit cannot resolve (a
+# heading conflict, a missing section, a stale field shape), abort before the
+# notes file is touched, so a partial op never leaves the two files diverged.
+_LOG_OK = frozenset({'updated', 'already current (skipped)'})
+
+
+def _abort_if_log_failed(log_result):
+    """Raise on a non-success session-log edit, before any notes edit runs."""
+    name, status = log_result
+    if status not in _LOG_OK:
+        raise ValueError(f'{name}: {status}')
+
+
 def _apply(action, args, cfg):
     """Build the action's field values and edit the session log and the notes."""
     folder = os.path.abspath(args.folder)
@@ -277,41 +341,42 @@ def _apply(action, args, cfg):
             raise ValueError('--new-datetime must start with YYYY-MM-DD, '
                              f'got "{args.new_datetime}"')
         new_date, new_time = m.group(1), m.group(2)
+        try:
+            datetime.date.fromisoformat(new_date)
+        except ValueError:
+            raise ValueError('--new-datetime has an impossible calendar date: '
+                             f'"{new_date}"')
         updates = {'Interview date': new_date, 'Status': 'scheduled'}
         if new_time:
             updates['Time'] = new_time
+        log_result = _edit_session_log(folder, cfg, args.stage, updates,
+                                       appends={'Schedule history':
+                                                f'moved to {new_date}{suffix}'},
+                                       revive_outcome=True, seed_history=True)
+        _abort_if_log_failed(log_result)
         results = [
-            _edit_session_log(folder, cfg, args.stage, updates,
-                              appends={'Schedule history':
-                                       f'moved to {new_date}{suffix}'},
-                              revive_outcome=True),
+            log_result,
             _note_schedule_change(folder, fn['interview_notes_file'], args.stage,
                                   args.date, args.new_datetime, suffix),
             _untag_cancelled(folder, fn['interview_notes_file'], args.stage,
                              args.date),
         ]
     else:  # cancel
+        log_result = _edit_session_log(folder, cfg, args.stage,
+                                       updates={'Status': f'cancelled {today}{suffix}',
+                                                'Outcome': _CANCELLED_OUTCOME},
+                                       appends={}, refuse_if_resolved=True)
+        _abort_if_log_failed(log_result)
         results = [
-            _edit_session_log(folder, cfg, args.stage,
-                              updates={'Status': f'cancelled {today}{suffix}',
-                                       'Outcome': _CANCELLED_OUTCOME},
-                              appends={}),
+            log_result,
             _tag_notes_heading(folder, fn['interview_notes_file'], args.stage,
                                args.date, f'[CANCELLED {today}]'),
         ]
 
-    changed = {'updated', 'heading tagged', 'schedule change recorded',
-               'cancellation tag cleared', 'already current (skipped)',
-               'already recorded (skipped)', 'heading already tagged (skipped)',
-               'no cancellation tag (skipped)'}
-    any_changed = False
+    # The session-log edit succeeded (else we aborted above); the notes results
+    # are informational. Exit 0.
     for name, status in results:
         print(f'  {name}: {status}')
-        if status in changed:
-            any_changed = True
-    if not any_changed:
-        raise ValueError(f'no interview section matched stage "{args.stage}" '
-                         f'in any file')
     print(f'{action}: done')
 
 

@@ -220,6 +220,15 @@ def check_session_log(log_text, required_fields, findings):
     required_fields comes from templates/session_log.md's '## Interview section'
     block, the single authority for an interview round's field set.
     """
+    # 'Interview date' and 'Outcome' get value-level validation below via
+    # hardcoded labels. The field SET is template-driven; guard that these labels
+    # still exist in it so a template rename fails loud here instead of silently
+    # skipping the value check.
+    for lbl in ('Interview date:', 'Outcome:'):
+        if lbl not in required_fields:
+            raise ValueError(
+                f"session-log validator references '{lbl}' but the template's "
+                f"interview field set no longer contains it; update this check.")
     section = next((b for h, b in _sections(log_text) if h == 'Interview: Screen'),
                    None)
     if section is None:
