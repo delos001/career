@@ -40,18 +40,16 @@ user sends (email or LinkedIn) and reports back; the skill records the send.
 
 ## Phase 2: draft
 
-Draft the message under the rules in `templates/followup.md` (the structure and
-drafting authority). Present it, one decision per turn, and revise until the
-user approves. Hold to: short; one substantive beat sourced from the debrief
-that shows the candidate already doing the role's thinking; one forwardable
-conviction line from positioning, a flat positive that explains why this role;
-trace every "as we discussed" to the notes; echo the interviewer's phrases where
-supplied; no product/tool/fact from model memory; no overstatement (initiative
-claims must be literally true); no "not X, it's Y"; no em dashes.
+Draft the message under the rules in `templates/followup.md`, which is the sole
+structure and drafting authority (read it; do not reproduce its rules here).
+Present the draft, one decision per turn, and revise until the user approves.
 
 ## Phase 3: write + session log
 
-1. On approval, copy `templates/followup.md` to
+1. If a followup artifact for this round already exists with `sent:` set to a
+   date (already sent), STOP and confirm before overwriting; re-drafting a sent
+   message discards the record of what was sent. On approval, copy
+   `templates/followup.md` to
    `<app folder>/followup_<stage_snake_case>_<interview_date>.md`, fill the
    frontmatter (`sent: pending`) and the body.
 2. Keep the session log current. Touch only this round's stage section, never
@@ -60,14 +58,15 @@ claims must be literally true); no "not X, it's Y"; no em dashes.
    `templates/session_log.md` (the single authority; read it, do not reproduce it
    from memory).
    - If `## Interview: <stage>` already exists (a prep run created it): add a
-     `Follow-up:` line, update `Outcome:` if the user reports the round's result,
-     and set `Status: held`.
+     `Follow-up: pending` line, update `Outcome:` if the user reports the round's
+     result, and set `Status: held`.
    - If it is missing (the round ran with no prep run), append a new
      `## Interview: <stage>` section in that field shape, with Prep date / Prep
      artifact / Research added marked `n/a`. Because follow-up only runs after a
-     round happened, set `Status: held` and an explicit `Outcome:` (the reported
-     result, or `pending` if none yet). Leaving `Status` at `scheduled` would make
-     `close-application` later flag a round that happened as one that never did.
+     round happened, set `Status: held`, an explicit `Outcome:` (the reported
+     result, or `pending` if none yet), and a `Follow-up: pending` line. Leaving
+     `Status` at `scheduled` would make `close-application` later flag a round
+     that happened as one that never did.
    - Reconcile the scheduling fields against the notes round, EVERY run, not only
      when creating the section. The session log is the one home for this metadata
      and a rescheduled round may never have had a lifecycle run. Read the round's
@@ -81,6 +80,7 @@ claims must be literally true); no "not X, it's Y"; no em dashes.
 ## Phase 4: close
 
 The user sends, then reports back. On confirmation, set `sent` to the send date
-in the artifact and complete the session-log `Follow-up:` line. Plain-English
+in the artifact and complete the session-log `Follow-up:` line (set it to
+`sent <YYYY-MM-DD> (<channel>)`). Plain-English
 handoff: where the artifact is, and that the next round (hiring manager) uses
 the `preparation-interview` skill.

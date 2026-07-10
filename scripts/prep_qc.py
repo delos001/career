@@ -8,18 +8,27 @@ what the skill owns (other skills' sections of shared files are not checked):
   interview_prep.md   structure against templates/interview_prep.md (the
                       single structure authority; nothing is hardcoded here)
   research.md         only the prep-attributed ledger sections
-  session_log.md      only the '## Interview: Screen' section
+  session_log.md      only the '## Interview: Recruiter Screen' section
 
-Checks
+Checks (P6-P8 and X1-X4 are the universal template rules shared with
+prep_interview_qc via _prep_checks, so screen-stage and post-screen artifacts
+are held to the same formatting and architecture):
   P1  frontmatter present; key set matches the template's key set exactly
   P2  every template heading present, in template order and at the
       template's depth (extras allowed)
   P3  heading depth never exceeds four (####)
   P4  no em dashes in the artifact
   P5  every frontmatter `sources` file exists (app folder or profile folder)
+  P6  no bold connector tokens welding list items
+  P7  every heading is in the allowed set (template headings + dynamic families)
+  P8  no coaching brackets or citations inside a heading line
+  X1  an APPENDIX region exists with at least one per-interview block
+  X2  every Q-label referenced is defined in the Question Bank
+  X3  each Appendix block carries only schema fields (Purpose/Interviewer/Emphasis)
+  X4  no Appendix block heading carries a date or an event-status token
   R1  each prep-attributed research.md section has a dated 'Added' line, at
       least one source URL, and no em dashes
-  S1  session log has '## Interview: Screen' with the required field labels
+  S1  session log has '## Interview: Recruiter Screen' with the required field labels
       (read from templates/session_log.md's '## Interview section' block, the
       single authority), a bare YYYY-MM-DD 'Interview date:', and no em dashes
   S2  the Outcome field is non-empty
@@ -43,70 +52,13 @@ import sys
 
 import _config
 import _util
-
-
-# ---------------------------------------------------------------------------
-# Markdown parsing helpers
-# ---------------------------------------------------------------------------
-
-# HTML comments in the template carry guidance, not structure. Strip them
-# (multiline, non-greedy) before reading headings so commented examples are
-# never treated as requirements.
-_COMMENT_RE = re.compile(r'<!--.*?-->', re.DOTALL)
-
-# A heading line: 1+ '#' then a space then text. Captured as (hashes, text).
-_HEADING_RE = re.compile(r'^(#{1,6})\s+(.*\S)\s*$', re.MULTILINE)
-
-# Frontmatter: the block between the first two '---' lines at file start.
-_FRONTMATTER_RE = re.compile(r'\A---\s*\n(.*?)\n---\s*\n', re.DOTALL)
-
-# A top-level frontmatter key (simple 'key: value' lines; nested keys are not
-# used by this artifact's schema).
-_FM_KEY_RE = re.compile(r'^([A-Za-z_][A-Za-z0-9_]*)\s*:', re.MULTILINE)
-
-
-def _read(path):
-    """Return the file's text, or None when the file does not exist."""
-    if not os.path.isfile(path):
-        return None
-    with open(path, 'r', encoding='utf-8') as f:
-        return f.read()
-
-
-def _headings(text):
-    """Return ordered (depth, text) heading tuples, comments stripped."""
-    clean = _COMMENT_RE.sub('', text)
-    return [(len(m.group(1)), m.group(2)) for m in _HEADING_RE.finditer(clean)]
-
-
-def _frontmatter_keys(text):
-    """Return the set of top-level frontmatter keys, or None if no block."""
-    m = _FRONTMATTER_RE.match(text)
-    if not m:
-        return None
-    return set(_FM_KEY_RE.findall(m.group(1)))
-
-
-def _frontmatter_sources(text):
-    """Return the filenames in the frontmatter 'sources: [...]' list."""
-    m = _FRONTMATTER_RE.match(text)
-    if not m:
-        return []
-    sm = re.search(r'^sources\s*:\s*\[(.*?)\]', m.group(1), re.MULTILINE)
-    if not sm:
-        return []
-    return [s.strip() for s in sm.group(1).split(',') if s.strip()]
-
-
-def _sections(text):
-    """Split on '## ' headings; return ordered (heading_text, body) tuples."""
-    out = []
-    matches = [m for m in _HEADING_RE.finditer(text) if len(m.group(1)) == 2]
-    for i, m in enumerate(matches):
-        start = m.end()
-        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
-        out.append((m.group(2), text[start:end]))
-    return out
+# Markdown parsing helpers and the universal interview_prep.md formatting /
+# architecture checks (P6-P8, X1-X4) live in _prep_checks, the single home
+# shared with prep_interview_qc so both entry points enforce them identically.
+from _prep_checks import (
+    _read, _headings, _sections, _frontmatter_keys, _frontmatter_sources,
+    check_connectors, check_headings, check_xrefs, check_appendix_fields,
+    check_appendix_status)
 
 
 # ---------------------------------------------------------------------------
@@ -206,7 +158,7 @@ def check_research(research_text, findings):
 
 
 # ---------------------------------------------------------------------------
-# Checks: session log 'Interview: Screen' section only
+# Checks: session log 'Interview: Recruiter Screen' section only
 # ---------------------------------------------------------------------------
 
 # A bare ISO date is the only legal value of the 'Interview date:' field; the
@@ -215,7 +167,7 @@ _BARE_DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 
 
 def check_session_log(log_text, required_fields, findings):
-    """Run S1-S2 on the Interview: Screen section. Other sections out of scope.
+    """Run S1-S2 on the Interview: Recruiter Screen section. Other sections out of scope.
 
     required_fields comes from templates/session_log.md's '## Interview section'
     block, the single authority for an interview round's field set.
@@ -229,10 +181,10 @@ def check_session_log(log_text, required_fields, findings):
             raise ValueError(
                 f"session-log validator references '{lbl}' but the template's "
                 f"interview field set no longer contains it; update this check.")
-    section = next((b for h, b in _sections(log_text) if h == 'Interview: Screen'),
+    section = next((b for h, b in _sections(log_text) if h == 'Interview: Recruiter Screen'),
                    None)
     if section is None:
-        findings.append(('S1', False, "no '## Interview: Screen' section"))
+        findings.append(('S1', False, "no '## Interview: Recruiter Screen' section"))
         findings.append(('S2', False, 'outcome not checkable (section missing)'))
         return
     missing = [f for f in required_fields if f not in section]
@@ -244,7 +196,7 @@ def check_session_log(log_text, required_fields, findings):
         problems.append('Interview date must be a bare YYYY-MM-DD (time / medium / '
                         f'interviewers have their own fields), got "{dm.group(1).strip()}"')
     findings.append(('S1', not problems,
-                     'Interview: Screen fields present, em-dash-free' if not problems
+                     'Interview: Recruiter Screen fields present, em-dash-free' if not problems
                      else '; '.join(problems)))
     m = re.search(r'Outcome:\s*(\S.*)', section)
     findings.append(('S2', bool(m),
@@ -278,6 +230,11 @@ def cmd_check(args, repo_root, cfg):
     else:
         check_artifact(artifact_text, template_text, app_folder, profile_dir,
                        findings)
+        check_connectors(artifact_text, findings)
+        check_headings(artifact_text, template_text, findings)
+        check_xrefs(artifact_text, findings)
+        check_appendix_fields(artifact_text, findings)
+        check_appendix_status(artifact_text, findings)
 
     research_text = _read(os.path.join(app_folder, fn['research_file']))
     if research_text is None:

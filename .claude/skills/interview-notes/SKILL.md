@@ -40,15 +40,15 @@ it never writes into note spaces.
    user and edit it directly; do not run add-round. Never touch hand-written
    note content while amending.
 
-## Phase 2: questions
+## Phase 2: questions and cue-card
 
 Build the planned-questions list from three tiers, presenting candidates and
 letting the user pick, edit, add, or skip (an empty list is allowed):
 
 1. The round's Appendix block in interview_prep.md names which Question Bank
-   items to prioritize ('Prioritize from Question Bank: ...'); pull those items'
-   full text from the shared Question Bank. If no Appendix block or prep exists
-   yet, offer the whole Question Bank.
+   items to prioritize (its Emphasis 'Prioritize from Question Bank' cue, however
+   the block phrases it); pull those items' full text from the shared Question
+   Bank. If no Appendix block or prep exists yet, offer the whole Question Bank.
 2. Carryover: unchecked questions from earlier round sections of this file, and
    any other Question Bank item (the bank is shared and reusable; the user may
    deliberately re-ask one to compare answers across rounds).
@@ -61,11 +61,21 @@ prefix each priority item (named in the Appendix 'Prioritize from Question
 Bank') with "(P) " so priorities are scannable at a glance. Carryover and
 user-added items outside the priority set carry no prefix.
 
+Then compose the live cue-card from `interview_prep.md` (skip when no prep
+exists; the cue-card then renders `_(none)_`). The round's Appendix block
+Emphasis names what to lead with and the top concerns to watch; pull the full
+text those pointers reference from the main body (the opener / identity thesis,
+the lead framing, the named concerns) and compose one short scannable bullet per
+cue, for example "Opener: ...", "Lead with: ...", "Top concerns: ...". Copy the
+text in full (the file is the live surface; no pointers). Present them for the
+user to confirm, edit, or drop, one per turn. The confirmed lines become the
+payload's `cue_card` list.
+
 ## Phase 3: scaffold
 
 1. Write the payload to `<app folder>/scratch/notes_round_payload.json`:
    `{"stage", "date" (YYYY-MM-DD), "datetime", "medium", "format",
-   "interviewers": [{"name", "title"}], "questions": [..]}`.
+   "cue_card": [..], "interviewers": [{"name", "title"}], "questions": [..]}`.
 2. Run:
    `python <repo>/scripts/notes_assemble.py add-round --folder <absolute app folder> --payload <absolute payload path>`
    The script appends the section, assigning the round number automatically

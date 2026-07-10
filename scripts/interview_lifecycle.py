@@ -9,9 +9,11 @@ carries no scheduling facts at all. This script keeps the two files that hold
 event state in sync when an interview moves or dies.
 
   session_log.md      the record. Reschedule rewrites 'Interview date:', 'Time:'
-                      (when a time is given) and the one-line 'Schedule history:'
-                      field. Cancel sets 'Status:' and 'Outcome:'. Sections hold
-                      current state, never an accumulating audit trail.
+                      (when a time is given), 'Status:' (back to scheduled) and
+                      the one-line 'Schedule history:' field, and clears a prior
+                      cancelled 'Outcome:' back to pending. Cancel sets 'Status:'
+                      and 'Outcome:'. Sections hold current state, never an
+                      accumulating audit trail.
   interview_notes.md  the capture surface. Reschedule appends to the round's
                       '- Schedule changes:' line; cancel tags the round heading
                       '[CANCELLED <date>]' so an empty section explains itself in

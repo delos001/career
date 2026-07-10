@@ -23,8 +23,8 @@ Appendix.
   check IDs or jargon to the user.
 - Scannable: short bullets and key words, never long paragraphs. The artifact
   is used live; the user scans keywords and speaks from them.
-- Artifact formatting (QC-enforced by prep_interview_qc.py; full rules in the
-  template's Conventions comment): no em dashes (commas or hyphens); headings are
+- Artifact formatting (full rules in the template's Conventions comment; the QC
+  enforcement split, script vs subagent, is in Phase 5): no em dashes (commas or hyphens); headings are
   short labels from the template's allowed set only, never coaching / citations /
   sentences in a heading; one weight-bearing element per bullet (expand discrete-
   element series to sub-bullets); no bold connector tokens (**plus** / **and**)
@@ -79,7 +79,10 @@ sets this interview's emphasis and any audience-specific research gaps.
 
 One question per turn:
 
-- Audience: hiring-manager | peer-team | executive.
+- Audience (rule-file key -> stage label): hiring-manager -> Hiring Manager,
+  peer-team -> Peer / Team, executive -> Executive. The key selects the
+  rules/interview-types file; the stage label is what goes in every heading
+  (Appendix, session log, notes round), matching interview_lifecycle's --stage.
 - Format: single | panel | presentation | technical (combine as needed; panel
   drives per-interviewer blocks; presentation sets the Appendix flag).
 - Purpose/objective: use it if the user has one; otherwise run the audience's
@@ -141,11 +144,15 @@ Cue / Avoid / If probed keep their labels).
    outcomes, no asked/debrief content, and no scheduling metadata at all (no
    date, time, or event status, including in the block heading); those live in
    session_log.md and interview_notes.md. The heading is
-   `## <Audience> - <Interviewer(s)>`, nothing more.
-2. Project the cue-card into `interview_notes.md`: interviewer + opener, the
-   questions in the bank's topical order with priority items prefixed (P), top
-   Concerns, the lead framing. If the notes file lacks this interview's section,
-   scaffold it via the `interview-notes` flow first.
+   `## <Stage label> - <Interviewer(s)>` (the Title-Case stage label, e.g.
+   `## Hiring Manager - Joanne Bugembe`), nothing more.
+2. The live cue-card lives in `interview_notes.md`, composed and written by the
+   `interview-notes` skill (the sole writer of that file) from this round's
+   Appendix Emphasis and the main body. Make the Appendix Emphasis name the
+   opener, what to lead with, the top Concerns, and which Question Bank items to
+   prioritize, so interview-notes can pull their full text into the round's
+   Cue-card and Questions to Ask. If the notes file lacks this interview's
+   section, run the `interview-notes` flow to scaffold it.
 
 ## Phase 5: session log, then QC
 
@@ -163,9 +170,12 @@ Cue / Avoid / If probed keep their labels).
    headings and their allow-set, no em dashes / bold connectors / coaching or
    citations in headings), the Appendix (present, schema-only fields, no date or
    event-status token in headings), Question-Bank cross-ref resolution, and the
-   research-ledger and session-log interview fields. The subagent owns what a
-   script cannot judge: that each citation supports its claim and that no
-   main-body content is copied into an Appendix block.
+   research-ledger and session-log interview fields; it also emits advisory
+   warnings (non-blocking) for bullet-packing and build/process narration. The
+   subagent owns what a script cannot judge: that each citation supports its
+   claim, that no main-body content is copied into an Appendix block, that the
+   body single-homes each point (no redundant restatement; cross-refs link by
+   label), and that the body carries no build/process narration.
 3. Fix and re-run. Cap 3 iterations; else ship provisional, summarize the
    residual in plain English, log it to `design/build_issues.md`.
 
@@ -187,7 +197,8 @@ Cue / Avoid / If probed keep their labels).
   `--date` is only needed when two notes rounds share a stage label.
 
   Reschedule rewrites the session log's `Interview date:` / `Time:` / `Schedule
-  history:` fields and appends to the notes round's `Schedule changes:` line.
+  history:` / `Status:` fields (and clears a prior cancelled `Outcome:` back to
+  pending) and appends to the notes round's `Schedule changes:` line.
   Cancel sets the session log's `Status:` and `Outcome:` and tags the notes round
   heading `[CANCELLED <date>]`. The notes round heading's date is that section's
   identity and is never rewritten; a move is recorded, not overwritten. Blocks are

@@ -10,7 +10,10 @@ sources: [research.md, gap_analysis.md, interview_notes.md, cv_content.md, jd.md
 TEMPLATE - structure authority for interview_prep.md (the cumulative, one-per-application
 interview prep doc), parsed by scripts/prep_qc.py and scripts/prep_interview_qc.py. Comments
 are drafting guidance; REMOVE them all from the artifact copy so the frontmatter above stays
-the first line of the file.
+the first line of the file. The `sources` list above is a curated menu: keep only the files
+this run actually used AND that exist. Drop any not yet present (e.g. `interview_notes.md` at
+screen-only stage, before any interview round has happened) and add a downstream file back only
+when a later refinement genuinely draws on it. QC (P5) fails a listed source that is absent.
 
 Architecture:
 - MAIN BODY = shared across all interviews; refined cumulatively; never duplicated per interview.
@@ -139,7 +142,7 @@ in the one doc read immediately before the interview. Carry-forward that affects
 into the main body's cumulative refinement, not here. Never copies main-body content. The live
 cue-card is projected from each block into interview_notes.md. Copy the block below per interview. -->
 
-## <Audience> - <Interviewer(s)>
+## <Stage label> - <Interviewer(s)>
 
 **Purpose**
 <!-- What this interview is for. If only screen-sourced, tag [confirm]. Prepare for flex: do not

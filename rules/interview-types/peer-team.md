@@ -1,6 +1,6 @@
 <!--
 Audience rule file for the preparation-interview skill. Read at intake when audience = peer-team.
-Sets this interview's emphasis, research targets, Question Bank priorities, and Appendix stress.
+Sets this interview's emphasis, research targets, and Question Bank priorities.
 Format (single / panel / presentation / technical) is a modifier layered on top of this.
 Structure mirrors hiring-manager.md.
 -->

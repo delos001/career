@@ -28,12 +28,13 @@ Payload (JSON, written by the dispatching skill, e.g. to <folder>/scratch/):
     "datetime": "2026-06-12 14:00 EST",
     "medium": "video",
     "format": "single",
+    "cue_card": ["Opener: warm, name the mutual contact", "Lead with: turnaround record", "Top concerns: team runway; role scope"],
     "interviewers": [{"name": "Jane Doe", "title": "Senior Director"}],
     "questions": ["How is the team structured?"]
   }
 
-  interviewers and questions may be empty lists: no interviewers renders one
-  TBD block; no questions renders _(none)_.
+  cue_card, interviewers and questions may be empty lists: no cue_card renders
+  _(none)_; no interviewers renders one TBD block; no questions renders _(none)_.
 
 Usage
   python notes_assemble.py init --folder <app-folder> --app-id APP-NNN
@@ -111,7 +112,18 @@ def _load_template(repo_root, cfg):
 # Payload keys add-round requires. interviewers/questions must be present
 # (empty lists allowed) so an omission is caught rather than silently skipped.
 _PAYLOAD_KEYS = ('stage', 'date', 'datetime', 'medium', 'format',
-                 'interviewers', 'questions')
+                 'cue_card', 'interviewers', 'questions')
+
+
+def _render_cue_card(cue_card):
+    """Render the live cue-card as plain bullets; _(none)_ when empty.
+
+    The interview-notes skill composes these lines from interview_prep.md
+    (opener, lead framing, top concerns); the script only renders them.
+    """
+    if not cue_card:
+        return '_(none)_'
+    return '\n'.join(f'- {line}' for line in cue_card)
 
 
 def _render_questions(questions):
@@ -228,6 +240,7 @@ def cmd_add_round(args, repo_root, cfg):
         'datetime': payload['datetime'],
         'medium': payload['medium'],
         'format': payload['format'],
+        'cue_card_block': _render_cue_card(payload['cue_card']),
         'questions_block': _render_questions(payload['questions']),
         'interviewer_blocks': _render_interviewers(
             payload['interviewers'], _block(template, 'Interviewer block')),

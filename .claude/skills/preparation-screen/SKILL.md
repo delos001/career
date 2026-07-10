@@ -71,8 +71,8 @@ Standard checklist (plus any role-specific gaps):
    values, so this grounds natural values-fit conversation.
 
 ALL research goes through the `prep-research` subagent, one target per
-invocation, foreground (background subagents cannot write under `personal/`,
-and findings must return before any write). This includes ad-hoc lookups
+invocation, foreground (findings must return before any write, and the
+orchestrator does the writing; the subagent never writes files). This includes ad-hoc lookups
 raised mid-conversation by the user, however small; never answer one with an
 inline search. On return, append the findings to `research.md` as a dated
 section attributed `**Added:** YYYY-MM-DD (interview prep, phone screen)`
@@ -83,7 +83,9 @@ intact.
 
 Create the artifact by copying `templates/interview_prep.md` and filling the
 frontmatter (template comments are guidance for drafting; remove them from
-the artifact copy). Then draft one section per turn, present it, and write it
+the artifact copy). Prune `sources` to the files that exist and were actually
+used this run; at screen-only stage that means dropping `interview_notes.md`,
+which does not exist until interview-notes runs. Then draft one section per turn, present it, and write it
 only on approval. The template's comments define each section's content rules.
 
 Across every section, separate substance from coaching. Substance is what the
@@ -103,14 +105,17 @@ The rules that need judgment emphasis (the template comments carry the rest):
   entry that curates these headline facts (allowed repetition).
 - Positioning & Approach: the screen's posture and any role stance/reframe;
   shared framing, kept general.
-- The Role and Concerns to Resolve: SEED lightly at screen stage (the role read
-  is mostly JD-inferred and to-confirm; concerns are nascent). Later interviews
-  refine them; do not force depth the screen cannot support.
+- The Role: SEED lightly at screen stage; the role read is mostly JD-inferred
+  and to-confirm. Later interviews refine it; do not force depth the screen
+  cannot support.
+- Concerns to Resolve: nascent at screen stage; seed only what the screen
+  surfaces. Later interviews refine them.
 - Fit and Gaps: the top-scored Signature Themes from the retrieval theme table
   contribute their core message and proof point, mapped to the requirements they
   hit. Gap chunks must jointly cover every non-covered requirement in
-  `gap_analysis.md`. Proof-point STAR stories and Situational are optional at
-  screen stage.
+  `gap_analysis.md`. Proof-point STAR stories and Situational may stay
+  light at screen stage (keep the template headings; leave the body sparse),
+  since the screen rarely goes deep on either.
 - Anticipated Questions, positioning routing (compress to cue level, never
   verbatim prose):
   - "Walk me through your background" opens with the identity thesis (Positioning
@@ -140,7 +145,7 @@ with no date and no status: scheduling metadata lives only in `session_log.md`.
 
 ## Phase 4: session log, then QC
 
-1. Session log: append the `## Interview: Screen` section (or update its fields in
+1. Session log: append the `## Interview: Recruiter Screen` section (or update its fields in
    UPDATE mode) before QC runs, so the QC pass covers it. Use the field shape
    defined by the `## Interview section` and `## Interview field notes` blocks of
    `templates/session_log.md` (the single authority; read it, do not reproduce it

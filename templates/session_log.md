@@ -38,8 +38,9 @@ The single authority for the shape of an interview round's session-log section,
 parsed by `scripts/prep_qc.py` and `scripts/prep_interview_qc.py` (the `- Label:`
 lines below are the required field set) and written by the prep skills, the
 follow-up skill, `scripts/interview_lifecycle.py`, and `close-application`. One
-section per round. `{{stage}}` is the round's stage label (Screen, Hiring Manager,
-Peer / Team, Executive, ...), matching the `interview_notes.md` round label.
+section per round. `{{stage}}` is the round's stage label (Recruiter Screen,
+Hiring Manager, Peer / Team, Executive, ...), matching the `interview_notes.md`
+round label.
 
 The session log is the ONE home for an interview's scheduling metadata. Each fact
 is its own field so a program can update one without rewriting the others; the
@@ -82,6 +83,8 @@ an accumulating audit trail (`Schedule history` is one line, rewritten in place)
   round. A `pending` outcome at close-out time is what `close-application` queries on.
 - **Optional extra fields** may follow `Outcome` (e.g. `Follow-up:` written by the
   follow-up skill; `Notes artifact:`; a `Role note:`). Only the fields above are required.
+  `Follow-up:` is `pending` when the message is drafted but not yet sent, then
+  `sent <YYYY-MM-DD> (<channel>)` once the user confirms the send.
 
 ## Field notes
 

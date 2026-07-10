@@ -37,8 +37,10 @@ created: {{created}}
 
 One appended per `add-round` run. `{{number}}` is the round's ordinal (its
 append order in the file), computed by the script; it is not a payload field.
-`{{questions_block}}` renders one checkbox
-bullet per planned question, each followed by an indented answer line for
+`{{cue_card_block}}` renders the live cue-card the candidate reads first: bullets
+the interview-notes skill composes from `interview_prep.md` (opener, lead framing,
+top concerns), `_(none)_` when no prep exists. `{{questions_block}}` renders one
+checkbox bullet per planned question, each followed by an indented answer line for
 typing the response directly during the call (`- [ ] <question>` then
 `    - Answer: `; `_(none)_` when empty); check a question off when asked, so
 unchecked questions are the carryover candidates for the next round.
@@ -53,6 +55,10 @@ payload order.
 - Duration:
 - Medium: {{medium}}
 - Format: {{format}}
+
+### Cue-card
+
+{{cue_card_block}}
 
 ### Questions to Ask
 
@@ -112,5 +118,5 @@ for what that person says.
   automatically; other statuses (e.g. `[NO-SHOW]`, `[DECLINED]`) may be added by
   hand.
 - **Round Debrief** - filled by hand after the round; consumed by the
-  follow-up skill. Interest level convention: Strong | Uncertain but
-  continuing | Undecided.
+  follow-up skill. Interest level is free text: a word or a fuller note; it is
+  often more nuanced than a simple label.
