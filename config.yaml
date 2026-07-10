@@ -14,6 +14,8 @@ paths:
   rules: rules                           # axis rule files (one folder per axis)
   design: design                         # design state and build issue logs
   temp: temp                             # shared dev-scratch / reference material; per-application run-scratch now lives in <app-folder>/scratch/ (see filenames.scratch_subdir)
+  self_assessment_rules: rules/self-assessment   # protocol + bootstrap prompt (generic, shareable)
+  self_assessment_runs: personal/self-assessment # runs: products at root, trails in dated subfolders
 
 # Filenames.
 filenames:
@@ -43,6 +45,8 @@ filenames:
   cv_collaboration_log_file: cv_collaboration_log.md  # cv-targeted per-round record of stakeholder contributions, integration, and QC; application folder
   scratch_subdir: scratch                      # run-scratch subfolder name; per-application pipeline scratch is <app-folder>/scratch/ (wiped at decline/close), axis-builder scratch is rules/scratch/ (wiped at end of build); both via scratch_cleanup.py
   company_slugs_file: company-slugs.yaml       # at the personal/ root; maps a company name to its preferred folder slug for reuse across applications
+  assessment_protocol: assessment-protocol.md  # in rules/self-assessment/; the versioned self-assessment protocol (single authority)
+  assessment_bootstrap: bootstrap-prompt.md    # in rules/self-assessment/; portable starter prompt, zero method content
 
 # Per-axis schema. Consumed by scripts/axis_qc.py and by the axis-builder
 # skills. Each entry defines the value-file frontmatter key, the required
@@ -78,3 +82,31 @@ naming:
   # Application ID: a global counter, e.g. APP-004.
   app_id_prefix: "APP-"
   app_id_digits: 3
+
+# Self-assessment QC spec. Consumed by scripts/self_assessment_qc.py; keeps
+# every pattern out of the script so protocol evolution is a config edit.
+self_assessment:
+  product_pattern: "profile_*.md"          # products at the runs-folder root
+  version_stamp_regex: "protocol v\\d+"    # product must name the protocol version it ran under
+  required_headings:                       # one regex per required product section, canonical order
+    - "^## Who .+"
+    - "^## The core pattern"
+    - "^## Cognitive style"
+    - "^## How .+ relate"
+    - "^## .*master traits"
+    - "^## Strengths"
+    - "^## Where .+ may thrive"
+    - "^## Weaknesses"
+    - "^## Tensions"
+    - "^## How .+ changed"
+    - "^## Where it may bite"
+    - "^## The open moves"
+    - "^## In one line"
+  required_labels:                         # key phrase from each mandatory How-to-read label
+    - "requested and run by the person it describes"
+    - "cannot show what was never"
+    - "hygiene, not independence"
+  scope_marker: "\\*\\*Scope"              # corpus-limitation statement marker
+  confidence_terms: [low, moderate, moderate-to-high, high]   # anchored vocabulary for inferred claims
+  max_sentence_words: 40                   # readability proxy for rule 9's "no sentence that needs re-reading"
+  max_paragraph_chars: 900                 # readability proxy for like-chunk paragraphs

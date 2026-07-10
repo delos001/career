@@ -113,9 +113,9 @@ Axis classification records two values per axis (primary + secondary), and retri
 
 ### profile-startup-investment-gradient
 The pipeline's value is modular (role evaluation, gap-analysis insight, CV creation, interview prep each carry standalone value for different user types) but its cost is monolithic: every module except role-intake sits behind the same all-or-nothing profile-corpus startup gate (longitudinal CV cross-section, narratives, positioning), a multi-day investment the user identified (2026-07-09, during the operator assessment's transfer-test discussion) as calibrated to his own pivot situation without his noticing at design time. For pivot candidates the foundation work is arguably the product; for same-role candidates and single-module users it is an entry barrier that makes the product more niche than intended. Candidate directions, none chosen: scale required profile depth to the module invoked (thin profile bootstrapped from a single ingested CV, confidence-flagged output, progressive deepening via the existing gap-loop staging mechanism); automate the grind without removing the thinking (e.g., inventory-candidate extraction from an old-CV stack). The values question that precedes any engineering: whether the system may run in a degraded, confidence-flagged mode for shallow-foundation users, when the citation/traceability regime was built to refuse exactly that trade. User's call.
-- Trigger: transfer-test execution (operator assessment open move); product-direction work; or user direction.
+- Trigger: transfer-test execution (self-assessment open move; a second-user run of the /self-assessment skill doubles as this test); product-direction work; or user direction.
 - Blocks: nothing currently (the pipeline serves its current user).
-- Refs: `personal/operator/profile_2026-07.md` (open moves: transfer test), `templates/profile_updates_pending.md` (staging mechanism).
+- Refs: `personal/self-assessment/profile_2026-07.md` (open moves: transfer test), `rules/self-assessment/assessment-protocol.md` (rule 13), `templates/profile_updates_pending.md` (staging mechanism).
 
 ### cv-targeted-reviewer-autonomy-reconciliation
 **Resolved 2026-05-29** by `cv-targeted-name-and-structure-2026-05` and `cv-targeted-candidate-advocate-2026-05` (DACI stakeholder model). See those entries.

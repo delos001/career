@@ -68,6 +68,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - preparation-interview
 - interview-notes
 - followup
+- self-assessment
 
 **Built** (detailed entry pending):
 - cv-targeted (built end to end; see `.claude/skills/cv-targeted/SKILL.md`)
@@ -188,14 +189,14 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - Application artifacts: `research.md`, `gap_analysis.md` (incl. Eligibility Flags confirmed constraints), `session_log.md`, `jd.md`, `cv_content.md`.
   - User input: screen facts (interviewer, date, duration, medium), per-gap research approvals, per-section content approvals, confirmations of pulled defaults.
 - **Outputs**:
-  - Files: `<application folder>/interview_prep.md`; dated prep sections appended to `research.md`; `## Interview: Screen` section in the session log; optional staged entries in `personal/profile/profile_updates_pending.md` (general facts only).
+  - Files: `<application folder>/interview_prep.md`; dated prep sections appended to `research.md`; `## Interview: Recruiter Screen` section in the session log; optional staged entries in `personal/profile/profile_updates_pending.md` (general facts only).
   - Skills: feeds the interview itself, interview-notes (tier-1 question sourcing), the followup skill, and preparation-interview (which appends to the same artifact).
 - **Triggers**: User invocation (`/preparation-screen`) after gap-analysis, when a screen is scheduled. UPDATE mode when `interview_prep.md` already exists.
 - **Update Triggers**: When `templates/interview_prep.md` changes (structure authority for artifact and `prep_qc.py` alike); when the gap-analysis Eligibility Flags contract changes; when `positioning.md`'s why-leave section or `user-info.md`'s default fields change shape; when either subagent's contract changes.
 
 #### preparation-interview
 
-- **Purpose**: Prepare the candidate for a post-screen interview (hiring-manager, peer/team, or executive). Maintains the shared, cumulative `interview_prep.md` (a main body refined across interviews plus a thin per-interview Appendix block) and projects a live cue-card into `interview_notes.md`. Per `preparation-interview-architecture-2026-07`.
+- **Purpose**: Prepare the candidate for a post-screen interview (hiring-manager, peer/team, or executive). Maintains the shared, cumulative `interview_prep.md` (a main body refined across interviews plus a thin per-interview Appendix block whose Emphasis feeds the live cue-card that the interview-notes skill composes into `interview_notes.md`). Per `preparation-interview-architecture-2026-07`.
 - **Status**: Built
 - **Inputs**:
   - Rules: `rules/interview-types/<audience>.md` (hiring-manager / peer-team / executive; sets the interview's emphasis and audience-specific research gaps).
@@ -206,7 +207,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - Application artifacts: `research.md`, `gap_analysis.md`, `session_log.md`, `jd.md`, `cv_content.md`, existing `interview_prep.md` / `interview_notes.md`.
   - User input: audience + format + purpose at intake, interviewer(s), logistics; per-gap research approvals; per-section content approvals.
 - **Outputs**:
-  - Files: extends `<application folder>/interview_prep.md` (main body + a per-interview Appendix block); dated prep sections appended to `research.md`; `## Interview: <audience>` section in the session log; a cue-card projected into `interview_notes.md`; optional staged entries in `personal/profile/profile_updates_pending.md`.
+  - Files: extends `<application folder>/interview_prep.md` (main body + a per-interview Appendix block); dated prep sections appended to `research.md`; `## Interview: <audience>` section in the session log; the Appendix Emphasis feeds the cue-card that interview-notes writes into `interview_notes.md` (this skill does not write that file); optional staged entries in `personal/profile/profile_updates_pending.md`.
   - Skills: feeds the interview itself, interview-notes (Appendix-priority question sourcing), and the followup skill.
 - **Triggers**: User invocation after a post-screen interview is scheduled. EXTEND mode when `interview_prep.md` already exists (reconciles a screen-era doc into the cumulative architecture).
 - **Update Triggers**: When `templates/interview_prep.md` changes (the shared structure authority); when a `rules/interview-types/` file changes; when either QC (`prep_interview_qc.py` / `qc-preparation-interview`) contract changes; when the lifecycle op or the interview-notes cue-card contract changes.
@@ -251,6 +252,25 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 ---
 
+#### self-assessment
+
+- **Purpose**: Run or rerun the behavioral self-assessment governed by `rules/self-assessment/assessment-protocol.md`; the skill is a thin orchestrator (intake, mode selection, filing, QC dispatch) and the protocol owns every method rule.
+- **Status**: Designed
+- **Inputs**:
+  - Rules: `rules/global-rules.md`, `rules/self-assessment/assessment-protocol.md` (single method authority; read in full, no segmented loading).
+  - Agents: `qc-self-assessment`.
+  - Scripts: `scripts/self_assessment_qc.py`.
+  - User input: corpus designation ("work I do or interests I pursue"), source roles, scope boundaries, filing location, sitting pacing, fact corrections (never conclusion approval).
+- **Outputs**:
+  - Files: in `personal/self-assessment/` (configurable via `paths.self_assessment_runs`): product `profile_<YYYY-MM>.md` at the runs root, stamped with the protocol version; trail documents in the `<YYYY-MM>/` subfolder.
+  - Side effects: may create the annual rerun event in the user's Google Calendar at cycle close (user approves details first); provisional ships log to `design/build_issues.md`.
+- **Triggers**:
+  - User invocation: `/self-assessment` for a fresh run or rerun; the annual calendar trigger.
+- **Update Triggers**:
+  - When `rules/self-assessment/assessment-protocol.md` changes (version bump; QC config in `config.yaml`'s `self_assessment` block must be re-checked against the new version).
+  - When `qc-self-assessment` or `scripts/self_assessment_qc.py` change.
+  - When `config.yaml`'s `self_assessment` block or the runs/rules paths change.
+
 ## Sub-Agents
 
 ### Roster
@@ -264,6 +284,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - qc-industry-builder, qc-level-builder, qc-orientation-builder, qc-specialty-builder, qc-work-state-builder (axis-builder QC agent family; one per axis)
 - prep-research, qc-preparation-screen (preparation-screen skill family; detailed entries below)
 - qc-preparation-interview (preparation-interview skill family; shares prep-research; detailed entry below)
+- qc-self-assessment (self-assessment skill family; judgment QC of a product against `rules/self-assessment/assessment-protocol.md`; mechanical checks owned by `scripts/self_assessment_qc.py`; see `.claude/agents/qc-self-assessment.md`)
 
 **Planned** (from `design/design_decisions.md`):
 - qc_cv_format, qc_cv_structural, qc_cv_content
@@ -437,13 +458,14 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - `scripts/retrieval_payload.py`, `scripts/retrieval_apply.py` (retrieval concern family)
 - `scripts/gap_assemble.py`, `scripts/staging_append.py` (gap-analysis concern family)
 - `scripts/axis_registry.py`, `scripts/axis_qc.py`, `scripts/axis_apply.py` (axis-builder concern family)
-- `scripts/_config.py`, `scripts/_util.py`, `scripts/axis_utils.py` (shared helper modules; not standalone scripts, no separate entries)
+- `scripts/_config.py`, `scripts/_util.py`, `scripts/axis_utils.py`, `scripts/_prep_checks.py` (shared helper modules; not standalone scripts, no separate entries)
 - `scripts/cv_to_docx.py` (cv-render skill: renders cv_content.md to a formatted .docx)
 - `scripts/prep_qc.py` (preparation-screen skill: deterministic QC; detailed entry below)
 - `scripts/prep_interview_qc.py` (preparation-interview skill: deterministic QC; detailed entry below)
 - `scripts/interview_lifecycle.py` (preparation-interview skill: reschedule / cancel three-file sync; detailed entry below)
 - `scripts/notes_assemble.py` (interview-notes skill: shell init + round-section append; detailed entry below)
 - `scripts/scratch_cleanup.py` (deletes a per-application scratch folder via `--app-folder`, or the axis-builder scratch via `--builder`; the single cleanup call for the run-scratch lifecycle)
+- `scripts/self_assessment_qc.py` (self-assessment skill: deterministic QC of a product file against the protocol's mechanical rules via `check --file`; all patterns and thresholds from config.yaml's `self_assessment` block; roster entry only)
 
 **Planned / referenced in design:**
 - `scripts/display/orient.py` (with `scripts/display/orientations.yaml` catalog)
@@ -578,7 +600,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/prep_qc.py
 
-- **Purpose**: Deterministic QC for the preparation-screen artifacts, scoped to what that skill owns. Validates `interview_prep.md` structure against `templates/interview_prep.md` (the parsed structure authority; nothing hardcoded), the prep-attributed ledger sections of `research.md`, and the `## Interview: Screen` session-log section. Checks P1-P5, R1, S1-S2.
+- **Purpose**: Deterministic QC for the preparation-screen artifacts, scoped to what that skill owns. Validates `interview_prep.md` structure against `templates/interview_prep.md` (the parsed structure authority; nothing hardcoded), the prep-attributed ledger sections of `research.md`, and the `## Interview: Recruiter Screen` session-log section. Checks P1-P8, X1-X4, R1, S1-S2; the universal template checks (P6-P8, X1-X4) come from the shared `scripts/_prep_checks.py` module (also used by `prep_interview_qc.py`).
 - **Status**: Built (verified against the APP-008 specimen, 8/8 pass, plus challenge-data negative tests, all defects caught).
 - **Inputs**: Subcommand args (`check --folder <absolute application folder>`). Config: `config.yaml` (`interview_prep_file`, `interview_prep_template`, research/session-log filenames, profile/templates paths) via `scripts/_config.py`.
 - **Outputs**: Per-check PASS/FAIL lines + RESULT line to stdout; exit 0 on pass, 1 otherwise.

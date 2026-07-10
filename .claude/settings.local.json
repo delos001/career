@@ -5,7 +5,8 @@
       "Bash(awk '/^ID:/{id=$2} /^Role: RL-019/{flag=1} /^Description:/{if\\(flag\\){print id\": \"$0; flag=0}}' \"C:\\\\Users\\\\delos\\\\code\\\\career\\\\personal\\\\profile\\\\inventory.md\")",
       "PowerShell(python C:\\\\Users\\\\delos\\\\code\\\\career\\\\scripts\\\\display\\\\introduce.py gap-analysis)",
       "Bash(python -c \"import _config; r,c=_config.load\\(\\); print\\('session_log_file =', c['filenames'].get\\('session_log_file'\\)\\); print\\('sessions in paths?', 'sessions' in c['paths']\\); print\\('session_log_filename in naming?', 'session_log_filename' in c['naming']\\); print\\('applications =', c['paths']['applications']\\)\")",
-      "Bash(python scripts/assemble.py init --slug zztest --app-id APP-999 --ym 2026-06 --company TestCo --role Tester --industry TestInd --start-date 2026-06-08 --jd-source jd.md)"
+      "Bash(python scripts/assemble.py init --slug zztest --app-id APP-999 --ym 2026-06 --company TestCo --role Tester --industry TestInd --start-date 2026-06-08 --jd-source jd.md)",
+      "PowerShell(python C:\\\\Users\\\\delos\\\\code\\\\career\\\\scripts\\\\prep_interview_qc.py check --folder C:\\\\Users\\\\delos\\\\code\\\\career\\\\personal\\\\applications\\\\medable_APP-008_2026-06; Write-Output \"=== EXIT: $LASTEXITCODE ===\")"
     ]
   }
 }
