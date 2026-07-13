@@ -561,6 +561,15 @@ Supersedes `experience-inventory-section-ordering` and the placement bullet of `
 
 Refs: `inventory-external-visibility-sections-2026-07`, `experience-inventory-section-ordering` (superseded), `experience-inventory-tagging-granularity`.
 
+#### narratives-placeholder-convention-2026-07
+A narrative terrain gap gets a placeholder block in narratives.md rather than a blank stub or an out-of-band note. Shape: H2 working title suffixed `(placeholder)`, **no `ID:` line and no `Linked Inventory:`** — the narratives parser skips ID-less H2 blocks (verified against `retrieval_payload._parse_narratives`), keeping placeholders out of retrieval and scoring with zero code change. Body fields: `Placeholder:` (marker line), `Gap:` (the recurring demand the story should evidence, with application evidence), `Sought:` (the raw material to capture), `Source:` (where the gap surfaced). ToC entry carries no ID prefix.
+
+Fill-in path: assign the next ST/DC ID, write the framework sections, add `Linked Inventory:`, update the ToC entry with the ID prefix. Placeholders are deposit targets: gap-analysis staging or any prep session that solicits matching material can route content against a named placeholder. Placeholder blocks are exempt from the builder QC entry checks (noted in `design/narratives_builder_quality_checks.md`).
+
+First instance: "Executive Persuasion Story (placeholder)", from the 2026-07-13 demand-profile scan (executive persuasion demanded in 8 of 14 applications; the events exist in ST-004/ST-006/DC-001 but the persuasion arc was never captured).
+
+Refs: `career-narratives-schema`.
+
 #### narratives-placement
 `rules/narratives/` with five files: `decision_adr`, `decision_personal`, `story_atola`, `story_star`, `story_personal`.
 
