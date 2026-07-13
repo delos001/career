@@ -39,7 +39,7 @@ Use this 0-to-1 scale consistently across all items in your batch. Scores betwee
 
 ## Corpus-specific notes
 
-- **Inventory (EX-NNN, PR-NNN):** the payload is `Description + Impact`. Score against requirements directly. Ignore the axis tags in scoring (the script handles those).
+- **Inventory (EX-NNN, PR-NNN, PB-NNN, PS-NNN):** the payload is `Description + Impact` (Impact is optional on PB/PS entries and may be absent). Score against requirements directly. Ignore the axis tags in scoring (the script handles those).
 - **Narratives (ST-NNN, DC-NNN):** the payload is the full narrative body (Situation / Task / Action / Result, or the decision body). A narrative may address multiple requirements through its arc; score on the overall match to the requirements set, not just the headline match.
 - **Themes (TH-NNN):** the payload is `Core message + Proof point + Use when` concatenated. OR-semantics: a strong match in any one of the three fields can drive a high score.
 

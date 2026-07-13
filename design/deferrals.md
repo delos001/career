@@ -35,9 +35,9 @@ A CLI or UI utility that filters `inventory.md` EX/PR entries by Role (RL-NNN), 
 - Refs: `career-narratives-schema`.
 
 ### inventory-builder-research-classification-sections-5-6
-inventory builder skill needs a research component to classify Section 5 (Technical Experience) tools and Section 6 (Industry Exposure Profile) content against industry-pack and specialty-pack vocabularies. Drives downstream retrieval relevance and cv_targeted's ability to surface section content matched to JD industry/specialty signals.
+inventory builder skill needs a research component to classify Technical Experience tools and Industry Exposure Profile content against industry-pack and specialty-pack vocabularies. Drives downstream retrieval relevance and cv_targeted's ability to surface section content matched to JD industry/specialty signals.
 - Trigger: inventory builder skill design.
-- Blocks: inventory builder build; cv_targeted's section-5/section-6 consumption pattern.
+- Blocks: inventory builder build; cv_targeted's consumption pattern for those two sections.
 - Refs: `experience-inventory-section-5-restructure`, `experience-inventory-section-6-rename`, `cv-targeted-content-rules-from-axes`.
 
 ### inventory-builder-quality-check-encoding
@@ -310,3 +310,9 @@ Extending Document Metadata Header schema with `Maintained by:` field.
 - Blocks: nothing currently.
 - Refs: `rules/work-states/turnaround.md`.
 
+
+### cv-structure-rules-for-pb-ps-aw
+`rules/cv/cv-structure.md` has no section rules for the inventory's Publications, Presentations, and Awards & Honors content: where each renders on a CV (own section vs. merged "Publications & Presentations", placement order, citation format per entry Type), and how `cv_qc.py`'s placement rules extend (C5/C6 currently govern EX/PR only; PB/PS citations validate via C3 but have no placement rule). Citation plumbing is already in place (`inventory-pb-ps-aw-entry-schemas-2026-07`); this deferral is the rendering design.
+- Trigger: first PB/PS/AW entries added to the inventory, or the first cv-targeted run against a JD with an external-visibility requirement.
+- Blocks: nothing currently (sections are scaffolded empty; retrieval and QC handle the prefixes).
+- Refs: `inventory-external-visibility-sections-2026-07`, `inventory-pb-ps-aw-entry-schemas-2026-07`, `rules/cv/cv-structure.md`, `scripts/cv_qc.py`.

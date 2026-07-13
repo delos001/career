@@ -12,18 +12,20 @@ Two subcommands:
 
   id      Fetch one or more entries by ID. Output is each block in sequence,
           separated by a blank line. ID prefix selects the file:
-            EX-NNN, PR-NNN  -> inventory.md Section 8 entry blocks
-            RL-NNN          -> inventory.md Section 7 role-record blocks
-            ED/CERT/AFF/TR  -> inventory.md Sections 1-4 credential blocks
+            EX/PR/PB/PS-NNN -> inventory.md entry blocks (Experience Entries,
+                               Independent & Volunteer Projects, Publications,
+                               Presentations)
+            RL-NNN          -> inventory.md Employment & Role History records
+            ED/CERT/AFF/TR/AW -> inventory.md credential/reference blocks
             ST-NNN, DC-NNN  -> narratives.md '## Title' blocks
             TH-NNN          -> positioning.md '## TH-NNN ...' blocks
 
   section Fetch a named section from a profile file. Output is the raw
           section body on stdout, no JSON wrapper. <file> is one of
           'inventory', 'narratives', 'positioning', 'user-info'. <section>
-          is the heading text normalised to lowercase-with-hyphens with the
-          leading numeric prefix stripped, so '## 1. Education' matches
-          '--section education'.
+          is the heading text normalised to lowercase-with-hyphens (a leading
+          numeric prefix, if a heading carries one, is stripped), so
+          '## Education' matches '--section education'.
 
 Nothing repo-dependent is hardcoded; folder locations and filenames come
 from config.yaml. Sibling helper modules (_config, _util) provide the
@@ -84,8 +86,8 @@ def _profile_file_path(repo_root, cfg, logical_name):
 # ID-prefix routing
 # The ID prefix tells us which profile file the entry lives in and which
 # block-extraction shape applies. Two shapes:
-#   metadata-block (inventory EX, PR, RL, and credential entries ED, CERT, AFF,
-#       TR): begins at 'ID: <id>' on its own
+#   metadata-block (inventory EX, PR, PB, PS, RL, and credential/reference
+#       entries ED, CERT, AFF, TR, AW): begins at 'ID: <id>' on its own
 #       line; ends at the next 'ID: ' line or the next heading.
 #   heading-block (narratives ST, DC; positioning TH): begins at a '## ...'
 #       heading that either contains the ID directly (themes) or wraps a
@@ -97,11 +99,14 @@ def _profile_file_path(repo_root, cfg, logical_name):
 _PREFIX_TO_FILE = {
     'EX': 'inventory',
     'PR': 'inventory',
+    'PB': 'inventory',
+    'PS': 'inventory',
     'RL': 'inventory',
     'ED': 'inventory',
     'CERT': 'inventory',
     'AFF': 'inventory',
     'TR': 'inventory',
+    'AW': 'inventory',
     'ST': 'narratives',
     'DC': 'narratives',
     'TH': 'positioning',
@@ -212,7 +217,7 @@ def _fetch_id(entry_id, repo_root, cfg):
         raise FileNotFoundError(f'profile file missing: {file_path}')
     text = _util.read(file_path)
     prefix = entry_id.split('-', 1)[0]
-    if prefix in ('EX', 'PR', 'RL', 'ED', 'CERT', 'AFF', 'TR'):
+    if prefix in ('EX', 'PR', 'PB', 'PS', 'RL', 'ED', 'CERT', 'AFF', 'TR', 'AW'):
         block = _extract_metadata_block(text, entry_id)
     else:
         block = _extract_heading_block_by_id(text, entry_id)
@@ -336,7 +341,7 @@ def main():
     # --- Subparser: id ---
     p_id = sub.add_parser(
         'id',
-        help='fetch one or more entries by ID (EX, PR, RL, ED, CERT, AFF, TR, ST, DC, TH prefixes)',
+        help='fetch one or more entries by ID (EX, PR, PB, PS, RL, ED, CERT, AFF, TR, AW, ST, DC, TH prefixes)',
     )
     p_id.add_argument(
         'ids', nargs='+',

@@ -30,7 +30,7 @@ Drafter -> QC output contract (cv_content.md):
 Checks (all report-only):
   C1   every experience / work-output bullet carries a src citation
   C2   Core Competencies and the summary carry a src citation
-  C3   every cited EX/PR/ST id is well-formed and exists in the corpus
+  C3   every cited EX/PR/PB/PS/ST id is well-formed and exists in the corpus
   C4   (with --gap-analysis) subheading cr markers name a real CR-NNN
   C5   experience bullets attributed to the right employer/role (per-block
        distinct Role tags do not exceed the block's role-title count)
@@ -124,7 +124,7 @@ REQUIRED_SECTIONS = [
 
 SRC_RE = re.compile(r'<!--\s*src:\s*([^>]+?)\s*-->')
 CR_MARK_RE = re.compile(r'<!--\s*cr:\s*([^>]+?)\s*-->')
-ENTRY_ID_RE = re.compile(r'\b(?:EX|PR|ST)-\d+\b')
+ENTRY_ID_RE = re.compile(r'\b(?:EX|PR|PB|PS|ST)-\d+\b')
 CR_ID_RE = re.compile(r'\bCR-\d+\b')
 ANY_COMMENT_RE = re.compile(r'<!--.*?-->')
 EM_DASH = '—'
@@ -300,7 +300,7 @@ def _check_c2_competencies_summary_cited(sections):
 
 
 def _check_c3_ids_exist(text, valid_ids):
-    """C3: every cited EX/PR/ST id is well-formed and exists in the corpus."""
+    """C3: every cited EX/PR/PB/PS/ST id is well-formed and exists in the corpus."""
     cited = set()
     for m in SRC_RE.finditer(text):
         cited.update(ENTRY_ID_RE.findall(m.group(1)))
@@ -398,7 +398,7 @@ def _check_c5_role_attribution(sections, ex_to_rl):
 def _check_c6_no_project_in_experience(sections):
     """C6: independent project (PR-NNN) entries are not cited in Professional Experience.
 
-    PR-NNN ids are inventory Section 9 independent / volunteer projects; per
+    PR-NNN ids are inventory Independent & Volunteer Projects entries; per
     cv-structure.md they belong in the work-output (Selected Projects) section,
     placed after Professional Experience, not as roles or bullets inside it. A PR
     citation in the Professional Experience body signals project work misplaced as
@@ -733,8 +733,9 @@ def run_qc(args):
     text = _util.read(args.cv_file)
     sections = _split_sections(text)
 
-    # Valid id universe for C3: all EX/PR ids in the inventory plus all ST ids
-    # in narratives. Membership only; references and definitions both count.
+    # Valid id universe for C3: all EX/PR/PB/PS ids in the inventory plus all
+    # ST ids in narratives. Membership only; references and definitions both
+    # count.
     inv_text = _util.read(args.inventory)
     valid_ids = set(ENTRY_ID_RE.findall(inv_text))
     valid_ids.update(ENTRY_ID_RE.findall(_util.read(args.narratives)))

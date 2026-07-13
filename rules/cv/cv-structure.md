@@ -184,7 +184,7 @@ standard role (Direct, On-site, non-concurrent, fully allocated):
   100% allocation shows nothing.
 
 The qualifier values (Type, Style, Concurrent, Allocation, Agency) come from the
-inventory's Section 7 role records.
+inventory's Employment & Role History records.
 
 **Date format.** Month and year: `Mon YYYY - Mon YYYY` (e.g. `Feb 2024 - Jan
 2026`), `Mon YYYY - Present` for an active role. Pull months from the role
@@ -398,7 +398,7 @@ demonstrably evidences a JD requirement.
 **Independent / self-directed project work belongs here, not in Professional
 Experience (hard rule).** Self-employment or independent activity whose
 accomplishments are recorded only as independent-project entries (inventory
-Section 9, `PR-NNN`) is represented as Selected Projects entries in this
+Independent & Volunteer Projects, `PR-NNN`) is represented as Selected Projects entries in this
 work-output section, placed after Professional Experience, never as a role at the
 top of Professional Experience, regardless of recency. A role record carrying no
 employment (`EX-NNN`) accomplishments and only `PR-NNN` project content is
@@ -443,7 +443,7 @@ board, governance, or senior-leadership targets where memberships, board seats,
 or committee roles are a JD signal; omit otherwise. When included, place after
 Certifications & Training and before Technical Proficiencies. Affiliation, role
 (Member through Board / Officer / Committee Chair), and currency; concise
-reference lines drawn from inventory Section 3.
+reference lines drawn from the inventory's Professional Affiliations section.
 
 **Technical Proficiencies (always last).** Tools, platforms, languages, and
 methods the candidate genuinely holds, tailored to mirror the JD's technical

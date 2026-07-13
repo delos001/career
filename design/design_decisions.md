@@ -512,16 +512,16 @@ Refs: `experience-inventory-entry-types` ("new categories add new prefix ad hoc"
 #### inventory-pb-ps-aw-entry-schemas-2026-07
 Entry schemas for the three new sections of `inventory-external-visibility-sections-2026-07`. Governing principle: minimum lines per entry — optional fields are omitted when empty, never carried blank (departure from EX/PR's carried-blank style). Every field must name its consumer.
 
-**Publications (PB) — common case 11 lines:**
+**Publications (PB) — common case 10 lines:**
 ```
-ID / Title / Type / Venue / Authors / Published (YYYY-MM) / Industry / Specialty / Added / Last Used / Description
+ID / Title / Type / Venue / Authors / Published (YYYY-MM) / Industry / Specialty / Added / Description
 ```
 Type enum: `peer-reviewed article | published abstract | white paper | industry article`.
 Optional: `Link:` (DOI/URL), `Role: RL-NNN` (provenance when authored in a role; no Company field — nothing renders employer next to a publication), `Orientation:` (tag only when obvious), `Impact:` (only when real — strengthens payload and CV line), ad hoc `Status: In Press`.
 
-**Presentations (PS) — common case 11 lines:**
+**Presentations (PS) — common case 10 lines:**
 ```
-ID / Title / Type / Event / Location / Delivered (YYYY-MM) / Industry / Specialty / Added / Last Used / Description
+ID / Title / Type / Event / Location / Delivered (YYYY-MM) / Industry / Specialty / Added / Description
 ```
 Type enum: `conference talk | keynote | panel | poster | webinar | podcast | media interview`. Location takes `Virtual` as a value.
 Optional: `Presenters:` (co-presented only; solo is default), `Link:`, `Role: RL-NNN`, `Orientation:`, `Impact:`.
@@ -534,9 +534,9 @@ Optional: `Recognizes: EX-NNN`, `Description:` (only when the award name doesn't
 
 Axis-tag trimming on PB/PS: **Industry and Specialty required** (the domain axes carry the retrieval signal); **Orientation optional**; **Level and Work-state omitted** — a publication or talk has no honest seniority or operating state, and blank axes simply never match in the tag-pull pass. Retrieval payload = Description (+ Impact when present), riding the existing parser unchanged.
 
-Eligibility floors live in section preambles, not per-entry Status fields: PB = accepted or better (nothing in preparation); PS = delivered (accepted-not-yet-delivered items wait).
+Eligibility floors (recorded here, not as inventory preambles — `data-only-discipline` keeps rules out of knowledge docs; enforcement happens at entry-addition time): PB = accepted or better (nothing in preparation); PS = delivered (accepted-not-yet-delivered items wait). No per-entry Status field.
 
-Open verification for the apply step: whether the Last Used stamper tolerates a missing line; if yes, `Last Used:` drops from the PB/PS common case too.
+Resolved at apply (2026-07-13): repo-wide grep found no script, skill, or rule that stamps or consumes `Last Used` on inventory entries — the field is an unconsumed carried-blank convention on EX/PR. PB/PS entries omit it entirely (rosters above reflect this). Whether EX/PR should shed their dead `Last Used:` lines is a separate cleanup, not decided here.
 
 Refs: `inventory-external-visibility-sections-2026-07`, `experience-inventory-section-2-structured-fields` (credential pattern), `retrieval-architecture-2026-05`, `last-used-stamping`.
 

@@ -185,7 +185,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - Agents: `prep-research` (all research, including ad-hoc; foreground), `qc-preparation-screen`.
   - Scripts: `scripts/prep_qc.py`, `scripts/session_log.py` (session-log append).
   - Templates: `templates/interview_prep.md` (structure authority).
-  - Profile docs: `positioning.md` (incl. the "layer beneath" block), `user-info.md` (static facts + dated defaults, confirm-not-trust), `inventory.md` Section 7 (verify factual claims).
+  - Profile docs: `positioning.md` (incl. the "layer beneath" block), `user-info.md` (static facts + dated defaults, confirm-not-trust), `inventory.md` Employment & Role History (verify factual claims).
   - Application artifacts: `research.md`, `gap_analysis.md` (incl. Eligibility Flags confirmed constraints), `session_log.md`, `jd.md`, `cv_content.md`.
   - User input: screen facts (interviewer, date, duration, medium), per-gap research approvals, per-section content approvals, confirmations of pulled defaults.
 - **Outputs**:
@@ -203,7 +203,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - Agents: `prep-research` (per-interviewer intel + purpose-fit gaps; foreground), `qc-preparation-interview` (judgment QC).
   - Scripts: `scripts/prep_interview_qc.py` (deterministic QC), `scripts/interview_lifecycle.py` (reschedule / cancel three-file sync), `scripts/notes_assemble.py` (cue-card scaffolding via the interview-notes flow).
   - Templates: `templates/interview_prep.md` (the one canonical structure authority, shared with preparation-screen).
-  - Profile docs: `positioning.md`, `user-info.md`, `inventory.md` Section 7, `profile_updates_pending.md` (staged facts as a valid traceability source).
+  - Profile docs: `positioning.md`, `user-info.md`, `inventory.md` Employment & Role History, `profile_updates_pending.md` (staged facts as a valid traceability source).
   - Application artifacts: `research.md`, `gap_analysis.md`, `session_log.md`, `jd.md`, `cv_content.md`, existing `interview_prep.md` / `interview_notes.md`.
   - User input: audience + format + purpose at intake, interviewer(s), logistics; per-gap research approvals; per-section content approvals.
 - **Outputs**:
@@ -469,7 +469,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 **Planned / referenced in design:**
 - `scripts/display/orient.py` (with `scripts/display/orientations.yaml` catalog)
-- `scripts/inventory/rename_role.py` (atomic Section 7 + Section 8 rename, per Inventory Entry Types decision)
+- `scripts/inventory/rename_role.py` (atomic role rename across Employment & Role History and Experience Entries, per Inventory Entry Types decision)
 - `scripts/registry/generate_vocabularies.py` (reads tag and registry sources across `rules/`, generates `VOCABULARIES.md` at repo root as a single read-only reference for human browsing; regenerated on demand after tag-source changes)
 - Document metadata header reconciliation script (sweeps in-scope docs, parses headers, cross-references against COMPONENTS.md and skill code; logged to Pending Follow-on Work)
 - Inventory validation script (validates Capability, Industry, Skill, Role, Purpose, Role Level, Org Context against tag/registry sources)
@@ -537,7 +537,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/retrieval_payload.py
 
-- **Purpose**: Build LLM-consumable payloads for the retrieval skill. Subcommands: `inventory --chunk-size N` (parse Section 8 of inventory.md; emit JSON with chunked entries, each carrying ID, axis tags, and Description+Impact payload text), `narratives` (parse narratives.md; emit JSON with each narrative's ID, title, Linked Inventory, body), `themes` (parse positioning.md; emit JSON with each Signature Theme's Core message + Proof point + Use when concatenated as payload).
+- **Purpose**: Build LLM-consumable payloads for the retrieval skill. Subcommands: `inventory --chunk-size N` (parse the retrievable entries of inventory.md — EX/PR/PB/PS, matched by ID marker across their sections; emit JSON with chunked entries, each carrying ID, axis tags, and Description+Impact payload text), `narratives` (parse narratives.md; emit JSON with each narrative's ID, title, Linked Inventory, body), `themes` (parse positioning.md; emit JSON with each Signature Theme's Core message + Proof point + Use when concatenated as payload).
 - **Status**: Designed
 - **Inputs**: Subcommand args (`--chunk-size`). Config: `config.yaml` (profile path + per-file filenames) via `scripts/_config.py`. Filesystem: inventory.md, narratives.md, positioning.md.
 - **Outputs**: JSON to stdout per the per-subcommand schema. Errors to stderr with exit 1.

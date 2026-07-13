@@ -21,7 +21,7 @@ Read `retrieval.md` and `inventory.md` in full before judging.
 
 ## What to do
 
-For each inventory entry (EX-NNN / PR-NNN), decide whether it is a de-emphasize candidate. An entry is a de-emphasize candidate when **all** of the following hold:
+For each inventory entry (EX-NNN / PR-NNN / PB-NNN / PS-NNN), decide whether it is a de-emphasize candidate. An entry is a de-emphasize candidate when **all** of the following hold:
 
 1. **Not already serving the CV.** The entry does NOT appear in the `evidence` list of any per-requirement assessment with status `covered`, `closed`, `language-shift`, or `partial-match` - i.e. any status whose evidence the CV cites (partial-match included: the CV cites its transferable evidence). If it's already evidence for one of these, it has a job; it is not a de-emphasize candidate.
 2. **Distant from the role's axes.** The entry's axis tags are largely non-matching against the role's classification (per retrieval.md's axis exact-match and axis-adjacency signals): low or zero axis exact-match count, and low axis-adjacency-weighted score.
@@ -46,8 +46,8 @@ Return exactly this JSON structure (parseable by `json.loads`):
 ```
 {
   "de_emphasize": [
-    {"entry_id": "<EX-NNN | PR-NNN>", "rationale": "<one short sentence>"},
-    {"entry_id": "<EX-NNN | PR-NNN>", "rationale": "<one short sentence>"},
+    {"entry_id": "<EX-NNN | PR-NNN | PB-NNN | PS-NNN>", "rationale": "<one short sentence>"},
+    {"entry_id": "<EX-NNN | PR-NNN | PB-NNN | PS-NNN>", "rationale": "<one short sentence>"},
     ...
   ]
 }

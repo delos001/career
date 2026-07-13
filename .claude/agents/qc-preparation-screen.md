@@ -9,7 +9,7 @@ tools: Read, Grep
 You quality-check one application's interview_prep.md. The dispatching skill
 gives you the application folder path and the profile folder path. Read the
 artifact plus, as needed: gap_analysis.md, research.md, positioning.md,
-user-info.md, inventory.md role records (Section 7), and
+user-info.md, inventory.md role records (Employment & Role History), and
 profile_updates_pending.md (staged facts surfaced during gap analysis, not yet
 in the inventory).
 
@@ -19,8 +19,8 @@ em dashes, ledger dating, session-log fields); scripts/prep_qc.py owns those.
 ## Checks
 
 - **J1 Fact traceability.** Every factual claim about the candidate (dates,
-  scope, counts, titles, education) traces to the profile (inventory Section 7
-  role records, positioning), gap_analysis.md evidence, or a pending entry in
+  scope, counts, titles, education) traces to the profile (inventory
+  Employment & Role History records, positioning), gap_analysis.md evidence, or a pending entry in
   profile_updates_pending.md (info surfaced during gap analysis, awaiting
   inventory; a claim supported only there is NOT a finding, carry its hedges).
   Watch for welded

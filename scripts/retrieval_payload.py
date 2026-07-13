@@ -74,18 +74,20 @@ def _positioning_path(repo_root, cfg):
 
 # ---------------------------------------------------------------------------
 # Inventory entry parsing
-# Retrievable entries (EX-NNN, PR-NNN) live in Section 8 (Experience Entries)
-# and Section 9 (Independent & Volunteer Projects). Each entry begins with
-# 'ID: <id>' and carries the axis-tag lines (Industry, Specialty, Orientation,
-# Level, Work-state), the Description, and the Impact; PR entries also carry a
-# 'Company:' line (no Role: RL reference). The parser scans the whole document
-# by the anchored 'ID:' marker rather than a hardcoded section number, so it
-# stays correct across section renumbering. It extracts the fields we need and
-# concatenates Description + Impact into a 'payload' text the LLM judges.
+# Retrievable entries (EX-NNN, PR-NNN, PB-NNN, PS-NNN) live in the Experience
+# Entries, Independent & Volunteer Projects, Publications, and Presentations
+# sections. Each entry begins with 'ID: <id>' and carries axis-tag lines
+# (Industry and Specialty always; Orientation, Level, Work-state where the
+# section's schema defines them), the Description, and optionally the Impact;
+# PR entries also carry a 'Company:' line (no Role: RL reference). The parser
+# scans the whole document by the anchored 'ID:' marker rather than by
+# section position, so it stays correct across section reordering. It
+# extracts the fields we need and concatenates Description + Impact into a
+# 'payload' text the LLM judges.
 # ---------------------------------------------------------------------------
 
 # Regex: a line that opens an inventory entry. Captures the ID.
-_ENTRY_RE = re.compile(r'^ID:\s+((?:EX|PR)-\d+)\s*$')
+_ENTRY_RE = re.compile(r'^ID:\s+((?:EX|PR|PB|PS)-\d+)\s*$')
 
 # Regex: a tag line (e.g. 'Industry: pharma', 'Specialty: clinical-operations | data-science').
 _TAG_RE = re.compile(r'^(Industry|Specialty|Orientation|Level|Work-state):\s*(.*)$')
@@ -98,7 +100,8 @@ _FIELD_RE = re.compile(r'^(Description|Impact):\s*(.*)$')
 # Regex: the Role tag linking an entry to its RL role record (its employer).
 _ROLE_RE = re.compile(r'^Role:\s+(RL-\d+)\s*$')
 
-# Regexes for Section 7 role records: the RL id line and its employer (Company).
+# Regexes for Employment & Role History records: the RL id line and its
+# employer (Company).
 _ROLE_ENTRY_RE = re.compile(r'^ID:\s+(RL-\d+)\s*$')
 _COMPANY_RE = re.compile(r'^Company:\s*(.+?)\s*$')
 
@@ -137,22 +140,24 @@ def _section_bounds(text, heading_prefix):
 
 
 def _parse_inventory_entries(inventory_text):
-    """Walk every EX/PR entry in inventory.md, returning a list of entry dicts.
+    """Walk every retrievable entry in inventory.md, returning entry dicts.
 
-    Each dict carries: id, role (str; EX entries reference an RL record),
-    company (str; PR entries carry their employer directly), industry (list),
-    specialty (list), orientation (list), level (list), work_state (list),
-    description (str), impact (str), payload (str = Description + ' ' + Impact,
-    both trimmed).
+    Each dict carries: id, role (str; EX/PB/PS entries may reference an RL
+    record), company (str; PR entries carry their employer directly),
+    industry (list), specialty (list), orientation (list), level (list),
+    work_state (list), description (str), impact (str), payload (str =
+    Description + ' ' + Impact, both trimmed). Axes a section's schema omits
+    (e.g. Level/Work-state on PB/PS per
+    `inventory-pb-ps-aw-entry-schemas-2026-07`) stay empty lists and never
+    tag-match.
 
     Entries are matched anywhere in the document by their anchored
-    'ID: EX-NNN' / 'ID: PR-NNN' opener (currently Section 8 Experience Entries
-    and Section 9 Independent & Volunteer Projects). Scanning by entry marker
-    rather than a hardcoded section number keeps the parser stable across
-    section renumbering (cf. the 9<->10 swap in
-    `experience-inventory-section-ordering`). A new '## ' section heading
-    closes the open entry, so a non-entry section (e.g. Academic Coursework
-    Detail) cannot bleed into the last entry's fields.
+    'ID: <prefix>-NNN' opener (_ENTRY_RE owns the retrievable-prefix set:
+    EX, PR, PB, PS). Scanning by entry marker rather than section position
+    keeps the parser stable across section reordering
+    (`inventory-section-denumbering-and-reorder-2026-07`). A new '## '
+    section heading closes the open entry, so a non-entry section (e.g.
+    Academic Coursework Detail) cannot bleed into the last entry's fields.
     """
     lines = inventory_text.split('\n')
     entries = []
@@ -219,14 +224,15 @@ def _parse_inventory_entries(inventory_text):
 
 
 def _parse_role_companies(inventory_text):
-    """Walk Section 7 (Employment & Role History); return {RL-NNN: company}.
+    """Walk the Employment & Role History section; return {RL-NNN: company}.
 
     Each role record opens with 'ID: RL-NNN' and carries a 'Company:' line. This
     resolves an entry's Role tag to its employer for the retrieval manifest. Empty
     dict if the section is absent.
     """
     try:
-        sec_start, sec_end = _section_bounds(inventory_text, '## 7. ')
+        sec_start, sec_end = _section_bounds(
+            inventory_text, '## Employment & Role History')
     except ValueError:
         return {}
     lines = inventory_text.split('\n')

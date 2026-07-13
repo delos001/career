@@ -45,7 +45,7 @@ Read all referenced files in full before checking.
 
 ### Cross-document consistency
 
-8. **No fabricated IDs** - every `EX-NNN`, `PR-NNN`, `ED-NNN`, `CERT-NNN`, `AFF-NNN`, `TR-NNN`, `ST-NNN`, `DC-NNN` referenced anywhere in `gap_analysis.md` exists in the profile documents (credential entries `ED-NNN`/`CERT-NNN`/`AFF-NNN`/`TR-NNN` live in `inventory.md` Sections 1-4). Every `CR-NNN` referenced exists in `research.md`'s critical requirements. Every `PU-NNN` referenced exists in `profile_updates_pending.md`. Grep the source documents to confirm.
+8. **No fabricated IDs** - every `EX-NNN`, `PR-NNN`, `PB-NNN`, `PS-NNN`, `ED-NNN`, `CERT-NNN`, `AFF-NNN`, `TR-NNN`, `AW-NNN`, `ST-NNN`, `DC-NNN` referenced anywhere in `gap_analysis.md` exists in the profile documents (credential/reference entries `ED-NNN`/`CERT-NNN`/`AFF-NNN`/`TR-NNN`/`AW-NNN` live in `inventory.md`'s reference sections). Every `CR-NNN` referenced exists in `research.md`'s critical requirements. Every `PU-NNN` referenced exists in `profile_updates_pending.md`. Grep the source documents to confirm.
    Route-back: the owning phase of the offending reference (phase 3 for evidence IDs in Requirements; phase 5 for de-emphasize entry IDs; phase 6 for PU-NNN references).
 9. **Session log mirroring** - the fit score in the session log `## Gap Analysis` section matches the fit score in `gap_analysis.md`'s header. No silent divergence.
    Route-back: phase 6 (assemble outputs).

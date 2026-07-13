@@ -36,8 +36,9 @@ and the Signature Theme score table in `retrieval.md` (targeted read of that
 table only, never the whole manifest).
 From `personal/profile/`: `positioning.md` (all sections; the routing rules
 in Phase 3 say where each lands), `user-info.md` (static facts and
-dated defaults), `inventory.md` Section 7 (authoritative role records; verify
-any date/scope/count claim here before writing it).
+dated defaults), `inventory.md` Employment & Role History section
+(authoritative role records; verify any date/scope/count claim here before
+writing it).
 
 ## Phase 0: mode
 
