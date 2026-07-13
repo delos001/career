@@ -31,8 +31,9 @@ to disagree, the protocol wins.
   style and filing location (default: the configured runs folder).
 - Derive the corpus-limitation statement and confirm the subject proceeds with
   those limits understood.
-- Mode: a prior product in the runs folder means rerun; otherwise fresh run.
-  The subject can override (a fresh run is always legitimate).
+- Mode: a file matching `self_assessment.product_pattern` (config.yaml) at the
+  runs root means rerun; otherwise fresh run. The subject can override (a
+  fresh run is always legitimate).
 - Output: corpus list, limitation statement, mode, run folder
   (`<runs>/<YYYY-MM>/` for the trail; product at the runs root).
 
@@ -57,8 +58,10 @@ to disagree, the protocol wins.
 **Checking the product.**
 
 - Deterministic pass: `python <repo>/scripts/self_assessment_qc.py check
-  --file <absolute path to the product>`. Fix script findings and re-run until
-  clean; these are mechanical and stay internal.
+  --file <absolute path to the product>`. Fix and re-run until clean.
+  Structural fixes (stamp, headings, labels, Scope marker, em dashes) stay
+  internal; fixes that change claim content (assigning a confidence level for
+  G1, rewording for E2/R1/R2) get a before/after shown to the user first.
 - Judgment pass: dispatch the `qc-self-assessment` agent with the product path
   and the protocol path. For each finding that changes content, show the
   before/after to the user prior to applying (mechanical fills excepted), then

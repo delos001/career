@@ -4,7 +4,7 @@
 
 **Version:** v2, 2026-07-10. v1 (2026-07-07, the version the 2026-07 profile ran under) is in the personal repo's git history (originally `operator/method.md`). Every v2 change traces to the 2026-07 run's trail: `personal/self-assessment/2026-07/yield_audit_2026-07.md` (internal audit) and `personal/self-assessment/2026-07/method_research_2026-07.md` (external research, adoption decisions).
 
-The rules for conducting a behavioral self-assessment of a person (the subject) from corpora they designate plus direct questioning. Rules 1-12 were earned during the 2026-07 run; each exists because its absence produced a documented error. Rules 13-15 and the run modes were adopted 2026-07-10 from the research pass. This file is generic: it hardcodes no repositories, no file names, and no facts about any subject. Runs and their trails file per the dispatching skill or the subject's instruction.
+The rules for conducting a behavioral self-assessment of a person (the subject) from corpora they designate plus direct questioning. Rules 1-12 were earned during the 2026-07 run; each exists because its absence produced a documented error. Rules 13-15 and the run modes were adopted 2026-07-10 from the research pass. The method below is generic: it hardcodes no repositories, no file names, and no facts about any subject. The Used-by and Version lines above are this repo's own wiring and provenance; they travel with the file as history, not method, and a reader outside this repo can ignore them. Runs and their trails file per the dispatching skill or the subject's instruction.
 
 ## What this is
 

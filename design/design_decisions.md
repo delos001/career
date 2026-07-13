@@ -474,6 +474,8 @@ EX entries reference Section 7 via `Role: RL-NNN` field per `inventory-role-rl-r
 #### experience-inventory-section-ordering
 Sections 9 and 10 swap. Independent & Volunteer Projects → 9. Academic Coursework Detail → 10. Education stays at top.
 
+**Superseded by `inventory-section-denumbering-and-reorder-2026-07`** (headings de-numbered; full reorder into clusters).
+
 #### experience-inventory-tagging-granularity
 Reference sections addressable at sub-section level via heading anchors. Per-item tagging not added.
 
@@ -491,6 +493,73 @@ Background Roles: the `Background Roles (Not Tagged)` block formerly after Secti
 Closes `inventory-section-8-subsection-reassignment` (the deferred Step 6 sub-section remap, already moot since `competency-field-and-registry-removed-2026-05`; the structural question is now resolved by this decision). Apply executed via `scripts/_reorg_section8.py` against 212 EX entries; per `working-files-deleted-after-apply` the script is deletable, this decision is the durable record.
 
 Refs: `inventory-role-rl-reference-applied-2026-05`, `inventory-entry-multi-value-orientation-2026-05`, `cv-targeted-retrieval-architecture-2026-05`, `competency-field-and-registry-removed-2026-05`, `experience-inventory-section-7-flat-records`, `inventory-section-8-subsection-reassignment` (deferral, closed), `design/inventory_builder_quality_checks.md` (parallel-construction scope + §5 background-role exemption updated), `design/narratives_builder_quality_checks.md` (anchored-matching note added).
+
+#### inventory-external-visibility-sections-2026-07
+Closes the inventory's external-visibility gap (publications, speaking, recognition, professional service). Research pass over clinical-research / life-sciences CV conventions collapsed the candidate space into three homes; like items are categories or fields within a section, not sections of their own.
+
+- **New Section 11: Publications (`PB-NNN`). New Section 12: Presentations (`PS-NNN`).** Separate sections rather than one combined section: the two carry different field schemas (written artifact vs. delivered event — the decisive argument, per the one-schema-per-section convention of `experience-inventory-section-1/2/3-structured-fields`), and section-level prefixes keep IDs self-describing for structure-independent extraction (`^ID: PB-` pulls every publication with no heading parsing). Boundary rule: **written vs. delivered.** Publications = peer-reviewed articles, published abstracts, white papers, industry articles. Presentations = conference talks, keynotes, panels, posters, webinars, media/podcast appearances. A per-entry `Type:` field carries granularity within each section. CV display may merge the two at render time; the inventory keeps them apart.
+- **Both participate in retrieval** — axis-tagged and scored like EX/PR (JDs in this industry ask for external visibility; participation lets these entries surface as ranked evidence). Entry schemas defined at scaffold time.
+- **New Section 13: Awards & Honors (`AW-NNN`).** Reference content, not retrieval-scored: an award recognizes work that already lives in an EX entry, and that entry is the scoring-pool evidence. Optional `Recognizes: EX-NNN` field links the award to the recognized work so cv-targeted can pull it alongside a cited entry. IDs assigned anyway for portability and citation (cf. `education-citable-ids-2026-06`). Reference status does not limit CV presence, same as Education/Certifications today.
+- **Section 3 (Professional Affiliations) expands to carry active professional service** — committee and working-group roles, advisory boards, peer review, conference organizing, board service — alongside passive memberships. Flat list, no subsections: the distinction is carried by the existing schema's `Role` field, already designed for this range (`experience-inventory-section-3-structured-fields`) — a heading split would force false either/or filing (a committee chair is simultaneously member and in service). Heading text unchanged; slug callers unaffected.
+- **Placement:** superseded same-day by `inventory-section-denumbering-and-reorder-2026-07` — the three new sections join the professional-standing cluster (after Professional Affiliations) in the de-numbered document order.
+- **Empty-section convention:** new sections are scaffolded even when empty; a section with no entries carries a single machine-checkable `Entries: None` line (extends the RL-record convention from `inventory-section-8-rl-grouping-2026-05`). Explicit None records observed absence — gap analysis can confirm a JD-demanded item is genuinely absent without a user query. This supersedes prior case-by-case advice to omit data-less sections, which was scoped to rendered CVs, not the source-of-truth inventory.
+- **Script registration at apply time:** PB/PS join the retrievable-entry scan in `retrieval_payload.py` and the ID-fetch prefixes in `scripts/profile_slice.py`; AW joins ID-fetch only. Repo-wide sweep for EX/PR prefix enumerations (scoring, staging, QC scripts, skill docs) so nothing silently ignores the new IDs.
+
+Researched but rejected as sections: patents/IP, grants and funding, teaching/mentoring, languages — academic-CV furniture for this profile, or better carried as EX entries under their roles. Any can join later as a category or new section without restructuring.
+
+Refs: `experience-inventory-entry-types` ("new categories add new prefix ad hoc"), `experience-inventory-section-3-structured-fields`, `inventory-section-8-rl-grouping-2026-05`, `education-citable-ids-2026-06`, `retrieval-architecture-2026-05`.
+
+#### inventory-pb-ps-aw-entry-schemas-2026-07
+Entry schemas for the three new sections of `inventory-external-visibility-sections-2026-07`. Governing principle: minimum lines per entry — optional fields are omitted when empty, never carried blank (departure from EX/PR's carried-blank style). Every field must name its consumer.
+
+**Publications (PB) — common case 11 lines:**
+```
+ID / Title / Type / Venue / Authors / Published (YYYY-MM) / Industry / Specialty / Added / Last Used / Description
+```
+Type enum: `peer-reviewed article | published abstract | white paper | industry article`.
+Optional: `Link:` (DOI/URL), `Role: RL-NNN` (provenance when authored in a role; no Company field — nothing renders employer next to a publication), `Orientation:` (tag only when obvious), `Impact:` (only when real — strengthens payload and CV line), ad hoc `Status: In Press`.
+
+**Presentations (PS) — common case 11 lines:**
+```
+ID / Title / Type / Event / Location / Delivered (YYYY-MM) / Industry / Specialty / Added / Last Used / Description
+```
+Type enum: `conference talk | keynote | panel | poster | webinar | podcast | media interview`. Location takes `Virtual` as a value.
+Optional: `Presenters:` (co-presented only; solo is default), `Link:`, `Role: RL-NNN`, `Orientation:`, `Impact:`.
+
+**Awards & Honors (AW) — common case 4 lines:**
+```
+ID / Award / Issuer / Date (YYYY)
+```
+Optional: `Recognizes: EX-NNN`, `Description:` (only when the award name doesn't self-describe). No axis tags, no Added/Last Used — reference content per the credential-section pattern.
+
+Axis-tag trimming on PB/PS: **Industry and Specialty required** (the domain axes carry the retrieval signal); **Orientation optional**; **Level and Work-state omitted** — a publication or talk has no honest seniority or operating state, and blank axes simply never match in the tag-pull pass. Retrieval payload = Description (+ Impact when present), riding the existing parser unchanged.
+
+Eligibility floors live in section preambles, not per-entry Status fields: PB = accepted or better (nothing in preparation); PS = delivered (accepted-not-yet-delivered items wait).
+
+Open verification for the apply step: whether the Last Used stamper tolerates a missing line; if yes, `Last Used:` drops from the PB/PS common case too.
+
+Refs: `inventory-external-visibility-sections-2026-07`, `experience-inventory-section-2-structured-fields` (credential pattern), `retrieval-architecture-2026-05`, `last-used-stamping`.
+
+#### inventory-section-denumbering-and-reorder-2026-07
+Two structural changes to inventory.md, applied together in one sweep.
+
+**De-numbering.** Section headings drop the numeric prefix (`## 7. Employment & Role History` → `## Employment & Role History`). Heading text becomes the sole section identifier. Rationale: the number was a duplicate identifier carrying no information the name doesn't, going stale on every insert or reorder, and inviting number anchors in code. Heading text is already the operative contract — `profile_slice.py` slug matching strips numeric prefixes (verified: the strip regex is a no-op on unnumbered headings) and EX/PR entry parsing ignores headings entirely. The ToC communicates order by being an ordered list.
+
+**Reorder into three clusters.** New document order:
+- Work: Employment & Role History, Experience Entries, Independent & Volunteer Projects, Industry Exposure Profile, Technical Experience.
+- Credentials: Education, Academic Coursework Detail, Professional Training, Professional Certifications.
+- Professional standing: Professional Affiliations, Publications, Presentations, Awards & Honors.
+
+Rationale: the prior order interleaved work content and reference content with no grouping logic. Clusters make the document navigable and give every future section an obvious insertion point instead of dangling off the end.
+
+Apply-time sweep (runs with the scaffolding step of `inventory-external-visibility-sections-2026-07`):
+- `retrieval_payload.py` Section 7 bounds anchor (`'## 7. '`, the sole number-dependent seam in inventory-consuming scripts) re-anchored on heading text. Mandatory, not cosmetic: on a heading miss the current code returns an empty RL→Company map, silently stripping company data from the payload.
+- Live prose references to section numbers (script docstrings, skill docs — e.g. "Sections 1-6 of inventory are OUT of retrieval scope") reworded to section names or structural terms ("untagged reference sections"). Historical design-decision entries keep their numbers as records of past states.
+- inventory.md ToC rebuilt un-numbered in the new order.
+
+Supersedes `experience-inventory-section-ordering` and the placement bullet of `inventory-external-visibility-sections-2026-07`.
+
+Refs: `inventory-external-visibility-sections-2026-07`, `experience-inventory-section-ordering` (superseded), `experience-inventory-tagging-granularity`.
 
 #### narratives-placement
 `rules/narratives/` with five files: `decision_adr`, `decision_personal`, `story_atola`, `story_star`, `story_personal`.

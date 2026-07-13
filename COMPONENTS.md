@@ -465,7 +465,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - `scripts/interview_lifecycle.py` (preparation-interview skill: reschedule / cancel three-file sync; detailed entry below)
 - `scripts/notes_assemble.py` (interview-notes skill: shell init + round-section append; detailed entry below)
 - `scripts/scratch_cleanup.py` (deletes a per-application scratch folder via `--app-folder`, or the axis-builder scratch via `--builder`; the single cleanup call for the run-scratch lifecycle)
-- `scripts/self_assessment_qc.py` (self-assessment skill: deterministic QC of a product file against the protocol's mechanical rules via `check --file`; all patterns and thresholds from config.yaml's `self_assessment` block; roster entry only)
+- `scripts/self_assessment_qc.py` (self-assessment skill: deterministic QC of a product file against the protocol's mechanical rules via `check --file`; patterns and thresholds from config.yaml's `self_assessment` block, current protocol version read from the protocol file's own Version line; roster entry only)
 
 **Planned / referenced in design:**
 - `scripts/display/orient.py` (with `scripts/display/orientations.yaml` catalog)

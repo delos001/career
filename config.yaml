@@ -86,8 +86,8 @@ naming:
 # Self-assessment QC spec. Consumed by scripts/self_assessment_qc.py; keeps
 # every pattern out of the script so protocol evolution is a config edit.
 self_assessment:
-  product_pattern: "profile_*.md"          # products at the runs-folder root
-  version_stamp_regex: "protocol v\\d+"    # product must name the protocol version it ran under
+  product_pattern: "profile_*.md"          # products at the runs-folder root; the skill's rerun-vs-fresh mode detection matches on this
+  version_stamp_regex: "protocol v\\d+"    # locates the product's stamp; V1 compares its number to the protocol file's current Version line
   required_headings:                       # one regex per required product section, canonical order
     - "^## Who .+"
     - "^## The core pattern"
@@ -106,7 +106,8 @@ self_assessment:
     - "requested and run by the person it describes"
     - "cannot show what was never"
     - "hygiene, not independence"
+    - "verification path"                  # rule 11: trail + underlying record remain the verification path
   scope_marker: "\\*\\*Scope"              # corpus-limitation statement marker
-  confidence_terms: [low, moderate, moderate-to-high, high]   # anchored vocabulary for inferred claims
+  confidence_terms: [low, moderate, high]  # anchored vocabulary for inferred claims; must match the protocol's defined levels
   max_sentence_words: 40                   # readability proxy for rule 9's "no sentence that needs re-reading"
   max_paragraph_chars: 900                 # readability proxy for like-chunk paragraphs
