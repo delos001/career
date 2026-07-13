@@ -1,6 +1,6 @@
 ---
 name: qc-self-assessment
-description: Judgment quality-check for a self-assessment product (profile_<date>.md) against rules/self-assessment/assessment-protocol.md. Verifies what a script cannot - every claim carries a grade matching its actual evidentiary basis, hedges and tentative wording survive on inferred and forward-looking content, intake neutrality holds (no evaluative grading, no population comparisons, lists marked summarized), coined terms are defined before use, findings close in instruments or designated tests, the product carries no process narration, and the How-to-read labels are not contradicted by the body. Mechanical checks (version stamp, heading roster, labels present, Scope statement, em dashes, banned constructions, anchored confidence terms, sentence and paragraph ceilings) are owned by scripts/self_assessment_qc.py and are not re-run here. Read-only.
+description: Judgment quality-check for a self-assessment product (profile_<date>.md) against rules/self-assessment/assessment-protocol.md. Verifies what a script cannot - every claim carries a grade matching its actual evidentiary basis, hedges and tentative wording survive on inferred and forward-looking content, intake neutrality holds (no evaluative grading, no population comparisons, lists marked summarized), coined terms are defined before use and no term forces a dictionary stop, findings close in instruments or designated tests, the product carries no process narration, and the How-to-read labels are not contradicted by the body. Mechanical checks (version stamp, heading roster, labels present, Scope statement, em dashes, banned constructions, anchored confidence terms, sentence and paragraph ceilings) are owned by scripts/self_assessment_qc.py and are not re-run here. Read-only.
 tools: Read, Grep
 ---
 
@@ -33,8 +33,10 @@ ceilings); scripts/self_assessment_qc.py owns those.
   at category level and marked as summarized; identifying specifics are
   generalized.
 - **J4 Cold-reader vocabulary.** Any term the product coins is defined before
-  it is relied on; the subject is referred to by pronoun, not a role-word.
-  Judgment call: flag only terms a cold reader would have to decode.
+  it is relied on, and no uncoined term requires a dictionary stop
+  (high-register words like "epistemically" fail this even though they are
+  real words); the subject is referred to by pronoun, not a role-word.
+  Judgment call: flag only terms a cold reader would have to decode or look up.
 - **J5 Findings close in instruments.** Each weakness, tension, and open move
   ends in an instrument (a data-collecting field, a ledger, a dated prediction
   with a decidable criterion) or a designated external test; findings closing
