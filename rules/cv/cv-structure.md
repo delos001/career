@@ -492,9 +492,13 @@ clause breaks.
 - Title Case headings and decorative boldface: labels use the defined heading
   style, not Title Case On Every Word.
 
-**Plain, verifiable language.** No keyword-stuffing, no verbs inflated beyond the
-level's voice (governed by the level axis file), no duty-list phrasing. Tailoring
-means genuine relevance and terminology alignment, not term dumping.
+**Plain, verifiable language (hard rule).** No keyword-stuffing, no verbs inflated
+beyond the level's voice (governed by the level axis file), no duty-list phrasing.
+Tailoring means genuine relevance and terminology alignment, not term dumping.
+Never substitute a job-description buzzword for an accurate term to manufacture a
+keyword match or stretch a claim: when a plainer, more accurate word describes the
+experience, use the accurate word. Every term must map to what the candidate
+actually did, without overstatement.
 
 **Achievement single-home (hard rule).** Each distinct achievement - a specific
 quantified result or named accomplishment (e.g. "200+ data transfers without
