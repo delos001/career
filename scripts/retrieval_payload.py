@@ -14,15 +14,17 @@ subagent consumes alongside the critical requirements list. Three subcommands:
               lists in a single prompt.
   narratives  Read narratives.md and emit a JSON list of every narrative
               (ST-NNN and DC-NNN) with its ID, Linked Inventory IDs, and a
-              concatenated body payload. One LLM call sees the whole list.
+              concatenated body payload. Scored in byte-budgeted chunks
+              (see split), one LLM call per chunk.
   themes      Read positioning.md and emit a JSON list of every Signature
               Theme (TH-NNN) with Core message + Proof point + Use when
               triggers concatenated. One LLM call sees the whole list.
   split       Read the three payload files previously written to the temp
-              directory, write one JSON file per inventory chunk, and print
-              a plain-English summary (chunk count, sizes, narrative count,
-              theme count). Eliminates the need for ad-hoc inline Python
-              between Phase 2 (build payloads) and Phase 3 (score).
+              directory, write one JSON file per inventory chunk and per
+              narrative chunk (byte-budgeted), and print a plain-English
+              summary (chunk counts and sizes per corpus, theme count).
+              Eliminates the need for ad-hoc inline Python between Phase 2
+              (build payloads) and Phase 3 (score).
 
 Nothing repo-dependent is hardcoded; folder locations and filenames come from
 config.yaml. The script does not invoke any LLM itself: it only prepares
@@ -34,7 +36,7 @@ Project   : career
 Usage     : python scripts/retrieval_payload.py inventory [--chunk-size 50]
             python scripts/retrieval_payload.py narratives
             python scripts/retrieval_payload.py themes
-            python scripts/retrieval_payload.py split --slug <slug> --app-id <APP-NNN> [--temp-dir temp]
+            python scripts/retrieval_payload.py split --slug <slug> --app-id <APP-NNN> [--temp-dir temp] [--narr-chunk-bytes 45000]
 Depends   : pyyaml (via _config)
 """
 
@@ -304,8 +306,8 @@ def cmd_inventory(args, repo_root, cfg):
 # carries ID, Linked Inventory IDs (parsed from the 'Linked Inventory:' line),
 # and a payload text built from the narrative body (title + sections up to
 # but not including 'Value Translation' / 'Outcome' which can over-emphasise
-# specific phrasing). The retrieval skill sends the whole list to one
-# scorer subagent invocation (narratives corpus is small).
+# specific phrasing). The split subcommand batches the list into byte-budgeted
+# chunk files; the retrieval skill sends one scorer subagent per chunk.
 # ---------------------------------------------------------------------------
 
 # Regex: a '## <Title>' heading marks the start of a narrative.
@@ -453,14 +455,39 @@ def cmd_themes(args, repo_root, cfg):
 # ---------------------------------------------------------------------------
 # Split subcommand
 # After the three payload files are written, this subcommand splits them into
-# one JSON file per inventory chunk and one JSON file per narrative entry, then
-# prints a summary so the calling skill knows exactly which files to pass to
-# scorer agents. Eliminates ad-hoc inline Python between Phase 2 and Phase 3
+# one JSON file per inventory chunk and one JSON file per narrative chunk,
+# then prints a summary so the calling skill knows exactly which files to pass
+# to scorer agents. Eliminates ad-hoc inline Python between Phase 2 and Phase 3
 # and guarantees each scorer reads a bounded file rather than a large payload.
 # ---------------------------------------------------------------------------
 
+def _chunk_narratives_by_bytes(entries, max_bytes):
+    """Group narrative entries into chunks bounded by a serialized-byte budget.
+
+    Narrative bodies vary widely in size, and the failure mode being guarded
+    against is a scorer's file read exceeding its token cap, which is a byte
+    problem rather than a count problem. Each chunk takes whole entries until
+    adding the next would exceed max_bytes; a single entry larger than the
+    budget still gets its own chunk. Returns a list of entry lists.
+    """
+    chunks = []
+    current = []
+    current_bytes = 0
+    for entry in entries:
+        entry_bytes = len(json.dumps(entry, ensure_ascii=False).encode('utf-8'))
+        if current and current_bytes + entry_bytes > max_bytes:
+            chunks.append(current)
+            current = []
+            current_bytes = 0
+        current.append(entry)
+        current_bytes += entry_bytes
+    if current:
+        chunks.append(current)
+    return chunks
+
+
 def cmd_split(args, repo_root, cfg):
-    """Split payload files into per-chunk and per-narrative files; print summary."""
+    """Split payload files into per-chunk files per corpus; print summary."""
     prefix = f"{args.slug}_{args.app_id}"
     temp_dir = args.temp_dir
     os.makedirs(temp_dir, exist_ok=True)  # scratch dir may not exist yet on a fresh run
@@ -489,25 +516,36 @@ def cmd_split(args, repo_root, cfg):
             )
         chunk_paths.append((out_path, len(chunk['entries'])))
 
-    # Write one file per narrative entry. Narrative bodies can be large enough
-    # that a single payload file exceeds the Read tool token cap; individual
-    # files guarantee each scorer invocation reads a bounded amount.
-    narrative_paths = []
-    for entry in nar_data['entries']:
-        nid = entry['id']
-        out_path = os.path.join(temp_dir, f"{prefix}_narrative_{nid}.json")
+    # Write byte-budgeted narrative chunk files. One scorer invocation per
+    # chunk keeps every read bounded below the Read tool token cap while
+    # avoiding the cost of a full scorer dispatch per narrative. The 'body'
+    # field duplicates 'payload' verbatim for narratives, so it is stripped
+    # from the scorer-facing chunk file to halve what each scorer reads.
+    slim_entries = [
+        {k: v for k, v in entry.items() if k != 'body'}
+        for entry in nar_data['entries']
+    ]
+    narr_chunks = _chunk_narratives_by_bytes(slim_entries, args.narr_chunk_bytes)
+    narr_chunk_paths = []
+    for idx, entries in enumerate(narr_chunks):
+        out_path = os.path.join(temp_dir, f"{prefix}_narr_chunk{idx}.json")
         with open(out_path, 'w', encoding='utf-8') as f:
-            json.dump({'corpus': 'narratives', 'entry': entry}, f, ensure_ascii=False)
-        narrative_paths.append(out_path)
+            json.dump(
+                {'corpus': 'narratives', 'chunk_index': idx, 'entries': entries},
+                f,
+                ensure_ascii=False,
+            )
+        narr_chunk_paths.append((out_path, len(entries)))
 
     # Print summary.
     sizes = '+'.join(str(n) for _, n in chunk_paths)
     print(f"Inventory: {inv_data['chunk_count']} chunks written ({sizes} = {inv_data['entry_count']} entries)")
     for path, size in chunk_paths:
         print(f"  {path} ({size} entries)")
-    print(f"Narratives: {nar_data['entry_count']} entries written")
-    for path in narrative_paths:
-        print(f"  {path}")
+    narr_sizes = '+'.join(str(n) for _, n in narr_chunk_paths)
+    print(f"Narratives: {len(narr_chunk_paths)} chunks written ({narr_sizes} = {nar_data['entry_count']} entries)")
+    for path, size in narr_chunk_paths:
+        print(f"  {path} ({size} entries)")
     print(f"Themes: {th_data['entry_count']} entries (use {prefix}_themes_payload.json)")
 
 
@@ -561,6 +599,10 @@ def main():
     p_split.add_argument('--slug', required=True, help='role slug (e.g. takeda)')
     p_split.add_argument('--app-id', required=True, help='application ID (e.g. APP-006)')
     p_split.add_argument('--temp-dir', default='temp', help='temp directory (default: temp)')
+    p_split.add_argument(
+        '--narr-chunk-bytes', type=int, default=45000,
+        help='maximum serialized bytes per narrative chunk file (default 45000)',
+    )
     p_split.set_defaults(func=cmd_split)
 
     args = parser.parse_args()

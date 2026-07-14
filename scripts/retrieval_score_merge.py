@@ -3,21 +3,23 @@
 retrieval_score_merge.py - merge per-agent score files into final score files
 
 After Phase 3 of the retrieval skill, each scorer agent has written its
-results to a per-chunk or per-narrative temp file. This script collects those
-files, validates them, merges them into the three final score files that
+results to a per-chunk temp file. This script collects those files,
+validates them, merges them into the three final score files that
 retrieval_apply.py expects, and prints a confirmation.
 
 Conventions (derived from --slug and --app-id):
   Input chunk files  : temp/<slug>_<app-id>_scores_inventory_chunk{N}.json
-  Input narrative    : temp/<slug>_<app-id>_scores_narrative_{ID}.json
+  Input narrative    : temp/<slug>_<app-id>_scores_narr_chunk{N}.json
   Input themes file  : temp/<slug>_<app-id>_scores_themes.json
   Output inventory   : temp/<slug>_<app-id>_inventory_scores.json
   Output narratives  : temp/<slug>_<app-id>_narrative_scores.json
   Output themes      : temp/<slug>_<app-id>_theme_scores.json
 
-The script reads the inventory and narratives payload files (written by
-retrieval_payload.py) to discover expected chunk count and narrative IDs,
-then validates that all expected score files are present before merging.
+The script reads the inventory payload file (written by retrieval_payload.py)
+to discover the expected inventory chunk count, discovers narrative chunk
+count from the payload-side chunk files written by the split subcommand, and
+validates that the merged narrative scores exactly cover the narrative IDs in
+the narratives payload before writing.
 
 Author  : Jason Delosh
 Created : 2026-06-01
@@ -82,12 +84,35 @@ def merge_scores(slug, app_id, temp_dir):
     inv_out = os.path.join(temp_dir, f"{prefix}_inventory_scores.json")
     _write_json(inv_out, {'scores': inv_scores})
 
-    # --- Merge narrative entries ---
+    # --- Merge narrative chunks ---
+    # Narrative chunking is byte-budgeted, so the chunk count is not derivable
+    # from the payload alone; discover it from the payload-side chunk files
+    # written by retrieval_payload.py split.
     nar_scores = []
-    for nid in narrative_ids:
-        path = os.path.join(temp_dir, f"{prefix}_scores_narrative_{nid}.json")
-        data = _load_json(path)
+    chunk_index = 0
+    while os.path.exists(os.path.join(temp_dir, f"{prefix}_narr_chunk{chunk_index}.json")):
+        score_path = os.path.join(temp_dir, f"{prefix}_scores_narr_chunk{chunk_index}.json")
+        data = _load_json(score_path)
         nar_scores.extend(data['scores'])
+        chunk_index += 1
+    if chunk_index == 0:
+        raise FileNotFoundError(
+            f'no narrative chunk files found ({prefix}_narr_chunk0.json missing); '
+            'run retrieval_payload.py split first'
+        )
+
+    # Validate: merged scores must exactly cover the payload's narrative IDs.
+    scored_ids = {s['id'] for s in nar_scores}
+    expected_ids = set(narrative_ids)
+    if scored_ids != expected_ids:
+        problems = []
+        missing = sorted(expected_ids - scored_ids)
+        extra = sorted(scored_ids - expected_ids)
+        if missing:
+            problems.append(f"unscored: {', '.join(missing)}")
+        if extra:
+            problems.append(f"unexpected: {', '.join(extra)}")
+        raise ValueError(f"narrative score coverage mismatch ({'; '.join(problems)})")
 
     nar_out = os.path.join(temp_dir, f"{prefix}_narrative_scores.json")
     _write_json(nar_out, {'scores': nar_scores})

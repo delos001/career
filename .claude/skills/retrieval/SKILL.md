@@ -79,22 +79,22 @@ Ask if this session is for a new retrieval run or to resume a previous one?
   - `python scripts/retrieval_payload.py themes` - prints JSON to stdout with the theme payload.
 - Capture each output to a scratch file: `<scratch>/<SLUG>_APP-NNN_inventory_payload.json`, `<scratch>/<SLUG>_APP-NNN_narratives_payload.json`, `<scratch>/<SLUG>_APP-NNN_themes_payload.json`.
 - Non-zero exit on any of these = halt per global rules.
-- Run `python scripts/retrieval_payload.py split --slug <slug> --app-id APP-NNN --temp-dir <scratch>`. This writes one JSON file per inventory chunk (`<scratch>/<SLUG>_APP-NNN_inv_chunk0.json`, etc.) and prints a plain-English summary of chunk count, chunk sizes, narrative count, and theme count. Non-zero exit = halt per global rules.
-- Output: three payload scratch-file paths, per-chunk scratch-file paths, chunk count and entry counts (from split output).
+- Run `python scripts/retrieval_payload.py split --slug <slug> --app-id APP-NNN --temp-dir <scratch>`. This writes one JSON file per inventory chunk (`<scratch>/<SLUG>_APP-NNN_inv_chunk0.json`, etc.) and one JSON file per narrative chunk (`<scratch>/<SLUG>_APP-NNN_narr_chunk0.json`, etc.; narratives are batched by byte budget, not one file per narrative), and prints a plain-English summary of chunk counts and sizes per corpus and theme count. Non-zero exit = halt per global rules.
+- Output: three payload scratch-file paths, per-chunk scratch-file paths for both corpora, chunk counts and entry counts (from split output).
 
 ## Phase 3 - Score all three corpora
 
 **Scoring inventory chunks, narratives, and themes against critical requirements.**
 
-- Input: critical-requirements block, JD text, per-chunk file paths and per-narrative file paths (from Phase 2 split output), themes payload file path.
+- Input: critical-requirements block, JD text, per-chunk file paths for both corpora (from Phase 2 split output), themes payload file path.
 - Dispatch the scorer subagent in parallel. Each invocation receives: input file path, output file path, corpus type, critical requirements, JD text. The scorer writes results to the output file and returns only a brief confirmation — do not read or echo the scores in the main context.
   - **One `retrieval-scorer` invocation per inventory chunk.**
     - Input file: `<scratch>/<SLUG>_APP-NNN_inv_chunk{N}.json`
     - Output file: `<scratch>/<SLUG>_APP-NNN_scores_inventory_chunk{N}.json`
     - Corpus: `inventory`
-  - **One `retrieval-scorer` invocation per narrative entry.**
-    - Input file: `<scratch>/<SLUG>_APP-NNN_narrative_{ID}.json`
-    - Output file: `<scratch>/<SLUG>_APP-NNN_scores_narrative_{ID}.json`
+  - **One `retrieval-scorer` invocation per narrative chunk.**
+    - Input file: `<scratch>/<SLUG>_APP-NNN_narr_chunk{N}.json`
+    - Output file: `<scratch>/<SLUG>_APP-NNN_scores_narr_chunk{N}.json`
     - Corpus: `narratives`
   - **One `retrieval-scorer` invocation for themes.**
     - Input file: `<scratch>/<SLUG>_APP-NNN_themes_payload.json`
@@ -117,10 +117,11 @@ Ask if this session is for a new retrieval run or to resume a previous one?
 
 **Running QC on the manifest.**
 
-- Input: manifest path, `research.md` path, session-log path, brief activity record (counts of scored items per corpus).
-- Dispatch `qc-retrieval`. **Loops on FINDINGS:** translate the findings to plain English for the user, then apply each per *Phase routing on failure*, re-run forward, and return to Phase 5.
-- Cap the loop at **3 iterations**. Exit earlier on **PASS**. If findings remain after the third iteration, stop looping and carry them into the Phase 6 handoff so the user sees them.
-- Output: PASS verdict, or unresolved findings after 3 iterations.
+- Input: application folder path, run date, inventory scored-entry count (from the `retrieval_score_merge.py` output in Phase 3).
+- Run `python scripts/retrieval_qc.py check --folder <app_folder> --scored-inventory <N> --date YYYY-MM-DD`. Every check is deterministic (structure, axis consistency, coverage counts, column population, link and ID existence, date); there is no judgment subagent for this artifact.
+- **Loops on FAIL:** translate the failed checks to plain English for the user, then apply each per *Phase routing on failure*, re-run forward, and return to Phase 5.
+- Cap the loop at **3 iterations**. Exit earlier on **PASS**. If failures remain after the third iteration, stop looping and carry them into the Phase 6 handoff so the user sees them.
+- Output: PASS verdict, or unresolved failures after 3 iterations.
 
 ## Phase 6 - Handoff
 

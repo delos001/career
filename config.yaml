@@ -48,6 +48,17 @@ filenames:
   assessment_protocol: assessment-protocol.md  # in rules/self-assessment/; the versioned self-assessment protocol (single authority)
   assessment_bootstrap: bootstrap-prompt.md    # in rules/self-assessment/; portable starter prompt, zero method content
 
+# Gap-analysis de-emphasize pre-filter cutoffs. Consumed by
+# scripts/gap_de_emphasize.py. An inventory entry is a de-emphasize candidate
+# when no CV-citing requirement cites it as evidence AND its axis signals sit
+# at or below BOTH cutoffs (an entry absent from the retrieval manifest has no
+# signals and counts as maximally distant). The judgment agent then decides
+# dilution on the candidate set only.
+gap_analysis:
+  de_emphasize:
+    max_axis_exact: 1     # candidate if axis exact-match count <= this
+    max_axis_adj: 2.5     # and adjacency-weighted score <= this
+
 # Per-axis schema. Consumed by scripts/axis_qc.py and by the axis-builder
 # skills. Each entry defines the value-file frontmatter key, the required
 # section headings (in canonical order), and the standard "Used by:" consumers

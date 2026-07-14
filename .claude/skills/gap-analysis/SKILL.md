@@ -79,7 +79,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - `## Geographic Preferences` (Modality, Willing to Relocate, Travel).
   - `## Availability` (Start).
   - `## Exclusions` (Industries / Company Types).
-- Note the corpus paths the downstream sub-agents will read (`retrieval.md` in the application folder; `inventory.md` and `narratives.md` in the profile folder). These files are NOT loaded into main skill context; the `gap-detector` and `de-emphasize-identifier` sub-agents read them in isolated context.
+- Note the corpus paths the downstream consumers will read (`retrieval.md` in the application folder; `inventory.md` and `narratives.md` in the profile folder). These files are NOT loaded into main skill context; the `gap-detector` sub-agent reads them in isolated context, and the Phase 5 de-emphasize pre-filter script reads them to build the bounded candidates file.
 - Output: critical-requirements block, role/company/industry summary, axis classification, user-info eligibility sections, paths to `retrieval.md`, `inventory.md`, `narratives.md`.
 
 ## Phase 2 - Eligibility / fit-signal check
@@ -155,7 +155,9 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - Per-requirement coverage credit by status: `covered | closed | language-shift = 1.0`; `partial-match = 0.5`; `interview-deferred | unresolved = 0.0`.
   - Fit score = `sum(weight × credit) / sum(weight)`. Render as percentage with one decimal place (e.g., `78.3%`).
   - Count unmet must-haves: must-have requirements with status `interview-deferred` or `unresolved`.
-- **Step 5b - De-emphasize identification.** Dispatch `de-emphasize-identifier` sub-agent with role context (research summaries + axis classification), the final per-requirement records from `<scratch>/gap_requirements.json` (pass the actual records with their `status` + `evidence` IDs, **not** a prose summary, so the agent can exclude entries already cited as CV evidence), and paths to `retrieval.md` and `inventory.md`. Sub-agent returns a list of `{entry_id, rationale}` items. **Write `<scratch>/gap_de_emphasize.json` to disk immediately when the sub-agent returns.** Do not hand-reconcile the list against the evidence: `gap_assemble.py` (Phase 6b) deterministically drops any entry also cited as evidence for a covered/closed/language-shift/partial-match requirement, so a collision cannot reach the artifact even if the agent misses one.
+- **Step 5b - De-emphasize identification.** Two sub-steps:
+  - **Pre-filter (script).** Run `python scripts/gap_de_emphasize.py filter --folder <app_folder> --requirements-file <scratch>/gap_requirements.json --out <scratch>/de_emphasize_candidates.json`. The script applies the two deterministic conditions (not cited as CV evidence; axis signals at or below the config cutoffs) and writes the bounded candidates file. Non-zero exit = halt per global rules.
+  - **Dilution judgment (sub-agent).** Dispatch `de-emphasize-identifier` with role context (research summaries + axis classification) and the candidates file path. The agent reads only the candidates file (not `inventory.md`, not `retrieval.md`) and judges the third condition - substantive dilution - returning `{entry_id, rationale}` items. **Write `<scratch>/gap_de_emphasize.json` to disk immediately when the sub-agent returns.** Do not hand-reconcile the list against the evidence: `gap_assemble.py` (Phase 6b) deterministically drops any entry also cited as evidence for a covered/closed/language-shift/partial-match requirement (same exclusion function the pre-filter imports), so a collision cannot reach the artifact.
 - **Step 5c - Recommendation.** Generate one of three labels in main skill, with a 1-2 sentence rationale:
   - **`Proceed`** - strong signals across fit, must-haves, eligibility (high fit, zero unmet must-haves, no overriding eligibility flag).
   - **`Proceed with caution`** - mixed signals (moderate fit, 1-2 unmet must-haves, or an overridden eligibility flag).
@@ -178,9 +180,10 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 
 **Running QC on the gap analysis artifact, session log, and staging additions.**
 
-- Input: gap_analysis.md path, session log path, research.md path, staging file path, inventory.md path, narratives.md path, activity record (PU-NNN entries appended this run, fit score and recommendation computed, eligibility flag outcomes).
-- Dispatch `qc-gap-analysis`. **Loops on FINDINGS:** translate the findings to plain English for the user, then apply each per *Phase routing on failure*, re-run forward, return to Phase 7.
-- Cap the loop at **3 iterations**. Exit earlier on **PASS**. If findings remain after the third iteration, carry them into Phase 8 so the user sees them. After QC verdict is known, re-run Step 6c to refresh the session log section's QC verdict field.
+- Input: application folder path, PU-NNN entries appended this run (from Step 6a).
+- **Step 7a - Mechanical checks (script).** Run `python scripts/gap_qc.py check --folder <app_folder>`, passing `--appended-pu PU-NNN` once per staging entry appended this run (omit the flag if none were appended). The script owns structure, header and session-log fields, requirement coverage, status taxonomy, Notes presence, closure linkage, ID existence, fit-score math, mirroring, and the recommendation label. On FAIL: translate the failed checks to plain English for the user, apply each per *Phase routing on failure*, re-run forward, and return to Step 7a.
+- **Step 7b - Judgment checks (subagent).** Only after Step 7a passes, dispatch `qc-gap-analysis` with the `gap_analysis.md` path. It verifies Notes substance only (mechanical checks are not re-run). **Loops on FINDINGS:** translate to plain English, apply per *Phase routing on failure*, re-run forward (Step 7a re-runs after any fix), return to Phase 7.
+- Cap the loop at **3 iterations** across both steps. Exit earlier when both PASS. If findings remain after the third iteration, carry them into Phase 8 so the user sees them. After the QC verdict is known, re-run Step 6c to refresh the session log section's QC verdict field.
 - Output: PASS verdict, or unresolved findings after 3 iterations.
 
 ## Phase 8 - User decision and handoff

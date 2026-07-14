@@ -98,7 +98,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Inputs**:
   - Rules: `rules/global-rules.md`. (Axis registries and value files are read by `axis-classifier`, not by the skill directly.)
   - Agents: `company-research`, `role-research`, `industry-research`, `critical-requirements-extractor`, `axis-classifier`, `qc-role-intake`.
-  - Scripts: `scripts/display/introduce.py`, `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/company_slug.py`, `scripts/assemble.py`.
+  - Scripts: `scripts/display/introduce.py`, `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/company_slug.py`, `scripts/assemble.py`, `scripts/role_intake_qc.py`.
   - Templates: `templates/session_log.md`, `templates/research_file.md`.
   - User input: job description (paste / file / URL), role communications (optional), company slug (reused from the registry or supplied if the company is new), metadata confirmations (title/company) at Phase 2.
 - **Outputs**:
@@ -119,8 +119,8 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Status**: Designed
 - **Inputs**:
   - Rules: `rules/global-rules.md`; `rules/<axis>/<value>.md` Adjacency sections (read by `scripts/retrieval_apply.py` for adjacency-aware axis scoring).
-  - Agents: `retrieval-scorer`, `qc-retrieval`.
-  - Scripts: `scripts/display/introduce.py`, `scripts/retrieval_payload.py`, `scripts/retrieval_apply.py`.
+  - Agents: `retrieval-scorer`.
+  - Scripts: `scripts/display/introduce.py`, `scripts/retrieval_payload.py`, `scripts/retrieval_score_merge.py`, `scripts/retrieval_apply.py`, `scripts/retrieval_qc.py`.
   - Profile docs: `personal/profile/inventory.md`, `personal/profile/narratives.md`, `personal/profile/positioning.md` (read indirectly via the scripts above).
   - Application artifacts: `personal/applications/<SLUG>/research.md` (axis classification + critical requirements), `personal/applications/<SLUG>/jd.md`.
   - User input: APP-NNN (resume) or implicit (new run; folder must exist with role-intake output already in place).
@@ -143,7 +143,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Inputs**:
   - Rules: `rules/global-rules.md`; `rules/<axis>/<value>.md` Adjacency sections (read indirectly via the gap-detector sub-agent and `retrieval.md`).
   - Agents: `gap-detector`, `de-emphasize-identifier`, `qc-gap-analysis`.
-  - Scripts: `scripts/display/introduce.py`, `scripts/gap_assemble.py`, `scripts/staging_append.py`, `scripts/session_log.py`.
+  - Scripts: `scripts/display/introduce.py`, `scripts/gap_assemble.py`, `scripts/gap_de_emphasize.py`, `scripts/staging_append.py`, `scripts/session_log.py`, `scripts/gap_qc.py`.
   - Templates: `templates/gap_analysis.md`, `templates/profile_updates_pending.md`.
   - Profile docs: `personal/profile/inventory.md`, `personal/profile/narratives.md`, `personal/profile/user-info.md` (eligibility sections).
   - Application artifacts: `personal/applications/<SLUG>/research.md` (critical requirements + role/company/industry blocks), `personal/applications/<SLUG>/retrieval.md`.
@@ -159,7 +159,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - When the gap_analysis.md template, the staging-file schema, or the session-log section schema change.
   - When the fit-score formula or recommendation logic change.
   - When the gap-detector or de-emphasize-identifier output JSON contracts change.
-  - When the QC check set in `qc-gap-analysis` changes.
+  - When the QC check set in `scripts/gap_qc.py` or `qc-gap-analysis` changes.
   - When downstream consumers (CV creation, interview prep, career brief, profile-update skill) require additional fields.
 
 #### axis-builder skill family (industry-builder, level-builder, orientation-builder, specialty-builder, work-state-builder)
@@ -277,7 +277,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 **Built** (detailed entries below):
 - company-research, role-research, industry-research, critical-requirements-extractor, axis-classifier, qc-role-intake
-- retrieval-scorer, qc-retrieval (retrieval skill family)
+- retrieval-scorer (retrieval skill family)
 - gap-detector, de-emphasize-identifier, qc-gap-analysis (gap-analysis skill family)
 - industry-builder-research, level-builder-research, orientation-builder-research, specialty-builder-research, work-state-builder-research (axis-builder research agent family; one per axis)
 - industry-builder-reconciler, level-builder-reconciler, orientation-builder-reconciler, specialty-builder-reconciler, work-state-builder-reconciler (axis-builder reconciler agent family; one per axis)
@@ -339,30 +339,39 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### qc-role-intake
 
-- **Purpose**: Quality-check the role-intake artifacts (session log + research file) for completeness, internal consistency, and global-rules adherence; return findings tagged with route-back phases.
+- **Purpose**: Judgment quality-check for the role-intake artifacts - verifies the axis classification is supported by the research content, claims trace to sources or the JD, and no section was completed on partial content. Mechanical checks are owned by `scripts/role_intake_qc.py` and not re-run here.
 - **Status**: Designed
-- **Inputs**: Skill-passed (by `role-intake`): session log path, research file path, activity record. Tools: Read, Grep.
+- **Inputs**: Skill-passed (by `role-intake`): session log path, research file path. Tools: Read, Grep.
 - **Outputs**: QC verdict (PASS / FINDINGS) with a route-back phase per finding.
-- **Triggers**: Invoked by `role-intake` Phase 8.
-- **Update Triggers**: When the role-intake session log or research file schema changes; when the skill's phase structure changes (route-back map).
+- **Triggers**: Invoked by `role-intake` Phase 8 Step 8b, after `role_intake_qc.py` passes.
+- **Update Triggers**: When the role-intake session log or research file schema changes; when the skill's phase structure changes (route-back map); when the mechanical/judgment split with `role_intake_qc.py` shifts.
+
+#### scripts/role_intake_qc.py
+
+- **Purpose**: Deterministic QC for role-intake artifacts (I1-I4): research file structure and block subsections (with URL presence in Sources), session log metadata and axis-classification completeness (with date form and pending-marker detection), cross-file field equality (company / role / APP-NNN, metadata Level and Industry against the axis values), and axis-gap mirroring between the two files.
+- **Status**: Designed
+- **Inputs**: Args (`check --folder <app_folder>`). Config: `config.yaml` (filenames) via `scripts/_config.py`. Filesystem: research.md and session_log.md in the folder.
+- **Outputs**: Per-check `PASS`/`FAIL` lines and a `RESULT` line to stdout; exit 0 when all pass, 1 otherwise.
+- **Triggers**: Invoked by `role-intake` Phase 8 Step 8a, before the `qc-role-intake` judgment agent.
+- **Update Triggers**: When the session log or research file templates change; when the axis-line label convention changes.
 
 #### retrieval-scorer
 
 - **Purpose**: Score a list of inventory entries, narratives, or Signature Themes against the critical requirements list for the retrieval skill. Corpus-agnostic LLM-judgment ranker; uses a consistent 0-1 rubric. Returns JSON with {id, score, reason} per item.
 - **Status**: Designed
-- **Inputs**: Skill-passed (by `retrieval`): critical requirements list, corpus type (`inventory` | `narratives` | `themes`), items to score (one chunk at a time for inventory; full set for narratives and themes), optional JD text for context. Tools: Read.
+- **Inputs**: Skill-passed (by `retrieval`): critical requirements list, corpus type (`inventory` | `narratives` | `themes`), items to score (one chunk at a time for inventory and narratives; full set for themes), optional JD text for context. Tools: Read.
 - **Outputs**: JSON `{corpus, scores: [{id, score, reason}, ...]}` returned to the caller.
-- **Triggers**: Invoked by `retrieval` Phase 3, once per inventory chunk and once each for narratives and themes (all in parallel).
+- **Triggers**: Invoked by `retrieval` Phase 3, once per inventory chunk, once per narrative chunk, and once for themes (all in parallel).
 - **Update Triggers**: When the scoring rubric changes; when the JSON return contract changes; when the supported corpora change.
 
-#### qc-retrieval
+#### scripts/retrieval_qc.py
 
-- **Purpose**: Quality-check the retrieval manifest for structural completeness, signal coverage, and cross-reference integrity. Returns findings with route-back guidance per the retrieval skill's phase map.
+- **Purpose**: Deterministic QC for the retrieval manifest (R1-R8): structure, axis consistency against the session log, inventory coverage against the source corpus, signal-column population, narrative link integrity, theme and profile ID existence, Generated-date form. Replaces the former qc-retrieval subagent, whose checks were fully mechanical (no judgment residue).
 - **Status**: Designed
-- **Inputs**: Skill-passed (by `retrieval`): manifest path, research.md path, activity record (scoring counts per corpus). Tools: Read, Grep.
-- **Outputs**: QC verdict (PASS / FINDINGS) with a route-back phase per finding.
+- **Inputs**: Args (`check --folder <app_folder>`, optional `--scored-inventory N`, optional `--date YYYY-MM-DD`). Config: `config.yaml` (profile path + filenames) via `scripts/_config.py`. Filesystem: retrieval.md and session_log.md in the folder; inventory.md, narratives.md, positioning.md in the profile folder.
+- **Outputs**: Per-check `PASS`/`FAIL` lines and a `RESULT` line to stdout; exit 0 when all pass, 1 otherwise.
 - **Triggers**: Invoked by `retrieval` Phase 5.
-- **Update Triggers**: When the manifest schema or the retrieval skill's phase structure changes; when new sub-agent contracts get added that QC must validate.
+- **Update Triggers**: When the manifest schema, session-log axis section, or the retrieval skill's phase structure changes.
 
 #### gap-detector
 
@@ -375,21 +384,39 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### de-emphasize-identifier
 
-- **Purpose**: Identify inventory entries to de-emphasize in the CV for the gap-analysis skill. Combines role context, final per-requirement assessments, retrieval axis signals, and direct inventory reads to surface entries that don't serve the role's coverage and would dilute the CV's narrative.
+- **Purpose**: Judge substantive dilution for de-emphasize candidates in the gap-analysis skill. Reads the pre-filtered candidates file (evidence exclusion and axis-distance screening already applied by `scripts/gap_de_emphasize.py`) and decides, per candidate, whether its substance would dilute the CV's narrative for the role. Does not read the inventory or the retrieval manifest.
 - **Status**: Designed
-- **Inputs**: Skill-passed (by `gap-analysis`): role context (research summaries + axis classification), final per-requirement assessments, paths to `retrieval.md` and `inventory.md`. Tools: Read.
+- **Inputs**: Skill-passed (by `gap-analysis`): role context (research summaries + axis classification), candidates file path. Tools: Read.
 - **Outputs**: JSON `{de_emphasize: [{entry_id, rationale}, ...]}` returned to the caller; empty list is valid.
-- **Triggers**: Invoked by `gap-analysis` Phase 5.
-- **Update Triggers**: When the de-emphasize criteria, the entry-level vs finer-grained scope, or the output contract changes.
+- **Triggers**: Invoked by `gap-analysis` Phase 5, after the pre-filter script.
+- **Update Triggers**: When the dilution criterion, the entry-level vs finer-grained scope, the candidates-file schema, or the output contract changes.
+
+#### scripts/gap_de_emphasize.py
+
+- **Purpose**: Deterministic pre-filter for de-emphasize candidates. Applies the two data-lookup conditions - entry not cited as CV evidence (via `gap_assemble.cited_evidence_ids`, the same function the downstream safety net uses) and axis signals at or below the config cutoffs (`gap_analysis.de_emphasize` in config.yaml; entries absent from the manifest count as maximally distant) - and writes a bounded candidates file (id, axis tags, signals, payload) for the judgment agent.
+- **Status**: Designed
+- **Inputs**: Args (`filter --folder <app_folder> --requirements-file <path> --out <path>`). Config: `config.yaml` (profile path, filenames, de-emphasize cutoffs). Filesystem: retrieval.md in the folder, inventory.md in the profile folder, the Phase 4 requirements scratch file. Imports `retrieval_payload.parse_inventory_entries` and `gap_assemble.cited_evidence_ids`.
+- **Outputs**: Candidates JSON at `--out`; plain-English count summary to stdout. Errors to stderr with exit 1.
+- **Triggers**: Invoked by `gap-analysis` Phase 5 Step 5b, before the `de-emphasize-identifier` agent.
+- **Update Triggers**: When the manifest table layout, the requirements-record schema, the cutoff semantics, or the candidates-file schema change.
 
 #### qc-gap-analysis
 
-- **Purpose**: Quality-check the gap analysis artifact, session log section, and staging-file additions for structural completeness, content integrity, cross-document consistency, and logic correctness. Returns findings with route-back guidance per the gap-analysis skill's phase map.
+- **Purpose**: Judgment quality-check for gap_analysis.md - verifies that Notes content carries the substance its status demands (reasoning named, partial-match notes cover both the transferable element and the remaining gap, case sub-sections give the CV architect usable direction). Mechanical checks are owned by `scripts/gap_qc.py` and not re-run here.
 - **Status**: Designed
-- **Inputs**: Skill-passed (by `gap-analysis`): gap_analysis.md path, session log path, research.md path, staging file path, inventory.md path, narratives.md path, activity record (PU-NNN entries appended, fit score and recommendation computed, eligibility outcomes). Tools: Read, Grep.
+- **Inputs**: Skill-passed (by `gap-analysis`): gap_analysis.md path. Tools: Read, Grep.
 - **Outputs**: QC verdict (PASS / FINDINGS) with a route-back phase per finding.
-- **Triggers**: Invoked by `gap-analysis` Phase 7.
-- **Update Triggers**: When the artifact / session log / staging-file schemas change; when the gap-analysis skill's phase structure changes (route-back map); when new sub-agent contracts get added that QC must validate.
+- **Triggers**: Invoked by `gap-analysis` Phase 7 Step 7b, after `gap_qc.py` passes.
+- **Update Triggers**: When the artifact's Notes conventions or status taxonomy change; when the gap-analysis skill's phase structure changes (route-back map); when the mechanical/judgment split with `gap_qc.py` shifts.
+
+#### scripts/gap_qc.py
+
+- **Purpose**: Deterministic QC for gap-analysis artifacts. Owns the mechanical checks (G1-G11): section structure, header and session-log fields, requirement coverage against research.md, status taxonomy, Notes presence, closure linkage to staging entries, ID existence against the profile documents, fit-score math, session-log mirroring, and the recommendation label set.
+- **Status**: Designed
+- **Inputs**: Args (`check --folder <app_folder>`, repeatable `--appended-pu`). Config: `config.yaml` (profile path + filenames) via `scripts/_config.py`. Filesystem: gap_analysis.md, research.md, session_log.md in the folder; inventory.md, narratives.md, profile_updates_pending.md in the profile folder.
+- **Outputs**: Per-check `PASS`/`FAIL` lines and a `RESULT` line to stdout; exit 0 when all pass, 1 otherwise.
+- **Triggers**: Invoked by `gap-analysis` Phase 7 Step 7a, before the `qc-gap-analysis` judgment agent.
+- **Update Triggers**: When the gap_analysis.md template, research-requirements format, staging-entry schema, session-log section schema, fit-score formula, or status taxonomy change.
 
 #### prep-research
 
@@ -455,7 +482,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/display/introduce.py`, `scripts/assemble.py`
 - `scripts/session_log.py` (shared section-append for all skills that write to a session log)
 - `scripts/profile_slice.py` (consumed by retrieval and downstream skills)
-- `scripts/retrieval_payload.py`, `scripts/retrieval_apply.py` (retrieval concern family)
+- `scripts/retrieval_payload.py`, `scripts/retrieval_score_merge.py`, `scripts/retrieval_apply.py` (retrieval concern family)
 - `scripts/gap_assemble.py`, `scripts/staging_append.py` (gap-analysis concern family)
 - `scripts/axis_registry.py`, `scripts/axis_qc.py`, `scripts/axis_apply.py` (axis-builder concern family)
 - `scripts/_config.py`, `scripts/_util.py`, `scripts/axis_utils.py`, `scripts/_prep_checks.py` (shared helper modules; not standalone scripts, no separate entries)
@@ -537,12 +564,21 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/retrieval_payload.py
 
-- **Purpose**: Build LLM-consumable payloads for the retrieval skill. Subcommands: `inventory --chunk-size N` (parse the retrievable entries of inventory.md — EX/PR/PB/PS, matched by ID marker across their sections; emit JSON with chunked entries, each carrying ID, axis tags, and Description+Impact payload text), `narratives` (parse narratives.md; emit JSON with each narrative's ID, title, Linked Inventory, body), `themes` (parse positioning.md; emit JSON with each Signature Theme's Core message + Proof point + Use when concatenated as payload).
+- **Purpose**: Build LLM-consumable payloads for the retrieval skill. Subcommands: `inventory --chunk-size N` (parse the retrievable entries of inventory.md — EX/PR/PB/PS, matched by ID marker across their sections; emit JSON with chunked entries, each carrying ID, axis tags, and Description+Impact payload text), `narratives` (parse narratives.md; emit JSON with each narrative's ID, title, Linked Inventory, body), `themes` (parse positioning.md; emit JSON with each Signature Theme's Core message + Proof point + Use when concatenated as payload), `split` (read the three payload files from the scratch dir; write one JSON file per inventory chunk and one per byte-budgeted narrative chunk; print a plain-English summary).
 - **Status**: Designed
-- **Inputs**: Subcommand args (`--chunk-size`). Config: `config.yaml` (profile path + per-file filenames) via `scripts/_config.py`. Filesystem: inventory.md, narratives.md, positioning.md.
-- **Outputs**: JSON to stdout per the per-subcommand schema. Errors to stderr with exit 1.
+- **Inputs**: Subcommand args (`--chunk-size`; split: `--slug`, `--app-id`, `--temp-dir`, `--narr-chunk-bytes`). Config: `config.yaml` (profile path + per-file filenames) via `scripts/_config.py`. Filesystem: inventory.md, narratives.md, positioning.md; split reads the payload files from the temp dir.
+- **Outputs**: JSON to stdout per the per-subcommand schema; split writes per-chunk JSON files to the temp dir. Errors to stderr with exit 1.
 - **Triggers**: Invoked by `retrieval` Phase 2.
 - **Update Triggers**: When the inventory entry schema, narrative schema, or theme schema changes; when the chunking strategy changes.
+
+#### scripts/retrieval_score_merge.py
+
+- **Purpose**: Merge the per-chunk scorer output files into the three final score files that `retrieval_apply.py` consumes. Discovers expected inventory chunk count from the payload file and narrative chunk count from the split-written chunk files; validates that merged narrative scores exactly cover the payload's narrative IDs before writing.
+- **Status**: Designed
+- **Inputs**: Args (`--slug`, `--app-id`, `--temp-dir`). Filesystem: payload files and per-chunk score files in the temp dir.
+- **Outputs**: `<prefix>_inventory_scores.json`, `<prefix>_narrative_scores.json`, `<prefix>_theme_scores.json` in the temp dir; confirmation to stdout. Errors to stderr with exit 1.
+- **Triggers**: Invoked by `retrieval` Phase 3, after all scorer agents confirm.
+- **Update Triggers**: When the scorer output JSON contract or the chunk-file naming convention changes.
 
 #### scripts/retrieval_apply.py
 

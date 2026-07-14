@@ -374,6 +374,12 @@ def _cited_evidence_ids(requirements):
     return cited
 
 
+# Cross-script aliases: gap_de_emphasize.py imports these so its candidate
+# pre-filter excludes exactly the same entries this module's safety net drops.
+CV_CITED_STATUSES = _CV_CITED_STATUSES
+cited_evidence_ids = _cited_evidence_ids
+
+
 # ---------------------------------------------------------------------------
 # Subcommand: assemble
 # Reads structured inputs, renders the artifact wholesale, writes to disk.

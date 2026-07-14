@@ -1,6 +1,6 @@
 ---
 name: retrieval-scorer
-description: Scores inventory entries, narratives, or Signature Themes against the critical requirements list for the retrieval skill. Reads the input file, writes the scored results to a specified output file, and returns a brief confirmation. One corpus or one item per invocation.
+description: Scores inventory entries, narratives, or Signature Themes against the critical requirements list for the retrieval skill. Reads the input file, writes the scored results to a specified output file, and returns a brief confirmation. One corpus or one chunk per invocation.
 tools: Read, Write
 ---
 

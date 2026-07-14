@@ -224,11 +224,21 @@ Ask if this session is for a new role or to resume a previous one?
 
 **Running QC on the session log and research file.**
 
-- Input: session log path, research file path, brief activity record.
-- Dispatch `qc-role-intake`. **Loops on FINDINGS:** translate the findings
-  to plain English for the user, then apply each per *Phase routing on
-  failure* (or as a direct session-log edit where the finding specifies
-  one), re-run forward, and return to Phase 8.
+- Input: session log path, research file path.
+- **Step 8a - Mechanical checks (script).** Run
+  `python scripts/role_intake_qc.py check --folder <app_folder>`. The script
+  owns section and field presence, pending markers, date form, URL presence,
+  cross-file field equality, and axis-gap mirroring. On FAIL: translate the
+  failed checks to plain English for the user, apply each per *Phase routing
+  on failure* (or as a direct session-log edit for a one-field correction),
+  re-run forward, and return to Step 8a.
+- **Step 8b - Judgment checks (subagent).** Only after Step 8a passes,
+  dispatch `qc-role-intake` with the session log and research file paths. It
+  verifies substance only (axis classification supported by the research,
+  claims trace to sources, no section completed on partial content);
+  mechanical checks are not re-run. **Loops on FINDINGS:** translate to
+  plain English, apply per *Phase routing on failure*, re-run forward
+  (Step 8a re-runs after any fix), and return to Phase 8.
 - **Show every content edit as before/after.** Whenever a fix changes the
   wording or substance of the session log or research file, present a
   before/after table (one row per changed passage: location, before, after)

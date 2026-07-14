@@ -266,7 +266,7 @@ Retrieval is a standalone skill that runs after role-intake and serves multiple 
 
 **Narrative retrieval — two-signal:**
 - Deterministic Linked-Inventory walk: every narrative (`ST-NNN`, `DC-NNN`) whose `Linked Inventory:` references any inventory entry already in the manifest is included.
-- Independent semantic pass: every narrative is also scored by LLM-judgment against the critical requirements list, providing an arc-level relevance signal independent of inventory linkage.
+- Independent semantic pass: every narrative is also scored by LLM-judgment against the critical requirements list, providing an arc-level relevance signal independent of inventory linkage. Scored in byte-budgeted chunks (default ~45KB per chunk file, one LLM call per chunk), mirroring the inventory chunking rationale; a one-scorer-per-narrative dispatch introduced at implementation time proved a per-application token-cost regression (~17 agents each re-reading the full requirements + JD context) and was replaced with chunked dispatch 2026-07-14.
 A narrative may carry either signal alone or both. Both are reported in the manifest.
 
 **Manifest exposes raw signals; downstream consumers derive tiers locally.** No pre-computed `strong/moderate/weak` tier at retrieval time. Per-entry signals exposed:
@@ -288,6 +288,20 @@ Downstream consumers (gap analysis, CV creation, interview prep) apply their own
 Resolves deferrals: `cv-targeted-hybrid-retrieval` (implementation details specified by this design), `axis-adjacency-weights-redefinition` (adjacency weights drive retrieval ranking and downstream tier derivation; per-axis-file Adjacency text remains authoritative).
 
 Refs: `cv-targeted-retrieval-architecture-2026-05` (superseded), `role-intake-critical-requirements-extraction-2026-05`, `experience-inventory-domain-scoping`, `career-narratives-schema`, `axes-composition-precedence`.
+
+#### de-emphasize-prefilter-2026-07
+The de-emphasize decision's three conditions split by nature: (1) not-cited-as-CV-evidence and (2) axis distance are data lookups; only (3) substantive dilution needs judgment. Previously the `de-emphasize-identifier` agent applied all three by reading the full manifest plus the full inventory (~60k tokens/app). Now `scripts/gap_de_emphasize.py filter` applies 1 and 2 deterministically — exclusion via `gap_assemble.cited_evidence_ids` (the same function the downstream safety net uses, so the two cannot drift), distance via config cutoffs `gap_analysis.de_emphasize` (max_axis_exact=1, max_axis_adj=2.5; an entry absent from the manifest counts as maximally distant) — and writes a bounded candidates file; the agent judges dilution only, reading nothing else. Cutoffs are deliberately loose (adj=2.5 admits all-adjacent entries) so borderline entries reach judgment rather than being silently excluded; tightening is a config edit. APP-017 calibration: 220 entries → 22 evidence-excluded, 62 signal-excluded, 136 candidates (~76KB vs ~242KB read before).
+
+Refs: `gap-analysis-architecture-2026-05`, `de-emphasize-cited-evidence-filter-2026-06`, `qc-mechanical-script-retrofit-2026-07` (same script-vs-judgment split rationale).
+
+#### qc-mechanical-script-retrofit-2026-07
+The three application-pipeline QC agents built 2026-05 (qc-role-intake, qc-retrieval, qc-gap-analysis) predated the mechanical-script + judgment-agent split and ran every check via LLM, re-reading their full input sets each QC iteration (qc-gap-analysis read the entire profile corpus per iteration). Retrofit 2026-07-14 to the standard split:
+- `scripts/retrieval_qc.py` (R1-R8) replaces qc-retrieval outright — its check set was fully mechanical with no judgment residue, so retrieval QC is script-only and the agent is retired.
+- `scripts/gap_qc.py` (G1-G11) owns gap-analysis mechanical checks; `qc-gap-analysis` slims to Notes-substance judgment reading only the artifact (see the QC bullet of `gap-analysis-architecture-2026-05`).
+- `scripts/role_intake_qc.py` (I1-I4) owns role-intake mechanical checks; `qc-role-intake` slims to judgment (classification supported by research, claims trace to sources, no partial-content sections).
+Both axis-line parsers accept plain and bold labels (both formats live in real session logs; same seam as the finalize metadata fill fix). Verified against real applications: current-template artifacts pass clean; historical artifacts fail exactly where they predate later schema changes.
+
+Refs: `qc-h2-mechanical-script-check-2026-05` (pattern precedent), `retrieval-architecture-2026-05`, `gap-analysis-architecture-2026-05`, `role-intake-architecture`.
 
 #### arc-composition-for-high-impact-roles
 Atomic inventory entry structure enables broad JD matching and retrieval recall. Roles requiring high-level, enterprise-scope proof points need the composition layer to synthesize related entries into unified achievement arcs rather than treating each as an independent bullet.
@@ -1272,7 +1286,7 @@ Built artifact-producing skill running after retrieval; stopping point for the u
 
 **Staging-file discipline.** New information captured to the staging file is concise structured context for correct downstream insertion, not copy-paste content. The profile-update skill adapts captured material to each target doc's conventions; gap-analysis does not write directly into inventory / narratives / positioning. Per the `respect-profile-doc-conventions` feedback memory.
 
-**QC.** `qc-gap-analysis` checks structural, content-integrity, cross-document-consistency, and logic groups; loops up to 3 iterations with per-finding route-back; on bounded-loop failure the artifact ships provisional with findings surfaced in Phase 8 per `artifact-skill-qc-internal`.
+**QC.** Split per the standard mechanical-script + judgment-agent pattern (2026-07-14; the original agent-only QC predated the pattern and did all checks via LLM full-reads of the profile corpus per iteration). `scripts/gap_qc.py` owns the mechanical checks G1-G11 (structure, header/session-log fields, requirement coverage, status taxonomy, Notes presence, closure linkage, ID existence, fit math, mirroring, label set); `qc-gap-analysis` slims to judgment only (Notes substance, case-section usability) and reads just the artifact. Loops up to 3 iterations with per-finding route-back; on bounded-loop failure the artifact ships provisional with findings surfaced in Phase 8 per `artifact-skill-qc-internal`. Closure-ref presence anchors on the skill-passed `--appended-pu` list because eligibility-attestation closures legitimately stage nothing.
 
 **Interface amendments (2026-06-02):**
 - *Gap-detector compact output:* `gap-detector` returns a compact shape for `covered` requirements (`requirement_id` + `verdict` + flat evidence ID list; no text, type, or reasoning) and a full shape only for `gap` and `language-shift`. Reduces sub-agent output volume proportionally to the covered/total ratio (15/19 covered on APP-006 = ~80% payload reduction).
