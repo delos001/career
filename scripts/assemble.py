@@ -422,7 +422,10 @@ def cmd_finalize(args, repo_root, cfg):
     # alone); the axis-classifier decides them after research, so init left both
     # '_(pending)_' and finalize writes the resolved axis values here.
     def _axis_value(axis_name):
-        m = re.search(rf'(?mi)^-?[ \t]*{re.escape(axis_name)}:[ \t]*(.+)$',
+        # The classifier emits bold labels ('- **Level:** value'); tolerate the
+        # optional leading '- ', the '**' bold markers around the label, and a
+        # plain 'Level:' form so both styles parse.
+        m = re.search(rf'(?mi)^-?[ \t]*\*{{0,2}}{re.escape(axis_name)}:\*{{0,2}}[ \t]*(.+)$',
                       classification_body)
         if not m:
             return None
