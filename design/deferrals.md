@@ -10,6 +10,12 @@ All built skills (role-intake, retrieval, gap-analysis, cv-targeted) hardcode re
 - Blocks: nothing currently (hardcoded prose works; it just breaks on repo reorg).
 - Refs: `config.yaml`, `.claude/skills/*/SKILL.md`, memory `no-hardcoded-repo-values`.
 
+### gap-detector-read-reduction
+gap-detector reads retrieval.md + inventory.md + narratives.md in full (~60-80k tokens, once per application). Assessed 2026-07-14 and deliberately left alone: the manifest surfaces the entire corpus by design (broad recall so gap detection produces no false gaps; the axis floor cannot discriminate on this profile since nearly every entry is adjacent on at least one axis), so the only real read-reduction lever is making retrieval genuinely selective (semantic-score threshold), a recall-vs-cost design change, not an optimization.
+- Trigger: inventory grows several-fold beyond ~220 entries (the arithmetic then favors a scoring threshold on gap-detector's reading set despite the recall risk).
+- Blocks: nothing currently.
+- Refs: `retrieval-architecture-2026-05`, `qc-mechanical-script-retrofit-2026-07`, memory `retrieval-token-cost`.
+
 ### session-log-parser-tests
 Tests verifying latest-wins per topic (decision entries) and per phase (phase_complete entries).
 - Trigger: parser implementation lands.
