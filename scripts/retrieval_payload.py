@@ -537,6 +537,13 @@ def cmd_split(args, repo_root, cfg):
             )
         narr_chunk_paths.append((out_path, len(entries)))
 
+    # Remove stale chunk files a prior run left behind; the merge script
+    # discovers chunks by existence-walk, so leftovers would merge stale scores.
+    idx = len(narr_chunks)
+    while os.path.exists(os.path.join(temp_dir, f"{prefix}_narr_chunk{idx}.json")):
+        os.remove(os.path.join(temp_dir, f"{prefix}_narr_chunk{idx}.json"))
+        idx += 1
+
     # Print summary.
     sizes = '+'.join(str(n) for _, n in chunk_paths)
     print(f"Inventory: {inv_data['chunk_count']} chunks written ({sizes} = {inv_data['entry_count']} entries)")

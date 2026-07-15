@@ -103,6 +103,8 @@ def merge_scores(slug, app_id, temp_dir):
 
     # Validate: merged scores must exactly cover the payload's narrative IDs.
     scored_ids = {s['id'] for s in nar_scores}
+    if len(nar_scores) != len(scored_ids):
+        raise ValueError('duplicate narrative IDs across score chunks (stale chunk file?)')
     expected_ids = set(narrative_ids)
     if scored_ids != expected_ids:
         problems = []

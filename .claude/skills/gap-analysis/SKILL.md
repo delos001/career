@@ -221,8 +221,8 @@ Consumed by Phase 7 (QC failures). Route back, fix, re-run forward (Phase 7 alwa
 | Requirement status missing or off-taxonomy | Phase 4 |
 | Non-covered requirement missing Notes | Phase 4 |
 | Closure / staging linkage broken | Phase 6 |
-| Fabricated EX/PR/ED/CERT/AFF/TR/ST/DC ID in Requirements evidence | Phase 3 |
-| Fabricated EX/PR ID in De-emphasize | Phase 5 |
+| Fabricated profile ID in Requirements evidence | Phase 3 |
+| Fabricated profile ID in De-emphasize | Phase 5 |
 | Fabricated PU-NNN reference | Phase 6 |
 | Session log mirroring divergence | Phase 6 |
 | Fit-score math wrong or unmet-must-haves count wrong | Phase 5 |

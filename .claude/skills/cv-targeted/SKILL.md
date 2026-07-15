@@ -157,12 +157,18 @@ Ask if this session is for a new CV or to resume a previous one.
 
 - Input: `cv_content.md`, `drafting_plan.md`, and `cv_collaboration_log.md` paths,
   corpus paths, level.
-- **Step 3a - Parallel stakeholder pass.** Dispatch `career-strategist`,
-  `hiring-manager`, and `candidate-advocate` in parallel. They do not see each
-  other's output; the architect is the single reconciliation point. On rounds
-  after the first, also give each stakeholder the architect's dispositions of its
-  own prior-round contributions (from the architect's previous return), so it can
-  respond to the architect's stated constraints in good faith.
+- **Step 3a - Parallel stakeholder pass.** On the first round, spawn
+  `career-strategist`, `hiring-manager`, and `candidate-advocate` in parallel
+  with the input sets below. They do not see each other's output; the architect
+  is the single reconciliation point. **The three advisors persist for the life
+  of the run.** On every later round, do not spawn new advisor agents: continue
+  each existing advisor (SendMessage to its agent id), passing only the
+  architect's dispositions of its own prior-round contributions (from the
+  architect's previous return) and the instruction to re-read the revised
+  `cv_content.md` and re-assess. A continued advisor already holds its sources
+  from the first round and must not re-read them. If an advisor cannot be
+  continued (the run was resumed in a new session, or the agent is gone),
+  re-spawn it fresh with its full first-round input set.
   - `career-strategist` gets: `cv_content.md`, `rules/cv/cv-structure.md`,
     `rules/cv/cv-best-practices.md`, the level and orientation axis files,
     `research.md`, and `level`.
@@ -203,9 +209,10 @@ Ask if this session is for a new CV or to resume a previous one.
   them).
 - Narrate each round in plain English (what each stakeholder contributed and that
   the architect is integrating), not check ids or agent mechanics.
-- Context-safe: each round spawns fresh sub-agents and the architect revises from
-  on-disk state, so the main skill accumulates only compact contributions and a
-  round counter.
+- Context-safe: the advisors hold their sources in their own persistent isolated
+  contexts and the architect revises from on-disk state, so the main skill
+  accumulates only compact contributions and a round counter. Advisor
+  persistence is within-session only; a cross-session resume re-spawns fresh.
 - Output: the converged (or cap-reached) `cv_content.md` and `drafting_plan.md`;
   any unresolved material contributions carried forward; the log updated.
 

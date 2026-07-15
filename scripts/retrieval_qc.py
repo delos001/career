@@ -110,6 +110,10 @@ def _parse_table(manifest_text, heading, expected_cols):
             continue  # the |----| separator row
         if len(cells) > len(expected_cols):
             cells = cells[:len(expected_cols) - 1] + [' | '.join(cells[len(expected_cols) - 1:])]
+        elif len(cells) < len(expected_cols):
+            # Pad short rows so R4's empty-cell checks flag them as findings
+            # instead of the column unpack crashing on a malformed row.
+            cells = cells + [''] * (len(expected_cols) - len(cells))
         rows.append(cells)
     return rows, header_ok
 

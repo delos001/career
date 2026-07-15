@@ -41,7 +41,7 @@ For language-shifts, populate `language_shift` with the role's terminology, the 
 
 - Score every requirement. Do not skip.
 - Score against the critical requirements; do not invent additional requirements from the role context or JD.
-- Do not fabricate IDs. Every ID in `evidence` and `language_shift.entries_to_reframe` must exist in `inventory.md` (EX/PR/ED/CERT/AFF/TR) or `narratives.md` (ST/DC).
+- Do not fabricate IDs. Every ID in `evidence` and `language_shift.entries_to_reframe` must exist in `inventory.md` or `narratives.md`.
 - For `covered`: return the compact shape (no relevance text, no reasoning). Top 1-3 evidence IDs only.
 - For `language-shift`: return the full shape with `evidence` (with relevance), `language_shift`, and `reasoning`.
 - For `gap`: return the full shape with `missing` and `reasoning`. `evidence` is `[]`.

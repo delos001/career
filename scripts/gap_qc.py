@@ -24,9 +24,11 @@ Checks (IDs mirror the original qc-gap-analysis check numbering):
       to a staging entry carrying all required fields; every --appended-pu
       ID is referenced from the artifact. (Closed-without-ref is legitimate
       for eligibility attestations, so ref presence anchors on --appended-pu.)
-  G8  No fabricated IDs: every EX/PR/PB/PS/ED/CERT/AFF/TR/AW/ST/DC ID in
-      the artifact exists in the profile documents; every CR-NNN is within
-      the requirements range; every PU-NNN exists in the staging file.
+  G8  No fabricated IDs: every profile-prefixed ID in the artifact exists
+      in the profile documents (the prefix set is derived from the
+      documents' own `ID:` lines, so new sections are covered without a
+      code change); every CR-NNN is within the requirements range; every
+      PU-NNN exists in the staging file.
   G9  Session log mirroring: session log fit score matches the artifact
       header fit score.
   G10 Math: header fit score equals the type-weighted formula result and
@@ -87,20 +89,10 @@ RECOMMENDATION_LABELS = {'Proceed', 'Proceed with caution', 'Do not pursue'}
 # Required fields of a staging PU entry.
 PU_FIELDS = ['Captured', 'From', 'Closed requirement', 'Role context', 'Content', 'Status']
 
-# Profile ID prefixes the artifact may cite as evidence.
-PROFILE_PREFIXES = ('EX', 'PR', 'PB', 'PS', 'ED', 'CERT', 'AFF', 'TR', 'AW', 'ST', 'DC')
-
-# Regex: any citable profile ID token in artifact text.
-_PROFILE_ID_RE = re.compile(r'\b(?:EX|PR|PB|PS|ED|CERT|AFF|TR|AW|ST|DC)-\d+\b')
-
-# Regex: an `ID: <PREFIX>-NNN` line in the profile documents.
+# Regex: an `ID: <PREFIX>-NNN` line in the profile documents. The citable
+# prefix set is derived from these lines at check time (see check_ids), so a
+# new inventory section with a new ID prefix is covered without a code change.
 _ID_LINE_RE = re.compile(r'^ID:\s+([A-Z]+-\d+)\s*$', re.MULTILINE)
-
-# Regex: a requirement sub-section heading, e.g. `### CR-001 - <text> (<type>)`.
-_CR_HEADING_RE = re.compile(r'^### (CR-\d+) - .*$', re.MULTILINE)
-
-# Regex: a PU entry heading in the staging file, e.g. `### PU-001 - <label>`.
-_PU_HEADING_RE = re.compile(r'^### (PU-\d+) - ', re.MULTILINE)
 
 # Regex: a bold-label field line, e.g. `- **Status:** covered`.
 _FIELD_LINE_RE = re.compile(r'^- \*\*(.+?):\*\*\s*(.*)$')
@@ -361,7 +353,15 @@ def check_closure_linkage(records, staging_entries, appended_pu, artifact_text, 
 def check_ids(artifact_text, profile_ids, req_count, staging_entries, findings):
     """G8: every cited ID exists in its source document."""
     problems = []
-    fabricated = sorted({t for t in _PROFILE_ID_RE.findall(artifact_text)
+    if not profile_ids:
+        findings.append(('G8', False,
+                         'no IDs found in the profile documents (unreadable or empty)'))
+        return
+    # Citable prefixes are derived from the profile documents themselves, so a
+    # new inventory section with a new ID prefix is covered without a code change.
+    prefixes = sorted({pid.split('-')[0] for pid in profile_ids})
+    id_re = re.compile(r'\b(?:' + '|'.join(prefixes) + r')-\d+\b')
+    fabricated = sorted({t for t in id_re.findall(artifact_text)
                          if t not in profile_ids})
     if fabricated:
         problems.append(f"IDs not in profile documents: {', '.join(fabricated)}")
@@ -390,7 +390,10 @@ def check_mirroring(header, log_fields, findings):
 
 def check_math(header, records, req_types, findings):
     """G10: fit score and unmet must-haves recompute from statuses and types."""
-    if req_types is None or len(req_types) != len(records):
+    # Compare key sets, not lengths: a dropped CR plus an invented one keeps
+    # the count equal but would KeyError the recompute loop below.
+    expected = None if req_types is None else {f'CR-{i:03d}' for i in range(1, len(req_types) + 1)}
+    if expected is None or set(records) != expected:
         findings.append(('G10', False,
                          'cannot recompute: requirements list and artifact do not align'))
         return
