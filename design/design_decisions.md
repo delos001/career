@@ -400,7 +400,7 @@ Schema (revised 2026-05-12: Era replaced with `Role: RL-NNN` for inventory-schem
 narratives is interview-prep primary; cv_targeted / role_evaluation consume it secondarily for bullet-framing depth via inventory linkage. Narratives are not a primary CV retrieval anchor.
 
 - IDs: `ST-NNN` for stories, `DC-NNN` for decisions.
-- Per-entry fields: ID, Role (RL-NNN reference, multi-value; matches inventory `Role:` field; rebrand-resilient), Framework, Linked Inventory (required, multi-value), Added, Last Used.
+- Per-entry fields: ID, Role (RL-NNN reference, multi-value; matches inventory `Role:` field; rebrand-resilient), Framework, Linked Inventory (required, multi-value). (`Added` / `Last Used` dropped by `provenance-stamps-dropped-2026-07`.)
 - **Era field replaced with `Role: RL-NNN`.** Original Era field used uncontrolled free-text employer strings, drift-prone and inconsistent with inventory's canonical Role reference. RL records hold authoritative title + company; narratives can carry multiple RLs since a single narrative may span multiple roles within an employer.
 - **Purpose field dropped.** Phantom field: no defined content scope, no controlled vocabulary, no consumer. Schema parsimony preferred over speculative optionality.
 - **Tags field dropped.** Same overlap problem inventory had with Capability/Competency: Tags values mix Specialty, Orientation, Role Level, and leadership soft-skill signals. Removing Tags reduces schema and eliminates drift risk against the axes.
@@ -409,10 +409,10 @@ narratives is interview-prep primary; cv_targeted / role_evaluation consume it s
   - cv_targeted / role_evaluation: select inventory entries by axis match; pass list to narratives lookup; intersecting narratives surface for bullet framing or decision context.
   - interview_prep: retrieves narratives via semantic body match plus inventory-axis-inheritance ranking via Linked Inventory.
 - **Asymmetric linkage (narrative to inventory only).** Reverse direction (inventory to narrative) rejected: the inventory corpus is much larger than the narratives corpus, so back-references on inventory would mean many inventory edits per narrative authoring event and most inventory entries would carry an empty field. Authoring burden stays on the smaller doc.
-- Framework: stories use `story_personal`; decisions use `decision_adr`.
+- Framework: stories use `story_personal`; decisions use `decision_adr`. **Decisions relabeled `decision_personal` by `narratives-framework-files-restored-2026-07`** (the migrated body was the personal roster all along; the `decision_adr` label was a mismatch).
 - Migration body operations: rename "Who Pushed Back" → "Resistance" (keep as standalone section; scope expanded to non-person resistance including time, skill, and technology constraints); drop "What I'd Own Differently" subsections (purely reflective content; no replacement); empty subsections retained with `Not applicable` placeholder.
 - APPENDIX removed; framework defs live in `rules/narratives/`. Tag Taxonomy section removed.
-- Header: `**Used by:** cv_targeted, cv_general, interview_prep, role_evaluation, positioning, career_brief`. `**Stamps:** Last Used (YYYY-MM)`.
+- Header: `**Used by:** cv_targeted, cv_general, interview_prep, role_evaluation, positioning, career_brief`. (The `**Stamps:**` line was removed with the stamps themselves per `provenance-stamps-dropped-2026-07`.)
 
 Stale-link mitigation: validator script (deferred to skill build) grep-checks Linked Inventory IDs against actual EX/PR IDs in inventory.
 
@@ -443,12 +443,23 @@ Every retrievable entry (EX-NNN, PR-NNN) carries `Industry:` and `Specialty:` fi
 Per-entry fields for Orientation and Work-state pending `retrieval-method-for-discrete-elements` resolution.
 
 #### experience-inventory-entry-types
-`EX-NNN` (employment, Section 8), `PR-NNN` (independent and volunteer, Section 10). Same field schema. Differ in ID prefix, descriptor field name (`Role:` vs `Project:`), section. New categories add new prefix ad hoc.
+`EX-NNN` (employment, Section 8), `PR-NNN` (independent and volunteer, Section 10). Same field schema. Differ in ID prefix, the `Project:` descriptor field PR adds, and section. New categories add new prefix ad hoc. (Both reference their role record via `Role: RL-NNN` per `pr-role-reference-2026-07`; before that, PR named its employer directly.)
 
 #### experience-inventory-section-6-rename
 Renamed "Therapeutic Area and Domain Exposure" → "Industry Exposure Profile". `**Bold:**` lines → `### Sub-section` headings.
 Sub-sections: Therapeutic Areas, Trial Phases, Study Types, Geographic Scope, Data Sources (renamed from Data Modalities), Standards (new), Regulatory Frameworks, Functional Experience (renamed from Functional Domains).
 Data Modalities sub-section dropped — content folded; "Data Sources" carries the operative meaning (EDC, central lab, ePRO, IXRS, etc.).
+
+**Sub-section roster reclassified as per-user content by `industry-exposure-categories-user-defined-2026-07`** (the rename and the heading mechanism stand; the named set is this user's instance, not schema).
+
+#### industry-exposure-categories-user-defined-2026-07
+The `### Sub-section` headings inside Industry Exposure Profile are per-user content, not schema. The schema defines the section heading, the category mechanism (`### <Category>` followed by flat item lines), and nothing else. The category set is generated per user to fit their industry: a clinical-research profile carries Therapeutic Areas / Trial Phases / Study Types; a profile from another field carries whatever exposure categories its hiring panels recognize.
+
+Rationale (2026-07-16 profile-generalization pass, driven by the creation-for-other-users goal): the field-consumption audit confirmed no script, skill, agent, or rules file consumes the sub-section names — the section's retrieval classification is itself an open deferral (`inventory-builder-research-classification-sections-5-6`) — so the domain-specific roster existed only in the schema record. The current inventory.md conforms as-is; no document edit was needed.
+
+Builder implication: the inventory builder derives each user's category set from their artifacts and the relevant industry pack at build time rather than copying any recorded roster (same derive-don't-hardcode principle the scripts follow for ID-prefix vocabularies).
+
+Refs: `experience-inventory-section-6-rename` (roster reclassified), `experience-inventory-tagging-granularity` (sub-section heading anchors unchanged), `inventory-builder-research-classification-sections-5-6` (deferral, unaffected), `feedback_design_for_generalization`.
 
 #### experience-inventory-section-1-structured-fields
 Section 1 (Education) entries carry structured fields, no IDs: Degree, Discipline, Institution, Start Date, End Date. Year-only date granularity (YYYY). Honors/GPA omitted. No retrieval tagging — section remains reference content per `experience-inventory-tagging-granularity`; structure exists to give cv_targeted's renderer reliable field handles instead of comma-parsing a flat line (which broke on disciplines containing commas).
@@ -550,7 +561,7 @@ Axis-tag trimming on PB/PS: **Industry and Specialty required** (the domain axes
 
 Eligibility floors (recorded here, not as inventory preambles — `data-only-discipline` keeps rules out of knowledge docs; enforcement happens at entry-addition time): PB = accepted or better (nothing in preparation); PS = delivered (accepted-not-yet-delivered items wait). No per-entry Status field.
 
-Resolved at apply (2026-07-13): repo-wide grep found no script, skill, or rule that stamps or consumes `Last Used` on inventory entries — the field is an unconsumed carried-blank convention on EX/PR. PB/PS entries omit it entirely (rosters above reflect this). Whether EX/PR should shed their dead `Last Used:` lines is a separate cleanup, not decided here.
+Resolved at apply (2026-07-13): repo-wide grep found no script, skill, or rule that stamps or consumes `Last Used` on inventory entries — the field is an unconsumed carried-blank convention on EX/PR. PB/PS entries omit it entirely (rosters above reflect this). Whether EX/PR should shed their dead `Last Used:` lines is a separate cleanup, not decided here. **Decided 2026-07-16: dropped repo-wide per `provenance-stamps-dropped-2026-07`.**
 
 Refs: `inventory-external-visibility-sections-2026-07`, `experience-inventory-section-2-structured-fields` (credential pattern), `retrieval-architecture-2026-05`, `last-used-stamping`.
 
@@ -575,6 +586,15 @@ Supersedes `experience-inventory-section-ordering` and the placement bullet of `
 
 Refs: `inventory-external-visibility-sections-2026-07`, `experience-inventory-section-ordering` (superseded), `experience-inventory-tagging-granularity`.
 
+#### education-coursework-field-2026-07
+The Academic Coursework Detail section is retired; its content folds into the owning Education entries as an optional multi-line `Coursework:` field (indented `Category: items` lines under the field label). Applied to ED-001 (MS coursework) and ED-002 (MBA coursework); ED entries without coursework detail omit the field (minimum-lines principle of `inventory-pb-ps-aw-entry-schemas-2026-07`).
+
+Rationale: the 2026-07-16 field-consumption audit found no consumer of the standalone section — no script parses it and no skill or agent is directed to it, while its substance had demonstrably closed a gap under the pre-pipeline process (APP-001 biostatistics-depth requirement). Homing the content on ED entries gives it two existing consumer paths with no new machinery: gap-detector's ED-NNN credential matching and cv-architect's Education-block read for the CV tail. The inventory also keeps the content for its stand-alone reference role.
+
+Apply-time sweep: inventory.md ToC entry removed; `retrieval_payload.py` docstring example of a non-entry section re-pointed (parser behavior unchanged — ED is not a retrievable prefix and entry parsing closes on any `## ` heading). The Credentials cluster roster in `inventory-section-denumbering-and-reorder-2026-07` stands as a record of that decision's state.
+
+Refs: `inventory-section-denumbering-and-reorder-2026-07`, `education-citable-ids-2026-06`, `inventory-pb-ps-aw-entry-schemas-2026-07` (minimum-lines principle).
+
 #### narratives-placeholder-convention-2026-07
 A narrative terrain gap gets a placeholder block in narratives.md rather than a blank stub or an out-of-band note. Shape: H2 working title suffixed `(placeholder)`, **no `ID:` line and no `Linked Inventory:`** — the narratives parser skips ID-less H2 blocks (verified against `retrieval_payload._parse_narratives`), keeping placeholders out of retrieval and scoring with zero code change. Body fields: `Placeholder:` (marker line), `Gap:` (the recurring demand the story should evidence, with application evidence), `Sought:` (the raw material to capture), `Source:` (where the gap surfaced). ToC entry carries no ID prefix.
 
@@ -586,6 +606,17 @@ Refs: `career-narratives-schema`.
 
 #### narratives-placement
 `rules/narratives/` with five files: `decision_adr`, `decision_personal`, `story_atola`, `story_star`, `story_personal`.
+
+Implemented by `narratives-framework-files-restored-2026-07`.
+
+#### narratives-framework-files-restored-2026-07
+`rules/narratives/` created with the five framework files per `narratives-placement`. The definitions were recovered from the prior repo (`career_development/rules/career_narratives/`, still on disk) rather than re-invented, then reconciled to the current schema: the obsolete Tags/Archetype/Era metadata block replaced with the `career-narratives-schema` block (ID / Role / Framework / Linked Inventory; the Added / Last Used stamps were carried in the first draft and dropped hours later by `provenance-stamps-dropped-2026-07`), the migration body ops applied to `decision_personal` ("Who Pushed Back" renamed to Resistance with scope expanded to non-person resistance; "What I'd Own Differently" dropped), the empty-section `Not applicable` convention noted in each file, em dashes removed (rules files are products), and stale `knowledge/Career_Narratives.md` references dropped.
+
+**DC entries relabeled `decision_adr` to `decision_personal`** (5 entries). The migrated decision bodies follow the personal roster (The Decision / The Context / The Options and What Each Cost / My Criteria / My Reasoning / Resistance / The Outcome), not ADR's lean Context / Decision / Alternatives / Consequences; `career-narratives-schema` had assigned the `decision_adr` label while its own migration ops described personal-format sections. Relabeling keeps ADR's industry-standard meaning intact and available. Verified before the change: no script consumes the Framework field, so the relabel is metadata-only.
+
+Gap origin: `career-narratives-schema` removed the in-document APPENDIX on the premise the definitions would move to `rules/narratives/`; the move never executed, leaving every `Framework:` value a dangling reference until now. Surfaced by the 2026-07-16 profile-generalization pass; the inventory/narratives builder skills cannot draft or QC entries without these files.
+
+Refs: `career-narratives-schema` (Framework bullet amended), `narratives-placement` (implemented), `design/narratives_builder_quality_checks.md` (references now resolve).
 
 #### tag-taxonomy
 `rules/tags.yaml` holds only global tag vocabularies that apply to every entry: Role Level, Purpose. YAML. Org Context absorbed into the Work-state axis.
@@ -644,7 +675,7 @@ Registry-gap candidates surfaced and resolved during user QC: `regulatory-docume
 Refs: `competency-registry-activity-level-redesign-2026-05`, `competency-registry-runtime-value` (resolved by `cv-targeted-retrieval-architecture-2026-05`), `inventory-section-8-subsection-reassignment` (deferral — Step 6 trigger fires here but action deferred pending prototype outcome), `competency-field-and-registry-removed-2026-05`.
 
 #### inventory-role-rl-reference-applied-2026-05
-Cluster C migration applied: EX entry `Title:` and `Company:` fields collapsed into a single `Role: RL-NNN` reference to Section 7. RL becomes canonical for role title and company; rebrand resilience is now one record's update instead of 192. PR entries unchanged (no RL counterpart).
+Cluster C migration applied: EX entry `Title:` and `Company:` fields collapsed into a single `Role: RL-NNN` reference to Section 7. RL becomes canonical for role title and company; rebrand resilience is now one record's update instead of 192. PR entries unchanged (no RL counterpart at the time; `pr-role-reference-2026-07` extended the same reference to PR once `Type: Independent` created one).
 
 Reconciliation produced two RL Title corrections (Section 7 was holding contracted/HR titles where EX entries held operational/working titles; user resolved each by adopting the operational title as canonical):
 - RL-017: `Clinical Data Quality Consultant` → `Sr. Data Scientist, Data Management Sciences`.
@@ -698,12 +729,27 @@ Refs: `questions-library-deletion` (deferral).
 Existing profile documents (user-info, inventory, narratives, positioning) updated by hand-edit. Builder skills become refresh tools later, only if refresh demand recurs. Mechanical sub-tasks may use one-off scripts (deleted after apply per `working-files-deleted-after-apply`). Resolves the open question `knowledge-doc-update-mechanism`.
 
 #### inventory-entry-structure-applied
-EX-NNN entries carry, in order: ID, Role, Industry, Specialty, Orientation, Level, Work-state, Added, Last Used, Description (`Description:` label, bold preserved on value), Impact, Context.
-PR-NNN entries carry, in order: ID, Project, Company, Industry, Specialty, Orientation, Level, Work-state, Added, Last Used, Description, Impact, Context.
-Schemas diverge on the second field: EX uses `Role: RL-NNN` reference to Section 7 (per `inventory-role-rl-reference-applied-2026-05`); PR uses `Project:` + `Company:` since Independent & Volunteer projects have no RL counterpart. Title field on EX entries dropped; RL is canonical for role title and company.
+EX-NNN entries carry, in order: ID, Role, Industry, Specialty, Orientation, Level, Work-state, Description (`Description:` label, bold preserved on value), Impact, Context.
+PR-NNN entries carry, in order: ID, Project, Role, Industry, Specialty, Orientation, Level, Work-state, Description, Impact, Context.
+Schemas diverge on the descriptor field: EX has none (the RL record names the role); PR carries `Project:` for the project name. Both reference their role record via `Role: RL-NNN` (per `inventory-role-rl-reference-applied-2026-05`, extended to PR by `pr-role-reference-2026-07`). Title field on EX entries dropped; RL is canonical for role title and company. PR's `Company:` field is retired in favor of the RL reference, retained in the schema only as the fallback for a project with no role record (see `pr-role-reference-2026-07`).
 Prose section order at end of block: Description (Action), then Impact (Result), then Context (Situation). Impact is sparse-permitted, may carry a colon-delimited value-type prefix per `outcome-folded-into-impact` (e.g., `Impact: Risk Reduction: <prose>` or `Impact: Risk Reduction`). Context is sparse-permitted, free prose.
-Competency field removed per `competency-field-and-registry-removed-2026-05` (originally listed between Work-state and Added).
-Refs: `experience-inventory-domain-scoping`, `experience-inventory-entry-types`, `outcome-folded-into-impact`, `impact-field-semantics-2026-05`, `competency-field-and-registry`, `inventory-role-rl-reference-applied-2026-05`, `inventory-field-drift-cleanup` (deferral).
+Competency field removed per `competency-field-and-registry-removed-2026-05` (originally listed between Work-state and the since-dropped Added stamp). `Added` / `Last Used` dropped per `provenance-stamps-dropped-2026-07`. `Company:` replaced by `Role:` on PR entries per `pr-role-reference-2026-07`.
+Refs: `experience-inventory-domain-scoping`, `experience-inventory-entry-types`, `outcome-folded-into-impact`, `impact-field-semantics-2026-05`, `competency-field-and-registry`, `inventory-role-rl-reference-applied-2026-05`, `pr-role-reference-2026-07`, `inventory-field-drift-cleanup` (deferral).
+
+#### pr-role-reference-2026-07
+PR entries reference their role record via `Role: RL-NNN`, the same linkage EX entries use. Applied to all 13 PR entries (`Role: RL-021`); each entry's `Company: Independent` line was replaced in place, so field order is preserved. RL-021's `Entries: Independent & Volunteer Projects` back-pointer is deleted.
+
+**The pointer was a patch over a falsified premise.** The original PR schema (`inventory-entry-structure-applied`) held that "Independent & Volunteer projects have no RL counterpart", so PR named its employer directly and carried no Role. `Type: Independent` (added by `experience-inventory-section-7-flat-records`, 2026-05-12) then created RL-021 for a self-directed work period whose products are PR entries, which made the premise false. Rather than restore the child-to-parent linkage every other entry type uses, a back-pointer naming a *section* was added to the parent (2026-05-14, under time pressure), and the per-RL completeness check grew a special case to follow it.
+
+**Consequence: `Entries:` collapses to one meaning.** The field was carrying three statements: section-level `Entries: None` (empty by fact, per the empty-section convention of `inventory-external-visibility-sections-2026-07`); RL-level `Entries: None` (background role, zero entries expected, exempt from the per-RL completeness and density checks); and RL-021's section pointer. Only the pointer was a workaround. With it gone, `Entries:` means intentional absence at both section and record level, and per-RL completeness is one uniform scan (`does any EX or PR entry carry Role: RL-NNN?`) instead of a rule plus a follow-the-pointer branch. `Entries: None` stays: absence alone cannot distinguish an intentional zero-entry role from an oversight, so that assertion is not derivable.
+
+**`Company:` retained in the PR schema as a fallback**, populated only when a project has no role record (mutually exclusive with `Role:`, never both). Kept per `feedback_design_for_generalization`: another user's volunteer project may have no corresponding role record, and the parser already resolves `role_companies[role] or company` with no code change. Every current PR entry has an RL, so none carries it.
+
+Verified behavior-neutral before and after apply: `retrieval_apply._employer` resolves `role_companies['RL-021']` = `Independent`, the same string the dropped `Company:` lines held; all 13 PR entries resolve to `Independent`, all 225 inventory entries still parse, and no EX or PR entry has an unresolved employer. cv-structure renders PR content as Selected Projects citing `PR-NNN` with no employer line, so the CV path is untouched.
+
+Apply-time sweep: `retrieval_payload.py` / `retrieval_apply.py` docstrings and the manifest's `Employer` column note corrected (all three asserted PR entries carry no Role reference); the per-RL completeness and density rules in `design/inventory_builder_quality_checks.md` rewritten to the uniform scan. Applied via a one-off script, deleted after apply per `working-files-deleted-after-apply`; this decision is the durable record.
+
+Refs: `inventory-entry-structure-applied`, `inventory-role-rl-reference-applied-2026-05`, `experience-inventory-entry-types`, `inventory-section-8-rl-grouping-2026-05` (the `Entries:` field's origin), `inventory-external-visibility-sections-2026-07` (empty-section convention, unaffected), `feedback_design_for_generalization`.
 
 #### impact-field-semantics-2026-05
 Refines `outcome-folded-into-impact` based on 2026-05-04/05 reconciliation pass against existing entries.
@@ -945,6 +991,23 @@ Per file-and-folder-naming. Compound application ID embedded. Examples: `gap-ana
 
 #### last-used-stamping
 Skills stamping accepted outputs add `Last Used: YYYY-MM` to cited entries in `inventory` and `narratives`.
+
+**Superseded by `provenance-stamps-dropped-2026-07`.** The stamping was never wired into any skill, so the field sat blank or stale for the life of the repo.
+
+#### provenance-stamps-dropped-2026-07
+The `Added:` and `Last Used:` fields are dropped from every inventory and narrative entry (450 lines removed from inventory.md, 34 from narratives.md), along with the narratives header's `**Stamps:**` line. Neither field had a consumer: the 2026-07-16 field-consumption audit found no script, skill, agent, or rule reading either one, and `last-used-stamping` (the decision that created the write path) was never implemented.
+
+**Both are derivable from artifacts, at higher fidelity than the fields carried.**
+- *Last Used*: every application folder permanently records which entries were used — the retrieval manifest lists what surfaced, `cv_content.md` carries a `<!-- src: EX-NNN -->` citation per claim, and gap analysis and prep artifacts cite evidence IDs. Usage is reconstructable for every application ever run, including the ones the stamping would have missed.
+- *Added*: the personal repo's git history dates every entry's first appearance to the day (`git log -S "ID: EX-214"`), where the field held month granularity at best (most entries read `pre-2026-04`).
+
+**Why derive rather than stamp.** Stamping is a discipline that must fire on every run; the repo's own history shows it silently rots when it does not. A derived report cannot drift from reality, needs no write-back, and answers questions the fields could not (usage strength — merely surfaced by retrieval versus actually cited in a CV — and full change context). Raw event logs (application artifacts, git) are preserved; the dropped fields were lossy projections of them.
+
+Consequence accepted: corpus-level questions ("what was added this year") now need a script rather than a column scan. Not a blocker, and deliberately untracked: the user will build the aggregation/visualization layer when he wants it (2026-07-16). The derivation sources are named above, so nothing needs re-deriving if he does.
+
+Applied 2026-07-16: fields stripped from both profile docs; `**Stamps:**` header line removed from narratives.md; the five `rules/narratives/` framework files' metadata blocks updated; `career-narratives-schema` and `inventory-entry-structure-applied` field rosters shortened; both builder quality-check docs synced.
+
+Refs: `last-used-stamping` (superseded), `career-narratives-schema`, `inventory-entry-structure-applied`, `inventory-pb-ps-aw-entry-schemas-2026-07` (its open cleanup question, now closed), `document-metadata-header-discipline`.
 
 #### state-detection
 Ordered checks combine file existence and session log entries.

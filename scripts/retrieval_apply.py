@@ -206,9 +206,10 @@ def _build_inventory_rows(repo_root, jd_axes, inventory_entries, semantic_scores
 
     Each row carries: id, employer, semantic, exact_count, adjacency_score,
     in_semantic, in_tag_pull, axis_match_summary, reason. `employer` resolves an
-    entry's Role tag to its company via role_companies, falling back to a PR
-    entry's own Company field (PR entries carry no Role reference), so downstream
-    consumers (CV creation especially) place each entry under the right employer.
+    entry's Role tag to its company via role_companies, falling back to an
+    entry's own Company field (carried only by a PR entry with no RL record, per
+    `pr-role-reference-2026-07`), so downstream consumers (CV creation
+    especially) place each entry under the right employer.
     PB/PS entries carry Role only when authored/delivered in the course of a
     role (`inventory-pb-ps-aw-entry-schemas-2026-07`); with neither Role nor
     Company the employer renders as '-' (no employer applies, distinct from a
@@ -464,8 +465,9 @@ def _render_manifest(slug, app_id, date, jd_axes, inventory_rows, narrative_rows
         axis_block,
         '',
         '**Signal columns:** `Employer` is the entry\'s company, resolved from its '
-        'Role tag (or, for independent/volunteer projects, the entry\'s own Company '
-        'field; `-` for a publication/presentation entry with no Role link), so '
+        'Role tag (falling back to the entry\'s own Company field, carried only by '
+        'a project entry with no role record; `-` for a publication/presentation '
+        'entry with no Role link), so '
         'each entry can be placed under the right employer without '
         're-deriving it. `Semantic` is the LLM-judgment score against the '
         'critical requirements list (0.00 to 1.00; `-` means the entry was not '

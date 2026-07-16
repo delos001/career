@@ -50,12 +50,6 @@ Distinct from staleness *detection*, which is a live bug in GitHub #47, not a de
 - Blocks: nothing currently.
 - Refs: `rule-staleness-threshold`, GitHub #47.
 
-### profile-usage-derivation-report
-A script that derives profile-entry usage from the application artifacts rather than from stamped fields, since `provenance-stamps-dropped-2026-07` removed `Added` / `Last Used`. Sources: each application's retrieval manifest (what surfaced), `cv_content.md` `<!-- src: ID -->` citations (what was actually used), and the gap-analysis / prep evidence citations. Emits per entry: which applications cited it, at what dates, and at what strength (surfaced-only versus CV-cited — different signals for archiving). `Added` equivalents come from the personal repo's git history (`git log -S "ID: EX-NNN"`), which dates entries to the day rather than the field's month granularity. Answers "what was added this year", "which entries never get used" (the inventory-ret archiving question the stamps were originally for), and "which entries carry the most weight". User framed a visualization/dashboard layer over the aggregate as the eventual shape; low priority (raised 2026-07-16).
-- Trigger: user demand for the archiving decision or the importance visualization; or inventory growth making inventory-ret archiving live.
-- Blocks: nothing. Corpus-level questions are answerable ad hoc from the same artifacts in the interim.
-- Refs: `provenance-stamps-dropped-2026-07`, `last-used-stamping` (superseded), `feedback_scripts_separate_by_concern`.
-
 ## Under Audit (GitHub #6)
 
 These entries are gated on triggers that have already fired, or whose premise may have dissolved. They are held here in full because #6's action is "confirm resolved and delete, or restate with a real trigger," and that work happens in these entries. Do not delete them ahead of that audit.

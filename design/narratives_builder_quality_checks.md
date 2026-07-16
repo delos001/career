@@ -6,7 +6,7 @@ Parallel artifact to `design/inventory_builder_quality_checks.md`.
 
 ## Finding Resolution Protocol
 
-User decisions on findings are authoritative; the builder applies the response. The post-resolution state must satisfy the corresponding rule in this file and any referenced rule files (`rules/narratives/story_personal.md`, `rules/narratives/decision_adr.md`, etc.).
+User decisions on findings are authoritative; the builder applies the response. The post-resolution state must satisfy the corresponding rule in this file and any referenced rule files (`rules/narratives/story_personal.md`, `rules/narratives/decision_personal.md`, etc.).
 
 Applies at creation, refresh, and audit.
 
@@ -27,12 +27,12 @@ Rationale: Cat 6 rewrites can invalidate findings from Cat 3/4/5 if done after t
 
 ## 1. Structural Integrity
 
-- **Document header block required at top.** Order: H1 title (`# Career Narratives`), blank, `**Used by:** <pipe-separated skill list>`, blank, `**Stamps:** <stamp description>`, blank, then TOC. Per `career-narratives-schema` document-header rule.
+- **Document header block required at top.** Order: H1 title (`# Career Narratives`), blank, `**Used by:** <pipe-separated skill list>`, blank, then TOC. Per `career-narratives-schema` document-header rule. (The `**Stamps:**` line was removed with the stamps themselves per `provenance-stamps-dropped-2026-07`.)
 - **TOC required after document header.** TOC structure: H2 `## Table of Contents` followed by nested bullet list. Includes one entry per H1 section and one entry per narrative (H2). Each narrative TOC entry prepends the ID: `- [ST-NNN <Title>](#anchor)`. Anchor must match the heading text via standard CommonMark slug algorithm.
 - **TOC anchor consistency.** When a narrative title changes, its TOC anchor must update in the same edit. Builder validates anchor-to-heading-text correspondence at audit time. 2026-05-12 finding: ST-009 title changed from "Duke CRI" to "Duke Clinical Research Institute" but anchor was not updated in same edit; fixed during Cat 1 sweep.
-- **Per-entry metadata block: 6 fields in fixed order.** `ID`, `Role`, `Framework`, `Linked Inventory`, `Added`, `Last Used`. Each on its own line, format `<Field>: <value>`. No blank lines within the block. Field order is part of the schema; reordering is a defect.
+- **Per-entry metadata block: 4 fields in fixed order.** `ID`, `Role`, `Framework`, `Linked Inventory`. Each on its own line, format `<Field>: <value>`. No blank lines within the block. Field order is part of the schema; reordering is a defect. (`Added` / `Last Used` dropped per `provenance-stamps-dropped-2026-07`.)
 - **Blank line between H2 entry heading and metadata block.** Pattern: `## <Title>` blank line, then `ID: <value>`. No blank line between metadata fields (they are tight block).
-- **Blank line between metadata block and first H3 section.** Pattern: `Last Used: <value>` blank line, then `### <Section>`. Static parsers depend on this. Enforced 2026-05-12; defect prevented field-line vs section-line disambiguation.
+- **Blank line between metadata block and first H3 section.** Pattern: `Linked Inventory: <value>` (the block's last line) blank line, then `### <Section>`. Static parsers depend on this. Enforced 2026-05-12; defect prevented field-line vs section-line disambiguation.
 - **H3 level for framework sections.** All framework sections (Situation, Action, The Decision, etc.) use `### `, not `## ` or `#### `. Builder validates at audit time.
 - **Standard CommonMark bullet indentation.** Top-level bullet: `- <content>` (single space after dash). Sub-bullet: `  - <content>` (2-space indent, single space after dash). Pandoc style (`-   ` with 3 spaces, 4-space sub-indent) prohibited.
 - **Pipe delimiter for multi-value reference lists.** Per §2 rule, applied to `Role`, `Linked Inventory`, document `**Used by:**`. Format: `A | B | C` (space-pipe-space).
@@ -68,7 +68,7 @@ Rationale: Cat 6 rewrites can invalidate findings from Cat 3/4/5 if done after t
 
 - **Placeholder blocks are not entries.** An H2 block with no `ID:` line and a `Placeholder:` marker (per `narratives-placeholder-convention-2026-07`) is a deposit target for a not-yet-captured story; framework-template, metadata-block, and Linked-Inventory checks do not apply to it. Its ToC entry carries no ID prefix.
 - **Stories use the `story_personal` framework template (13 sections, fixed order).** Required sections, in order: `Situation`, `Baseline`, `Task`, `Action`, `My Role`, `Thinking`, `Tradeoff`, `Constraints / Mitigation`, `Outcome`, `Value Translation`, `Scale`, `Learnings`, `Application`. Section heading text exact; case-sensitive; no abbreviations (e.g., "Constraints / Mitigation" not "Constraints").
-- **Decisions use the `decision_adr` framework template (7 sections, fixed order).** Required sections, in order: `The Decision`, `The Context`, `The Options and What Each Cost`, `My Criteria`, `My Reasoning`, `Resistance`, `The Outcome`. Per `career-narratives-schema` (2026-05-12 revision): `Who Pushed Back` renamed to `Resistance`; `What I'd Own Differently` dropped (purely reflective; no replacement).
+- **Decisions use the `decision_personal` framework template (7 sections, fixed order; relabeled from `decision_adr` per `narratives-framework-files-restored-2026-07`).** Required sections, in order: `The Decision`, `The Context`, `The Options and What Each Cost`, `My Criteria`, `My Reasoning`, `Resistance`, `The Outcome`. Per `career-narratives-schema` (2026-05-12 revision): `Who Pushed Back` renamed to `Resistance`; `What I'd Own Differently` dropped (purely reflective; no replacement).
 - **Empty sections retained with `Not applicable` placeholder, not blank.** Per `career-narratives-schema`: when a framework section has no content for a specific narrative, populate with a single bullet `- Not applicable` rather than leaving the heading empty or deleting the section. Preserves structural uniformity for retrieval and parsing.
 - **Section heading H3 level.** Every framework section heading uses `### <Name>`. Sub-content as bullets with standard markdown indentation (`- ` top-level, `  - ` sub-bullet).
 - **Section ordering uniform within framework.** Stories' 13 sections appear in the order above on every entry; decisions' 7 sections likewise. Builder validates ordering at audit time and reports any deviation.
@@ -109,7 +109,7 @@ Rationale: Cat 6 rewrites can invalidate findings from Cat 3/4/5 if done after t
 - **Tense: past tense for events; present tense for general statements.** Past for what happened (e.g., "Created a novel..."); present for generalizations and rules of thumb ("Specialization can mitigate risk..."). Future/conditional for Learnings phrased aspirationally ("Would invest more in change management...").
 - **No em-dashes (— or ---) in any field.** Per global writing-style rule and prior audit (2026-05-12 em-dash sweep). Use periods, semicolons, parentheses, conjunctions, or rewrite. Document `design_decisions.md` and `design/inventory_builder_quality_checks.md` §4 apply identical rule.
 - **No Pandoc artifacts.** No `[Name]{.underline}` syntax, no ` ```{=html} ` fence blocks, no `\'` / `\"` / `\$` escape backslashes. Per the 2026-05-12 cleanup.
-- **Voice: hybrid acceptable, framework-aware.** Stories (`story_personal`) and Decisions (`decision_adr`) tolerate different voice patterns by section:
+- **Voice: hybrid acceptable, framework-aware.** Stories (`story_personal`) and Decisions (`decision_personal`) tolerate different voice patterns by section:
   - `Situation`, `Baseline`, `Task`, `Outcome`, `Value Translation`, `Scale`: implicit first-person or descriptive third-person dominant. Past tense for events.
   - `Action`, `My Role`: implicit first-person dominant ("Created...", "Led...", "Developed..."). Subject is the user; first-person pronoun typically omitted.
   - `Thinking`, `Tradeoff`, `My Reasoning`, `My Criteria`, `Resistance`: explicit "I" allowed and common; reflective voice. "We"/"our" allowed when describing team or organizational context.

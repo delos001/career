@@ -144,8 +144,9 @@ def _section_bounds(text, heading_prefix):
 def _parse_inventory_entries(inventory_text):
     """Walk every retrievable entry in inventory.md, returning entry dicts.
 
-    Each dict carries: id, role (str; EX/PB/PS entries may reference an RL
-    record), company (str; PR entries carry their employer directly),
+    Each dict carries: id, role (str; EX/PR/PB/PS entries reference an RL
+    record), company (str; fallback employer for a PR entry with no RL record,
+    per `pr-role-reference-2026-07`),
     industry (list), specialty (list), orientation (list), level (list),
     work_state (list), description (str), impact (str), payload (str =
     Description + ' ' + Impact, both trimmed). Axes a section's schema omits
@@ -159,7 +160,7 @@ def _parse_inventory_entries(inventory_text):
     keeps the parser stable across section reordering
     (`inventory-section-denumbering-and-reorder-2026-07`). A new '## '
     section heading closes the open entry, so a non-entry section (e.g.
-    Academic Coursework Detail) cannot bleed into the last entry's fields.
+    Industry Exposure Profile) cannot bleed into the last entry's fields.
     """
     lines = inventory_text.split('\n')
     entries = []
@@ -202,8 +203,8 @@ def _parse_inventory_entries(inventory_text):
             continue
         m = _COMPANY_RE.match(line)
         if m:
-            # PR entries name their employer directly; EX entries have no
-            # Company line, so this only populates PR entries.
+            # Fallback employer: only a PR entry with no RL record carries a
+            # Company line (`pr-role-reference-2026-07`). EX entries never do.
             current['company'] = m.group(1).strip()
             continue
         m = _TAG_RE.match(line)
