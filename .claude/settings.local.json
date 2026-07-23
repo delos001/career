@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Write(C:\\Users\\delos\\code\\career\\personal\\**)",
+      "Edit(C:\\Users\\delos\\code\\career\\personal\\**)",
       "PowerShell(python C:\\\\Users\\\\delos\\\\code\\\\career\\\\scripts\\\\display\\\\introduce.py gap-analysis)",
       "PowerShell(python C:\\\\Users\\\\delos\\\\code\\\\career\\\\scripts\\\\prep_interview_qc.py check --folder C:\\\\Users\\\\delos\\\\code\\\\career\\\\personal\\\\applications\\\\medable_APP-008_2026-06; Write-Output \"=== EXIT: $LASTEXITCODE ===\")"
     ],
