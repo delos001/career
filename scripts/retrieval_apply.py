@@ -128,24 +128,41 @@ def _adjacency_for(repo_root, axis_folder, value):
 
 # ---------------------------------------------------------------------------
 # Per-axis scoring
-# Given a JD axis value (primary + optional secondary) and an entry's list of
-# values for that axis, return (exact_match_bool, axis_score). axis_score is
-# 1.0 for an exact match against primary or secondary, 0.5 for an adjacency
-# match against primary or secondary, and 0.0 for no match. Multi-value
-# entries take the max over their values.
+# Given a JD axis value (primary + any number of secondaries) and an entry's
+# list of values for that axis, return (exact_match_bool, axis_score).
+# axis_score is 1.0 for an exact match against primary or any secondary, 0.5
+# for an adjacency match against primary or any secondary, and 0.0 for no
+# match. Multi-value entries take the max over their values.
 # ---------------------------------------------------------------------------
 
 # Default adjacency weight per `retrieval-architecture-2026-05`.
 _ADJACENCY_WEIGHT = 0.5
 
 
-def _score_axis(repo_root, axis_folder, jd_primary, jd_secondary, entry_values):
+def _secondary_values(jd_block):
+    """Return the JD block's secondary values as a list.
+
+    The axis-classifier may commit more than one secondary on an axis (no axis
+    registry caps the count; a specialty can carry both a domain anchor and a
+    regulatory framing layer, for example). The field therefore accepts either
+    a single value or a list. A bare string is still read, so axes files
+    written before multi-secondary support parse unchanged.
+    """
+    raw = jd_block.get('secondary')
+    if raw is None:
+        return []
+    if isinstance(raw, str):
+        return [raw] if raw.strip() else []
+    return [v for v in raw if v]
+
+
+def _score_axis(repo_root, axis_folder, jd_primary, jd_secondaries, entry_values):
     """Return (exact_match, score) for one axis."""
     if not entry_values:
         return False, 0.0
     exact = False
     best = 0.0
-    for jd_value in filter(None, (jd_primary, jd_secondary)):
+    for jd_value in filter(None, [jd_primary, *jd_secondaries]):
         adjacency = set(_adjacency_for(repo_root, axis_folder, jd_value))
         for entry_value in entry_values:
             if entry_value == jd_value:
@@ -174,10 +191,10 @@ def _compute_entry_axis_signals(repo_root, jd_axes, entry):
     for display_name, axis_folder, entry_key in _AXIS_CONFIG:
         jd_block = jd_axes.get(display_name, {}) or {}
         jd_primary = jd_block.get('primary')
-        jd_secondary = jd_block.get('secondary')
+        jd_secondaries = _secondary_values(jd_block)
         entry_values = entry.get(entry_key, []) or []
         exact, score = _score_axis(
-            repo_root, axis_folder, jd_primary, jd_secondary, entry_values
+            repo_root, axis_folder, jd_primary, jd_secondaries, entry_values
         )
         if exact:
             exact_count += 1
@@ -187,7 +204,7 @@ def _compute_entry_axis_signals(repo_root, jd_axes, entry):
             'score': score,
             'entry_values': entry_values,
             'jd_primary': jd_primary,
-            'jd_secondary': jd_secondary,
+            'jd_secondaries': jd_secondaries,
         }
     return exact_count, round(weighted_sum, 2), detail
 
@@ -450,9 +467,10 @@ def _render_manifest(slug, app_id, date, jd_axes, inventory_rows, narrative_rows
     for display_name, _, _ in _AXIS_CONFIG:
         block = jd_axes.get(display_name, {}) or {}
         primary = block.get('primary') or '_(not classified)_'
-        secondary = block.get('secondary')
-        if secondary:
-            axis_lines.append(f'- **{display_name}:** {primary} (primary), {secondary} (secondary)')
+        secondaries = _secondary_values(block)
+        if secondaries:
+            secondary_str = ', '.join(f'{v} (secondary)' for v in secondaries)
+            axis_lines.append(f'- **{display_name}:** {primary} (primary), {secondary_str}')
         else:
             axis_lines.append(f'- **{display_name}:** {primary}')
     axis_block = '\n'.join(axis_lines)
