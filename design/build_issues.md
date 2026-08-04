@@ -29,6 +29,8 @@ Not a content defect per se; carried to handoff. See `personal/applications/beon
 
 ## preparation-screen / preparation-interview: no home for a late recruiter round — 2026-08-03
 
+Tracked as [#62](https://github.com/delos001/career/issues/62). That issue is the working copy; this entry is the run record.
+
 Surfaced running APP-020 (Faro, Director Implementation Services). The recruiter
 round with internal recruiting was scheduled AFTER the hiring-manager round, which
 neither skill anticipates.
