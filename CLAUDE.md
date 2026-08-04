@@ -18,6 +18,8 @@ Example: `python C:\Users\delos\code\career\scripts\gap_assemble.py assemble --f
 
 This repo contains Claude Code skills in `.claude/skills/`. Each skill has a `SKILL.md` that is the authoritative spec for how the skill runs. Read it before running the skill. Follow it exactly.
 
+File paths inside a `SKILL.md` are repo-root-relative, not relative to the skill's own folder. A reference to `templates/session_log.md` means `<repo root>/templates/session_log.md`. Skills do not carry their own `templates/` directories; every template lives in the single root `templates/`.
+
 ## Scripts
 
 All Python scripts live in `scripts/`. They resolve the repo root from `__file__` and read config from `config.yaml`. Nothing is hardcoded. Do not pass repo-root-relative paths from within scripts/ — use `../` or absolute paths.
