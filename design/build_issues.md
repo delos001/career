@@ -26,3 +26,38 @@ Shipped provisional at the Phase 4 3-iteration cap. One unresolved finding:
 
 Not a content defect per se; carried to handoff. See `personal/applications/beone_APP-009_2026-06/cv_collaboration_log.md` for the full QC trail.
 
+
+## preparation-screen / preparation-interview: no home for a late recruiter round — 2026-08-03
+
+Surfaced running APP-020 (Faro, Director Implementation Services). The recruiter
+round with internal recruiting was scheduled AFTER the hiring-manager round, which
+neither skill anticipates.
+
+- `preparation-screen` owns recruiter rounds, but its Phase 0 UPDATE mode fires
+  whenever `interview_prep.md` exists and then walks every main-body section for
+  confirm/amend. It has no path to add a per-interview Appendix block; the block is
+  written only on the CREATE path in Phase 3. So a recruiter round that follows a
+  post-screen round cannot be represented in the cumulative doc by the skill that
+  owns it.
+- `rules/interview-types/` carries `hiring-manager.md`, `peer-team.md` and
+  `executive.md`. There is no recruiter file, so `preparation-interview` has no
+  audience rule file to load for this case.
+
+Workaround used this run: ran `preparation-interview` in EXTEND mode, which handles
+the cumulative architecture correctly, and substituted `preparation-screen`'s Phase 3
+recruiter-specific emphasis rules (comp posture, process intel, flagging which
+Question Bank items to hold for people with real authority) in place of the missing
+rule file. Stage label `Recruiter Screen`, matching the existing convention and
+`interview_lifecycle`'s `--stage`.
+
+Two candidate fixes, not yet decided:
+
+1. Add `rules/interview-types/recruiter.md` and let `preparation-interview` own every
+   round including recruiter ones, reducing `preparation-screen` to the create-first-doc
+   case. Cleanest, and matches how the architecture already works.
+2. Give `preparation-screen` an EXTEND path mirroring `preparation-interview`'s Phase 0,
+   so both skills can add an Appendix block to an existing cumulative doc. More
+   duplication between the two skills.
+
+Option 1 is the smaller change and removes a skill boundary that has now cost a
+decision mid-run.
