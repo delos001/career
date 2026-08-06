@@ -21,7 +21,8 @@ are held to the same formatting and architecture):
   P4  no em dashes in the artifact
   P5  every frontmatter `sources` file exists (app folder or profile folder)
   P6  no bold connector tokens welding list items
-  P7  every heading is in the allowed set (template headings + dynamic families)
+  P7  every heading is in the allowed set (template headings + dynamic
+      families), at its template depth, under its template section, and unique
   P8  no coaching brackets or citations inside a heading line
   X1  an APPENDIX region exists with at least one per-interview block
   X2  every Q-label referenced is defined in the Question Bank

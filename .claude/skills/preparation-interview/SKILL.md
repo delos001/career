@@ -52,7 +52,7 @@ Appendix.
 ONE cumulative `interview_prep.md` per application:
 
 - MAIN BODY = shared, refined cumulatively, never duplicated per interview:
-  Company & Industry, Positioning & Approach, The Role, Fit and Gaps,
+  Company & Industry, The Role, Positioning & Approach, Fit and Gaps,
   Anticipated Questions, Question Bank, Concerns to Resolve, Comp / Logistics.
 - APPENDIX = one thin block per interview: purpose + interviewer(s) + emphasis
   (which Question Bank items to prioritize, which Concerns to raise here, what

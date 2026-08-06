@@ -55,11 +55,14 @@ letting the user pick, edit, add, or skip (an empty list is allowed):
 3. User-supplied additions.
 
 Selected questions are copied as full text (the file is the live surface
-during the call; no pointers to other documents). Order the final list in the
-shared Question Bank's topical order so related questions sit adjacent, and
-prefix each priority item (named in the Appendix 'Prioritize from Question
-Bank') with "(P) " so priorities are scannable at a glance. Carryover and
-user-added items outside the priority set carry no prefix.
+during the call; no pointers to other documents). The Appendix 'Prioritize from
+Question Bank' list is written in the order the questions should be ASKED, and
+that block is the only place the asking order is recorded, so carry it VERBATIM:
+those items lead the checklist in the Appendix's order, never re-sorted into
+Question Bank order, each prefixed with "(P) " so priorities are scannable at a
+glance. Re-sorting them contradicts the cue-card sitting directly above. Carryover
+and user-added items follow BELOW the priority set, ordered by the shared Question
+Bank's topical order so related questions sit adjacent, and carry no prefix.
 
 Then compose the live cue-card from `interview_prep.md` (skip when no prep
 exists; the cue-card then renders `_(none)_`). The round's Appendix block

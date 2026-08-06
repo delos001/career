@@ -235,7 +235,7 @@ confirm-live handling + an opener, do not pad guesses. -->
 **Emphasis for this interview** (pointers into the main body)
 - Primary goal: <...>
 - Lead with: <Positioning stance>
-- Prioritize from Question Bank: <Opener, Q#, Q#, ...> <!-- project to interview_notes.md with a (P) prefix; keep the bank's topical order -->
+- Prioritize from Question Bank: <Opener, Q#, Q#, ...> <!-- write in the order the questions should be ASKED, not by label number; this is the only record of that order, and interview-notes projects the list verbatim with a (P) prefix -->
 - Push these Concerns here: <...>
 - Presentation: <none | required -> skill not yet built; prepare manually>
 - Unique to this interview: <none | ...>

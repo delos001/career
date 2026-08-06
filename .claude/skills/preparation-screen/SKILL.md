@@ -89,6 +89,15 @@ used this run; at screen-only stage that means dropping `interview_notes.md`,
 which does not exist until interview-notes runs. Then draft one section per turn, present it, and write it
 only on approval. The template's comments define each section's content rules.
 
+A template heading tagged `{optional}` is standard vocabulary, not a required
+section. Draft it, keep it when the screen produced material for it, and DROP the
+heading when it did not, rather than leaving a bare heading behind. The tag itself
+never reaches the artifact. Never rename one, never delete one that has content,
+and never invent a sub-heading outside the template's set; a genuinely homeless
+topic is a template change, and the template's Conventions comment carries the
+three tests it has to pass first. Expect most `{optional}` sub-headings to be thin
+or absent at screen stage.
+
 Across every section, separate substance from coaching. Substance is what the
 user knows or says; coaching is your interpretive steer on how to weigh or use
 it. Classification test: would the user ever say this aloud (substance), or are
@@ -115,8 +124,8 @@ The rules that need judgment emphasis (the template comments carry the rest):
   contribute their core message and proof point, mapped to the requirements they
   hit. Gap chunks must jointly cover every non-covered requirement in
   `gap_analysis.md`. Proof-point STAR stories and Situational may stay
-  light at screen stage (keep the template headings; leave the body sparse),
-  since the screen rarely goes deep on either.
+  light at screen stage (both are required headings, so keep them and leave the
+  body sparse), since the screen rarely goes deep on either.
 - Anticipated Questions, positioning routing (compress to cue level, never
   verbatim prose):
   - "Walk me through your background" opens with the identity thesis (Positioning

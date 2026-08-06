@@ -26,8 +26,10 @@ Checks (FAIL blocks the build; WARN is advisory and leaves the exit code alone)
   P7  every heading is in the allowed set: every template heading (required and
       '{optional}' alike) plus the three dynamic families (Appendix per-interview
       '##' blocks, one '###' per Anticipated Question, one '#### Story ...' per
-      Proof-points story). An invented sub-heading fails here; use the template's
-      vocabulary or make it a bullet
+      Proof-points story). A template heading must also sit at its template depth,
+      under its template section, and appear once. An invented, misplaced,
+      re-levelled or duplicated sub-heading fails here; use the template's
+      vocabulary in its own section, or make it a bullet
   P8  no coaching brackets or citations inside a heading line
   X1  an APPENDIX region exists with at least one per-interview block
   X2  cross-ref integrity: every Q-label referenced anywhere (Q1, Q1a, ...)

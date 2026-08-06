@@ -88,6 +88,15 @@ Fixed for this run by hand, and `SKILL.md` Phase 4 now requires the Appendix pri
 list to be written in asking order and carried verbatim into the checklist. That is a
 model-followed instruction, not an enforced one, so the failure can recur silently.
 
+**2026-08-06.** The Phase 4 rule landed in the one document that does NOT write the
+checklist. `interview-notes/SKILL.md` Phase 2 and the template's Appendix block comment
+both still said to order the projection by the shared Question Bank's topical order, so
+the next run would have re-sorted the asking order away by following its own explicit
+instruction. Both are now aligned with Phase 4 (priority items verbatim in the Appendix's
+order, non-priority tail below in topical order), and the reversal of the 2026-07-07
+projection clause is recorded as `appendix-priority-list-is-asking-order-2026-08`. The
+enforcement gap and its ownership question are unchanged and still open.
+
 Candidate check, not yet designed:
 
 - A cross-artifact check that reads the round's Appendix block and the matching

@@ -1113,6 +1113,69 @@ Format spec = rendering config (fonts, margins, spacing, bullet chars, file-nami
 #### workflow-sequence-diagram-deleted
 Old registry's ASCII diagram does not carry over.
 
+#### template-optional-heading-tag-2026-08
+A template heading tagged `{optional}` is standard vocabulary that is not required in every artifact.
+P7 whitelists it (so a heading cannot be deleted or replaced with an invented name); P2 excludes it from
+the required set (so a section the run left empty is dropped rather than carried as a bare heading). The
+tag is template-only and never reaches the artifact. Implemented in `_prep_checks.py` (`_is_optional` /
+`_strip_optional`, and the P7 allowed-set strip) and consumed by both `prep_interview_qc.py` and
+`prep_qc.py`, which share `templates/interview_prep.md`.
+Chosen over two alternatives: making the sub-headings required (forces empty sections on every
+application) and widening P7 by depth (loses the guarantee that heading names are controlled).
+
+#### subheadings-and-bold-labels-are-different-tools-2026-08
+A `###` sub-heading is the navigation layer, so a topic can be reached without scanning its whole
+section. A bold label breaks discrete content up **within** a sub-heading. Neither outranks the other,
+and a section needing more internal shape gets a bold label rather than a new sub-heading; the fixed set
+is meant to be sufficient.
+Replaces the prior rule ("Do not promote any other sub-topic to a heading; those are bullets"), which
+caused a real regression: a run flattened the user's hand-added sub-headings back into bold labels,
+recreating sections with no navigation. Recorded because the failure was the rule working as written.
+
+#### new-subheading-is-a-template-change-2026-08
+A genuinely new sub-heading is a template change, never artifact-local. Three tests, all required:
+(1) the material is decision-relevant for the round; (2) it does not fit under an existing sub-heading
+even as a bold label; (3) the heading name is role-agnostic, carrying no company, product, or person
+name. Fail (3) and it is role content, so it becomes a bold label under the closest existing heading.
+Pass all three and the proposal goes to the user with the material that forced it; on approval it enters
+the template tagged `{optional}` and only then gets used. An unapproved heading never enters an artifact.
+Rationale: a local heading is invisible and free, so it proliferates. A template change is visible,
+approved, and permanent, so it gets weighed. Test (3) does most of the filtering.
+Refs: `template-optional-heading-tag-2026-08`.
+
+#### the-role-precedes-positioning-2026-08
+`## The Role` sits before `## Positioning & Approach` in `templates/interview_prep.md`, reversing the
+prior order. The role read is the input to the positioning built on top of it, and `### Confirmed scope`
+(the first-hand, dated account of the job) is the highest-confidence content in the doc, so it belongs
+above the framing rather than below it.
+Accepted cost: P2 judges the required headings as an ordered subsequence, so an artifact written under
+the prior order fails P2 on order alone. APP-006 is the only such artifact, it is closed, and it is left
+as is.
+
+#### appendix-priority-list-is-asking-order-2026-08
+The Appendix block's `Prioritize from Question Bank` list is written in the order the questions should
+be ASKED, and `interview-notes` projects it verbatim: priority items lead the round's checklist in that
+order, non-priority items follow below in Question Bank topical order. The Appendix block is the only
+place a round's asking order is recorded, so re-sorting the projection destroys it.
+Supersedes the projection clause of the 2026-07-07 convention hardening entry above ("the interview_notes
+projection preserves that order"), which held the checklist to Question Bank order for every item.
+Topical order still governs the Question Bank itself and the non-priority tail.
+Written into the three documents that execute it: `preparation-interview/SKILL.md` Phase 4 (author),
+`templates/interview_prep.md` Appendix block comment, `interview-notes/SKILL.md` Phase 2 (the sole writer
+of `interview_notes.md`). Still model-followed, not enforced; the cross-artifact check and its ownership
+question stay open in GitHub #67.
+
+#### p7-checks-heading-placement-not-just-name-2026-08
+P7 judges a heading as a `(depth, text)` pair under its template section, and rejects a duplicate, rather
+than matching the bare name against a flat set.
+Forced by `template-optional-heading-tag-2026-08`: the fixed vocabulary went from 14 headings to 30, and
+the 16 new ones are short generic labels (Scale, Traction, Financials, Posture, Stakeholders,
+Miscellaneous) that read as plausible under more than one section. Name-only matching accepted a
+sub-heading under the wrong section, at the wrong depth, or twice, so the widened vocabulary bought
+control over heading NAMES while silently dropping control over heading PLACEMENT.
+Implemented in `_prep_checks.py` (`_template_heading_map`, rewritten `check_headings`); the three
+dynamic families keep their positional exemption.
+
 ### Stack & Infrastructure
 
 #### stack-orchestration

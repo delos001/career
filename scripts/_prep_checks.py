@@ -13,7 +13,8 @@ recruiter-screen and the post-screen stage.
 Owns
   markdown parsing helpers (headings, sections, frontmatter, comment stripping)
   P6  no bold connector tokens welding list items
-  P7  every heading is in the allowed set (template headings + dynamic families)
+  P7  every heading is in the allowed set (template headings + dynamic
+      families), at its template depth, under its template section, and unique
   P8  no coaching brackets or citations inside a heading line
   X1  an APPENDIX region exists with at least one per-interview block
   X2  cross-ref integrity: every Q-label referenced is defined in the Question Bank
@@ -138,21 +139,51 @@ def check_connectors(artifact_text, findings):
 # P7 / P8: heading discipline
 # ---------------------------------------------------------------------------
 
-def check_headings(artifact_text, template_text, findings):
-    """P7 (heading whitelist) and P8 (no coaching/citations in a heading).
+def _template_heading_map(template_text):
+    """Return the template's fixed heading vocabulary, with placement.
 
-    Allowed headings = every non-placeholder template heading, plus three
-    dynamic families: any '##' block inside the APPENDIX region, one '###' per
-    Anticipated Question, one '#### Story ...' per Proof-points story. Depth-1
-    headings (title / MAIN BODY / APPENDIX) are always allowed.
+    pairs   set of (depth, text) the template defines, '{optional}' stripped so
+            the artifact's bare heading text matches
+    parents {(depth, text): <depth-2 section it is written under>} for every
+            depth-3+ heading, so a sub-heading is legal only under its own
+            section. Matching on name alone would let 'Scale' or 'Financials'
+            land under any section, or appear twice.
     """
-    # Optional template headings stay in the allowed set; only P2's required set
-    # excludes them. The '{optional}' tag is stripped so the artifact's bare
-    # heading text matches.
-    tpl_fixed = {_strip_optional(t) for d, t in _headings(template_text)
-                 if not _is_placeholder(t)}
+    pairs, parents = set(), {}
+    parent2 = None
+    for d, raw in _headings(template_text):
+        if _is_placeholder(raw):
+            continue
+        text = _strip_optional(raw)
+        if d == 2:
+            parent2 = text
+        pairs.add((d, text))
+        if d >= 3:
+            parents[(d, text)] = parent2
+    return pairs, parents
+
+
+def check_headings(artifact_text, template_text, findings):
+    """P7 (heading vocabulary and placement) and P8 (no coaching/citations).
+
+    A heading passes P7 when it is a template heading AT the template's depth
+    and UNDER the template's section for it, appearing once, or when it belongs
+    to one of three dynamic families: any '##' block inside the APPENDIX region,
+    one '###' per Anticipated Question, one '#### Story ...' per Proof-points
+    story. Depth-1 headings (title / MAIN BODY / APPENDIX) are always allowed.
+
+    Name-only matching was not enough once the template's sub-heading vocabulary
+    grew: short generic labels (Scale, Financials, Posture, Miscellaneous) read
+    as plausible under more than one section, so the depth, the parent, and
+    uniqueness are all checked here.
+    """
+    tpl_pairs, tpl_parents = _template_heading_map(template_text)
+    tpl_depths = {}
+    for d, t in tpl_pairs:
+        tpl_depths.setdefault(t, set()).add(d)
     in_appendix = False
     parent2 = parent3 = None
+    seen = set()
     bad_wl = []
     bad_content = []
     for depth, text in _headings(artifact_text):
@@ -160,7 +191,7 @@ def check_headings(artifact_text, template_text, findings):
         # in the body, never the heading line.
         if any(tok in text for tok in ('[', ']', '(CR-', '(TH-', '*(')):
             bad_content.append('#' * depth + ' ' + text)
-        # Region / parent tracking for the whitelist.
+        # Region / parent tracking, before the heading itself is judged.
         if depth == 1:
             parent2 = parent3 = None
             if text.strip().upper().startswith('APPENDIX'):
@@ -169,22 +200,35 @@ def check_headings(artifact_text, template_text, findings):
             parent2, parent3 = text, None
         elif depth == 3:
             parent3 = text
-        # P7: whitelist.
-        allowed = (
-            depth == 1
-            or text in tpl_fixed
-            or (in_appendix and depth == 2)
-            or (depth == 3 and parent2 is not None
-                and parent2.startswith('Anticipated Questions'))
-            or (depth == 4 and parent3 is not None
-                and parent3.startswith('Proof points'))
-        )
-        if not allowed:
-            bad_wl.append('#' * depth + ' ' + text)
+        # The three dynamic families are named by their position, not by a
+        # fixed label, so they are exempt from the vocabulary check.
+        if (depth == 1
+                or (in_appendix and depth == 2)
+                or (depth == 3 and parent2 is not None
+                    and parent2.startswith('Anticipated Questions'))
+                or (depth == 4 and parent3 is not None
+                    and parent3.startswith('Proof points'))):
+            continue
+        label = '#' * depth + ' ' + text
+        pair = (depth, text)
+        if pair not in tpl_pairs:
+            if text in tpl_depths:
+                bad_wl.append(f"{label} (template depth is "
+                              f"{'/'.join('#' * d for d in sorted(tpl_depths[text]))})")
+            else:
+                bad_wl.append(f'{label} (not in the template vocabulary)')
+            continue
+        expected = tpl_parents.get(pair)
+        if expected is not None and parent2 != expected:
+            bad_wl.append(f"{label} (under '{parent2}', belongs under '{expected}')")
+        if pair in seen:
+            bad_wl.append(f'{label} (duplicate)')
+        seen.add(pair)
     findings.append(('P7', not bad_wl,
-                     'all headings in the allowed set'
+                     'all headings in the allowed set, at their template depth '
+                     'and section'
                      if not bad_wl
-                     else 'headings outside the allowed set (make these bullets?): '
+                     else 'heading vocabulary or placement (make these bullets?): '
                           + '; '.join(bad_wl)))
     findings.append(('P8', not bad_content,
                      'no coaching/citations in headings'
