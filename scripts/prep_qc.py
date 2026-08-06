@@ -14,8 +14,9 @@ Checks (P6-P8 and X1-X4 are the universal template rules shared with
 prep_interview_qc via _prep_checks, so screen-stage and post-screen artifacts
 are held to the same formatting and architecture):
   P1  frontmatter present; key set matches the template's key set exactly
-  P2  every template heading present, in template order and at the
-      template's depth (extras allowed)
+  P2  every required template heading present, in template order and at the
+      template's depth (extras allowed). Headings tagged '{optional}' in the
+      template are whitelisted by P7 but not required here
   P3  heading depth never exceeds four (####)
   P4  no em dashes in the artifact
   P5  every frontmatter `sources` file exists (app folder or profile folder)
@@ -57,8 +58,8 @@ import _util
 # shared with prep_interview_qc so both entry points enforce them identically.
 from _prep_checks import (
     _read, _headings, _sections, _frontmatter_keys, _frontmatter_sources,
-    check_connectors, check_headings, check_xrefs, check_appendix_fields,
-    check_appendix_status)
+    _is_optional, check_connectors, check_headings, check_xrefs,
+    check_appendix_fields, check_appendix_status)
 
 
 # ---------------------------------------------------------------------------
@@ -89,7 +90,10 @@ def check_artifact(artifact_text, template_text, app_folder, profile_dir, findin
     # is a miss, not a match.
     # Template headings carrying '<...>' placeholder tokens are patterns, not
     # required literals (e.g. the Appendix block heading); exclude them.
-    tpl_heads = [(d, t) for d, t in _headings(template_text) if '<' not in t]
+    # Headings tagged '{optional}' are standard vocabulary but not required in
+    # every artifact; P7 still whitelists them.
+    tpl_heads = [(d, t) for d, t in _headings(template_text)
+                 if '<' not in t and not _is_optional(t)]
     art_heads = _headings(artifact_text)
     missing = ['#' * d + ' ' + t for d, t in tpl_heads if (d, t) not in art_heads]
     if missing:

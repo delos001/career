@@ -63,3 +63,36 @@ Two candidate fixes, not yet decided:
 
 Option 1 is the smaller change and removes a skill boundary that has now cost a
 decision mid-run.
+
+## preparation-interview: no QC check that the cue-card and the question checklist agree - 2026-08-05
+
+Tracked as [#67](https://github.com/delos001/career/issues/67). That issue is the working copy; this entry is the run record.
+
+Surfaced running APP-020 (Faro, Director Implementation Services), peer/team round.
+
+The Appendix block's prioritized Question Bank list is the only place a round's
+ASKING order is recorded. `interview-notes` projects that list into the round's
+`### Questions to Ask` checklist in `interview_notes.md`. On this run the projection
+preserved WHICH questions were priority (the `(P)` markers matched the Appendix list
+exactly) but dropped the ORDER, emitting the checklist in Question Bank physical order
+instead. The result contradicted the cue-card sitting directly above it: the cue-card
+said "get to Q8 early" while the checklist put Q8 sixth, below three non-priority
+questions.
+
+No check catches this. `prep_interview_qc.py` validates the prep doc's structure and
+X2 confirms every Q-label reference resolves, but nothing compares the projected
+checklist against the Appendix list that produced it, and nothing reads
+`interview_notes.md` at all from this skill's QC.
+
+Fixed for this run by hand, and `SKILL.md` Phase 4 now requires the Appendix priority
+list to be written in asking order and carried verbatim into the checklist. That is a
+model-followed instruction, not an enforced one, so the failure can recur silently.
+
+Candidate check, not yet designed:
+
+- A cross-artifact check that reads the round's Appendix block and the matching
+  `interview_notes.md` round section, then asserts the checklist contains exactly the
+  prioritized questions in the Appendix's order, with non-priority questions below
+  them. Needs a decision on ownership first: `prep_interview_qc.py` does not currently
+  read `interview_notes.md`, and `interview-notes` is the sole writer of that file, so
+  the check may belong to that skill instead.

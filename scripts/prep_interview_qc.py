@@ -15,17 +15,19 @@ literals, and are excluded from the required-heading set.
 
 Checks (FAIL blocks the build; WARN is advisory and leaves the exit code alone)
   P1  frontmatter present; key set matches the template's key set exactly
-  P2  every non-placeholder template heading present, in template order, at
-      the template's depth (extras allowed)
+  P2  every required template heading present, in template order, at the
+      template's depth (extras allowed). Required = template headings carrying
+      neither a '<placeholder>' token nor an '{optional}' tag
   P3  heading depth never exceeds four (####)
   P4  no em dashes in the artifact
   P5  every frontmatter `sources` file exists (app folder or profile folder)
   P6  no bold connector tokens (**plus** / **and** / **+** / **&**) welding
       list items; use bullets
-  P7  every heading is in the allowed set: the fixed template headings plus the
-      three dynamic families (Appendix per-interview '##' blocks, one '###' per
-      Anticipated Question, one '#### Story ...' per Proof-points story). A
-      promoted sub-topic (decision rights, a gap cluster) fails here
+  P7  every heading is in the allowed set: every template heading (required and
+      '{optional}' alike) plus the three dynamic families (Appendix per-interview
+      '##' blocks, one '###' per Anticipated Question, one '#### Story ...' per
+      Proof-points story). An invented sub-heading fails here; use the template's
+      vocabulary or make it a bullet
   P8  no coaching brackets or citations inside a heading line
   X1  an APPENDIX region exists with at least one per-interview block
   X2  cross-ref integrity: every Q-label referenced anywhere (Q1, Q1a, ...)
@@ -67,8 +69,8 @@ import _util
 # so both entry points enforce the template identically.
 from _prep_checks import (
     _COMMENT_RE, _read, _headings, _sections, _frontmatter_keys,
-    _frontmatter_sources, _is_placeholder, check_connectors, check_headings,
-    check_xrefs, check_appendix_fields, check_appendix_status)
+    _frontmatter_sources, _is_placeholder, _is_optional, check_connectors,
+    check_headings, check_xrefs, check_appendix_fields, check_appendix_status)
 
 
 # ---------------------------------------------------------------------------
@@ -88,8 +90,11 @@ def check_artifact(artifact_text, template_text, app_folder, profile_dir, findin
                          'frontmatter keys match template' if not (missing or extra)
                          else f'frontmatter keys differ; missing={missing} extra={extra}'))
 
-    # P2: required = template headings WITHOUT placeholder tokens.
-    tpl_heads = [(d, t) for d, t in _headings(template_text) if not _is_placeholder(t)]
+    # P2: required = template headings WITHOUT placeholder tokens and WITHOUT the
+    # '{optional}' tag. Optional headings are still whitelisted by P7; they are
+    # simply not demanded of every artifact.
+    tpl_heads = [(d, t) for d, t in _headings(template_text)
+                 if not _is_placeholder(t) and not _is_optional(t)]
     art_heads = _headings(artifact_text)
     missing = ['#' * d + ' ' + t for d, t in tpl_heads if (d, t) not in art_heads]
     if missing:

@@ -26,7 +26,15 @@ Appendix.
 - Artifact formatting (full rules in the template's Conventions comment; the QC
   enforcement split, script vs subagent, is in Phase 5): no em dashes (commas or hyphens); headings are
   short labels from the template's allowed set only, never coaching / citations /
-  sentences in a heading; one weight-bearing element per bullet (expand discrete-
+  sentences in a heading, never a company, product, or person name; `###`
+  sub-headings are the navigation layer and bold labels break content up within
+  one, so a section needing more internal shape gets a bold label and never a new
+  sub-heading; keep an `{optional}` sub-heading when it carries material, drop it
+  when the run left it empty, never rename or delete one that has content; a
+  genuinely homeless, role-agnostic topic is a template gap, so surface the
+  proposal with the material that forced it, add it to the template tagged
+  `{optional}` on approval, and only then use it, since an artifact-local heading
+  is never invented; one weight-bearing element per bullet (expand discrete-
   element series to sub-bullets); no bold connector tokens (**plus** / **and**)
   welding list items; no build/process narration in the body; no redundant
   restatement (single-home, cross-refs link by label); frontmatter is the first
@@ -151,8 +159,13 @@ Cue / Avoid / If probed keep their labels).
    Appendix Emphasis and the main body. Make the Appendix Emphasis name the
    opener, what to lead with, the top Concerns, and which Question Bank items to
    prioritize, so interview-notes can pull their full text into the round's
-   Cue-card and Questions to Ask. If the notes file lacks this interview's
-   section, run the `interview-notes` flow to scaffold it.
+   Cue-card and Questions to Ask. Write the prioritized list in the order the
+   questions should be ASKED, not by label number, because that sequence is the
+   only place the asking order is recorded and the projection carries it
+   verbatim: the checklist lands in that order, priority questions above
+   non-priority ones, so it never contradicts the cue-card sitting above it. If
+   the notes file lacks this interview's section, run the `interview-notes` flow
+   to scaffold it.
 
 ## Phase 5: session log, then QC
 

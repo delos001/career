@@ -98,6 +98,24 @@ def _is_placeholder(heading_text):
     return '<' in heading_text and '>' in heading_text
 
 
+# A template heading tagged '{optional}' is part of the standard vocabulary but
+# is not required in every artifact. It stays in the P7 allowed set (so the model
+# cannot invent a substitute name) while being excluded from the P2 required set
+# (so a section with no material is dropped rather than left as a bare heading).
+# The tag is template-only; the artifact carries the bare heading text.
+_OPTIONAL_RE = re.compile(r'\s*\{optional\}\s*$')
+
+
+def _is_optional(heading_text):
+    """True when a template heading is tagged '{optional}'."""
+    return bool(_OPTIONAL_RE.search(heading_text))
+
+
+def _strip_optional(heading_text):
+    """Return the heading text with any trailing '{optional}' tag removed."""
+    return _OPTIONAL_RE.sub('', heading_text)
+
+
 # ---------------------------------------------------------------------------
 # P6: connector tokens
 # ---------------------------------------------------------------------------
@@ -128,7 +146,11 @@ def check_headings(artifact_text, template_text, findings):
     Anticipated Question, one '#### Story ...' per Proof-points story. Depth-1
     headings (title / MAIN BODY / APPENDIX) are always allowed.
     """
-    tpl_fixed = {t for d, t in _headings(template_text) if not _is_placeholder(t)}
+    # Optional template headings stay in the allowed set; only P2's required set
+    # excludes them. The '{optional}' tag is stripped so the artifact's bare
+    # heading text matches.
+    tpl_fixed = {_strip_optional(t) for d, t in _headings(template_text)
+                 if not _is_placeholder(t)}
     in_appendix = False
     parent2 = parent3 = None
     bad_wl = []
