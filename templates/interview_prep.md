@@ -110,6 +110,15 @@ the company is and how well it is doing. -->
 ### Industry Timing {optional}
 <!-- 2-4 dated facts that explain why this market is moving now. -->
 
+## Technical Briefing {optional}
+<!-- Domain and technical substance the candidate has to be fluent in for a technical round: the
+working vocabulary, the position the candidate can defend under questioning, and what stays a question
+for the panel. The SPEAKABLE layer only; research.md holds the depth, the hedges in full, and the
+sources. One bold label per topic, named by the topic and never by a company, product, or person.
+Each topic carries the terms, the defensible position, the question to ask them, and any accuracy trap
+or confidence hedge that must survive into the room. Drop the whole section when a run produced no
+technical material. -->
+
 ## The Role
 <!-- The candidate's role understanding; shared, refined cumulatively, never copied per interview.
 Sub-topics are the ### headings below, each conditional: draft it, and drop it if the run produced no
