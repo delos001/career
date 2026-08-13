@@ -15,7 +15,9 @@ Subject: <short plain subject, e.g. Thank you>
 
 <Paragraph 1 - thank and echo. Thank them for their time, then name one or two
 specifics from the round in the interviewer's own phrasing, traceable to the
-notes. No generic praise.>
+notes. Echo the conversation, for example a problem worked through in the room,
+rather than reciting each interviewer's own scope of work back to them; on a
+panel, one shared reference beats one per person. No generic praise.>
 
 <Paragraph 2 - the one substantive beat. Sourced from the debrief's "rough
 patches to address in follow-up" field. Either show the candidate already doing
