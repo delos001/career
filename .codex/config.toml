@@ -1,0 +1,6 @@
+# Project-scoped MCP for Codex. Additive to ~/.codex/config.toml.
+# Loads only in this repo, and only because this path is marked trusted in the
+# global config. Authenticates from the career-cluster token.
+[mcp_servers.github]
+url = "https://api.githubcopilot.com/mcp/"
+bearer_token_env_var = "GITHUB_PERSONAL_ACCESS_TOKEN"
