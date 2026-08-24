@@ -600,6 +600,21 @@ Apply-time sweep: inventory.md ToC entry removed; `retrieval_payload.py` docstri
 
 Refs: `inventory-section-denumbering-and-reorder-2026-07`, `education-citable-ids-2026-06`, `inventory-pb-ps-aw-entry-schemas-2026-07` (minimum-lines principle).
 
+#### industry-axis-is-a-matching-vocabulary-2026-08
+`Industry` is optional on EX and PR entries, and is omitted when the work has no industry the registry recognizes.
+
+**The registry is target-side.** `rules/industries/registry.md` lists the industries the candidate applies into (`used_by: cv-targeted, axis-classifier`, and the classifier classifies the job). An entry's Industry tag is therefore only useful when the industry the work was performed in is also an industry the candidate targets. Two cases fall outside that: self-directed work with no client industry at all, and work performed for an industry the candidate does not apply into (a consultant's landscaping or widget-manufacturing client). In both, no honest value can ever match, so the field is omitted rather than filled.
+
+**Why not the alternatives.** Inventing a value (`Industry: independent`, applied to all 13 PR entries before this decision) puts a non-industry into an industry vocabulary and trips axis validation. Giving such a value blanket adjacency to every industry would score 0.5 everywhere, but adjacency encodes a substantive translation claim (pharma to biotech via analogous submission pathways); "independent translates to everything" is not that claim and degrades the mechanism wherever it is used honestly. Widening the registry to cover source industries turns a matching vocabulary into a personal work history and grows it per user with values no JD will ever carry. Multi-valuing across the registry asserts the work was performed in industries where it was not.
+
+**Not a scoring change.** Excluding a non-applicable axis from the score was considered and rejected: it would make analytics work for a landscaping business score identically to analytics work for a biotech, erasing a ranking difference that is real. The existing three-state model is correct as built - direct match 1.0, adjacency 0.5, no match 0.0 - and an unmatched axis does not suppress the entry, because manifest inclusion is a union across the semantic pass and any single axis match (`scripts/retrieval_apply.py:215`). Independent work still reaches retrieval on specialty, orientation, level, and work-state, and sorts below directly-relevant work. That is the intended behavior.
+
+**Where the fact goes instead.** The real industry stays as prose in `Context:` when worth recording; for self-directed work the role record already carries `Type: Independent` and `Company: Independent`. Applied 2026-08-24: the 13 `Industry: independent` lines removed from PR entries, no other change; `retrieval_payload.py` initializes the field to an empty list, so a missing field parses and scores exactly as an unmatched one did.
+
+Consistent with `inventory-pb-ps-aw-entry-schemas-2026-07`, which already omits Level and Work-state from PB/PS entries on the same reasoning: a publication or talk has no honest seniority or operating state. This decision applies the established rule to Industry rather than introducing a new one.
+
+Refs: `inventory-entry-structure-applied`, `industry-value-granularity`, `retrieval-architecture-2026-05`, `inventory-pb-ps-aw-entry-schemas-2026-07`, `templates/inventory.md` (field note).
+
 #### narratives-placeholder-convention-2026-07
 A narrative terrain gap gets a placeholder block in narratives.md rather than a blank stub or an out-of-band note. Shape: H2 working title suffixed `(placeholder)`, **no `ID:` line and no `Linked Inventory:`** — the narratives parser skips ID-less H2 blocks (verified against `retrieval_payload._parse_narratives`), keeping placeholders out of retrieval and scoring with zero code change. Body fields: `Placeholder:` (marker line), `Gap:` (the recurring demand the story should evidence, with application evidence), `Sought:` (the raw material to capture), `Source:` (where the gap surfaced). ToC entry carries no ID prefix.
 

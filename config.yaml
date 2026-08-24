@@ -33,6 +33,7 @@ filenames:
   gap_analysis_template: gap_analysis.md       # in the templates/ folder
   staging_file: profile_updates_pending.md     # in the profile/ folder; cross-application staging of new info raised during gap-analysis
   inventory_file: inventory.md                 # in the profile/ folder
+  inventory_template: inventory.md             # in the templates/ folder; structure authority parsed by profile_update_qc.py
   narratives_file: narratives.md               # in the profile/ folder
   positioning_file: positioning.md             # in the profile/ folder
   user_info_file: user-info.md                 # in the profile/ folder

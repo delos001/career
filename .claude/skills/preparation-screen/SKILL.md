@@ -176,10 +176,12 @@ with no date and no status: scheduling metadata lives only in `session_log.md`.
 ## Phase 5: close out
 
 1. Staging: if the prep surfaced new GENERAL facts about the candidate
-   (role-independent), list them and ask the user which to stage; append
-   approved items to `personal/profile/profile_updates_pending.md` following
-   that file's existing entry format. Role-specific answers stay in the
-   artifact only.
+   (role-independent), list them and ask the user which to stage. Write each
+   approved item's content to a file (2-3 sentences of context, not
+   copy-paste inventory content), then run `python scripts/staging_append.py
+   --folder <app_folder> --kind enrichment --content-file <path> --label
+   "<3-5 word descriptor>"`. Never hand-write into the staging file.
+   Role-specific answers stay in the artifact only.
 
 2. Handoff, in plain English: where the artifact is, what the user should do
    before the call (read it once, speak the arcs aloud), and any provisional

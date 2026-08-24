@@ -159,3 +159,34 @@ cv-render: |
 
   Operates under rules/global-rules.md - halts and asks for direction on any
   failure or ambiguity rather than guessing.
+
+profile-update: |
+  # profile-update - promote staged updates into your profile
+
+  New facts about your experience get captured during gap analysis and interview
+  prep, into a staging file (personal/profile/profile_updates_pending.md). This
+  skill is what writes them into your profile. Until it runs, a staged fact does
+  not exist as far as retrieval, gap analysis, and CV creation are concerned.
+
+  This is the only skill that writes to inventory.md. Every other one reads.
+
+  Steps:
+    1. Show what is staged and waiting, and how far back it goes.
+    2. Agree which entries this run will process (all, a subset, or the oldest
+       few). On a long backlog you are offered a way to work in clusters.
+    3. Walk each entry one at a time: what was captured, what your profile
+       already says about it, and one proposed disposition - a new entry, an
+       edit to an existing entry, or no change. You see the actual text before
+       anything is written.
+    4. Write it, then close the staged entry with a line recording which profile
+       IDs now carry it.
+    5. QC the profile documents and the staging bookkeeping.
+    6. Report what changed and what is still waiting.
+
+  Framing guards in a captured note (for example "frame as review, not
+  ownership") are treated as binding instructions, not commentary.
+
+  Have ready: nothing. The staging file is the input.
+
+  Operates under rules/global-rules.md - halts and asks for direction on any
+  failure or ambiguity rather than guessing.

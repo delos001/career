@@ -2,16 +2,36 @@
 """
 staging_append.py - append a Profile Updates Pending entry
 
-Called by the gap-analysis skill (Phase 6, Step 6b) once per closure-via-user-
-input. Appends a single PU-NNN entry to the cross-application staging file at
+Called by the gap-analysis skill (Phase 6, Step 6a) once per capture, and by the
+prep skills for facts surfaced during interview preparation. Appends a single
+PU-NNN entry to the cross-application staging file at
 personal/profile/profile_updates_pending.md. Creates the file from the
 templates/profile_updates_pending.md skeleton if it does not yet exist.
 
-Each entry captures: when, from which application, which critical requirement
-was closed, the role's axis context, the user's surfaced content (kept
-concise - this is CONTEXT for the downstream profile-update skill, NOT
-copy-paste content for inventory / narratives / positioning per the
-respect-profile-doc-conventions feedback memory), and a pending status.
+Each entry captures: when, from which application, the requirement anchor, the
+role's axis context, the user's surfaced content (kept concise - this is CONTEXT
+for the downstream profile-update skill, NOT copy-paste content for inventory /
+narratives / positioning per the respect-profile-doc-conventions feedback
+memory), and a pending status.
+
+Context comes from the application folder, not from the caller. Given --folder,
+the script reads the capture date (today), the application ID, the company, the
+role, and the five axis values out of that application's session log. Nine of
+the thirteen fields an entry carries are therefore derived rather than passed,
+which is what keeps the calling instruction in each skill to a single line.
+Every derived field still has an explicit flag that overrides it, for the case
+where the session log is absent or the value needs correcting.
+
+Two entry kinds, selected by --kind:
+
+  closure     The user's input fully closed a gap. Requires --closed-requirement;
+              renders a 'Closed requirement:' line.
+  enrichment  New or under-represented profile information surfaced on a
+              partial-match or covered requirement, or during interview prep.
+              Renders a 'Related requirement:' line, which may be 'n/a' plus a
+              short reason. Passing --closed-requirement here is an error: the
+              distinction is what tells the downstream profile-update skill
+              whether the information was already credited in a fit score.
 
 The script assigns the next PU-NNN by scanning existing entry IDs in the file,
 appends the new entry under '## Entries' (replacing the '_(none)_' placeholder
@@ -21,13 +41,11 @@ caller can record the reference inline in gap_analysis.md.
 Author    : Jason Delosh
 Created   : 2026-05-27
 Project   : career
-Usage     : python scripts/staging_append.py \\
-                --captured YYYY-MM-DD --from-app APP-NNN \\
-                --company ... --role ... \\
-                --closed-requirement CR-NNN --requirement-text-short ... \\
-                --industry ... --specialty ... --orientation ... \\
-                --level ... --work-state ... \\
-                --content-file ... --label ...
+Usage     : python scripts/staging_append.py --folder <app_folder> \\
+                --kind enrichment --content-file ... --label ...
+            python scripts/staging_append.py --folder <app_folder> \\
+                --kind closure --closed-requirement CR-NNN \\
+                --requirement-text-short ... --content-file ... --label ...
 Depends   : pyyaml (via _config)
 """
 
@@ -78,10 +96,79 @@ def _next_pu_id(staging_text):
 
 
 # ---------------------------------------------------------------------------
+# Context derivation from the application folder
+# The session log already holds every contextual field a staging entry needs:
+# the metadata block names the application, company, and role, and the axis
+# classification names the five axis values. Reading them here rather than
+# making each caller look them up and pass them one at a time is what keeps
+# the call short enough to state in one line of a skill document.
+# ---------------------------------------------------------------------------
+
+# Regex: a '- Label: value' line in the session log's metadata block.
+_META_RE = r'(?m)^-\s+{label}:\s*(.+?)\s*$'
+
+# Regex: an axis line, e.g. '- **Industry:** eclinical - Faro is a ...'.
+# Captures the first value token, which is the primary per the axis-classifier's
+# '<primary> (primary), <secondary> (secondary)' convention.
+_AXIS_RE = r'(?m)^-\s+\*\*{label}:\*\*\s+([A-Za-z0-9-]+)'
+
+# Axis flag name -> the label the session log uses for it.
+_AXIS_LABELS = {
+    'industry': 'Industry',
+    'specialty': 'Specialty',
+    'orientation': 'Orientation',
+    'level': 'Level',
+    'work_state': 'Work-state',
+}
+
+
+def _derive_from_folder(folder, cfg):
+    """Return the contextual fields read from an application's session log.
+
+    Raises when the folder or session log is missing, or when a field cannot be
+    found, so a silent partial derivation never produces a half-filled entry.
+    """
+    log_path = os.path.join(folder, cfg['filenames']['session_log_file'])
+    if not os.path.exists(log_path):
+        raise ValueError(f'no session log in the application folder: {log_path}')
+    text = _util.read(log_path)
+
+    derived = {}
+    for flag, label in (('from_app', 'APP-NNN'), ('company', 'Company'),
+                        ('role', 'Role')):
+        m = re.search(_META_RE.format(label=re.escape(label)), text)
+        if not m:
+            raise ValueError(f'session log has no "{label}:" line to read')
+        derived[flag] = m.group(1)
+
+    for flag, label in _AXIS_LABELS.items():
+        m = re.search(_AXIS_RE.format(label=re.escape(label)), text)
+        if not m:
+            raise ValueError(
+                f'session log has no "{label}" line in its axis classification; '
+                f'pass --{flag.replace("_", "-")} explicitly')
+        derived[flag] = m.group(1)
+
+    return derived
+
+
+# ---------------------------------------------------------------------------
 # Entry rendering
 # Builds the markdown block for one PU-NNN entry. Field labels match the
-# per-entry schema in templates/profile_updates_pending.md.
+# per-entry schema in templates/profile_updates_pending.md. The requirement
+# line is the only difference between the two kinds: a closure names the
+# requirement it closed, an enrichment names a requirement that is context only
+# (or 'n/a' when the fact was surfaced outside a requirement walk).
 # ---------------------------------------------------------------------------
+
+def _requirement_line(args):
+    """Return the requirement bullet for this entry's kind."""
+    if args.kind == 'closure':
+        return (f'- **Closed requirement:** {args.closed_requirement} - '
+                f'{args.requirement_text_short}\n')
+    related = args.related_requirement or 'n/a'
+    return f'- **Related requirement:** {related}\n'
+
 
 def _render_entry(pu_id, args, content):
     """Render one PU-NNN entry block per the staging-file per-entry schema."""
@@ -94,7 +181,7 @@ def _render_entry(pu_id, args, content):
         f'### {pu_id} - {args.label}\n\n'
         f'- **Captured:** {args.captured}\n'
         f'- **From:** {args.from_app} ({args.company} | {args.role})\n'
-        f'- **Closed requirement:** {args.closed_requirement} - {args.requirement_text_short}\n'
+        f'{_requirement_line(args)}'
         f'- **Role context:** {role_context}\n'
         f'- **Content:** {content}\n'
         f'- **Status:** pending\n'
@@ -149,29 +236,78 @@ def main():
     parser = argparse.ArgumentParser(
         description='append a Profile Updates Pending entry'
     )
-    parser.add_argument('--captured', required=True, help='YYYY-MM-DD')
-    parser.add_argument('--from-app', required=True, dest='from_app',
+    parser.add_argument('--folder',
+                        help='application folder; the capture date, application '
+                             'ID, company, role, and five axis values are read '
+                             'from its session log')
+    parser.add_argument('--captured', help='YYYY-MM-DD (default: today)')
+    parser.add_argument('--from-app', dest='from_app',
                         help='APP-NNN of the originating application')
-    parser.add_argument('--company', required=True)
-    parser.add_argument('--role', required=True)
-    parser.add_argument('--closed-requirement', required=True,
-                        help='CR-NNN of the requirement closed by this user input')
-    parser.add_argument('--requirement-text-short', required=True,
-                        help='short form of the requirement text for the entry header')
-    parser.add_argument('--industry', required=True)
-    parser.add_argument('--specialty', required=True)
-    parser.add_argument('--orientation', required=True)
-    parser.add_argument('--level', required=True)
-    parser.add_argument('--work-state', required=True, dest='work_state')
+    parser.add_argument('--company')
+    parser.add_argument('--role')
+    parser.add_argument('--kind', choices=['closure', 'enrichment'],
+                        default='closure',
+                        help='closure = the input closed a gap; enrichment = new '
+                             'or under-represented information that did not')
+    parser.add_argument('--closed-requirement',
+                        help='closure only: CR-NNN of the requirement this input closed')
+    parser.add_argument('--requirement-text-short',
+                        help='closure only: short form of the requirement text')
+    parser.add_argument('--related-requirement',
+                        help="enrichment only: 'CR-NNN - short text' for context, or "
+                             "'n/a (reason)' when no requirement anchors the capture")
+    parser.add_argument('--industry')
+    parser.add_argument('--specialty')
+    parser.add_argument('--orientation')
+    parser.add_argument('--level')
+    parser.add_argument('--work-state', dest='work_state')
     parser.add_argument('--content-file', required=True,
                         help='path to a file holding the concise content (2-3 sentences max)')
     parser.add_argument('--label', required=True,
                         help='3-5 word descriptor of the surfaced information')
     args = parser.parse_args()
 
+    # Kind-conditional argument validation. argparse cannot express this, and a
+    # silent default here would reintroduce the mislabeling this flag exists to
+    # prevent: an enrichment rendered under a 'Closed requirement:' label reads
+    # downstream as a gap the fit score already credited.
+    if args.kind == 'closure':
+        missing = [flag for flag, value in (
+            ('--closed-requirement', args.closed_requirement),
+            ('--requirement-text-short', args.requirement_text_short),
+        ) if not value]
+        if missing:
+            parser.error(f"--kind closure requires {' and '.join(missing)}")
+        if args.related_requirement:
+            parser.error('--related-requirement is enrichment-only; a closure '
+                         'names its requirement with --closed-requirement')
+    else:
+        if args.closed_requirement:
+            parser.error('--closed-requirement is closure-only; an enrichment '
+                         'did not close a gap. Use --related-requirement.')
+
     try:
         sys.stdout.reconfigure(encoding='utf-8')
         repo_root, cfg = _config.load()
+
+        # Fill the contextual fields from the application folder. An explicit
+        # flag always wins, so a caller can correct a derived value without
+        # having to pass all nine.
+        if args.folder:
+            for flag, value in _derive_from_folder(args.folder, cfg).items():
+                if not getattr(args, flag):
+                    setattr(args, flag, value)
+        if not args.captured:
+            args.captured = _util.today_iso()
+        missing = [f"--{flag.replace('_', '-')}" for flag in
+                   ('from_app', 'company', 'role', 'industry', 'specialty',
+                    'orientation', 'level', 'work_state')
+                   if not getattr(args, flag)]
+        if missing:
+            raise ValueError(
+                f"missing context: {', '.join(missing)}. Pass --folder to read "
+                f'these from the application session log, or pass each flag '
+                f'explicitly.')
 
         templates_dir = os.path.join(repo_root, cfg['paths']['templates'])
         template_name = cfg['filenames']['staging_file']  # template lives at same name in templates/
