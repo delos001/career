@@ -386,6 +386,41 @@ def cmd_research(args, repo_root, cfg):
 # pending axis sections with the axis-classifier subagent's output.
 # ---------------------------------------------------------------------------
 
+# Regex: an axis label in any form the classifier has emitted - with or without
+# the leading bullet, with or without bold markers around the label.
+_AXIS_LINE_RE = re.compile(
+    r'^-?\s*\*{0,2}(Orientation|Industry|Specialty|Level|Work-state):\*{0,2}'
+    r'\s*(.*)$')
+
+
+def _normalize_axis_lines(body):
+    """Return an axis block rewritten into the classifier's declared form.
+
+    The classifier's return-format spec emits `- <Axis>: <values> - <rationale>`
+    with a bare label and a plain-hyphen separator, but it has drifted to bolded
+    labels, missing bullets, and em dash separators across runs. Normalizing on
+    the way in means the session log always carries the spec form no matter what
+    the subagent produced, so every downstream reader (staging_append.py,
+    retrieval_qc.py, role_intake_qc.py check I5) has one shape to match. Fixing
+    the generator rather than the artifact, per
+    feedback_qc_structural_finding_script_seam.
+
+    Lines carrying no axis label pass through untouched, so sub-bullets the
+    classifier adds are preserved rather than silently dropped.
+    """
+    out = []
+    for line in body.split('\n'):
+        m = _AXIS_LINE_RE.match(line)
+        if not m:
+            out.append(line)
+            continue
+        # Only the FIRST em dash is the value/rationale separator; any later one
+        # sits inside the rationale prose and is left alone.
+        rest = m.group(2).replace(' — ', ' - ', 1)
+        out.append(f'- {m.group(1)}: {rest}')
+    return '\n'.join(out)
+
+
 def cmd_finalize(args, repo_root, cfg):
     # repo_root and cfg are unused here by design: finalize only edits an existing
     # session log (path passed in), and the section headings it targets stay
@@ -411,8 +446,11 @@ def cmd_finalize(args, repo_root, cfg):
     classification_body = re.sub(
         r'(?i)\A##[ \t]+Axis[ \t]+Classification[ \t]*\n+', '', classification_body
     ).strip()
+    # Normalize before anything reads or writes the block, so the value
+    # extraction below and the session log itself both see the spec form.
+    classification_body = _normalize_axis_lines(classification_body)
     if len(parts) > 1:
-        gaps_body = parts[1].strip()
+        gaps_body = _normalize_axis_lines(parts[1].strip())
         gaps_content = 'None' if not gaps_body or gaps_body.lower() == 'none' else gaps_body
     else:
         gaps_content = 'None'
@@ -422,10 +460,9 @@ def cmd_finalize(args, repo_root, cfg):
     # alone); the axis-classifier decides them after research, so init left both
     # '_(pending)_' and finalize writes the resolved axis values here.
     def _axis_value(axis_name):
-        # The classifier emits bold labels ('- **Level:** value'); tolerate the
-        # optional leading '- ', the '**' bold markers around the label, and a
-        # plain 'Level:' form so both styles parse.
-        m = re.search(rf'(?mi)^-?[ \t]*\*{{0,2}}{re.escape(axis_name)}:\*{{0,2}}[ \t]*(.+)$',
+        # classification_body has been normalized to the classifier's declared
+        # form above, so only that form needs matching here.
+        m = re.search(rf'(?m)^- {re.escape(axis_name)}:[ \t]*(.+)$',
                       classification_body)
         if not m:
             return None

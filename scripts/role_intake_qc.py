@@ -23,6 +23,8 @@ split into its mechanical half, check 5 stays with the agent):
       values match the Axis Classification's Level and Industry values.
   I4  Axis gaps recorded in both: the set of axes flagged in the session
       log's Axis Gaps matches the set flagged in the research file's.
+  I5  Axis lines match the axis-classifier's declared return format
+      (`- <Axis>: <values> - <rationale>`, no bold, no bare label).
 
 Output: one `<ID>  PASS|FAIL  <detail>` line per check, then a RESULT
 line. Exit 0 when all pass, 1 otherwise.
@@ -119,15 +121,46 @@ def _axis_values(log_text):
         return None
     values = {}
     for line in body.split('\n'):
-        # Labels appear both plain (`- Orientation:`) and bold
-        # (`- **Orientation:**`) across runs; accept both (same seam as the
-        # finalize metadata fill, fixed 2026-07).
+        # The spec form is plain (`- Orientation:`). Bold and un-bulleted forms
+        # are classifier drift; `assemble.py finalize` now normalizes them away
+        # on write, so they should not reach a new log. Parsing stays tolerant
+        # so the other checks still work on a legacy log while check I5 reports
+        # the drift.
         m = re.match(
             r'^- (?:\*\*)?(Orientation|Industry|Specialty|Level|Work-state):(?:\*\*)?\s*(.+)$',
             line)
         if m:
             values[m.group(1)] = m.group(2).split(' - ')[0].strip()
     return values
+
+
+def check_axis_line_form(log_text, findings):
+    """I5: axis lines match the axis-classifier's declared return format.
+
+    The classifier's return-format spec (`.claude/agents/axis-classifier.md`)
+    emits `- <Axis>: <values> - <rationale>` with no bold markers, and
+    `assemble.py finalize` writes that output into the session log verbatim. So
+    a bolded or un-bulleted axis line is subagent drift from its own spec, not a
+    style choice. `_axis_values` deliberately tolerates the drifted forms so the
+    other checks keep working while it is corrected; this check is what makes
+    the drift visible instead of silently accommodated. Downstream readers
+    (`staging_append.py`) match the spec form and nothing else.
+    """
+    body = _section_body(log_text, 'Axis Classification')
+    if body is None:
+        findings.append(('I5', False, 'no `## Axis Classification` section to check'))
+        return
+    conforming = re.compile(
+        r'^- (?:Orientation|Industry|Specialty|Level|Work-state): \S')
+    drifted = [line.strip() for line in body.split('\n')
+               if re.search(r'\b(?:Orientation|Industry|Specialty|Level|'
+                            r'Work-state):', line)
+               and not conforming.match(line)]
+    findings.append((
+        'I5', not drifted,
+        '; '.join(f'axis line does not match the classifier return format: '
+                  f'{line[:60]}' for line in drifted)
+        or 'axis lines match the classifier return format'))
 
 
 def _gap_axes(text):
@@ -286,6 +319,7 @@ def cmd_check(args, repo_root, cfg):
     check_session_log(log_text, meta, findings)
     check_consistency(research_text, log_text, meta, findings)
     check_gap_mirroring(research_text, log_text, findings)
+    check_axis_line_form(log_text, findings)
 
     failed = [f for f in findings if not f[1]]
     for check, ok, detail in findings:

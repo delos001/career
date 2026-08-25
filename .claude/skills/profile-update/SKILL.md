@@ -5,15 +5,10 @@ description: Promote staged profile updates into the profile documents. Reads th
 
 # profile-update - promote staged updates into the profile
 
-New information about the candidate surfaces constantly: during gap-analysis
-closure loops, during interview prep, in conversation. It is captured to
-`personal/profile/profile_updates_pending.md` as `PU-NNN` entries so the run
-that surfaced it is not derailed. This skill is what turns those captures into
-profile content the rest of the pipeline can retrieve and cite.
-
-Until an entry is promoted, the fact does not exist as far as retrieval, gap
-analysis, and CV creation are concerned. That is the cost this skill exists to
-pay down.
+Writes the `PU-NNN` captures in `personal/profile/profile_updates_pending.md`
+into the profile documents, one entry at a time, and closes each capture with
+an audit line naming the profile IDs that now carry it. Until a capture is
+promoted, the fact is invisible to retrieval, gap analysis, and CV creation.
 
 **This skill is the only writer to `inventory.md`.** Every other skill reads.
 
@@ -68,7 +63,7 @@ itself: an entry marked `processed` is done and is never reprocessed. Run
 
 - Input: invocation.
 - Run `python scripts/profile_update.py pending`. Each line carries the
-  `PU-NNN`, its kind, the capture date, and the source application.
+  `PU-NNN`, the capture date, the label, and the source application.
 - Do NOT read the staging file into context. Phase 3 pulls one entry at a time
   with `show`.
 - Report the count in plain English. Name how far back the oldest capture goes,
@@ -124,9 +119,14 @@ Repeat every step below for one `PU-NNN` before naming the next.
     (add `--subsection "<heading>"` for a section that has sub-sections). The
     script assigns the ID, places the entry in sorted position, and rebuilds the
     table of contents. Capture the ID it prints.
-  - Enrichment of an inventory entry: apply the approved text with Edit.
+  - Enrichment of an inventory entry: write the approved value to
+    `temp/pu_value.md`, then run
+    `python scripts/profile_update.py set --id <ID> --field <Field> --value-file temp/pu_value.md`,
+    once per field changed. Open the value with a newline for a multi-line
+    field such as `Coursework`. Never hand-edit `inventory.md`.
   - Enrichment of a narrative or positioning entry: apply with Edit against
-    `narratives.md` or `positioning.md`.
+    `narratives.md` or `positioning.md`. Those documents have no
+    structure-authority template to validate against yet.
   - **Creating a new narrative or positioning entry is out of scope.** Those
     documents have no structure-authority template yet. Leave the entry pending,
     tell the user plainly that it needs the narratives or positioning builder,

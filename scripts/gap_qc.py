@@ -87,7 +87,7 @@ UNMET_STATUSES = {'interview-deferred', 'unresolved'}
 RECOMMENDATION_LABELS = {'Proceed', 'Proceed with caution', 'Do not pursue'}
 
 # Required fields of a staging PU entry.
-PU_FIELDS = ['Captured', 'From', 'Closed requirement', 'Role context', 'Content', 'Status']
+PU_FIELDS = ['Captured', 'From', 'Requirement', 'Role context', 'Content', 'Status']
 
 # Regex: an `ID: <PREFIX>-NNN` line in the profile documents. The citable
 # prefix set is derived from these lines at check time (see check_ids), so a

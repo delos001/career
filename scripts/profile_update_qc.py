@@ -27,7 +27,7 @@ Checks:
   P7  Table of contents matches the document headings
   P8  Empty-section markers agree with actual content
   P9  Staging entries closed this run are marked processed with resolvable targets
-  P10 Staging entries carry one requirement label and a consistent status
+  P10 Staging entries carry a Requirement anchor and a consistent status
 
 Author    : Jason Delosh
 Created   : 2026-08-24
@@ -287,27 +287,34 @@ def check_toc(findings, inventory_text):
                            'headings; regenerate it rather than editing it')
 
 
-def check_empty_markers(findings, inventory_text, entries, schemas):
-    """P8: 'Entries: None' appears on empty sections and nowhere else."""
+def check_empty_markers(findings, inventory_text, schemas, spans):
+    """P8: 'Entries: None' appears on empty sections and nowhere else.
+
+    Checked per span, not per section: a section the template splits into
+    sub-sections can have one side populated and the other legitimately empty,
+    so scanning the whole section both misreports the marked-empty side and
+    hides an unmarked-empty one.
+    """
     findings.mark('P8')
-    counts = {}
-    for entry in entries:
-        counts[entry['prefix']] = counts.get(entry['prefix'], 0) + 1
     for prefix, schema in schemas.items():
-        section = schema['section']
-        bounds = pu._section_bounds(inventory_text, section)
-        if bounds is None:
-            continue
-        start, end = bounds
-        body = '\n'.join(inventory_text.split('\n')[start:end])
-        marked = bool(re.search(r'(?m)^Entries: None\s*$', body))
-        populated = bool(re.search(r'(?m)^ID:\s+' + prefix + r'-\d+\s*$', body))
-        if populated and marked and prefix != 'RL':
-            findings.add('P8', f'"{section}" carries "Entries: None" but holds '
-                               f'entries')
-        if not populated and not marked:
-            findings.add('P8', f'"{section}" is empty but carries no '
-                               f'"Entries: None" marker')
+        for heading in spans.get(schema['section'], [schema['section']]):
+            bounds = pu._section_bounds(inventory_text, heading)
+            if bounds is None:
+                continue
+            start, end = bounds
+            body = '\n'.join(inventory_text.split('\n')[start:end])
+            marked = bool(re.search(r'(?m)^Entries: None\s*$', body))
+            populated = bool(re.search(r'(?m)^ID:\s+' + prefix + r'-\d+\s*$',
+                                       body))
+            # RL is the exception: there 'Entries: None' is a per-record field
+            # asserting a background role, so it appears legitimately inside a
+            # populated section.
+            if populated and marked and prefix != 'RL':
+                findings.add('P8', f'"{heading}" carries "Entries: None" but '
+                                   f'holds entries')
+            if not populated and not marked:
+                findings.add('P8', f'"{heading}" is empty but carries no '
+                                   f'"Entries: None" marker')
 
 
 # ---------------------------------------------------------------------------
@@ -317,8 +324,14 @@ def check_empty_markers(findings, inventory_text, entries, schemas):
 # reprocessed on a later run.
 # ---------------------------------------------------------------------------
 
-def check_processed(findings, staging_entries, entries, processed_pu):
-    """P9: entries closed this run are marked processed with real targets."""
+def check_processed(findings, staging_entries, entries, processed_pu, prefixes):
+    """P9: entries closed this run are marked processed with real targets.
+
+    `prefixes` is the inventory's entry-type set, read from the template. A
+    target outside it is a narrative or positioning ID; those documents have no
+    structure-authority template yet, so their IDs are skipped rather than
+    checked (issue: narratives/positioning template).
+    """
     findings.mark('P9')
     by_id = {entry['id']: entry for entry in staging_entries}
     known = {entry['id'] for entry in entries}
@@ -340,7 +353,7 @@ def check_processed(findings, staging_entries, entries, processed_pu):
         if targets.strip() == 'no change':
             continue
         for target in [t.strip() for t in targets.split(',') if t.strip()]:
-            if target.split('-')[0] in ('ST', 'DC', 'TH'):
+            if target.split('-')[0] not in prefixes:
                 continue
             if target not in known:
                 findings.add('P9', f'{pu_id} names target {target}, which does '
@@ -348,18 +361,12 @@ def check_processed(findings, staging_entries, entries, processed_pu):
 
 
 def check_staging_integrity(findings, staging_entries):
-    """P10: one requirement label per entry, and status matches the audit line."""
+    """P10: every entry is anchored, and status matches the audit line."""
     findings.mark('P10')
     for entry in staging_entries:
-        closed = pu._bullet_value(entry['body'], 'Closed requirement')
-        related = pu._bullet_value(entry['body'], 'Related requirement')
-        if closed and related:
-            findings.add('P10', f"{entry['id']} carries both a Closed "
-                                f'requirement and a Related requirement line',
-                          entry['id'])
-        if not closed and not related:
-            findings.add('P10', f"{entry['id']} carries no requirement line",
-                          entry['id'])
+        if not pu._bullet_value(entry['body'], 'Requirement'):
+            findings.add('P10', f"{entry['id']} carries no Requirement line "
+                                f'naming where the fact surfaced', entry['id'])
         has_processed = bool(pu._bullet_value(entry['body'], 'Processed'))
         if has_processed and entry['status'] != 'processed':
             findings.add('P10', f"{entry['id']} has a Processed line but its "
@@ -390,12 +397,14 @@ def cmd_check(args, repo_root, cfg):
     check_references(findings, entries)
     check_axis_values(findings, entries, repo_root, cfg)
     check_toc(findings, inventory_text)
-    check_empty_markers(findings, inventory_text, entries, schemas)
+    check_empty_markers(findings, inventory_text, schemas,
+                        pu.template_spans(template_text))
 
     staging_path = pu._staging_path(repo_root, cfg)
     if os.path.exists(staging_path):
         staging_entries = pu.parse_staging(_util.read(staging_path))
-        check_processed(findings, staging_entries, entries, args.processed_pu)
+        check_processed(findings, staging_entries, entries, args.processed_pu,
+                        set(schemas))
         check_staging_integrity(findings, staging_entries)
 
     sys.exit(findings.report())

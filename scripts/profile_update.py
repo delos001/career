@@ -13,17 +13,21 @@ in, whether an existing entry should be enriched instead). This script owns
 everything that must not be done by hand: ID assignment, placement order, ToC
 integrity, and status bookkeeping.
 
-Five subcommands:
+Six subcommands:
 
   pending   List the staging entries still awaiting processing. Compact output
-            (ID, kind, label, source application) so the skill can plan a run
-            without reading the whole staging file into context.
+            (ID, capture date, label, source application) so the skill can plan
+            a run without reading the whole staging file into context.
   show      Print one staging entry's full block, for the entry being worked.
   next-id   Print the next unused ID for a prefix, derived by scanning
             inventory.md. Informational; 'insert' assigns IDs itself.
   insert    Place a new entry block into inventory.md. The block file carries
             the entry WITHOUT its 'ID:' line; the script assigns the ID at write
             time so two inserts in one run cannot collide, then prints it.
+  set       Replace one field's value on one existing entry. The enrichment
+            path: the entry is found by its anchored 'ID:' line rather than by
+            matching content, so an edit cannot land on a similar-looking
+            neighbour, and the whole entry is re-validated afterwards.
   close     Flip a staging entry to processed and append the '**Processed:**'
             line naming the target IDs (or 'no change').
 
@@ -39,6 +43,8 @@ Usage     : python scripts/profile_update.py pending
             python scripts/profile_update.py show --pu PU-004
             python scripts/profile_update.py next-id --prefix EX
             python scripts/profile_update.py insert --prefix EX --block-file <path>
+            python scripts/profile_update.py set --id EX-060 --field Impact \\
+                --value-file <path>
             python scripts/profile_update.py close --pu PU-004 \\
                 --targets EX-210,EX-211 --date 2026-08-24
 Depends   : pyyaml (via _config)
@@ -118,6 +124,27 @@ def template_sections(template_text):
         if m and '{' not in m.group(2):
             sections.append((len(m.group(1)), m.group(2)))
     return sections
+
+
+def template_spans(template_text):
+    """Return {section: [heading, ...]} - the spans a section is checked in.
+
+    A section the template splits into literal sub-sections is checked per
+    sub-section rather than as a whole: 'Entries: None' is a claim about the
+    span it sits in, and Professional Training's Completed and In Progress can
+    each be empty while the other is not. Placeholder sub-headings are dropped
+    upstream by template_sections, so a per-user category set never becomes a
+    span of its own. A section with no literal sub-sections is its own span.
+    """
+    spans = {}
+    current = None
+    for depth, heading in template_sections(template_text):
+        if depth == 2:
+            current = heading
+            spans[current] = []
+        elif current is not None:
+            spans[current].append(heading)
+    return {section: subs or [section] for section, subs in spans.items()}
 
 
 # ---------------------------------------------------------------------------
@@ -249,9 +276,9 @@ def _github_slug(heading_text):
 def rebuild_toc(text):
     """Return the document with its Table of Contents regenerated.
 
-    Every ATX heading except the ToC's own is listed, indented two spaces per
-    depth level below the document title. Returns the text unchanged when the
-    document carries no ToC section.
+    Every ATX heading is listed, the ToC's own heading included, indented two
+    spaces per depth level below the document title. Returns the text unchanged
+    when the document carries no ToC section.
     """
     bounds = _section_bounds(text, 'Table of Contents')
     if bounds is None:
@@ -325,46 +352,97 @@ def _place_ex(text, block, new_number):
     bounds = _rl_subheading_bounds(text, role)
     if bounds is None:
         raise ValueError(
-            f'no "### {role}" group exists under Experience Entries. Create the '
-            f'role record and its group before adding entries to it.')
+            f'no "### {role}" group exists under Experience Entries. Insert the '
+            f'{role} role record first; that creates the group.')
     start, end = bounds
     key = _ex_sort_key(field_map, new_number)
     # Walk the group's existing entries and stop at the first one that sorts
     # after the newcomer; its start line is the insertion point.
     group_text = '\n'.join(text.split('\n')[start:end])
-    at = None
     for entry in parse_entries(group_text):
         if entry['prefix'] != 'EX':
             continue
         if _ex_sort_key(entry['field_map'], entry['number']) > key:
-            at = start + entry['start']
-            break
-    if at is None:
-        at = start + _last_content_line(group_text) + 1
-    return _insert_lines(text, at, block.split('\n') + [''])
+            # Taking the successor's start line means taking its position after
+            # the blank that separates it from the entry above, so the blank
+            # goes below the newcomer.
+            return _insert_lines(text, start + entry['start'],
+                                 block.split('\n') + [''])
+    # Nothing sorts after the newcomer, so it closes the group and needs its
+    # own separating blank above. A group with no entries yet ends at its own
+    # heading line, which is why the blank cannot be assumed to be there.
+    at = start + _last_content_line(group_text) + 1
+    return _insert_lines(text, at, [''] + block.split('\n'))
 
 
 def _place_rl(text, block):
-    """Return text with an RL record placed reverse-chronologically."""
+    """Return text with an RL record placed reverse-chronologically.
+
+    A role that will carry EX entries also needs its '### RL-NNN' group under
+    Experience Entries: that group is where EX entries land, and without it the
+    next EX insert has nowhere to go. Both halves are written here so a new role
+    is never left half-created. A background role - one asserting 'Entries:
+    None' - is placed without a group, matching the existing background roles.
+    """
     field_map = dict(
         re.match(r'^([A-Za-z][A-Za-z &-]*):\s?(.*)$', line).groups()
         for line in block.split('\n')
         if re.match(r'^([A-Za-z][A-Za-z &-]*):\s?(.*)$', line)
     )
-    start_date = field_map.get('Start Date', '')
+    start_date = field_map.get('Start Date', '').strip()
+    if not start_date:
+        raise ValueError(
+            'RL entry block has an empty "Start Date:"; placement is '
+            'reverse-chronological and cannot be computed without it')
     bounds = _section_bounds(text, 'Employment & Role History')
     if bounds is None:
         raise ValueError('inventory has no "## Employment & Role History" section')
     start, end = bounds
     section_text = '\n'.join(text.split('\n')[start:end])
-    at = None
+    at, lead = None, False
     for entry in parse_entries(section_text):
         if entry['field_map'].get('Start Date', '') < start_date:
             at = start + entry['start']
             break
     if at is None:
-        at = start + _last_content_line(section_text) + 1
-    return _insert_lines(text, at, block.split('\n') + [''])
+        # Oldest role on record: it closes the section and carries its own
+        # separating blank above rather than below.
+        at, lead = start + _last_content_line(section_text) + 1, True
+    text = _insert_lines(
+        text, at,
+        [''] + block.split('\n') if lead else block.split('\n') + [''])
+
+    if field_map.get('Entries', '').strip() == 'None':
+        return text
+    return _add_role_group(text, field_map.get('ID', '').strip())
+
+
+def _add_role_group(text, role_id):
+    """Return text with a '### <role_id>' group added under Experience Entries.
+
+    Groups run in the same order as the role records, so the new group goes
+    immediately before the group of the next role record that has one. Roles
+    without a group (background roles) are skipped over. When no later role has
+    a group, the new group closes the section.
+    """
+    if not role_id:
+        raise ValueError('RL entry block carries no "ID:" line to name its group')
+    bounds = _section_bounds(text, 'Experience Entries')
+    if bounds is None:
+        raise ValueError('inventory has no "## Experience Entries" section')
+    hist = _section_bounds(text, 'Employment & Role History')
+    lines = text.split('\n')
+    order = [e['id'] for e in
+             parse_entries('\n'.join(lines[hist[0]:hist[1]]))
+             if e['prefix'] == 'RL']
+    start, end = bounds
+    for later in order[order.index(role_id) + 1:]:
+        for i in range(start, end):
+            if lines[i].strip() == f'### {later}':
+                return _insert_lines(text, i, [f'### {role_id}', '', '---', ''])
+    section_text = '\n'.join(lines[start:end])
+    at = start + _last_content_line(section_text) + 1
+    return _insert_lines(text, at, ['', '---', '', f'### {role_id}'])
 
 
 def _place_append(text, block, section, subsection=None):
@@ -419,16 +497,9 @@ def parse_staging(staging_text):
         end = heads[idx + 1][0] if idx + 1 < len(heads) else len(lines)
         body = '\n'.join(lines[start:end])
         status = _bullet_value(body, 'Status') or 'pending'
-        # A 'Closed requirement:' label alone does not make an entry a closure.
-        # Entries captured before the closure/enrichment split (issue #58) used
-        # that label for everything, including prep-surfaced facts anchored to
-        # 'n/a'. Only a real CR-NNN anchor counts.
-        closed = _bullet_value(body, 'Closed requirement') or ''
-        kind = 'closure' if re.match(r'^CR-\d+', closed) else 'enrichment'
         entries.append({
             'id': pu_id,
             'label': label,
-            'kind': kind,
             'status': status,
             'from': _bullet_value(body, 'From') or '',
             'captured': _bullet_value(body, 'Captured') or '',
@@ -465,7 +536,7 @@ def cmd_pending(args, repo_root, cfg):
         print('nothing pending')
         return
     for e in entries:
-        print(f"{e['id']}  {e['kind']:<10}  {e['captured']}  {e['label']}")
+        print(f"{e['id']}  {e['captured']}  {e['label']}")
         print(f"            from {e['from']}")
     print(f'\n{len(entries)} pending')
 
@@ -569,6 +640,90 @@ def _validate_block(block, schema, prefix):
 
 
 # ---------------------------------------------------------------------------
+# Subcommand: set
+# The enrichment path. An enrichment rewrites part of an entry that already
+# exists, which by hand means matching a snippet of a 3000-line document and
+# hoping it is unique. Here the entry is located by its anchored 'ID:' line and
+# only the named field's span is replaced, so the edit cannot land on a
+# neighbour, cannot drop a sibling field, and cannot reorder the roster. The
+# whole entry is re-validated against the template before anything is written.
+# ---------------------------------------------------------------------------
+
+def cmd_set(args, repo_root, cfg):
+    """Replace one field's value on one existing entry."""
+    inventory_path = _inventory_path(repo_root, cfg)
+    text = _util.read(inventory_path)
+    schemas = parse_template(_util.read(_template_path(repo_root, cfg)))
+
+    entry = next((e for e in parse_entries(text) if e['id'] == args.id), None)
+    if entry is None:
+        raise ValueError(f'entry not found in inventory: {args.id}')
+    schema = schemas.get(entry['prefix'])
+    if schema is None:
+        raise ValueError(
+            f'the template defines no schema for {entry["prefix"]} entries')
+    roster = [label for label, _ in schema['fields']]
+    if args.field == 'ID':
+        raise ValueError('IDs are assigned once and are never rewritten')
+    if args.field not in roster:
+        raise ValueError(
+            f'{entry["prefix"]} entries carry no "{args.field}:" field; the '
+            f"template defines {', '.join(f for f in roster if f != 'ID')}")
+
+    value = _util.read(args.value_file).rstrip()
+    if not value:
+        raise ValueError(
+            f'{args.value_file} is empty; set writes a value, it does not '
+            f'remove a field')
+    # A value opening with a newline is a multi-line field (Coursework), whose
+    # label sits alone on its line with the value indented beneath it.
+    rendered = (f'{args.field}:{value}' if value.startswith('\n')
+                else f'{args.field}: {value}').split('\n')
+
+    lines = text.split('\n')
+    body = lines[entry['start']:entry['end']]
+    new_body = _set_field(body, args.field, rendered, roster)
+
+    # Re-validate the whole entry, minus its ID line, exactly as an insert is
+    # validated. A value that breaks the roster or the field order never lands.
+    _validate_block(
+        '\n'.join(l for l in new_body if not re.match(r'^ID:\s', l)).strip(),
+        schema, entry['prefix'])
+    _util.write(inventory_path,
+                '\n'.join(lines[:entry['start']] + new_body
+                          + lines[entry['end']:]))
+    print(f'{args.id} {args.field} updated')
+
+
+def _set_field(body, field, rendered, roster):
+    """Return an entry's lines with one field's span replaced or inserted.
+
+    A field the entry already carries is replaced across its full span, which
+    for a multi-line field runs to the next field label. A field it does not
+    carry is an omitted optional one, and is inserted at its template position
+    so the roster stays in canonical order.
+    """
+    label_re = re.compile(r'^([A-Za-z][A-Za-z &-]*):')
+    at = next((i for i, line in enumerate(body)
+               if line.startswith(f'{field}:')), None)
+    if at is not None:
+        stop = next((j for j in range(at + 1, len(body))
+                     if label_re.match(body[j])), None)
+        if stop is None:
+            # Last field in the entry: stop at its final line of content so the
+            # blank line separating this entry from the next one survives.
+            stop = _last_content_line('\n'.join(body)) + 1
+        return body[:at] + rendered + body[stop:]
+    later = roster[roster.index(field) + 1:]
+    at = next((i for i, line in enumerate(body)
+               for m in [label_re.match(line)] if m and m.group(1) in later),
+              None)
+    if at is None:
+        at = _last_content_line('\n'.join(body)) + 1
+    return body[:at] + rendered + body[at:]
+
+
+# ---------------------------------------------------------------------------
 # Subcommand: close
 # Flips one staging entry to processed and appends the audit line naming the
 # profile IDs that now carry the content. 'no change' is a valid target list:
@@ -591,14 +746,16 @@ def cmd_close(args, repo_root, cfg):
         ids = [t.strip() for t in targets.split(',') if t.strip()]
         inventory_text = _util.read(_inventory_path(repo_root, cfg))
         known = {e['id'] for e in parse_entries(inventory_text)}
-        # Narrative and positioning IDs live in other files; this script only
-        # verifies the ones it can see, and reports the rest as unverified
-        # rather than failing a legitimate cross-document promotion.
+        # Which prefixes belong to the inventory is the template's answer, not
+        # this script's. Anything outside that set is a narrative or positioning
+        # ID living in a file this script cannot see, so it passes unverified
+        # rather than failing a legitimate cross-document promotion. Those
+        # documents have no structure-authority template yet; once they do, the
+        # else-branch becomes a real check (issue: narratives/positioning
+        # template).
+        prefixes = set(parse_template(_util.read(_template_path(repo_root, cfg))))
         unverified = [i for i in ids
-                      if i not in known and i.split('-')[0] in ('EX', 'PR', 'RL',
-                                                                'PB', 'PS', 'AW',
-                                                                'ED', 'TR', 'CERT',
-                                                                'AFF')]
+                      if i.split('-')[0] in prefixes and i not in known]
         if unverified:
             raise ValueError(
                 f"target ID(s) not found in inventory: {', '.join(unverified)}")
@@ -676,6 +833,14 @@ def main():
                           help='sub-section heading when the section has one '
                                '(e.g. Completed / In Progress for TR entries)')
     p_insert.set_defaults(func=cmd_insert)
+
+    p_set = sub.add_parser('set', help="replace one field's value on one entry")
+    p_set.add_argument('--id', required=True, help='the entry to edit, e.g. EX-060')
+    p_set.add_argument('--field', required=True, help='field label, e.g. Impact')
+    p_set.add_argument('--value-file', required=True,
+                       help='file holding the new value; open it with a newline '
+                            'for a multi-line field such as Coursework')
+    p_set.set_defaults(func=cmd_set)
 
     p_close = sub.add_parser('close', help='mark a staging entry processed')
     p_close.add_argument('--pu', required=True, help='PU-NNN')

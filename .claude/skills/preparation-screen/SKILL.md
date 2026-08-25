@@ -179,8 +179,10 @@ with no date and no status: scheduling metadata lives only in `session_log.md`.
    (role-independent), list them and ask the user which to stage. Write each
    approved item's content to a file (2-3 sentences of context, not
    copy-paste inventory content), then run `python scripts/staging_append.py
-   --folder <app_folder> --kind enrichment --content-file <path> --label
-   "<3-5 word descriptor>"`. Never hand-write into the staging file.
+   --folder <app_folder> --requirement "n/a (<short reason>)" --content-file
+   <path> --label "<3-5 word descriptor>"`. When the fact surfaced against a
+   known requirement, pass `--requirement <CR-NNN> --requirement-text-short
+   "<text>"` instead. Never hand-write into the staging file.
    Role-specific answers stay in the artifact only.
 
 2. Handoff, in plain English: where the artifact is, what the user should do

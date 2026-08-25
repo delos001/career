@@ -111,3 +111,13 @@ Return exactly this structure:
 ```
 
 The rationale is one sentence per axis explaining why the value was selected and why the main alternative(s) were not. Use a plain hyphen separator, not an em dash.
+
+Every axis line begins with `- ` and carries a bare label: `- Industry:`, never
+`- **Industry:**` and never `**Industry:**`. Add no sub-bullets and no fields
+the block above does not list.
+
+`scripts/assemble.py finalize` writes this block into the session log verbatim,
+and `scripts/staging_append.py` reads the five values back out by matching that
+exact form. A bolded or un-bulleted label is not a style variation; it makes
+those values unreadable. `scripts/role_intake_qc.py` check I5 fails the run on
+any line that does not match.

@@ -22,16 +22,13 @@ which is what keeps the calling instruction in each skill to a single line.
 Every derived field still has an explicit flag that overrides it, for the case
 where the session log is absent or the value needs correcting.
 
-Two entry kinds, selected by --kind:
-
-  closure     The user's input fully closed a gap. Requires --closed-requirement;
-              renders a 'Closed requirement:' line.
-  enrichment  New or under-represented profile information surfaced on a
-              partial-match or covered requirement, or during interview prep.
-              Renders a 'Related requirement:' line, which may be 'n/a' plus a
-              short reason. Passing --closed-requirement here is an error: the
-              distinction is what tells the downstream profile-update skill
-              whether the information was already credited in a fit score.
+Every entry carries one 'Requirement:' line anchoring where the fact surfaced:
+a CR-NNN from that gap-analysis run, or 'n/a' plus a short reason when nothing
+anchors it (a general fact raised during interview prep). The anchor is
+provenance only. Whether the fact happened to close a gap is a fact about that
+one application, recorded in its gap_analysis.md, and the profile does not carry
+it: an entry that closed nothing is promoted exactly the same way, because it
+may close a gap on a future application.
 
 The script assigns the next PU-NNN by scanning existing entry IDs in the file,
 appends the new entry under '## Entries' (replacing the '_(none)_' placeholder
@@ -42,10 +39,11 @@ Author    : Jason Delosh
 Created   : 2026-05-27
 Project   : career
 Usage     : python scripts/staging_append.py --folder <app_folder> \\
-                --kind enrichment --content-file ... --label ...
+                --requirement CR-NNN --requirement-text-short ... \\
+                --content-file ... --label ...
             python scripts/staging_append.py --folder <app_folder> \\
-                --kind closure --closed-requirement CR-NNN \\
-                --requirement-text-short ... --content-file ... --label ...
+                --requirement "n/a (surfaced during prep)" \\
+                --content-file ... --label ...
 Depends   : pyyaml (via _config)
 """
 
@@ -107,10 +105,12 @@ def _next_pu_id(staging_text):
 # Regex: a '- Label: value' line in the session log's metadata block.
 _META_RE = r'(?m)^-\s+{label}:\s*(.+?)\s*$'
 
-# Regex: an axis line, e.g. '- **Industry:** eclinical - Faro is a ...'.
-# Captures the first value token, which is the primary per the axis-classifier's
+# Regex: an axis line, e.g. '- Industry: eclinical - Faro is a ...'. The form is
+# the axis-classifier's return-format spec, which assemble.py finalize writes
+# into the session log verbatim; it carries no bold markers. Captures the first
+# value token, which is the primary per the classifier's
 # '<primary> (primary), <secondary> (secondary)' convention.
-_AXIS_RE = r'(?m)^-\s+\*\*{label}:\*\*\s+([A-Za-z0-9-]+)'
+_AXIS_RE = r'(?m)^-\s+{label}:\s+([A-Za-z0-9-]+)'
 
 # Axis flag name -> the label the session log uses for it.
 _AXIS_LABELS = {
@@ -155,19 +155,15 @@ def _derive_from_folder(folder, cfg):
 # ---------------------------------------------------------------------------
 # Entry rendering
 # Builds the markdown block for one PU-NNN entry. Field labels match the
-# per-entry schema in templates/profile_updates_pending.md. The requirement
-# line is the only difference between the two kinds: a closure names the
-# requirement it closed, an enrichment names a requirement that is context only
-# (or 'n/a' when the fact was surfaced outside a requirement walk).
+# per-entry schema in templates/profile_updates_pending.md.
 # ---------------------------------------------------------------------------
 
 def _requirement_line(args):
-    """Return the requirement bullet for this entry's kind."""
-    if args.kind == 'closure':
-        return (f'- **Closed requirement:** {args.closed_requirement} - '
-                f'{args.requirement_text_short}\n')
-    related = args.related_requirement or 'n/a'
-    return f'- **Related requirement:** {related}\n'
+    """Return the requirement bullet anchoring where the fact surfaced."""
+    anchor = args.requirement.strip()
+    if args.requirement_text_short:
+        anchor = f'{anchor} - {args.requirement_text_short.strip()}'
+    return f'- **Requirement:** {anchor}\n'
 
 
 def _render_entry(pu_id, args, content):
@@ -245,17 +241,13 @@ def main():
                         help='APP-NNN of the originating application')
     parser.add_argument('--company')
     parser.add_argument('--role')
-    parser.add_argument('--kind', choices=['closure', 'enrichment'],
-                        default='closure',
-                        help='closure = the input closed a gap; enrichment = new '
-                             'or under-represented information that did not')
-    parser.add_argument('--closed-requirement',
-                        help='closure only: CR-NNN of the requirement this input closed')
+    parser.add_argument('--requirement', required=True,
+                        help='CR-NNN of the requirement under discussion when '
+                             "the fact surfaced, or 'n/a (reason)' when nothing "
+                             'anchors it')
     parser.add_argument('--requirement-text-short',
-                        help='closure only: short form of the requirement text')
-    parser.add_argument('--related-requirement',
-                        help="enrichment only: 'CR-NNN - short text' for context, or "
-                             "'n/a (reason)' when no requirement anchors the capture")
+                        help='short form of the requirement text; appended to '
+                             '--requirement when given')
     parser.add_argument('--industry')
     parser.add_argument('--specialty')
     parser.add_argument('--orientation')
@@ -266,25 +258,6 @@ def main():
     parser.add_argument('--label', required=True,
                         help='3-5 word descriptor of the surfaced information')
     args = parser.parse_args()
-
-    # Kind-conditional argument validation. argparse cannot express this, and a
-    # silent default here would reintroduce the mislabeling this flag exists to
-    # prevent: an enrichment rendered under a 'Closed requirement:' label reads
-    # downstream as a gap the fit score already credited.
-    if args.kind == 'closure':
-        missing = [flag for flag, value in (
-            ('--closed-requirement', args.closed_requirement),
-            ('--requirement-text-short', args.requirement_text_short),
-        ) if not value]
-        if missing:
-            parser.error(f"--kind closure requires {' and '.join(missing)}")
-        if args.related_requirement:
-            parser.error('--related-requirement is enrichment-only; a closure '
-                         'names its requirement with --closed-requirement')
-    else:
-        if args.closed_requirement:
-            parser.error('--closed-requirement is closure-only; an enrichment '
-                         'did not close a gap. Use --related-requirement.')
 
     try:
         sys.stdout.reconfigure(encoding='utf-8')
