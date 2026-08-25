@@ -94,11 +94,17 @@ Repeat every step below for one `PU-NNN` before naming the next.
 - **Step 3a - Read the entry.** Run
   `python scripts/profile_update.py show --pu PU-NNN`. Read the Content field
   and note every framing guard, hedge, and suggested action it carries.
+  A capture routinely bundles several distinct items into one sentence. Split
+  them out and show the user the list before working any of them. They cannot
+  judge the third item if they were never told there was a third.
 - **Step 3b - Check what already exists.** The Content field often names the
   entries it relates to. Pull them with
   `python scripts/profile_slice.py id EX-NNN ...`. When it names none, search
   the inventory for the same substance before concluding nothing covers it, per
-  [[feedback_comprehensive_coverage_scan]]. Report what you found.
+  [[feedback_comprehensive_coverage_scan]]. Paste the full text of every entry
+  you name. Never cite an entry by ID alone and never summarize one the user is
+  being asked to compare against, per [[feedback_concrete_proposals]]; a summary
+  makes them go find it themselves.
 - **Step 3c - Propose one disposition.** Exactly one of:
   - **New entry** - the substance is not represented anywhere. Name the entry
     type and the role it belongs to.
