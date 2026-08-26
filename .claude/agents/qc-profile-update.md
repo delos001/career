@@ -1,6 +1,6 @@
 ---
 name: qc-profile-update
-description: Judgment quality-check for the profile-update skill's writes into the profile documents. Verifies the one thing a script cannot - that each written entry is actually supported by the staged PU-NNN Content it came from, that every framing guard and evidence hedge in that capture survived into the entry, and that the writing matches the surrounding document's conventions. Mechanical checks (section roster, field rosters, ID integrity, entry placement, reference resolution, axis values, table of contents, empty-section markers, staging bookkeeping) are owned by scripts/profile_update_qc.py and are not re-run here. Reads only the staged entries and the entries they landed in, so it stays context-bounded. Read-only.
+description: Judgment quality-check for the profile-update skill's writes into the profile documents. Verifies the one thing a script cannot - that each written entry is actually supported by the staged PU-NNN Content it came from, that every framing guard and evidence hedge in that capture survived into the entry, and that the writing matches the surrounding document's conventions. Mechanical checks (section roster, field rosters, ID integrity, entry placement, reference resolution, axis values, table of contents, empty-section markers, list-section content, staging bookkeeping) are owned by scripts/profile_update_qc.py and are not re-run here. Reads only the staged entries and the entries they landed in, so it stays context-bounded. Read-only.
 tools: Read, Grep
 ---
 
@@ -18,8 +18,9 @@ script check owns.
 The dispatching skill gives you:
 
 - the `PU-NNN` staging IDs processed this run;
-- the profile IDs each one landed in (`EX-NNN`, `PR-NNN`, `ST-NNN`, ...), or
-  `no change`;
+- the profile targets each one landed in: entry IDs (`EX-NNN`, `PR-NNN`,
+  `ST-NNN`, ...), list addresses (`Technical Experience / <Category> /
+  <Label>`), or `no change`;
 - the paths to `personal/profile/profile_updates_pending.md` and the profile
   documents that were written to.
 
@@ -72,6 +73,14 @@ every cross-document check belongs to the script.
    than created, the original claim is still intact and still accurate. An
    enrichment that broadened a scoped claim, or that reworded an existing
    quantified result, is a finding.
+   Route-back: phase 3, step 3d.
+
+8. **A list item names a thing, and the capture names it.** Items added to a
+   list section are named tools, products, platforms, or exposure facts, never
+   capability descriptions or methods. The
+   item text traces to the capture: where the capture records that the user is
+   unsure of a product's exact name, the item carries the wording the capture
+   used and does not resolve that uncertainty into a specific product name.
    Route-back: phase 3, step 3d.
 
 ## Support, not vibes

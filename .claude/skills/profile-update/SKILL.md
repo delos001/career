@@ -1,14 +1,17 @@
 ---
 name: profile-update
-description: Promote staged profile updates into the profile documents. Reads the PU-NNN entries in personal/profile/profile_updates_pending.md, walks them with the user one at a time, and writes each into inventory.md as a new entry or as an enrichment of an existing one, then closes the staging entry with an audit line naming where the content landed. Runs standalone at any time, or inline at the end of a gap-analysis run. This is the only skill that writes to the profile documents.
+description: Promote staged profile updates into the profile documents. Reads the PU-NNN captures in personal/profile/profile_updates_pending.md, walks them with the user one at a time, and writes each into inventory.md as a new entry, as an enrichment of an existing one, or as an item on a list section, then removes the capture from the staging queue. The staging file is a queue, not an archive - the inventory is where the information persists. Runs standalone at any time, or inline at the end of a gap-analysis run. This is the only skill that writes to the profile documents.
 ---
 
 # profile-update - promote staged updates into the profile
 
 Writes the `PU-NNN` captures in `personal/profile/profile_updates_pending.md`
-into the profile documents, one entry at a time, and closes each capture with
-an audit line naming the profile IDs that now carry it. Until a capture is
-promoted, the fact is invisible to retrieval, gap analysis, and CV creation.
+into the profile documents, one entry at a time, then takes each capture off the
+queue. Until a capture is promoted, the fact is invisible to retrieval, gap
+analysis, and CV creation.
+
+The staging file is a **queue, not an archive**. A capture waits in it and then
+leaves; the inventory is where the information persists.
 
 **This skill is the only writer to `inventory.md`.** Every other skill reads.
 
@@ -45,9 +48,10 @@ Ask at intake, or take the mode from the caller:
 
 ## Resume check - run before Phase 0
 
-This skill has no artifact to probe, so resume state lives in the staging file
-itself: an entry marked `processed` is done and is never reprocessed. Run
-`python scripts/profile_update.py pending` and continue from what it returns.
+This skill has no artifact to probe, so resume state is the staging file itself.
+It is a queue: a capture is in it because it is waiting, and it is removed once
+its content is in the profile. Run `python scripts/profile_update.py pending`
+and continue from what it returns.
 
 ## Phase 0 - Intro
 
@@ -110,8 +114,14 @@ Repeat every step below for one `PU-NNN` before naming the next.
     type and the role it belongs to.
   - **Enrichment** - an existing entry covers the substance but under-states or
     mis-frames it. Name the entry.
+  - **List item** - the substance is a named tool, platform, or exposure item
+    rather than a piece of work. Name the list address it belongs under.
   - **No change** - the substance is already carried accurately. This is a
-    valid outcome and still closes the staging entry.
+    valid outcome and still clears the capture off the queue.
+  - **Retract** - the substance should not go into the profile after all.
+    Staging holds facts the user already judged to belong there, so this is
+    the user's call and never the skill's. Surface the doubt, take the
+    decision from them, and do not propose it as a way to clear a backlog.
   State the reasoning in one or two lines. Do not survey the alternatives.
 - **Step 3d - Show the actual text.** Present the full proposed entry, or a
   before/after for an enrichment, inline in the response. Never describe an
@@ -130,6 +140,15 @@ Repeat every step below for one `PU-NNN` before naming the next.
     `python scripts/profile_update.py set --id <ID> --field <Field> --value-file temp/pu_value.md`,
     once per field changed. Open the value with a newline for a multi-line
     field such as `Coursework`. Never hand-edit `inventory.md`.
+  - A tool, platform, or exposure item: some sections hold flat lists rather
+    than entries, so they carry no ID for `insert` to assign or `set` to
+    resolve. Run
+    `python scripts/profile_update.py list-add --target "<Section> / <Category> / <Label>" --item "<item>"`,
+    once per item. Drop the ` / <Label>` part only when the category holds a
+    single line; a wrong or missing part is answered with the valid choices.
+    The command appends and never rewrites, so nothing already listed can be
+    lost, and it refuses a duplicate. Capture the address it prints - that is
+    what Step 3f records.
   - Enrichment of a narrative or positioning entry: apply with Edit against
     `narratives.md` or `positioning.md`. Those documents have no
     structure-authority template to validate against yet.
@@ -137,12 +156,18 @@ Repeat every step below for one `PU-NNN` before naming the next.
     documents have no structure-authority template yet. Leave the entry pending,
     tell the user plainly that it needs the narratives or positioning builder,
     and move on.
-- **Step 3f - Close the staging entry.** Run
-  `python scripts/profile_update.py close --pu PU-NNN --targets <IDs> --date YYYY-MM-DD`,
-  passing every ID the content landed in, or `--targets "no change"`. This flips
-  the status and writes the audit line from the surfaced fact to the profile IDs
-  that now carry it.
-- Output: per entry, the disposition, the target IDs, and a closed staging entry.
+- **Step 3f - Clear the capture off the queue.** Run
+  `python scripts/profile_update.py close --pu PU-NNN --targets <target>`,
+  repeating `--targets` once per place the content landed - an entry ID or a
+  list address - or passing `--targets "no change"` on its own. The command
+  verifies every target and then **deletes the capture**. The staging file is a
+  queue, not an archive: the inventory is where the information persists, so
+  nothing is left behind once the content is in it.
+  A **retracted** capture is dropped instead: run
+  `python scripts/profile_update.py drop --pu PU-NNN`, which deletes it without
+  a target check and prints the block it removed. Retraction is the user's call
+  and never the skill's; confirm it with them before running it.
+- Output: per entry, the disposition, the targets, and a capture off the queue.
 
 ## Phase 4 - QC
 
@@ -151,10 +176,11 @@ Repeat every step below for one `PU-NNN` before naming the next.
 - Input: the IDs written this run and the `PU-NNN` closed this run.
 - **Step 4a - Mechanical checks (script).** Run
   `python scripts/profile_update_qc.py check`, passing `--scope-id` once per
-  inventory ID created or edited this run and `--processed-pu` once per staging
-  entry closed. The script owns document structure, field rosters, ID integrity,
-  entry placement, reference resolution, axis values, the table of contents,
-  empty-section markers, and staging bookkeeping. Findings on entries this run
+  inventory ID created or edited this run and per list address appended to, and
+  `--processed-pu` once per staging entry closed. The script owns document
+  structure, field rosters, ID integrity, entry placement, reference resolution,
+  axis values, the table of contents, empty-section markers, list-section
+  content, and staging bookkeeping. Findings on entries this run
   did not touch are reported as pre-existing advisories and do not fail the run;
   surface them to the user at Phase 5 rather than fixing them here.
   On FAIL: translate to plain English, fix, re-run.
@@ -174,7 +200,8 @@ Repeat every step below for one `PU-NNN` before naming the next.
 
 - Input: dispositions, target IDs, QC verdict, remaining pending entries.
 - Present, in plain English:
-  - what was added, what was enriched, what was recorded as no change;
+  - what was added, what was enriched, what was recorded as no change, and
+    what the user retracted;
   - the entries still pending and why (out-of-scope target, thin content,
     user deferral);
   - any pre-existing QC advisories the run surfaced but did not fix;
@@ -195,6 +222,7 @@ Consumed by Phase 4. Route back, fix, re-run forward.
 | Axis value not in its registry | Phase 3, Step 3d |
 | Dangling Role or Recognizes reference | Phase 3, Step 3e |
 | Table of contents out of date | Phase 3, Step 3e (re-run insert; never hand-edit the ToC) |
-| Staging entry not closed, or closed with an unresolvable target | Phase 3, Step 3f |
+| Item listed twice under one list category | Phase 3, Step 3e |
+| Capture still in the queue after its content was written | Phase 3, Step 3f |
 | Entry text overstates its staged Content | Phase 3, Step 3d |
 | Framing guard or hedge dropped | Phase 3, Step 3d |

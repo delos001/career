@@ -44,16 +44,18 @@ the fact:
 - **Requirement:** {CR-NNN} - {requirement_text_short}, or 'n/a' with a short reason
 - **Role context:** Industry={industry}, Specialty={specialty}, Orientation={orientation}, Level={level}, Work-state={work_state}
 - **Content:** {2-3 sentences max - what the user surfaced, in their own terms}
-- **Status:** pending
 ```
 
-When the profile-update skill processes an entry it rewrites the Status line and
-appends one Processed line:
+There is no status field. **This file is a queue, not an archive.** A capture is
+in it because it is waiting; when the profile-update skill puts its content into
+the profile it removes the capture, and when the file holds none it carries the
+`_(none)_` marker again. The inventory is where the information persists over
+time, so nothing about a capture is kept here after promotion.
 
-```
-- **Status:** processed
-- **Processed:** {YYYY-MM-DD} into {comma-separated target IDs, or 'no change'}
-```
+The skill verifies where the content landed before it removes the capture. A
+target is an inventory entry ID, a narratives or positioning entry ID, or a list
+address (`Technical Experience / Clinical Application Systems / Document
+Management`) for the sections that hold flat lists rather than entries.
 
 ## Field notes
 
@@ -81,12 +83,10 @@ appends one Processed line:
 - **Content** - the surfaced information itself, captured concisely. The
   processing skill rewrites this to the target doc's voice and conventions; it
   is not copied verbatim.
-- **Status** - `pending` on append. Updated to `processed` by the profile-update
-  skill when the entry has been written into the target doc(s). Processed
-  entries are retained, not removed: the entry plus its `Processed:` line is the
-  audit trail from a surfaced fact to the profile IDs that now carry it.
-- **Processed** - written by the profile-update skill alongside the status flip.
-  Carries the run date and the target IDs the content landed in (`EX-210`,
-  `EX-049, EX-058`, `ST-011`). `no change` records a deliberate decision that
-  the entry needed no profile edit, which is a valid outcome and still closes
-  the entry.
+- **Removal** - two commands take a capture out of the queue, and both delete
+  it. `profile_update.py close` is the promoted path: it verifies the targets
+  the content landed in, then removes the capture. `profile_update.py drop` is
+  the retraction path, for a capture the user decides should not go into the
+  profile after all; it is their call, never the skill's. Closing with
+  `--targets "no change"` is a third finish: the profile already carried the
+  content accurately, so nothing was written and the capture still leaves.

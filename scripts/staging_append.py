@@ -12,7 +12,11 @@ Each entry captures: when, from which application, the requirement anchor, the
 role's axis context, the user's surfaced content (kept concise - this is CONTEXT
 for the downstream profile-update skill, NOT copy-paste content for inventory /
 narratives / positioning per the respect-profile-doc-conventions feedback
-memory), and a pending status.
+memory).
+
+The file is a queue. A capture sits in it only while it waits to be promoted;
+the profile-update skill removes it once its content is in the profile. There is
+no status field, because presence in the file IS the waiting state.
 
 Context comes from the application folder, not from the caller. Given --folder,
 the script reads the capture date (today), the application ID, the company, the
@@ -180,7 +184,6 @@ def _render_entry(pu_id, args, content):
         f'{_requirement_line(args)}'
         f'- **Role context:** {role_context}\n'
         f'- **Content:** {content}\n'
-        f'- **Status:** pending\n'
     )
 
 

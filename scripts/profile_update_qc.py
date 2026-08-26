@@ -26,8 +26,9 @@ Checks:
   P6  Axis values exist in their registry
   P7  Table of contents matches the document headings
   P8  Empty-section markers agree with actual content
-  P9  Staging entries closed this run are marked processed with resolvable targets
-  P10 Staging entries carry a Requirement anchor and a consistent status
+  P9  Captures finished this run are gone from the queue
+  P10 Captures still in the queue carry a Requirement anchor
+  P11 List sections hold content and repeat no item within a category
 
 Author    : Jason Delosh
 Created   : 2026-08-24
@@ -319,61 +320,72 @@ def check_empty_markers(findings, inventory_text, schemas, spans):
 
 # ---------------------------------------------------------------------------
 # P9 / P10 - Staging bookkeeping
-# The staging file is the audit trail from a surfaced fact to the profile IDs
-# that now carry it. An entry left half-closed breaks that trail and will be
-# reprocessed on a later run.
+# The staging file is a queue of captures waiting to be promoted, not a record
+# of ones that already were. A capture left in it after its content reached the
+# profile will be offered again on the next run and re-litigated from scratch.
 # ---------------------------------------------------------------------------
 
-def check_processed(findings, staging_entries, entries, processed_pu, prefixes):
-    """P9: entries closed this run are marked processed with real targets.
+def check_processed(findings, staging_entries, processed_pu):
+    """P9: captures finished this run are gone from the queue.
 
-    `prefixes` is the inventory's entry-type set, read from the template. A
-    target outside it is a narrative or positioning ID; those documents have no
-    structure-authority template yet, so their IDs are skipped rather than
-    checked (issue: narratives/positioning template).
+    The queue holds what is waiting, so a capture whose content reached the
+    profile has no business still being in it. Its targets were verified by
+    'close' before the removal, which is the only moment both the capture and
+    its targets exist together; after the removal there is nothing left to
+    re-check them against, and that is the intended end state, not a gap.
     """
     findings.mark('P9')
-    by_id = {entry['id']: entry for entry in staging_entries}
-    known = {entry['id'] for entry in entries}
+    still_here = {entry['id'] for entry in staging_entries}
     for pu_id in processed_pu:
-        entry = by_id.get(pu_id)
-        if entry is None:
-            findings.add('P9', f'{pu_id} was reported as processed but does not '
-                               f'exist in the staging file')
-            continue
-        if entry['status'] != 'processed':
-            findings.add('P9', f'{pu_id} was reported as processed but its '
-                               f'Status still reads "{entry["status"]}"')
-        line = pu._bullet_value(entry['body'], 'Processed')
-        if not line:
-            findings.add('P9', f'{pu_id} has no "Processed:" line recording '
-                               f'where its content landed')
-            continue
-        targets = line.split(' into ', 1)[-1]
-        if targets.strip() == 'no change':
-            continue
-        for target in [t.strip() for t in targets.split(',') if t.strip()]:
-            if target.split('-')[0] not in prefixes:
-                continue
-            if target not in known:
-                findings.add('P9', f'{pu_id} names target {target}, which does '
-                                   f'not exist in the inventory')
+        if pu_id in still_here:
+            findings.add('P9', f'{pu_id} was reported as finished this run but '
+                               f'is still sitting in the staging file')
 
 
 def check_staging_integrity(findings, staging_entries):
-    """P10: every entry is anchored, and status matches the audit line."""
+    """P10: every capture in the queue is anchored to where it surfaced."""
     findings.mark('P10')
     for entry in staging_entries:
         if not pu._bullet_value(entry['body'], 'Requirement'):
             findings.add('P10', f"{entry['id']} carries no Requirement line "
                                 f'naming where the fact surfaced', entry['id'])
-        has_processed = bool(pu._bullet_value(entry['body'], 'Processed'))
-        if has_processed and entry['status'] != 'processed':
-            findings.add('P10', f"{entry['id']} has a Processed line but its "
-                                f'Status reads "{entry["status"]}"', entry['id'])
-        if entry['status'] == 'processed' and not has_processed:
-            findings.add('P10', f"{entry['id']} is marked processed but records "
-                                f'no target IDs', entry['id'])
+
+
+# ---------------------------------------------------------------------------
+# P11 - List sections
+# The two sections holding flat lists rather than entries carry no IDs, so
+# nothing above reaches them: P2's field roster, P3's ID integrity and P8's
+# empty-section marker all key off an 'ID:' line. That left the tool roster and
+# the industry-exposure profile unchecked entirely. Two things are worth
+# settling mechanically: a category that has quietly gone empty, and the same
+# item listed twice, which is what repeated appends over time actually produce.
+# Findings carry their list address, so a pre-existing duplicate elsewhere in
+# the document is an advisory rather than a block on this run's work.
+# ---------------------------------------------------------------------------
+
+def check_list_sections(findings, inventory_text, template_text, schemas):
+    """P11: each list category holds content and repeats no item."""
+    findings.mark('P11')
+    for section in pu.list_sections(template_text, schemas):
+        categories = pu.list_categories(inventory_text, section)
+        if not categories:
+            findings.add('P11', f'"{section}" holds no categories', section)
+        for category, start, end in categories:
+            address = f'{section}{pu._ADDRESS_SEP}{category}'
+            content = pu._list_content_lines(inventory_text, start, end)
+            if not content:
+                findings.add('P11', f'"{address}" holds no items', address)
+                continue
+            seen = {}
+            for _, line in content:
+                label, value, _bold = pu._list_line_label(line)
+                where = f'{address}{pu._ADDRESS_SEP}{label}' if label else address
+                for item in pu.split_items(value):
+                    if item.lower() in seen:
+                        findings.add(
+                            'P11', f'"{item}" is listed twice under '
+                                   f'"{address}"', where)
+                    seen[item.lower()] = True
 
 
 # ---------------------------------------------------------------------------
@@ -399,12 +411,12 @@ def cmd_check(args, repo_root, cfg):
     check_toc(findings, inventory_text)
     check_empty_markers(findings, inventory_text, schemas,
                         pu.template_spans(template_text))
+    check_list_sections(findings, inventory_text, template_text, schemas)
 
     staging_path = pu._staging_path(repo_root, cfg)
     if os.path.exists(staging_path):
         staging_entries = pu.parse_staging(_util.read(staging_path))
-        check_processed(findings, staging_entries, entries, args.processed_pu,
-                        set(schemas))
+        check_processed(findings, staging_entries, args.processed_pu)
         check_staging_integrity(findings, staging_entries)
 
     sys.exit(findings.report())
@@ -420,10 +432,11 @@ def main():
     p_check.add_argument('--processed-pu', action='append', default=[],
                          help='PU-NNN closed this run; repeatable')
     p_check.add_argument('--scope-id', action='append', default=[],
-                         help='an inventory ID this run created or edited; '
-                              'repeatable. Findings on entries outside the '
-                              'declared scope are reported as advisories rather '
-                              'than failures. Omit to audit the whole document.')
+                         help='an inventory ID this run created or edited, or a '
+                              'list address it appended to; repeatable. Findings '
+                              'outside the declared scope are reported as '
+                              'advisories rather than failures. Omit to audit '
+                              'the whole document.')
     p_check.set_defaults(func=cmd_check)
 
     args = parser.parse_args()

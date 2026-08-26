@@ -22,6 +22,11 @@ Two blocks below are machine-read. Nothing else in this file is.
   per-user category mechanism: the heading level and its position are schema,
   the names are derived per user and are never copied from this file or from
   another user's inventory.
+  A section that no entry schema claims and that carries sub-headings is a
+  **list section**: it holds flat item lines rather than entries, so it has no
+  IDs, and `profile-update` reaches it with `list-add` against a
+  `<Section> / <Category>` address rather than with `insert`. Adding one here is
+  the whole change; no script names these sections.
 - **`## Entry schemas`** - each `### <PREFIX>` fenced block gives that entry
   type's field roster in canonical order. A field line ending in `{optional}`
   may be omitted. Every other field line is required. Field order in a written

@@ -20,15 +20,17 @@ Checks (IDs mirror the original qc-gap-analysis check numbering):
   G6  Non-covered Notes present: status outside {covered, language-shift}
       carries a non-empty Notes value. (Whether the Notes content is
       adequate stays with the judgment agent.)
-  G7  Closure linkage: every `Closure ref: PU-NNN` in the artifact resolves
-      to a staging entry carrying all required fields; every --appended-pu
-      ID is referenced from the artifact. (Closed-without-ref is legitimate
-      for eligibility attestations, so ref presence anchors on --appended-pu.)
+  G7  Closure linkage: every `Closure ref: PU-NNN` still in the staging queue
+      carries all required fields; every --appended-pu ID is referenced from
+      the artifact. (Closed-without-ref is legitimate for eligibility
+      attestations, so ref presence anchors on --appended-pu. A ref to a
+      capture already promoted out of the queue is normal and is skipped.)
   G8  No fabricated IDs: every profile-prefixed ID in the artifact exists
       in the profile documents (the prefix set is derived from the
       documents' own `ID:` lines, so new sections are covered without a
-      code change); every CR-NNN is within the requirements range; every
-      PU-NNN exists in the staging file.
+      code change); every CR-NNN is within the requirements range. PU-NNN
+      references are not checked: the staging file is a queue and a promoted
+      capture is no longer in it.
   G9  Session log mirroring: session log fit score matches the artifact
       header fit score.
   G10 Math: header fit score equals the type-weighted formula result and
@@ -87,7 +89,7 @@ UNMET_STATUSES = {'interview-deferred', 'unresolved'}
 RECOMMENDATION_LABELS = {'Proceed', 'Proceed with caution', 'Do not pursue'}
 
 # Required fields of a staging PU entry.
-PU_FIELDS = ['Captured', 'From', 'Requirement', 'Role context', 'Content', 'Status']
+PU_FIELDS = ['Captured', 'From', 'Requirement', 'Role context', 'Content']
 
 # Regex: an `ID: <PREFIX>-NNN` line in the profile documents. The citable
 # prefix set is derived from these lines at check time (see check_ids), so a
@@ -339,7 +341,11 @@ def check_closure_linkage(records, staging_entries, appended_pu, artifact_text, 
         pu = m.group(1)
         entry = staging_entries.get(pu)
         if entry is None:
-            problems.append(f'{cr} references {pu} which is not in the staging file')
+            # Absent means promoted: the staging file is a queue holding only
+            # captures still waiting, and profile-update removes each one when
+            # its content reaches the inventory. A ref to a cleared capture is
+            # the expected steady state, and there is nothing left to check it
+            # against. Only a capture still in the queue can be checked here.
             continue
         missing = [f for f in PU_FIELDS if not entry.get(f)]
         if missing:
@@ -369,10 +375,11 @@ def check_ids(artifact_text, profile_ids, req_count, staging_entries, findings):
                      if req_count is not None and int(t) > req_count})
     if bad_cr:
         problems.append(f"CR IDs beyond the requirements list: {', '.join('CR-' + t for t in bad_cr)}")
-    bad_pu = sorted({t for t in re.findall(r'\bPU-\d+\b', artifact_text)
-                     if t not in staging_entries})
-    if bad_pu:
-        problems.append(f"PU IDs not in the staging file: {', '.join(bad_pu)}")
+    # PU IDs are deliberately NOT checked against the staging file. That file is
+    # a queue: profile-update removes each capture once its content is in the
+    # inventory, so an artifact citing a promoted capture would name an ID the
+    # file no longer holds. Absence cannot be told apart from fabrication here,
+    # and failing every promoted reference is the worse error of the two.
     findings.append(('G8', not problems, '; '.join(problems) or 'all cited IDs exist'))
 
 
