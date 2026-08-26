@@ -15,7 +15,7 @@ headers, ID schemes, tag fields, length norms). Keep content concise. See
 [[respect-profile-doc-conventions]].
 
 `scripts/staging_append.py` renders new entries from structured inputs the
-calling skill passes per capture.
+calling skill passes per PU entry.
 
 ## Skeleton (initial empty file)
 
@@ -29,11 +29,15 @@ profile-update skill.
 ## Entries
 
 _(none)_
+
+## Migrated
+
+_(none)_
 ```
 
 ## Per-entry schema
 
-Each capture appends one entry under `## Entries`. One shape, whatever surfaced
+Each PU entry appends one entry under `## Entries`. One shape, whatever surfaced
 the fact:
 
 ```
@@ -46,16 +50,46 @@ the fact:
 - **Content:** {2-3 sentences max - what the user surfaced, in their own terms}
 ```
 
-There is no status field. **This file is a queue, not an archive.** A capture is
-in it because it is waiting; when the profile-update skill puts its content into
-the profile it removes the capture, and when the file holds none it carries the
-`_(none)_` marker again. The inventory is where the information persists over
-time, so nothing about a capture is kept here after promotion.
+There is no status field on a PU entry. `## Entries` holds what is waiting, and a
+PU entry leaves it once it is finished. The inventory is where the information
+itself persists, so the PU entry's body is not kept after promotion.
 
-The skill verifies where the content landed before it removes the capture. A
-target is an inventory entry ID, a narratives or positioning entry ID, or a list
-address (`Technical Experience / Clinical Application Systems / Document
-Management`) for the sections that hold flat lists rather than entries.
+## Migrated section
+
+Every PU entry that leaves `## Entries` is recorded there, one line, permanently:
+
+```
+## Migrated
+
+PU-005: EX-229; EX-230; EX-231; EX-049
+PU-008: dropped
+PU-009: duplicate
+```
+
+The left side is the `PU-NNN`. The right side is what became of it, in one of
+three forms:
+
+- **Targets** - where the content landed: an inventory entry ID, a narratives or
+  positioning entry ID, or a list address (`Technical Experience / Clinical
+  Application Systems / Document Management`) for the sections that hold flat
+  lists rather than entries. Several targets are separated by `; `, because a
+  list address can itself contain a comma.
+- **`dropped`** - the user retracted the PU entry; nothing reached the profile.
+- **`duplicate`** - the profile already carried the substance accurately, so
+  nothing needed writing.
+
+The skill verifies the targets resolve before it moves a PU entry here.
+
+This section is why the file can be a queue without losing anything that
+depends on it. Two things read a `PU-NNN` after its PU entry is gone:
+
+- **The ID counter.** `staging_append.py` takes the next `PU-NNN` from the
+  highest number in `## Entries` **and** `## Migrated`. Without the migrated
+  half the counter walks backwards as PU entries are promoted and reissues a
+  number a closed application already cites.
+- **Past applications.** A `Closure ref: PU-NNN` written into a
+  `gap_analysis.md` is permanent. `gap_qc.py` resolves it against both sections,
+  so a promoted PU entry stays traceable to the entry it became.
 
 ## Field notes
 
@@ -75,18 +109,20 @@ Management`) for the sections that hold flat lists rather than entries.
   profile has no use for it: an entry that closed nothing is promoted exactly
   the same way, because it may close a gap on a future application. Closure
   linkage is checked where it belongs, by `gap_qc.py` check G7, which verifies
-  that a `Closure ref: PU-NNN` in `gap_analysis.md` resolves to a complete
-  staging entry.
+  that a `Closure ref: PU-NNN` in `gap_analysis.md` resolves - to a complete
+  PU entry in `## Entries` while it waits, or to its `## Migrated` line once it
+  has been promoted.
 - **Role context** - the five axis values from that role-intake's classification.
   These are CONTEXT for the processing skill's tagging judgment, not the only
   tags the processed inventory entry will carry.
 - **Content** - the surfaced information itself, captured concisely. The
   processing skill rewrites this to the target doc's voice and conventions; it
   is not copied verbatim.
-- **Removal** - two commands take a capture out of the queue, and both delete
-  it. `profile_update.py close` is the promoted path: it verifies the targets
-  the content landed in, then removes the capture. `profile_update.py drop` is
-  the retraction path, for a capture the user decides should not go into the
-  profile after all; it is their call, never the skill's. Closing with
-  `--targets "no change"` is a third finish: the profile already carried the
-  content accurately, so nothing was written and the capture still leaves.
+- **Removal** - two commands take a PU entry out of `## Entries`, and both record
+  it under `## Migrated`. `profile_update.py close` is the promoted path: it
+  verifies the targets the content landed in, then moves the PU entry, recording
+  those targets. `profile_update.py drop` is the retraction path, for a PU entry
+  the user decides should not go into the profile after all; it is their call,
+  never the skill's, and it records `dropped`. Closing with
+  `--targets duplicate` is a third finish: the profile already carried the
+  content accurately, so nothing was written and the PU entry still leaves.

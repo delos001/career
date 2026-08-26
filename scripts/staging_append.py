@@ -2,8 +2,8 @@
 """
 staging_append.py - append a Profile Updates Pending entry
 
-Called by the gap-analysis skill (Phase 6, Step 6a) once per capture, and by the
-prep skills for facts surfaced during interview preparation. Appends a single
+Called by the gap-analysis skill (Phase 6, Step 6a) once per PU entry, and by
+the prep skills for facts surfaced during interview preparation. Appends a single
 PU-NNN entry to the cross-application staging file at
 personal/profile/profile_updates_pending.md. Creates the file from the
 templates/profile_updates_pending.md skeleton if it does not yet exist.
@@ -14,12 +14,19 @@ for the downstream profile-update skill, NOT copy-paste content for inventory /
 narratives / positioning per the respect-profile-doc-conventions feedback
 memory).
 
-The file is a queue. A capture sits in it only while it waits to be promoted;
-the profile-update skill removes it once its content is in the profile. There is
-no status field, because presence in the file IS the waiting state.
+The file's '## Entries' section is a queue. A PU entry sits in it only while it
+waits to be promoted; the profile-update skill takes it out once its content is
+in the profile and records one line under '## Migrated' naming what became of
+it. There is no status field, because presence in '## Entries' IS the waiting
+state.
+
+That migrated record is what makes the PU-NNN counter safe. The next ID is the
+highest number across BOTH sections: taking it from the queue alone would let
+the counter walk backwards as PU entries are promoted and reissue a number a
+closed application's gap_analysis.md already cites in a 'Closure ref:' line.
 
 Context comes from the application folder, not from the caller. Given --folder,
-the script reads the capture date (today), the application ID, the company, the
+the script reads the date (today), the application ID, the company, the
 role, and the five axis values out of that application's session log. Nine of
 the thirteen fields an entry carries are therefore derived rather than passed,
 which is what keeps the calling instruction in each skill to a single line.
@@ -34,10 +41,11 @@ one application, recorded in its gap_analysis.md, and the profile does not carry
 it: an entry that closed nothing is promoted exactly the same way, because it
 may close a gap on a future application.
 
-The script assigns the next PU-NNN by scanning existing entry IDs in the file,
-appends the new entry under '## Entries' (replacing the '_(none)_' placeholder
-when the file is empty), and prints the assigned PU-NNN on stdout so the
-caller can record the reference inline in gap_analysis.md.
+The script assigns the next PU-NNN by scanning every ID the file records, queued
+and migrated alike, appends the new entry under '## Entries' (replacing that
+section's '_(none)_' placeholder when the queue is empty), and prints the
+assigned PU-NNN on stdout so the caller can record the reference inline in
+gap_analysis.md.
 
 Author    : Jason Delosh
 Created   : 2026-05-27
@@ -58,6 +66,7 @@ import sys
 
 import _config
 import _util
+import profile_update as pu
 
 
 # ---------------------------------------------------------------------------
@@ -66,13 +75,22 @@ import _util
 # missing, then append. PU-NNN IDs are globally sequential within the file,
 # independent of APP-NNN. Scanning existing IDs is cheap because the file is
 # small (one entry per closure across all gap-analysis runs).
+#
+# profile_update.py owns the staging file's section layout, so its section
+# constants and bounds helper are reused here rather than re-derived. One
+# parser for one file format; profile_update_qc.py reaches into it the same way.
 # ---------------------------------------------------------------------------
 
 # Regex: capture the fenced skeleton block from the template.
 _FENCE_RE = re.compile(r'```\n(.*?)\n```', re.DOTALL)
 
-# Regex: a PU-NNN entry's heading. Captures the integer.
+# Regex: a PU-NNN entry's heading in the queue. Captures the integer.
 _PU_HEADING_RE = re.compile(r'^### PU-(\d+)\b', re.MULTILINE)
+
+# Regex: a PU-NNN line in the migrated record. Captures the integer. Anchored to
+# the line start so a PU-NNN mentioned inside a PU entry's Content field, which
+# sits on a '- **Content:**' bullet, is never mistaken for an issued ID.
+_PU_MIGRATED_RE = re.compile(r'^PU-(\d+):', re.MULTILINE)
 
 # How many digits to render: PU-001, PU-042, etc. Matches the APP-NNN style.
 _PU_DIGITS = 3
@@ -88,11 +106,18 @@ def _skeleton(templates_dir, template_name):
 
 
 def _next_pu_id(staging_text):
-    """Return the next PU-NNN ID by scanning existing entry headings.
+    """Return the next PU-NNN ID by scanning every ID the file records.
 
-    Returns 'PU-001' on an empty / no-entries file; otherwise max+1 zero-padded.
+    Both sections count. A queued PU entry's heading and a migrated PU entry's
+    line are equally proof that the number was issued, and a number is issued
+    once: a promoted PU entry's number stays cited by its originating
+    application's gap_analysis.md forever, so reusing it would silently
+    re-point that reference at unrelated content.
+
+    Returns 'PU-001' when the file records none; otherwise max+1 zero-padded.
     """
     existing = [int(m.group(1)) for m in _PU_HEADING_RE.finditer(staging_text)]
+    existing += [int(m.group(1)) for m in _PU_MIGRATED_RE.finditer(staging_text)]
     next_n = (max(existing) + 1) if existing else 1
     return f'PU-{next_n:0{_PU_DIGITS}d}'
 
@@ -190,10 +215,14 @@ def _render_entry(pu_id, args, content):
 # ---------------------------------------------------------------------------
 # Append logic
 # When the file is missing, initialise from the template skeleton (so it
-# carries the standard header / Entries section / '_(none)_' placeholder).
-# Then locate '## Entries' and insert the new entry after it: replace
-# '_(none)_' on the first append, or append after existing entries on
-# subsequent appends.
+# carries the standard header, both sections, and a '_(none)_' placeholder in
+# each). Then insert the new entry inside '## Entries': replace that section's
+# placeholder on the first append, or follow the last queued PU entry on
+# subsequent ones.
+#
+# Every step is bounded to the section. The file now carries two placeholders
+# and ends with the migrated record, so a whole-file marker search would append
+# into the wrong section and a whole-file append would land past both.
 # ---------------------------------------------------------------------------
 
 def _ensure_file(staging_path, templates_dir, template_name):
@@ -206,23 +235,26 @@ def _ensure_file(staging_path, templates_dir, template_name):
 
 
 def _append_entry(staging_text, entry_block):
-    """Insert entry_block under '## Entries', replacing '_(none)_' if present.
+    """Insert entry_block at the end of '## Entries'.
 
     Raises if '## Entries' is missing - the file is malformed and the caller
     should not silently rebuild it (could clobber unprocessed entries).
     """
-    if not re.search(r'(?m)^##\s+Entries\s*$', staging_text):
+    bounds = pu._section_bounds(staging_text, pu.ENTRIES_HEADING)
+    if bounds is None:
         raise ValueError("staging file missing '## Entries' section")
-    # '_(none)_' placeholder appears on initial file; replace it on first append.
-    if re.search(r'(?m)^_\(none\)_\s*$', staging_text):
-        return re.sub(
-            r'(?m)^_\(none\)_\s*$',
-            entry_block.rstrip(),
-            staging_text,
-            count=1,
-        )
-    # Otherwise append the new entry at end of file, separated by a blank line.
-    return staging_text.rstrip() + '\n\n' + entry_block.rstrip() + '\n'
+    start, end = bounds
+    lines = staging_text.split('\n')
+    block = entry_block.rstrip().split('\n')
+    content = [i for i in range(start + 1, end) if lines[i].strip()]
+
+    # An empty queue holds only its placeholder; the first entry replaces it.
+    if len(content) == 1 and lines[content[0]].strip() == pu._EMPTY_MARKER:
+        return '\n'.join(lines[:content[0]] + block + lines[content[0] + 1:])
+
+    # Otherwise follow the last queued PU entry, separated by a blank line.
+    at = (content[-1] if content else start) + 1
+    return '\n'.join(lines[:at] + [''] + block + lines[at:])
 
 
 # ---------------------------------------------------------------------------
@@ -236,7 +268,7 @@ def main():
         description='append a Profile Updates Pending entry'
     )
     parser.add_argument('--folder',
-                        help='application folder; the capture date, application '
+                        help='application folder; the date, application '
                              'ID, company, role, and five axis values are read '
                              'from its session log')
     parser.add_argument('--captured', help='YYYY-MM-DD (default: today)')

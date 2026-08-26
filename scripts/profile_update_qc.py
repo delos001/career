@@ -26,9 +26,10 @@ Checks:
   P6  Axis values exist in their registry
   P7  Table of contents matches the document headings
   P8  Empty-section markers agree with actual content
-  P9  Captures finished this run are gone from the queue
-  P10 Captures still in the queue carry a Requirement anchor
+  P9  PU entries finished this run left the queue and are recorded as migrated
+  P10 PU entries still in the queue carry a Requirement anchor
   P11 List sections hold content and repeat no item within a category
+  P12 The migrated record is well-formed and its outcomes resolve
 
 Author    : Jason Delosh
 Created   : 2026-08-24
@@ -320,30 +321,33 @@ def check_empty_markers(findings, inventory_text, schemas, spans):
 
 # ---------------------------------------------------------------------------
 # P9 / P10 - Staging bookkeeping
-# The staging file is a queue of captures waiting to be promoted, not a record
-# of ones that already were. A capture left in it after its content reached the
+# '## Entries' is a queue of PU entries waiting to be promoted, not a record of
+# ones that already were. A PU entry left in it after its content reached the
 # profile will be offered again on the next run and re-litigated from scratch.
 # ---------------------------------------------------------------------------
 
-def check_processed(findings, staging_entries, processed_pu):
-    """P9: captures finished this run are gone from the queue.
+def check_processed(findings, staging_entries, migrated, processed_pu):
+    """P9: PU entries finished this run left the queue and were recorded.
 
-    The queue holds what is waiting, so a capture whose content reached the
-    profile has no business still being in it. Its targets were verified by
-    'close' before the removal, which is the only moment both the capture and
-    its targets exist together; after the removal there is nothing left to
-    re-check them against, and that is the intended end state, not a gap.
+    Both halves matter and neither substitutes for the other. A PU entry still
+    in the queue will be worked twice. A PU entry that left without a migrated
+    line takes its number out of circulation records entirely, which is what
+    lets the counter reissue it and what breaks the closure pointer in the
+    gap_analysis.md that staged it.
     """
     findings.mark('P9')
     still_here = {entry['id'] for entry in staging_entries}
     for pu_id in processed_pu:
         if pu_id in still_here:
             findings.add('P9', f'{pu_id} was reported as finished this run but '
-                               f'is still sitting in the staging file')
+                               f'is still sitting in the staging queue', pu_id)
+        elif pu_id not in migrated:
+            findings.add('P9', f'{pu_id} was reported as finished this run but '
+                               f'is recorded nowhere under "## Migrated"', pu_id)
 
 
 def check_staging_integrity(findings, staging_entries):
-    """P10: every capture in the queue is anchored to where it surfaced."""
+    """P10: every PU entry in the queue is anchored to where it surfaced."""
     findings.mark('P10')
     for entry in staging_entries:
         if not pu._bullet_value(entry['body'], 'Requirement'):
@@ -389,6 +393,57 @@ def check_list_sections(findings, inventory_text, template_text, schemas):
 
 
 # ---------------------------------------------------------------------------
+# P12 - The migrated record
+# Everything that makes a PU-NNN reusable or a closure pointer resolvable lives
+# in this one section, and nothing else in the repo can rebuild it: once a
+# PU entry's body is gone, its line is the only surviving proof the number was
+# issued. So the section is checked for the three ways it can quietly stop
+# doing its job - a line that does not parse, a number recorded twice or
+# recorded while still queued, and an outcome naming a target that does not
+# exist.
+# ---------------------------------------------------------------------------
+
+def check_migrated(findings, staging_text, inventory_text, narratives_text,
+                   template_text, schemas):
+    """P12: the migrated record is well-formed and its outcomes resolve."""
+    findings.mark('P12')
+    bounds = pu._section_bounds(staging_text, pu.MIGRATED_HEADING)
+    if bounds is None:
+        findings.add('P12', 'the staging file has no "## Migrated" section; '
+                            'every PU entry that leaves the queue is recorded '
+                            'there, and the PU-NNN counter reads it')
+        return
+    start, end = bounds
+    lines = staging_text.split('\n')
+    queued = {entry['id'] for entry in pu.parse_staging(staging_text)}
+    seen = set()
+    for i in range(start + 1, end):
+        line = lines[i].strip()
+        if not line or line == pu._EMPTY_MARKER:
+            continue
+        m = pu._MIGRATED_LINE_RE.match(line)
+        if not m:
+            findings.add('P12', f'"{line}" under "## Migrated" is not a '
+                                f'"PU-NNN: <outcome>" line')
+            continue
+        pu_id, outcome = m.group(1), m.group(2)
+        if pu_id in seen:
+            findings.add('P12', f'{pu_id} is recorded twice under "## Migrated"',
+                         pu_id)
+        seen.add(pu_id)
+        if pu_id in queued:
+            findings.add('P12', f'{pu_id} is recorded under "## Migrated" but is '
+                                f'still waiting in the queue', pu_id)
+        if outcome in (pu.DROPPED_OUTCOME, pu.DUPLICATE_TARGET):
+            continue
+        targets = [t.strip() for t in outcome.split(pu.TARGET_SEP) if t.strip()]
+        for problem in pu.verify_targets(targets, inventory_text,
+                                         narratives_text, template_text,
+                                         schemas):
+            findings.add('P12', f'{pu_id} records {problem}', pu_id)
+
+
+# ---------------------------------------------------------------------------
 # Subcommand: check
 # Loads the documents once, runs every check, prints the verdict, and exits
 # non-zero on any finding so the calling skill halts per global-rules.md.
@@ -415,9 +470,19 @@ def cmd_check(args, repo_root, cfg):
 
     staging_path = pu._staging_path(repo_root, cfg)
     if os.path.exists(staging_path):
-        staging_entries = pu.parse_staging(_util.read(staging_path))
-        check_processed(findings, staging_entries, args.processed_pu)
-        check_staging_integrity(findings, staging_entries)
+        staging_text = _util.read(staging_path)
+        check_processed(findings, pu.parse_staging(staging_text),
+                        pu.parse_migrated(staging_text), args.processed_pu)
+        check_staging_integrity(findings, pu.parse_staging(staging_text))
+        check_migrated(findings, staging_text, inventory_text,
+                       _util.read(pu._narratives_path(repo_root, cfg)),
+                       template_text, schemas)
+    elif args.processed_pu:
+        # Nothing to verify a reported closure against. Silence here would read
+        # as a pass on the one bookkeeping claim the run actually made.
+        findings.mark('P9')
+        findings.add('P9', 'PU entries were reported as finished this run but '
+                           'there is no staging file to check them against')
 
     sys.exit(findings.report())
 

@@ -5,27 +5,34 @@ profile_update.py - deterministic mutations for inventory.md and the staging fil
 Called by the profile-update skill. Owns every mechanical operation involved in
 promoting a staged PU-NNN entry into the profile: reading what is pending,
 assigning the next entry ID, placing a new entry at its correct position in
-inventory.md, rebuilding the table of contents, and clearing the capture out of
-the queue once its content is in the profile.
+inventory.md, rebuilding the table of contents, and clearing the PU
+entry out of the queue once its content is in the profile.
 
-The staging file is a queue, not an archive. A capture sits in it only while it
-is waiting to be promoted; once its content is in the inventory the capture is
-removed, because the inventory is where the information persists. Nothing about
-a capture is retained after promotion.
+The staging file's '## Entries' section is a queue. A PU entry sits in it only
+while it is waiting to be promoted; once its content is in the inventory the
+PU entry's body is removed, because the inventory is where the information
+persists.
+
+What is retained is one line under '## Migrated' recording that PU entry's
+number and what became of it. Two things outlive a PU entry and need that
+line: the PU-NNN counter, which would otherwise walk backwards as entries are
+promoted and reissue a number a closed application already cites, and the
+'Closure ref: PU-NNN' pointers written permanently into past gap_analysis.md
+artifacts.
 
 The skill owns the judgment (what the content should say, which entry it belongs
 in, whether an existing entry should be enriched instead). This script owns
 everything that must not be done by hand: ID assignment, placement order, ToC
 integrity, and status bookkeeping.
 
-Eight subcommands:
+Eight subcommands. The three that change a profile document each take --pu and
+leave a '- **Written:**' bullet on that PU entry naming what they changed, and
+'close' builds its migrated line out of those bullets:
 
-  pending   List the captures in the queue. Compact output (ID, capture date,
-            label, source application) so the skill can plan a run without
-            reading the whole staging file into context.
-  show      Print one staging entry's full block, for the entry being worked.
-  next-id   Print the next unused ID for a prefix, derived by scanning
-            inventory.md. Informational; 'insert' assigns IDs itself.
+  pending   List the PU entries in the queue. Compact output (ID, date, label,
+            source application) so the skill can plan a run without reading the
+            whole staging file into context.
+  show      Print one PU entry's full block, for the entry being worked.
   insert    Place a new entry block into inventory.md. The block file carries
             the entry WITHOUT its 'ID:' line; the script assigns the ID at write
             time so two inserts in one run cannot collide, then prints it.
@@ -37,11 +44,16 @@ Eight subcommands:
             rather than ID-bearing entries. The third write path: 'insert'
             assigns an ID and 'set' resolves one, so neither can reach a
             section that has none.
-  close     Verify where a capture's content landed, then remove the capture
-            from the queue. A target is an entry ID or a list address; both are
-            checked before anything is deleted.
-  drop      Remove a capture that will not be promoted after all. The
-            retraction path, and the user's decision alone.
+  record    Leave a Written bullet for an edit this script did not make: an
+            enrichment of narratives.md or positioning.md, which have no
+            structure-authority template and so are edited by hand.
+  close     Re-verify the targets a PU entry records having been written to,
+            then move it out of the queue and record it under '## Migrated'
+            against those targets. --duplicate finishes an entry that needed no
+            write because the profile already carried the substance.
+  drop      Move a PU entry that will not be promoted after all out of the
+            queue, recording it as 'dropped'. The retraction path, and the
+            user's decision alone.
 
 Nothing about the document's shape is hardcoded. The section roster, the
 prefix-to-section mapping, and the per-prefix field rosters are all parsed from
@@ -53,15 +65,16 @@ Created   : 2026-08-24
 Project   : career
 Usage     : python scripts/profile_update.py pending
             python scripts/profile_update.py show --pu PU-004
-            python scripts/profile_update.py next-id --prefix EX
-            python scripts/profile_update.py insert --prefix EX --block-file <path>
-            python scripts/profile_update.py set --id EX-060 --field Impact \\
-                --value-file <path>
-            python scripts/profile_update.py list-add \\
+            python scripts/profile_update.py insert --prefix EX --pu PU-004 \\
+                --block-file <path>
+            python scripts/profile_update.py set --id EX-060 --pu PU-004 \\
+                --field Impact --value-file <path>
+            python scripts/profile_update.py list-add --pu PU-004 \\
                 --target "Technical Experience / Office & Collaboration" \\
                 --item Miro
-            python scripts/profile_update.py close --pu PU-004 \\
-                --targets EX-210 --targets EX-211
+            python scripts/profile_update.py record --pu PU-004 --target ST-011
+            python scripts/profile_update.py close --pu PU-004
+            python scripts/profile_update.py close --pu PU-004 --duplicate
             python scripts/profile_update.py drop --pu PU-004
 Depends   : pyyaml (via _config)
 """
@@ -701,33 +714,54 @@ def cmd_list_add(args, repo_root, cfg):
     lines[found['line']] = render_list_line(
         found['label'], found['value'] + delimiter + item, found['bold'])
     _util.write(inventory_path, '\n'.join(lines))
+    _record_write(repo_root, cfg, args.pu, found['address'])
     print(found['address'])
 
 
 # ---------------------------------------------------------------------------
 # Staging file operations
-# The staging file is the run's work list. 'pending' and 'show' read it;
-# 'close' writes the status flip plus the audit line that records which profile
-# IDs now carry the staged content.
+# The file carries two sections. '## Entries' is the queue: 'pending' and 'show'
+# read it, and 'close' and 'drop' take PU entries out of it. '## Migrated' is
+# the permanent record of every PU entry that has left, one line each, and is
+# only ever appended to.
+#
+# The split is why both parsers work on section spans rather than on the whole
+# file. A whole-file scan for entry headings would let the last PU entry's body
+# run on into the migrated list, and a whole-file scan for the '_(none)_' marker
+# could not tell which of the two empty sections it belonged to.
 # ---------------------------------------------------------------------------
+
+# The two section headings, by the text _section_bounds locates them with.
+ENTRIES_HEADING = 'Entries'
+MIGRATED_HEADING = 'Migrated'
 
 # Regex: a staging entry heading, e.g. '### PU-004 - Oncology trial leadership'.
 _PU_HEADING_RE = re.compile(r'^### (PU-\d+)\s+-\s+(.*?)\s*$', re.MULTILINE)
 
+# Regex: a migrated line, e.g. 'PU-005: EX-229; EX-230' or 'PU-008: dropped'.
+_MIGRATED_LINE_RE = re.compile(r'^(PU-\d+):\s*(.+?)\s*$')
+
 
 def parse_staging(staging_text):
-    """Return every capture in the queue with its bounds and header fields.
+    """Return every PU entry in the queue with its bounds and header fields.
 
-    There is no status field to read: a capture is in the file because it is
-    waiting, and it leaves the file when it is done.
+    Bounded to '## Entries'. There is no status field to read: a PU entry is in
+    that section because it is waiting, and it leaves when it is done.
+
+    Line indices are absolute against the whole file, so a caller that splices
+    the text does not have to re-apply the section offset.
     """
+    bounds = _section_bounds(staging_text, ENTRIES_HEADING)
+    if bounds is None:
+        raise ValueError("staging file has no '## Entries' section")
+    section_start, section_end = bounds
     lines = staging_text.split('\n')
     heads = [(i, m.group(1), m.group(2))
-             for i, line in enumerate(lines)
-             for m in [_PU_HEADING_RE.match(line)] if m]
+             for i in range(section_start, section_end)
+             for m in [_PU_HEADING_RE.match(lines[i])] if m]
     entries = []
     for idx, (start, pu_id, label) in enumerate(heads):
-        end = heads[idx + 1][0] if idx + 1 < len(heads) else len(lines)
+        end = heads[idx + 1][0] if idx + 1 < len(heads) else section_end
         body = '\n'.join(lines[start:end])
         entries.append({
             'id': pu_id,
@@ -741,6 +775,24 @@ def parse_staging(staging_text):
     return entries
 
 
+def parse_migrated(staging_text):
+    """Return {PU-NNN: outcome} for every PU entry that has left the queue.
+
+    The outcome is the targets its content landed in, 'dropped', or
+    'duplicate'. Returns an empty mapping when the file predates the section,
+    so a caller can tell "nothing has migrated" from "this file cannot record
+    a migration" - which is what _record_migrated raises on.
+    """
+    bounds = _section_bounds(staging_text, MIGRATED_HEADING)
+    if bounds is None:
+        return {}
+    start, end = bounds
+    lines = staging_text.split('\n')
+    return {m.group(1): m.group(2)
+            for i in range(start + 1, end)
+            for m in [_MIGRATED_LINE_RE.match(lines[i])] if m}
+
+
 def _bullet_value(body, label):
     """Return the value of a '- **<label>:** value' bullet, or None."""
     m = re.search(rf'^-\s+\*\*{re.escape(label)}:\*\*\s*(.*?)\s*$',
@@ -749,15 +801,65 @@ def _bullet_value(body, label):
 
 
 # ---------------------------------------------------------------------------
+# Written bullets - the record of what a run actually changed
+# Every command that edits a profile document appends a '- **Written:**' bullet
+# to the PU entry it was working, naming the entry ID or list address it just
+# changed. 'close' then builds the migrated line out of those bullets instead of
+# out of a target list typed at the end.
+#
+# The difference matters because only a newly inserted entry proves its own
+# write: an enriched entry and a list category both existed before the run, so
+# checking that they exist says nothing about whether anything reached them. A
+# bullet is written by the command that did the work, so it cannot claim a write
+# that did not happen.
+#
+# The bullets live on the PU entry and are deleted with it, so nothing is
+# retained past the migrated line.
+# ---------------------------------------------------------------------------
+
+_WRITTEN_LABEL = 'Written'
+
+
+def written_targets(entry_body):
+    """Return every target a PU entry records having been written to."""
+    return re.findall(
+        rf'(?m)^-\s+\*\*{_WRITTEN_LABEL}:\*\*\s*(.+?)\s*$', entry_body)
+
+
+def _record_write(repo_root, cfg, pu_id, target):
+    """Append a '- **Written:** <target>' bullet to one PU entry.
+
+    Called after the profile document has already been changed, so a failure
+    here means the change landed but went unrecorded; the error says so rather
+    than leaving the caller to guess. Repeating a target (two fields set on one
+    entry) records it once.
+    """
+    staging_path = _staging_path(repo_root, cfg)
+    text = _util.read(staging_path)
+    entry = next((e for e in parse_staging(text) if e['id'] == pu_id), None)
+    if entry is None:
+        raise ValueError(
+            f'the profile document was changed, but {pu_id} is not in the '
+            f'staging queue so the change could not be recorded against it')
+    if target in written_targets(entry['body']):
+        return
+    lines = text.split('\n')
+    at = max(i for i in range(entry['start'], entry['end'])
+             if lines[i].strip().startswith('- **')) + 1
+    _util.write(staging_path, '\n'.join(
+        lines[:at] + [f'- **{_WRITTEN_LABEL}:** {target}'] + lines[at:]))
+
+
+# ---------------------------------------------------------------------------
 # Subcommand: pending
-# One line per capture. Everything in the file is waiting, so there is nothing
+# One line per PU entry. Everything in the file is waiting, so there is nothing
 # to filter. Deliberately compact: the skill plans a run from this list and
-# pulls full content per capture with 'show', so the staging file never enters
+# pulls full content per PU entry with 'show', so the staging file never enters
 # context wholesale.
 # ---------------------------------------------------------------------------
 
 def cmd_pending(args, repo_root, cfg):
-    """Print the captures waiting in the queue."""
+    """Print the PU entries waiting in the queue."""
     staging_path = _staging_path(repo_root, cfg)
     if not os.path.exists(staging_path):
         print('no staging file; nothing pending')
@@ -786,19 +888,6 @@ def cmd_show(args, repo_root, cfg):
             sys.stdout.write(e['body'] + '\n')
             return
     raise ValueError(f'staging entry not found: {args.pu}')
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: next-id
-# Informational only. 'insert' assigns IDs itself so that two inserts in one
-# run cannot both claim the same number, which is the failure mode the
-# application-ID counter hit.
-# ---------------------------------------------------------------------------
-
-def cmd_next_id(args, repo_root, cfg):
-    """Print the next unused ID for a prefix."""
-    text = _util.read(_inventory_path(repo_root, cfg))
-    print(next_id(text, args.prefix))
 
 
 # ---------------------------------------------------------------------------
@@ -841,6 +930,7 @@ def cmd_insert(args, repo_root, cfg):
 
     text = rebuild_toc(text)
     _util.write(inventory_path, text)
+    _record_write(repo_root, cfg, args.pu, assigned)
     print(assigned)
 
 
@@ -923,6 +1013,7 @@ def cmd_set(args, repo_root, cfg):
     _util.write(inventory_path,
                 '\n'.join(lines[:entry['start']] + new_body
                           + lines[entry['end']:]))
+    _record_write(repo_root, cfg, args.pu, args.id)
     print(f'{args.id} {args.field} updated')
 
 
@@ -956,12 +1047,16 @@ def _set_field(body, field, rendered, roster):
 
 # ---------------------------------------------------------------------------
 # Subcommand: close
-# Takes a promoted capture out of the queue. The targets are verified first, so
-# a typo is caught while the capture is still there to correct against rather
-# than after it is gone; once they check out the capture is deleted, because the
-# inventory now carries the information and the queue holds only what is
-# waiting. 'no change' is a valid target list: deciding a capture needs no
-# profile edit finishes it just as much as writing an entry does.
+# Takes a promoted PU entry out of the queue, recording where its content went.
+# The targets are not passed in: they are the '- **Written:**' bullets the edit
+# commands left on the entry, so the migrated line reports what was actually
+# changed rather than what the caller believed was changed. They are still
+# re-verified before anything moves, catching a bullet whose target has since
+# been renamed or removed by hand.
+#
+# --duplicate is the finish for a PU entry that needed no write because the
+# profile already carried the substance, and it is refused on an entry that
+# records writes, since those two claims cannot both be true.
 # ---------------------------------------------------------------------------
 
 # Separator between targets when several are reported together. A semicolon
@@ -969,27 +1064,46 @@ def _set_field(body, field, rendered, roster):
 # ('Programming, Data & Analytics').
 TARGET_SEP = '; '
 
+# The target list that finishes a PU entry without writing anything, and the
+# outcome a retraction records. Both are whole target lists, never one target
+# among several, so they read unambiguously on their migrated line.
+DUPLICATE_TARGET = 'duplicate'
+DROPPED_OUTCOME = 'dropped'
+
 # Regex: an entry-ID-shaped target, as opposed to a list address.
 _ID_RE = re.compile(r'^[A-Z]+-\d+$')
 
+# Regex: an anchored 'ID:' line, used to read narratives.md's own ID roster.
+# That document has no structure-authority template, but it does not need one
+# to answer the only question asked of it here: does this ID exist.
+_ID_LINE_RE = re.compile(r'^ID:\s+([A-Z]+-\d+)\s*$', re.MULTILINE)
 
-def verify_targets(targets, inventory_text, template_text, schemas):
+
+def verify_targets(targets, inventory_text, narratives_text, template_text,
+                   schemas):
     """Return one plain-English problem per target that does not resolve.
 
-    A target is either an entry ID or a list address. An ID whose prefix the
-    inventory template does not define is a narrative or positioning ID living
-    in a file this script cannot see, so it passes unverified rather than
-    failing a legitimate cross-document promotion. Those documents have no
-    structure-authority template yet; once they do, that branch becomes a real
-    check (issue: narratives/positioning template).
+    A target is either an entry ID or a list address. An ID must exist in
+    inventory.md or narratives.md; neither needs a structure-authority template
+    for this, because both carry real 'ID:' lines and that is all this check
+    reads. An ID in neither is rejected rather than waved through, so a made-up
+    ID cannot reach a migrated line that then validates forever.
+
+    positioning.md is deliberately absent. It is not a write target for this
+    skill at all (positioning-content-is-hand-driven-2026-08-26), and it carries
+    no 'ID:' lines to resolve against even if it were.
     """
-    known = {entry['id'] for entry in parse_entries(inventory_text)}
+    known = ({entry['id'] for entry in parse_entries(inventory_text)}
+             | set(_ID_LINE_RE.findall(narratives_text)))
     sections = list_sections(template_text, schemas)
     problems = []
     for target in targets:
         if _ID_RE.match(target):
-            if target.split('-')[0] in schemas and target not in known:
-                problems.append(f'{target} does not exist in the inventory')
+            if target not in known:
+                problems.append(
+                    f'{target} exists in neither inventory.md nor '
+                    f'narratives.md; positioning.md is not a write target for '
+                    f'this skill')
             continue
         try:
             resolve_list_target(inventory_text, target, sections)
@@ -999,7 +1113,7 @@ def verify_targets(targets, inventory_text, template_text, schemas):
 
 
 def cmd_close(args, repo_root, cfg):
-    """Verify where a capture's content landed, then take it off the queue."""
+    """Verify where a PU entry's content landed, then migrate it off."""
     staging_path = _staging_path(repo_root, cfg)
     staging_text = _util.read(staging_path)
     entries = parse_staging(staging_text)
@@ -1007,44 +1121,83 @@ def cmd_close(args, repo_root, cfg):
     if match is None:
         raise ValueError(f'staging entry not found: {args.pu}')
 
-    targets = [t.strip() for t in args.targets if t.strip()]
-    if not targets:
-        raise ValueError("--targets is empty; pass a target or 'no change'")
-    if targets != ['no change']:
-        if 'no change' in targets:
+    targets = written_targets(match['body'])
+    if args.duplicate:
+        if targets:
             raise ValueError(
-                "'no change' is the whole target list or none of it; it cannot "
-                'sit alongside a real target')
-        template_text = _util.read(_template_path(repo_root, cfg))
-        problems = verify_targets(
-            targets, _util.read(_inventory_path(repo_root, cfg)),
-            template_text, parse_template(template_text))
+                f'{args.pu} records writes to {TARGET_SEP.join(targets)}, so it '
+                f'is not a duplicate; close it without --duplicate')
+        outcome = DUPLICATE_TARGET
+    else:
+        if not targets:
+            raise ValueError(
+                f'{args.pu} records no writes, so there is nothing to close it '
+                f'against. Run insert, set, or list-add with --pu {args.pu}; '
+                f'use "record" for an edit made by hand in narratives.md or '
+                f'positioning.md; pass --duplicate when the profile already '
+                f'carried the substance; or use "drop" to retract it.')
+        problems = _verify(repo_root, cfg, targets)
         if problems:
             raise ValueError('unresolvable target(s): ' + '; '.join(problems))
-
+        outcome = TARGET_SEP.join(targets)
     _util.write(staging_path,
-                _remove_entry(staging_text, match, len(entries)))
-    print(f'{args.pu} cleared from staging; its content is in '
-          f'{TARGET_SEP.join(targets)}')
+                _migrate_entry(staging_text, match, len(entries), outcome))
+    print(f'{args.pu} migrated; recorded as "{args.pu}: {outcome}"')
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: record
+# The one write path this script does not own is an enrichment of narratives.md
+# or positioning.md, which have no structure-authority template to validate
+# against and so are edited by hand. 'record' is how such an edit still leaves a
+# Written bullet, keeping 'close' on a single rule - the migrated line comes
+# from recorded writes, always - instead of needing an exception that would
+# quietly re-open the hole this whole mechanism exists to close.
+# ---------------------------------------------------------------------------
+
+def cmd_record(args, repo_root, cfg):
+    """Record a write this script did not make itself."""
+    target = args.target.strip()
+    if not target:
+        raise ValueError('--target is empty; record names where the edit went')
+    # Verified here rather than only at close, so a bad target is caught while
+    # the edit is fresh instead of at the end of the entry's walk.
+    problems = _verify(repo_root, cfg, [target])
+    if problems:
+        raise ValueError('; '.join(problems))
+    _record_write(repo_root, cfg, args.pu, target)
+    print(f'{args.pu} now records a write to {target}')
+
+
+def _verify(repo_root, cfg, targets):
+    """Return verify_targets' problems, loading the documents it reads."""
+    template_text = _util.read(_template_path(repo_root, cfg))
+    return verify_targets(
+        targets,
+        _util.read(_inventory_path(repo_root, cfg)),
+        _util.read(_narratives_path(repo_root, cfg)),
+        template_text, parse_template(template_text))
 
 
 # ---------------------------------------------------------------------------
 # Subcommand: drop
-# The retraction path, and the only way a capture leaves the queue without its
-# content reaching the profile. Both drop and close delete the capture; what
-# separates them is the precondition, not the outcome. Close proves the content
-# arrived somewhere first; drop is the user deciding it should not.
+# The retraction path, and the only way a PU entry leaves the queue without its
+# content reaching the profile. Both drop and close take the PU entry's
+# body out and record its number under '## Migrated'; what separates them is the
+# precondition and the outcome recorded. Close proves the content arrived
+# somewhere first and records where; drop is the user deciding it should not,
+# and records 'dropped'.
 # ---------------------------------------------------------------------------
 
-# The marker a staging file carries in place of entries when it holds none.
-# staging_append.py replaces it on the first append, so a removal puts it back
-# when it takes the last capture: without it the next capture would append into
-# a file whose shape that replace no longer matches.
+# The marker a staging file carries in place of content when a section holds
+# none. staging_append.py replaces it on the first append, so a removal puts it
+# back when it takes the last PU entry: without it the next one would append
+# into a file whose shape that replace no longer matches.
 _EMPTY_MARKER = '_(none)_'
 
 
 def cmd_drop(args, repo_root, cfg):
-    """Remove a capture that will not be promoted, echoing what it held."""
+    """Retract a PU entry that will not be promoted, echoing what it held."""
     staging_path = _staging_path(repo_root, cfg)
     staging_text = _util.read(staging_path)
     entries = parse_staging(staging_text)
@@ -1053,32 +1206,89 @@ def cmd_drop(args, repo_root, cfg):
         raise ValueError(f'staging entry not found: {args.pu}')
 
     _util.write(staging_path,
-                _remove_entry(staging_text, match, len(entries)))
+                _migrate_entry(staging_text, match, len(entries),
+                               DROPPED_OUTCOME))
 
-    # Echo the withdrawn block. The delete is deliberate, but the content took a
-    # conversation to produce and nothing else holds it, so it is printed rather
-    # than vanishing silently.
+    # Echo the withdrawn block. The retraction is deliberate, but the content
+    # took a conversation to produce and the migrated line records only that it
+    # was dropped, so the body is printed rather than vanishing silently.
     print(f'{args.pu} dropped; it held:\n')
     sys.stdout.write(match['body'] + '\n')
 
 
-def _remove_entry(staging_text, match, total):
-    """Return the staging text with one capture's block taken out."""
+# ---------------------------------------------------------------------------
+# Migration
+# One operation, shared by close and drop: lift the PU entry's body out of the
+# queue and write its number under '## Migrated' against what became of it.
+# Doing both in one function is what keeps them inseparable - a PU entry can
+# never leave the queue without leaving its number behind, which is the whole
+# reason the section exists.
+# ---------------------------------------------------------------------------
+
+def _migrate_entry(staging_text, match, total, outcome):
+    """Return the staging text with one PU entry removed and recorded.
+
+    Removal runs first and recording second, so the recorded line's position is
+    computed against the text it actually lands in rather than against indices
+    taken before the splice. Both happen inside one returned string, so a caller
+    that writes the result cannot persist half of it: if recording raises,
+    nothing is written and the PU entry is still in the queue.
+    """
     lines = staging_text.split('\n')
     remaining = '\n'.join(lines[:match['start']] + lines[match['end']:])
     if total == 1:
         remaining = _restore_placeholder(remaining)
-    return remaining.rstrip() + '\n'
+    return _record_migrated(remaining, match['id'], outcome).rstrip() + '\n'
+
+
+def _record_migrated(staging_text, pu_id, outcome):
+    """Return the staging text with one 'PU-NNN: outcome' line recorded.
+
+    Written in PU order rather than in the order entries happen to be worked,
+    so the section stays scannable however a run picks its way through the
+    backlog. Recording runs before the removal and both share one write, so a
+    PU entry cannot lose its body without gaining its line.
+    """
+    bounds = _section_bounds(staging_text, MIGRATED_HEADING)
+    if bounds is None:
+        raise ValueError(
+            "staging file has no '## Migrated' section to record the PU entry "
+            'in; add it from templates/profile_updates_pending.md')
+    if pu_id in parse_migrated(staging_text):
+        raise ValueError(
+            f'{pu_id} is already recorded under "## Migrated"; a PU entry '
+            f'migrates once')
+
+    start, end = bounds
+    lines = staging_text.split('\n')
+    new_line = f'{pu_id}: {outcome}'
+    number = int(pu_id.split('-')[1])
+    content = [i for i in range(start + 1, end)
+               if lines[i].strip() and lines[i].strip() != _EMPTY_MARKER]
+    if not content:
+        # Section holds only its placeholder; the new line replaces it.
+        return '\n'.join(lines[:start + 1] + ['', new_line] + lines[end:])
+    for i in content:
+        m = _MIGRATED_LINE_RE.match(lines[i])
+        if m and int(m.group(1).split('-')[1]) > number:
+            return '\n'.join(lines[:i] + [new_line] + lines[i:])
+    at = content[-1] + 1
+    return '\n'.join(lines[:at] + [new_line] + lines[at:])
 
 
 def _restore_placeholder(staging_text):
-    """Return the staging text with the empty-file marker put back."""
-    m = re.search(r'(?m)^##\s+Entries\s*$', staging_text)
-    if not m:
+    """Return the staging text with the queue's empty marker put back.
+
+    Scoped to '## Entries' by splicing at that section's own bounds: a
+    whole-file marker search would not know which of the two sections an empty
+    marker belonged to.
+    """
+    bounds = _section_bounds(staging_text, ENTRIES_HEADING)
+    if bounds is None:
         raise ValueError("staging file has no '## Entries' section")
-    tail = staging_text[m.end():].lstrip('\n')
-    head = f'{staging_text[:m.end()].rstrip()}\n\n{_EMPTY_MARKER}\n'
-    return f'{head}\n{tail}' if tail else head
+    start, end = bounds
+    lines = staging_text.split('\n')
+    return '\n'.join(lines[:start + 1] + ['', _EMPTY_MARKER, ''] + lines[end:])
 
 
 # ---------------------------------------------------------------------------
@@ -1089,6 +1299,12 @@ def _inventory_path(repo_root, cfg):
     """Return the absolute path of the user's inventory document."""
     return os.path.join(repo_root, cfg['paths']['profile'],
                         cfg['filenames']['inventory_file'])
+
+
+def _narratives_path(repo_root, cfg):
+    """Return the absolute path of the user's narratives document."""
+    return os.path.join(repo_root, cfg['paths']['profile'],
+                        cfg['filenames']['narratives_file'])
 
 
 def _staging_path(repo_root, cfg):
@@ -1114,19 +1330,21 @@ def main():
         description='deterministic mutations for inventory.md and the staging file')
     sub = parser.add_subparsers(dest='command', required=True)
 
-    p_pending = sub.add_parser('pending', help='list the captures in the queue')
+    p_pending = sub.add_parser('pending',
+                               help='list the PU entries in the queue')
     p_pending.set_defaults(func=cmd_pending)
 
     p_show = sub.add_parser('show', help='print one staging entry in full')
     p_show.add_argument('--pu', required=True, help='PU-NNN')
     p_show.set_defaults(func=cmd_show)
 
-    p_next = sub.add_parser('next-id', help='print the next unused ID for a prefix')
-    p_next.add_argument('--prefix', required=True, help='EX, PR, RL, PB, PS, AW, ...')
-    p_next.set_defaults(func=cmd_next_id)
-
+    # --pu on every write command: the PU entry being worked is what the write
+    # gets recorded against, and close builds its migrated line from those
+    # records rather than from a target list typed afterwards.
     p_insert = sub.add_parser('insert', help='place a new entry into inventory.md')
     p_insert.add_argument('--prefix', required=True)
+    p_insert.add_argument('--pu', required=True,
+                          help='PU-NNN this write is being made for')
     p_insert.add_argument('--block-file', required=True,
                           help='entry block WITHOUT its ID: line')
     p_insert.add_argument('--subsection',
@@ -1136,6 +1354,8 @@ def main():
 
     p_set = sub.add_parser('set', help="replace one field's value on one entry")
     p_set.add_argument('--id', required=True, help='the entry to edit, e.g. EX-060')
+    p_set.add_argument('--pu', required=True,
+                       help='PU-NNN this write is being made for')
     p_set.add_argument('--field', required=True, help='field label, e.g. Impact')
     p_set.add_argument('--value-file', required=True,
                        help='file holding the new value; open it with a newline '
@@ -1148,20 +1368,30 @@ def main():
                         help='"<Section> / <Category>", or '
                              '"<Section> / <Category> / <Label>" when the '
                              'category holds more than one line')
+    p_list.add_argument('--pu', required=True,
+                        help='PU-NNN this write is being made for')
     p_list.add_argument('--item', required=True,
                         help='the item to append, exactly as it should read')
     p_list.set_defaults(func=cmd_list_add)
 
+    p_record = sub.add_parser(
+        'record', help='record an edit made by hand in narratives.md or '
+                       'positioning.md')
+    p_record.add_argument('--pu', required=True, help='PU-NNN')
+    p_record.add_argument('--target', required=True,
+                          help='the entry ID the hand edit went into')
+    p_record.set_defaults(func=cmd_record)
+
     p_close = sub.add_parser('close',
-                             help='clear a promoted capture off the queue')
+                             help='migrate a promoted PU entry off the queue')
     p_close.add_argument('--pu', required=True, help='PU-NNN')
-    p_close.add_argument('--targets', action='append', required=True,
-                         help="one target per flag, repeatable: an entry ID, a "
-                              "list address, or 'no change' on its own")
+    p_close.add_argument('--duplicate', action='store_true',
+                         help='finish a PU entry that needed no write because '
+                              'the profile already carried the substance')
     p_close.set_defaults(func=cmd_close)
 
     p_drop = sub.add_parser('drop',
-                            help='remove a capture that will not be promoted')
+                            help='retract a PU entry not being promoted')
     p_drop.add_argument('--pu', required=True, help='PU-NNN')
     p_drop.set_defaults(func=cmd_drop)
 

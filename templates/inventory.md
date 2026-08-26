@@ -120,13 +120,21 @@ Placeholders are `{...}`. `{NNN}` is a zero-padded three-digit counter.
 ## Awards & Honors
 
 {AW entries}
+
+## Languages
+
+### {Category}
+
+{flat item lines, or '**{Proficiency}:** language, language' lines}
 ```
 
 Section order is three clusters per `inventory-section-denumbering-and-reorder-2026-07`:
 work (Employment & Role History through Technical Experience), credentials
 (Education through Professional Certifications), professional standing
-(Professional Affiliations through Awards & Honors). Headings carry no numeric
-prefix; heading text is the sole section identifier.
+(Professional Affiliations through Awards & Honors). Languages closes the
+document after them, as a personal capability rather than a professional
+standing. Headings carry no numeric prefix; heading text is the sole section
+identifier.
 
 A section holding no entries carries a single `Entries: None` line rather than
 being omitted, so a downstream skill can distinguish observed absence from an

@@ -1,6 +1,6 @@
 ---
 name: qc-profile-update
-description: Judgment quality-check for the profile-update skill's writes into the profile documents. Verifies the one thing a script cannot - that each written entry is actually supported by the staged PU-NNN Content it came from, that every framing guard and evidence hedge in that capture survived into the entry, and that the writing matches the surrounding document's conventions. Mechanical checks (section roster, field rosters, ID integrity, entry placement, reference resolution, axis values, table of contents, empty-section markers, list-section content, staging bookkeeping) are owned by scripts/profile_update_qc.py and are not re-run here. Reads only the staged entries and the entries they landed in, so it stays context-bounded. Read-only.
+description: Judgment quality-check for the profile-update skill's writes into the profile documents. Verifies the one thing a script cannot - that each written entry is actually supported by the staged PU-NNN Content it came from, that every framing guard and evidence hedge in that PU entry survived into the entry, and that the writing matches the surrounding document's conventions. Mechanical checks (section roster, field rosters, ID integrity, entry placement, reference resolution, axis values, table of contents, empty-section markers, list-section content, staging bookkeeping) are owned by scripts/profile_update_qc.py and are not re-run here. Reads only the staged entries and the entries they landed in, so it stays context-bounded. Read-only.
 tools: Read, Grep
 ---
 
@@ -20,37 +20,39 @@ The dispatching skill gives you:
 - the `PU-NNN` staging IDs processed this run;
 - the profile targets each one landed in: entry IDs (`EX-NNN`, `PR-NNN`,
   `ST-NNN`, ...), list addresses (`Technical Experience / <Category> /
-  <Label>`), or `no change`;
+  <Label>`), or `duplicate` when the profile already carried the substance;
 - the paths to `personal/profile/profile_updates_pending.md` and the profile
   documents that were written to.
 
 Read only the staged entries named and the target entries named. Do not read the
-inventory, narratives, or positioning documents in full; they are large, and
-every cross-document check belongs to the script.
+inventory or narratives documents in full; they are large, and every
+cross-document check belongs to the script. `positioning.md` never appears as a
+target: this skill does not write it
+(`positioning-content-is-hand-driven-2026-08-26`).
 
 ## Checks
 
 1. **The entry is supported by its staged Content.** Every claim in the written
    entry traces to something the Content field actually says. A detail that
-   appears in the entry but not in the capture is a fabrication finding even
+   appears in the entry but not in the PU entry is a fabrication finding even
    when it is plausible and even when it would strengthen the entry.
    Route-back: phase 3, step 3d.
 
-2. **Framing guards survived.** Captures routinely carry explicit boundaries:
+2. **Framing guards survived.** PU entries routinely carry explicit boundaries:
    "frame as review and SME input, not authoring ownership", "state as direction
    he was driving, never as study-design ownership", "similar in shape, not the
    same", "do not derive a multiplier". Each such guard is an instruction. An
    entry that crosses one is a finding, and quote the guard it crossed.
    Route-back: phase 3, step 3d.
 
-3. **Evidence hedges survived.** Where the capture qualifies its own evidence
+3. **Evidence hedges survived.** Where the PU entry qualifies its own evidence
    ("candidate recollection, not instrumented measurement", "candidate is
    uncertain of exact module names", "second-hand and unconfirmed"), the written
    entry carries that qualification or omits the claim. Promoting a hedged fact
    to an unhedged one is a finding.
    Route-back: phase 3, step 3d.
 
-4. **Nothing was silently dropped.** Where the capture carries substance the
+4. **Nothing was silently dropped.** Where the PU entry carries substance the
    entry does not, that is either a deliberate scoping decision or a miss.
    Report it as a finding naming what was left behind, so the skill can confirm
    the decision rather than lose the content.
@@ -75,11 +77,11 @@ every cross-document check belongs to the script.
    quantified result, is a finding.
    Route-back: phase 3, step 3d.
 
-8. **A list item names a thing, and the capture names it.** Items added to a
+8. **A list item names a thing, and the PU entry names it.** Items added to a
    list section are named tools, products, platforms, or exposure facts, never
    capability descriptions or methods. The
-   item text traces to the capture: where the capture records that the user is
-   unsure of a product's exact name, the item carries the wording the capture
+   item text traces to the PU entry: where the PU entry records that the user is
+   unsure of a product's exact name, the item carries the wording the PU entry
    used and does not resolve that uncertainty into a specific product name.
    Route-back: phase 3, step 3d.
 

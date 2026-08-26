@@ -1674,4 +1674,133 @@ Refs: `config.yaml`, `scripts/assemble.py`, `scripts/session_log.py`, `templates
 
 ## Career Workflow Stage
 
-Empty. career_brief, cv_general, profile_update, positioning skill designed at their build time.
+career_brief, cv_general, positioning skill designed at their build time.
+
+#### staging-queue-with-migrated-record-2026-08-26
+
+`personal/profile/profile_updates_pending.md` carries two sections. `## Entries`
+is a queue of PU entries waiting to be promoted; `## Migrated` is a permanent,
+append-only record of every PU entry that has left it, one line each:
+
+```
+PU-005: EX-229; EX-230; EX-231; EX-049
+PU-008: dropped
+PU-009: duplicate
+```
+
+Left side is the `PU-NNN`. Right side is what became of it: the targets its
+content landed in (entry IDs or list addresses, several separated by `; `
+because a list address can contain a comma), `dropped` for a user retraction,
+or `duplicate` when the profile already carried the substance. Every departure
+is recorded, including the two that write nothing, so the invariant is that
+**every PU-NNN ever issued appears exactly once across the two sections**.
+
+Why the record is not optional. A PU entry's body is disposable once the
+inventory holds the content, but its *number* has two consumers that outlive
+it:
+
+- `staging_append.py` takes the next `PU-NNN` from the highest number in the
+  file. Reading the queue alone makes the counter non-monotonic: promoting the
+  highest-numbered entry lowers the max, and the next entry is issued a
+  number already in use. Inline-mode profile-update promotes exactly the
+  newest entries, so this fires on the very next gap-analysis run.
+- A `Closure ref: PU-NNN` written into a `gap_analysis.md` is permanent. With
+  no record of the promoted entry, `gap_qc.py` could not tell a promoted
+  reference from a fabricated one, and G7 and G8 had to stop checking `PU-NNN`
+  at all.
+
+Both are restored by the record: the counter spans both sections, and G7/G8
+resolve a reference against either. `profile_update_qc.py` P12 checks the
+record's form and that its targets resolve; P9 checks that an entry reported
+as finished both left the queue and gained its line. `close` and `drop` perform
+the removal and the recording in one write, so an entry cannot lose its body
+without leaving its number behind.
+
+Supersedes the pure-queue model, under which a promoted entry was deleted
+outright. `duplicate` replaces the `no change` disposition label; one state,
+one word.
+
+Refs: `templates/profile_updates_pending.md` (schema authority),
+`scripts/profile_update.py`, `scripts/staging_append.py`, `scripts/gap_qc.py`,
+`scripts/profile_update_qc.py`, `.claude/skills/profile-update/SKILL.md`,
+`.claude/agents/qc-profile-update.md`.
+
+#### close-reports-recorded-writes-2026-08-26
+
+`insert`, `set`, and `list-add` each take `--pu PU-NNN` and append a
+`- **Written:** <target>` bullet to that PU entry as they run. `close` builds
+the migrated line from those bullets and takes no target list at all. A write
+made by hand, which is only ever an enrichment of `narratives.md` or
+`positioning.md`, uses `record` to leave the same bullet.
+
+The reason is that verifying a target exists proves a write happened for
+exactly one of the three write paths. A newly inserted entry proves its own
+write, because the ID would not exist otherwise. An enriched entry and a list
+category both existed before the run, so resolving them says nothing. Under the
+old `--targets` interface a `set` that failed on an empty value file or an
+off-roster field name could still be closed against the entry it was meant to
+change, and the resulting migrated line would then pass P12 forever, because
+the entry it names is real.
+
+Consequences:
+
+- `close` refuses a PU entry that recorded no writes, which is what surfaces a
+  write that failed or was skipped.
+- `--duplicate` replaces `--targets duplicate`, and is refused on a PU entry
+  that recorded writes, since "nothing needed writing" and "these writes
+  happened" cannot both hold.
+- The bullets live on the PU entry and are deleted with it. Nothing is retained
+  past the migrated line, so the queue does not drift back into an archive.
+
+Also retires the coined noun "capture" for a `PU-NNN` block, across the skill,
+scripts, template, agent, and this file. It was undefined vocabulary that made
+every one of these documents harder to read cold; "PU entry" needs no gloss.
+
+Refs: `scripts/profile_update.py`, `.claude/skills/profile-update/SKILL.md`
+(Step 3e/3f), `scripts/profile_update_qc.py`,
+`staging-queue-with-migrated-record-2026-08-26` (the section these lines feed).
+
+#### positioning-content-is-hand-driven-2026-08-26
+
+`positioning.md` is never written by a skill run. Not a new entry, not an
+enrichment. The profile-update skill's write scope is `inventory.md` plus
+enrichments of `narratives.md`, and that is the whole of it.
+
+The reason is the nature of the content rather than a missing template.
+Positioning is abstract framing: how the candidate is presented, what he leads
+with, what he declines to say. It is not the kind of fact a gap-analysis or prep
+run surfaces and hands off, and it does not feed a CV the way an inventory entry
+does. Where something abstract does surface that genuinely belongs in
+positioning, it is staged like anything else, but deciding where it goes,
+whether it is accurate, and how to say it concisely is a judgment the user
+drives with the model assisting. So such a `PU-NNN` stays in the queue and waits
+for him; the skill names it, says plainly that it needs him, and moves on.
+
+This is the second time the rule has been decided and the first time it is
+written down. It was absent from the design record when profile-update was
+built, so the skill was given a positioning write path by default, and
+`verify_targets` waved through any ID whose prefix the inventory template did
+not define - which meant a made-up `ST-999` or a positioning target resolved
+clean and could reach a permanent migrated line.
+
+Consequences:
+
+- Step 3e drops `positioning.md` from its write paths and gains an explicit
+  never-write clause.
+- `verify_targets` now requires every ID target to exist in `inventory.md` or
+  `narratives.md`. Neither needs a structure-authority template for that:
+  narratives carries real `ID:` lines, and existence is the only question
+  asked. An ID in neither is rejected.
+- `record` verifies at record time as well as at close, so a bad target is
+  caught while the edit is fresh.
+- `positioning.md` is neither read nor written by the skill or its QC.
+
+The narratives out-of-scope boundary is unchanged and still template-pending:
+creating a NEW narrative entry waits on a narratives builder. Positioning is not
+waiting on anything.
+
+Refs: `.claude/skills/profile-update/SKILL.md` (Step 3e),
+`scripts/profile_update.py` (`verify_targets`, `_narratives_path`),
+`scripts/profile_update_qc.py` (P12), `.claude/agents/qc-profile-update.md`,
+`COMPONENTS.md`, `positioning-schema`, `knowledge-doc-update-mechanism`
+(2026-05 hand-edit stance this is consistent with).
