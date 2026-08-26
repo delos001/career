@@ -1760,6 +1760,46 @@ Refs: `scripts/profile_update.py`, `.claude/skills/profile-update/SKILL.md`
 (Step 3e/3f), `scripts/profile_update_qc.py`,
 `staging-queue-with-migrated-record-2026-08-26` (the section these lines feed).
 
+#### test-corpus-and-invariant-checks-2026-08-26
+
+`tests/fixture/` holds a complete invented candidate (profile documents plus one
+application) that the scripts run against instead of the real profile.
+`tests/run_tests.py` drives the real command-line entry points against a
+throwaway copy of it and asserts the invariants.
+
+Redirection is by environment variable: `CAREER_FIXTURE` names a repo-root
+relative folder, and `_config.load()` rebases every path that lives under the
+`personal` root onto it. Rebasing is by prefix rather than by naming the keys, so
+a new personal-rooted path in `config.yaml` is redirected without a code change.
+A value naming a folder that does not exist raises rather than silently falling
+back to the real profile.
+
+Why it exists. Until this, the only way to test a change to the profile
+machinery was to run it against the candidate's own documents, or to copy them
+out, run, and copy them back. That put the real profile in the blast radius of
+every test, and it meant any situation his data does not contain (an empty
+profile, a first-ever staged entry, a drained queue) went untested until it hit
+him. The corpus is chosen for shapes rather than realism; `tests/README.md`
+tabulates which shape each part covers.
+
+Two rules the check set is built on:
+
+- **Each check corresponds to a defect that actually shipped.** The set is a
+  record of what has broken, not a guess at what might. Each docstring names
+  what it caught.
+- **A check is only finished once it has been seen to fail.** Reintroduce the
+  bug, watch it go red, restore. Both headline checks were validated that way at
+  the time of writing.
+
+Two checks target the checkers rather than the documents: they break the fixture
+nine ways and require a complaint each time. The worst failure this repo has had
+was not a missing check but a check written to tolerate two shapes
+(`role-intake` axis drift, four months undetected), and that failure mode is
+invisible from the passing side.
+
+Refs: `tests/README.md`, `tests/run_tests.py`, `scripts/_config.py`
+(`FIXTURE_ENV`), `.gitignore` (`tests/.run/`).
+
 #### positioning-content-is-hand-driven-2026-08-26
 
 `positioning.md` is never written by a skill run. Not a new entry, not an

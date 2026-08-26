@@ -214,3 +214,8 @@ temp/
 
 # Axis-builder run-scratch (removed at end of build by scratch_cleanup.py --builder)
 rules/scratch/
+
+# Test-run copy of the fixture corpus. tests/run_tests.py copies tests/fixture/
+# here, writes to the copy, and removes it; this catches the leftover from a run
+# that crashed. The corpus itself (tests/fixture/) IS committed.
+tests/.run/

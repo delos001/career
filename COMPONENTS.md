@@ -511,6 +511,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - `scripts/profile_update.py`, `scripts/profile_update_qc.py` (profile-update concern family; the only scripts that write to the profile documents)
 - `scripts/axis_registry.py`, `scripts/axis_qc.py`, `scripts/axis_apply.py` (axis-builder concern family)
 - `scripts/_config.py`, `scripts/_util.py`, `scripts/axis_utils.py`, `scripts/_prep_checks.py` (shared helper modules; not standalone scripts, no separate entries)
+- `tests/run_tests.py` (invariant checks for the profile-update machinery; drives the real CLIs against a throwaway copy of the `tests/fixture/` corpus. Redirection is `CAREER_FIXTURE`, read by `scripts/_config.py`, which rebases every personal-rooted path onto the named folder. The runner refuses to start unless the resolved profile path is inside `tests/`. See `tests/README.md` and `test-corpus-and-invariant-checks-2026-08-26`.)
 - `scripts/cv_to_docx.py` (cv-render skill: renders cv_content.md to a formatted .docx)
 - `scripts/prep_qc.py` (preparation-screen skill: deterministic QC; detailed entry below)
 - `scripts/prep_interview_qc.py` (preparation-interview skill: deterministic QC; detailed entry below)

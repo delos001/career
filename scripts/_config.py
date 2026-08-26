@@ -24,6 +24,14 @@ import yaml
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(REPO_ROOT, 'config.yaml')
 
+# Set this to a repo-root-relative folder to run every script against a test
+# corpus instead of the real profile. Each path under 'personal' is rebased onto
+# it, so a script cannot read or write the candidate's own documents while it is
+# set. Rebasing is done by prefix rather than by naming the keys, so a new
+# personal-rooted path added to config.yaml is redirected without a code change.
+# See tests/README.md.
+FIXTURE_ENV = 'CAREER_FIXTURE'
+
 
 def load():
     """Load config.yaml and return (repo_root, config).
@@ -31,6 +39,9 @@ def load():
     repo_root is the absolute path to the repo root; config is the parsed
     config.yaml as a dict. Callers join the relative paths in config onto
     repo_root themselves.
+
+    When CAREER_FIXTURE names a folder, every path that lives under the
+    'personal' root is rebased onto it before the config is returned.
     """
     with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
@@ -43,4 +54,22 @@ def load():
     for key, value in config.get('paths', {}).items():
         if isinstance(value, str):
             config['paths'][key] = os.path.normpath(value)
+    _apply_fixture(config)
     return REPO_ROOT, config
+
+
+def _apply_fixture(config):
+    """Rebase every personal-rooted path onto the fixture folder, if set."""
+    fixture = os.environ.get(FIXTURE_ENV)
+    if not fixture:
+        return
+    fixture = os.path.normpath(fixture)
+    if not os.path.isdir(os.path.join(REPO_ROOT, fixture)):
+        raise ValueError(
+            f'{FIXTURE_ENV} is set to "{fixture}", which is not a folder under '
+            f'the repo root. Unset it to run against the real profile.')
+    base = config['paths']['personal']
+    for key, value in config['paths'].items():
+        if value == base or value.startswith(base + os.sep):
+            config['paths'][key] = os.path.normpath(
+                os.path.join(fixture, os.path.relpath(value, base)))
