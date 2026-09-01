@@ -25,3 +25,20 @@ File paths inside a `SKILL.md` are repo-root-relative, not relative to the skill
 All Python scripts live in `scripts/`. They resolve the repo root from `__file__` and read config from `config.yaml`. Nothing is hardcoded. Do not pass repo-root-relative paths from within scripts/ — use `../` or absolute paths.
 
 Scripts have a header block, section markup, and comments on complex logic. This overrides the default minimal-comments stance.
+
+## Testing
+
+Test against the fixture corpus, never the live profile. `python tests\run_tests.py` runs the invariant checks in seconds; `--only <substring>` runs one. `CAREER_FIXTURE=tests/fixture` redirects every personal-rooted path onto an invented candidate, and the runner refuses to start if the resolved path is outside `tests/`.
+
+The older pattern of backing up and restoring the real profile documents around a test is retired. Do not reintroduce it.
+
+A check is only finished once it has been seen to fail: reintroduce the bug, watch it go red, restore.
+
+## Tool and Environment Quirks
+
+These have each cost a debugging cycle.
+
+- **PowerShell has no heredoc.** `python - <<'PY'` is a parse error. Write the script to a file and run it.
+- **The Edit tool fails on multi-line matches containing `→` (U+2192).** Use single-line edits, or splice around the glyph.
+- **Validate `.drawio` XML after any edit:** `[xml]$x = Get-Content -Raw <path>`, then check `$x.mxfile.diagram.Count`.
+- **Never bulk-replace text through PowerShell arrays.** A single-element nested array flattens, so `$e[0]`/`$e[1]` become characters rather than strings, and the replace rewrites the file a character at a time. This silently corrupted 383 lines of a script once. Use the Edit tool, and check `git diff --stat` before moving on.

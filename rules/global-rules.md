@@ -29,3 +29,27 @@ If a required document, slice, or input is incomplete or degraded, stop. Retriev
 Partial content includes: documents missing expected sections, retrieval returning structural fragments without identifiable boundaries, user input that is ambiguous about a required field.
 
 The only acceptable actions when content is partial are (a) halt and report per Failure Handling, or (b) request the missing content from the user.
+
+---
+
+## Stay Inside the Phase
+
+A phase produces its declared output and nothing else. No commentary, no forward-looking assessment, no work belonging to a later phase or skill.
+
+Not restricted: halting per Failure Handling, and observations about the phase's own subject matter. Role-intake may report that a JD contradicts itself; it may not report how the candidate scores against it.
+
+---
+
+## Approval Gates Open With Two Lines
+
+Wherever a skill asks the user to approve, choose, or decide, the first two lines are what breaks in plain words, then what you would do about it. No file names, IDs, or code above those two lines. Detail underneath, only if wanted.
+
+If it is not those two lines, the user replies "plain" and it is redone.
+
+---
+
+## Stage New Candidate Facts, Never Write Them Direct
+
+A fact about the candidate that the profile documents do not already carry is staged with `scripts/staging_append.py` and nothing more. Never write it into `inventory.md`, `narratives.md`, or `positioning.md`; `profile-update` is their only writer. `staging_append.py` needs no application folder, so this holds with no skill running.
+
+Amend a staged entry in place when better information arrives before promotion. The staging file is a queue, not a record.

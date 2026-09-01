@@ -1280,10 +1280,41 @@ Refs: `initial-industry-pack-content-design`, `initial-specialty-pack-content-de
 Order: value, friction, scalability, learning tiebreaker. Scope creep and gold plating route to "enhancements" list, not inline.
 
 #### global-rules-minimized
-`rules/global-rules.md` as single file. Three rules: never fabricate content; failure handling protocol; never proceed with partial content.
+`rules/global-rules.md` as single file. Six rules: never fabricate content; failure handling protocol; never proceed with partial content; stay inside the phase; approval gates open with two lines; stage new candidate facts.
+**Minimal means operative text only.** The file is loaded by every skill on every run, so rationale, worked examples, quotes, and the reasoning for a rule's placement belong here in `design_decisions.md`, never in the rules file. On 2026-09-01 all three new rules were first written with "Why" paragraphs and placement arguments inline, duplicating what this file already held; the user caught it and they were cut back to the rule text.
+Refs: `stay-inside-the-phase`, `approval-gates-two-lines`, `candidate-facts-are-staged`.
+
+#### candidate-facts-are-staged
+A fact about the candidate that the profile documents do not already carry is staged with `scripts/staging_append.py` and nothing else. Never written into `inventory.md`, `narratives.md`, or `positioning.md`; `profile-update` is the sole writer of those. Amending a staged entry before promotion is expected, since the staging file is a queue rather than a record; better information is edited into the existing entry rather than accumulated as a second entry to reconcile later.
+**Global rather than per-skill** because the trigger is stage-independent: a fact can surface during metadata confirmation, gap closure, interview-answer checking, follow-up drafting, or in conversation with no skill running. `staging_append.py` needs no application folder, so writing direct is never the only option.
+**Why:** an entry written direct has no provenance. EX-232 reached the inventory that way on 2026-08-25; whether it credited the candidate correctly stayed open until 2026-09-01 because the conversation behind it was gone. It did in fact understate him. Refs: `global-rules-minimized`.
+
+#### stay-inside-the-phase
+Added to `rules/global-rules.md` 2026-08-31. A phase produces its declared output and nothing else: no commentary, no forward-looking assessment, no work belonging to a later phase or a later skill. Standing instructions to proactively flag gaps, risks, blind spots, and opportunity costs govern building and improving this workflow; they do not apply inside a skill run.
+
+Two carve-outs the rule does not restrict: halting on a genuine failure per Failure Handling, and reporting an observation about the phase's own subject matter. The worked example in the rule: role-intake may report that a job description contradicts itself, because understanding the job is its subject; it may not report how the candidate would score against that job, because that is gap analysis.
+
+**Why.** The repo is simultaneously in development (the user building and improving the workflow) and in production (the user applying to jobs), with one CLAUDE.md serving both. The global CLAUDE.md directive "proactively flag logical gaps, blind spots, risks" is always on and phase-blind, and it is correct during development. During a skill run it produces unrequested gap analysis at phase boundaries. On 2026-08-31 that mechanism generated a fabricated claim at the end of a role-intake run: an assertion that the advanced-degree requirement would surface as a gap, with no source and no reading of the profile, when the only record of the user's education says the opposite.
+
+**Why here rather than a dev/prod branch.** The user considered branching and rejected it as too much logistical overhead while another project is active. The dev/prod boundary already exists without a branch: it is whether a skill is running. Development work never invokes a skill, and every skill reads `rules/global-rules.md` first, so this file is a production-only surface that stays invisible during development with nothing to keep in sync.
+
+**Known limitation, stated to the user at the time.** This is a prose rule, the same class of instruction as the ones the incident violated. It lowers the odds; it does not close the hole. Nothing scripted can gate model commentary in chat.
 
 #### pacing-consolidation
 User-level CLAUDE.md holds general response-shape pacing. Skill approval-gating lives in skill authoring template as Presentation Phase convention.
+**Amended 2026-09-01:** no skill authoring template file exists in the repo, so that home was notional and the convention lived only in a memory, where no skill reads it. Approval-gating moved to `rules/global-rules.md` ("Approval Gates Open With Two Lines"), which every skill reads first. Refs: `approval-gates-two-lines`.
+
+#### approval-gates-two-lines
+Every skill approval, choice, or decision point opens with exactly two lines: what breaks in plain words, then what the model would do about it. No file names, IDs, or code above the fold; detail underneath and only on request. The user replies "plain" and it is redone if the format is missed.
+Agreed with the user 2026-08-26, enforced by him since, moved into `rules/global-rules.md` on 2026-09-01.
+**Why:** rework traces to approvals granted without understanding, not to bad proposals. An approval gate the user cannot parse is not a gate. Refs: `pacing-consolidation`.
+
+#### qc-checks-tolerating-two-formats
+A QC check written to accept both the correct format and a drifted one has stopped checking. Root cause of the 2026-08-25 axis-classification drift: three separate QC scripts tolerated both forms, so the drift was invisible for weeks and had reached five session logs. When a format is wrong, fix the producing seam and make the check reject the drifted form.
+
+#### rules-must-trace-to-an-executor
+A rule written into a document that does not perform the action is not a fix. Before recording a new rule, name the file that executes it: a skill phase, a rules file a skill reads, a script, or a QC check. If no such file exists, the rule is a note, not a control. This is why deliverable-shaping guidance belongs in `rules/` and skills rather than in memory, which no skill reads.
+**Corollary, from the 2026-09-01 memory audit:** application-specific facts must not be recorded in always-loaded memory. A memory does not carry its preconditions, so a fact derived from one application's parameters arrives at the next application stripped of the conditions that made it true. Per-application state lives in the application folder; derived facts about the candidate (career span, counts, scope) are computed from `inventory.md` at run time, never stored. The second half is what makes the workflow usable by a second candidate at all.
 
 ---
 

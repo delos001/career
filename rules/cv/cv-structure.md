@@ -75,6 +75,27 @@ lines each would eat roughly half a page - over budget even when the sentence
 count looks fine. Caps are estimated at draft time and confirmed at render (see
 Page length and line economy).
 
+**Career-span claims are derived, never inherited.** When the summary states a
+span ("nearly 25 years", "over a decade"), compute it from the role records in
+`inventory.md`: take the earliest start date among the roles that fall inside the
+scope the sentence actually claims, and count to the latest end date. Never lift a
+span from a previous CV. A prior CV's figure is a conservative floor written for a
+different target, and carrying it forward understates the candidate.
+
+Two rules follow from that:
+- **Scope first, number second.** A sentence covering one field of practice takes
+  the span of the roles in that field; a sentence covering a whole sector takes the
+  sector's span. Widening the scope to buy a bigger number costs the specificity
+  the target is screening for, and is usually the wrong trade. Earlier roles remain
+  visible further down the document regardless.
+- **When asking the candidate to choose, quote the drafted sentence.** The question
+  is which scope the sentence claims, not which number they prefer, and they cannot
+  answer it without seeing the wording.
+
+The same derive-do-not-inherit rule applies to any other span or count the summary
+asserts (years in a specialty, number of trials, team size): source it from the
+inventory records, not from a prior artifact.
+
 ## Core Competencies
 
 A high-placed keyword-and-skill block (directly under the summary) that doubles
@@ -558,6 +579,18 @@ mirror the `cv_qc.py` constants and must move with them):
   0.25-inch indent).
 - Estimate each unit as ceil(characters / line capacity) and sum against the
   section's page budget. Guard only; the render stage is authoritative.
+
+**Compressing for length is a traceability risk, not a style pass.** Trimming a
+bullet to fit deletes words, and qualifier words carry claims. Removing "a version
+of", "contributed to", "supported", or the citation that licensed a strong verb
+turns an accurate claim into an overstatement without changing a single fact. Two
+consequences:
+- Re-run the judgment traceability check after any compression pass, not only the
+  mechanical one. Compression can pass every mechanical check while introducing new
+  overstatements.
+- When a compression removes a qualifier, fund the qualifier's return from
+  somewhere else in the same unit rather than dropping it. The qualifier is usually
+  the part the source actually supports.
 
 **docx boundary.** Visual styling, authoritative pagination and page count, and
 the Earlier Professional Roles rendering belong to the render stage (cv-render),
