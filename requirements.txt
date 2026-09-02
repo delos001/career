@@ -1,0 +1,26 @@
+# Python dependencies for the career repo.
+#
+# Everything else the scripts import is standard library. Versions are the
+# ones this has been run against; lower bounds rather than exact pins, so the
+# file recreates on another machine instead of resolving to nothing.
+#
+#   pip install -r requirements.txt
+
+# --- Required -----------------------------------------------------------
+# PyYAML     : _config.py loads config.yaml and is imported by 26 of the 33
+#              scripts. Nothing runs without it.
+# python-docx: cv_to_docx.py, the CV render stage (top-level import).
+PyYAML>=6.0.3
+python-docx>=1.2.0
+
+# --- Optional: job-description input routes ------------------------------
+# Only needed to ingest a JD supplied as a PDF or a URL. Imported lazily
+# inside the relevant functions of scripts/ingest/jd_extract.py, so an absent
+# package costs one input route rather than a failed run. A JD pasted as
+# text, or handed over as .txt or .docx, needs none of these.
+#
+# pypdf         : a JD supplied as PDF
+# requests, bs4 : a JD supplied as a URL
+pypdf>=6.16.2
+requests>=2.34.2
+beautifulsoup4>=4.15.0
