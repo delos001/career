@@ -284,8 +284,11 @@ def _render_partial_match(requirements, req_lookup):
 
     A partial-match requirement has genuine transferable experience but a real
     gap remaining. This block gives the CV architect, per case, the evidence to
-    cite and the gap to avoid overclaiming. Text is resolved from req_lookup;
-    inline requirement_text is a fallback. '_(none)_' when no cases.
+    cite and the prose note. The note carries BOTH halves by design - the skill's
+    Phase 4e requires a partial-match note to describe the transferable element
+    and the gap that remains - so the field is labelled for both rather than for
+    the gap alone. Text is resolved from req_lookup; inline requirement_text is a
+    fallback. '_(none)_' when no cases.
     """
     parts = []
     for req in requirements:
@@ -309,7 +312,7 @@ def _render_partial_match(requirements, req_lookup):
         parts.append(
             f'### {rid} - {rtext}\n'
             f'- **Transferable evidence to cite:** {evidence_str}\n'
-            f'- **Gap remaining:** {gap}'
+            f'- **Transferable element and gap remaining:** {gap}'
         )
     if not parts:
         return '_(none)_'

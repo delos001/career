@@ -102,7 +102,7 @@ rendered from structured inputs the skill passes to the script.
   ```
   ### {{requirement_id}} - {{requirement_text_short}}
   - **Transferable evidence to cite:** {{entry_ids_comma_sep_or_none}}
-  - **Gap remaining:** {{notes}}
+  - **Transferable element and gap remaining:** {{notes}}
   ```
 
   Evidence to cite is the `entries_to_reframe` list when the case carries
