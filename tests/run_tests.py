@@ -496,6 +496,69 @@ def test_split_refuses_without_requirements():
 
 
 # ---------------------------------------------------------------------------
+# Gap-detector context
+# The detector's requirements, role context, and the inventory sections that
+# retrieval never scores reach it through a file gap_context.py writes. The
+# expected text is again extracted independently of the script's parser.
+# ---------------------------------------------------------------------------
+
+def build_detector_context():
+    """Run gap_context.py build on the fixture; return (returncode, output, scratch)."""
+    scratch = os.path.join(FIXTURE_APP, 'scratch')
+    # The manifest's content is not read by the build; it only has to exist.
+    _util.write(os.path.join(FIXTURE_APP, 'retrieval.md'), '# Retrieval Manifest\n')
+    code, out = run('gap_context.py', 'build', '--folder', FIXTURE_APP, '--temp-dir', scratch)
+    return code, out, scratch
+
+
+def h2_bodies(text):
+    """Return {heading: body} for every '## ' section, bodies trimmed of blank edges."""
+    parts = ('\n' + text).split('\n## ')[1:]
+    return {p.split('\n', 1)[0].strip(): (p.split('\n', 1) + [''])[1].strip('\n')
+            for p in parts}
+
+
+def test_detector_context_carries_unscored_profile_sections():
+    """Shipped 2026-10-14 (APP-023): the gap-detector was left to find the
+    systems list in a full-file read, missed it, and reported the candidate's
+    Veeva use as eTMF-only although the Technical Experience section listed
+    four other Veeva products.
+    """
+    code, out, scratch = build_detector_context()
+    assert code == 0, f'build failed:\n{out}'
+    context_path = os.path.join(scratch, 'gap_detector_context.md')
+    context = _util.read(context_path)
+
+    research = h2_bodies(_util.read(os.path.join(FIXTURE_APP, 'research.md')))
+    assert research['Critical Requirements'] in context, 'requirements not copied verbatim'
+    for name in ('Role', 'Company', 'Industry'):
+        assert research[name] in context, f'{name} context not copied verbatim'
+
+    root, cfg = _config.load()
+    inventory = h2_bodies(_util.read(pu._inventory_path(root, cfg)))
+    unscored = {h: b for h, b in inventory.items() if h != 'Table of Contents'
+                and not any(line.startswith(('ID: EX-', 'ID: PR-', 'ID: PB-', 'ID: PS-'))
+                            for line in b.split('\n'))}
+    assert 'Technical Experience' in unscored, 'fixture lost its Technical Experience section'
+    for heading, body in unscored.items():
+        assert f'## {heading}\n\n{body}' in context, f'"{heading}" not copied verbatim'
+    assert '## Experience Entries' not in context, 'a scored section leaked into the context'
+
+    assert f'Context file: {context_path}' in out, f'prompt lacks the context file:\n{out}'
+
+
+def test_detector_context_refuses_without_requirements():
+    """No requirements means nothing to judge against; build must stop."""
+    path = os.path.join(FIXTURE_APP, 'research.md')
+    research = _util.read(path)
+    _util.write(path, research.split('## Critical Requirements', 1)[0]
+                + '## Axis Gaps\n\nNone.\n')
+    code, out, _ = build_detector_context()
+    assert code != 0, f'build wrote a context with no requirements:\n{out}'
+    assert 'Critical Requirements' in out, out
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 

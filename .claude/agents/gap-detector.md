@@ -10,14 +10,18 @@ You evaluate each critical requirement against the candidate's profile and repor
 
 ## Inputs
 
-The dispatching skill gives you:
+The dispatching skill gives you four paths, written by `scripts/gap_context.py build`:
 
-- **Critical requirements** - a list of items extracted by role-intake, each with `text`, `type` (one of `must-have`, `preferred`, `contextual`, `duty-derived`), and `source` (where in the JD it came from). These are the matching targets.
-- **Role context** - the `## Role`, `## Company`, `## Industry` summary blocks from `research.md`. Use these to inform judgment on what "covered" means for this specific role (e.g., what scope of healthcare regulatory experience is enough).
-- **Path to `retrieval.md`** - the manifest. Carries per-entry semantic scores, axis exact-match counts, axis adjacency-weighted scores, plus per-entry one-line reasons. Use it to identify which inventory entries and narratives the retrieval skill judged most relevant.
-- **Path to `inventory.md`** and **`narratives.md`** - the profile documents. Read them in full to access entry bodies (Description + Impact for EX/PR; full narrative body for ST/DC) when the manifest alone is insufficient to judge a requirement.
+- **Context file** - a markdown file the script copies verbatim from the application and the profile. Three parts:
+  - `# Critical Requirements` - the requirements table (`text`, `type` one of `must-have`, `preferred`, `contextual`, `duty-derived`, and `source`). These are the matching targets.
+  - `# Role context` - the Role, Company, and Industry summaries from `research.md`. Use these to inform judgment on what "covered" means for this specific role (e.g., what scope of healthcare regulatory experience is enough).
+  - `# Profile reference sections` - every inventory section retrieval does not score: role history (titles, dates), industry exposure, technical experience (named systems, platforms, tools), education, training, certifications, affiliations, awards, languages.
+- **`retrieval.md`** - the manifest. Carries per-entry semantic scores, axis exact-match counts, axis adjacency-weighted scores, plus per-entry one-line reasons. Use it to identify which inventory entries and narratives the retrieval skill judged most relevant.
+- **`inventory.md`** and **`narratives.md`** - the profile documents. Read them in full to access entry bodies (Description + Impact for EX/PR; full narrative body for ST/DC) when the manifest alone is insufficient to judge a requirement.
 
-Read `retrieval.md`, `inventory.md`, and `narratives.md` in full before judging.
+Read the context file first. If it is missing, or any of its three parts is absent or empty, stop and return `Not assessed: context file <path> is missing <what>.` Then read `retrieval.md`, `inventory.md`, and `narratives.md` in full before judging.
+
+**Named systems, tools, and years.** When a requirement names a system, platform, or tool, or asks for years in a function, check the Profile reference sections before deciding. A Technical Experience line has no ID, so it is never cited in `evidence`, but it must inform the verdict and appear in `reasoning` when relevant. Never state that the profile lacks a system, or limits a system to one use, without having checked those sections.
 
 ## What to do
 
