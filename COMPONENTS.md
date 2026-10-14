@@ -383,7 +383,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 - **Purpose**: Score a list of inventory entries, narratives, or Signature Themes against the critical requirements list for the retrieval skill. Corpus-agnostic LLM-judgment ranker; uses a consistent 0-1 rubric. Returns JSON with {id, score, reason} per item.
 - **Status**: Designed
-- **Inputs**: Skill-passed (by `retrieval`): critical requirements list, corpus type (`inventory` | `narratives` | `themes`), items to score (one chunk at a time for inventory and narratives; full set for themes), optional JD text for context. Tools: Read.
+- **Inputs**: A four-line prompt written by `retrieval_payload.py split` and dispatched verbatim: corpus type (`inventory` | `narratives` | `themes`), input file (one chunk at a time for inventory and narratives; full set for themes), output file, and the scoring context file (the Critical Requirements section and the JD, copied verbatim by the script). Halts unscored if the context file lacks either section. Tools: Read, Write.
 - **Outputs**: JSON `{corpus, scores: [{id, score, reason}, ...]}` returned to the caller.
 - **Triggers**: Invoked by `retrieval` Phase 3, once per inventory chunk, once per narrative chunk, and once for themes (all in parallel).
 - **Update Triggers**: When the scoring rubric changes; when the JSON return contract changes; when the supported corpora change.
@@ -590,10 +590,10 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/retrieval_payload.py
 
-- **Purpose**: Build LLM-consumable payloads for the retrieval skill. Subcommands: `inventory --chunk-size N` (parse the retrievable entries of inventory.md — EX/PR/PB/PS, matched by ID marker across their sections; emit JSON with chunked entries, each carrying ID, axis tags, and Description+Impact payload text), `narratives` (parse narratives.md; emit JSON with each narrative's ID, title, Linked Inventory, body), `themes` (parse positioning.md; emit JSON with each Signature Theme's Core message + Proof point + Use when concatenated as payload), `split` (read the three payload files from the scratch dir; write one JSON file per inventory chunk and one per byte-budgeted narrative chunk; print a plain-English summary).
+- **Purpose**: Build LLM-consumable payloads for the retrieval skill. Subcommands: `inventory --chunk-size N` (parse the retrievable entries of inventory.md — EX/PR/PB/PS, matched by ID marker across their sections; emit JSON with chunked entries, each carrying ID, axis tags, and Description+Impact payload text), `narratives` (parse narratives.md; emit JSON with each narrative's ID, title, Linked Inventory, body), `themes` (parse positioning.md; emit JSON with each Signature Theme's Core message + Proof point + Use when concatenated as payload), `split` (read the three payload files from the scratch dir; write one JSON file per inventory chunk and one per byte-budgeted narrative chunk; write the scoring context file, copying the application's Critical Requirements section and jd.md verbatim; print a plain-English summary and one complete scorer prompt per dispatch).
 - **Status**: Designed
-- **Inputs**: Subcommand args (`--chunk-size`; split: `--slug`, `--app-id`, `--temp-dir`, `--narr-chunk-bytes`). Config: `config.yaml` (profile path + per-file filenames) via `scripts/_config.py`. Filesystem: inventory.md, narratives.md, positioning.md; split reads the payload files from the temp dir.
-- **Outputs**: JSON to stdout per the per-subcommand schema; split writes per-chunk JSON files to the temp dir. Errors to stderr with exit 1.
+- **Inputs**: Subcommand args (`--chunk-size`; split: `--slug`, `--app-id`, `--folder`, `--temp-dir`, `--narr-chunk-bytes`, `--context-max-bytes`). Config: `config.yaml` (profile path + per-file filenames) via `scripts/_config.py`. Filesystem: inventory.md, narratives.md, positioning.md; split reads the payload files from the temp dir and research.md + jd.md from the application folder.
+- **Outputs**: JSON to stdout per the per-subcommand schema; split writes per-chunk JSON files and the scoring context file to the temp dir and prints the scorer prompts. Errors to stderr with exit 1, including a missing or empty Critical Requirements section or JD, or a context file over the byte budget.
 - **Triggers**: Invoked by `retrieval` Phase 2.
 - **Update Triggers**: When the inventory entry schema, narrative schema, or theme schema changes; when the chunking strategy changes.
 

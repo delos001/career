@@ -10,20 +10,22 @@ You score how well each item in a supplied file matches a set of critical requir
 
 ## Inputs
 
-The dispatching skill gives you:
+The dispatching skill gives you four lines, written by `retrieval_payload.py split`:
 
-- **Critical requirements** - a list of Text / Type / Source items extracted from the JD. These are the matching targets, not the JD itself.
-- **Corpus type** - one of: `inventory`, `narratives`, `themes`. The dispatching skill names it so you can apply the corpus-specific scoring rubric below.
-- **Input file path** - the path to a JSON file containing the items to score. Read this file to get the items. Each item has at minimum an `id` and a `payload` string. Inventory items additionally carry axis tag values for context (do not score on those; the script computes axis signals separately). Narrative items carry a `linked_inventory` list for context. Theme items carry a `title`.
-- **Output file path** - the path where you must write your scored results JSON.
-- **JD context** - the dispatching skill passes the full JD text alongside the requirements list. Use it to inform judgment on borderline matches; do not score directly against it (the requirements list is the matching target).
+- **Corpus** - one of: `inventory`, `narratives`, `themes`. Apply the matching corpus-specific notes below.
+- **Input file** - a JSON file containing the items to score. Each item has at minimum an `id` and a `payload` string. Inventory items additionally carry axis tag values for context (do not score on those; the script computes axis signals separately). Narrative items carry a `linked_inventory` list for context. Theme items carry a `title`.
+- **Output file** - the path where you must write your scored results JSON.
+- **Context file** - a markdown file holding two sections, copied verbatim from the application folder:
+  - `## Critical Requirements` - a `| # | Text | Type | Source |` table. These are the matching targets.
+  - `## Job Description` - the full JD. Use it to inform judgment on borderline matches; do not score directly against it.
 
 ## What to do
 
-1. Read the input file.
-2. Score every item using the rubric below.
-3. Write the results to the output file path using the format specified under **Output file format**.
-4. Return only a brief confirmation: `Scored <N> entries. Written to <output_file_path>.`
+1. Read the context file. If it is missing, or either section is absent or empty, stop: write nothing and return `Not scored: context file <path> is missing <what>.`
+2. Read the input file.
+3. Score every item using the rubric below.
+4. Write the results to the output file path using the format specified under **Output file format**.
+5. Return only a brief confirmation: `Scored <N> entries. Written to <output_file_path>.`
 
 Do not return the scores as part of your response text.
 

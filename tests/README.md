@@ -81,11 +81,13 @@ Shapes chosen to exercise the machinery, not to look like a plausible career:
 | Every requirement status in the taxonomy | `CR-001` through `CR-006` |
 | A closure ref pointing at an already-migrated entry | `CR-002` to `PU-001` |
 | A fit score and unmet-must-have count that must compute | 63.3%, 1 unmet |
+| A JD carrying its own `##` headings, so the scoring context must keep them from cutting the requirements | `aldridge_APP-001` `jd.md` |
 
 ## What it does not cover yet
 
 No `retrieval.md`, `cv_content.md`, `interview_prep.md`, or `interview_notes.md`,
-so the retrieval, CV, and interview-prep scripts have no fixture to run against.
+so retrieval beyond its payload split, and the CV and interview-prep scripts,
+have no fixture to run against.
 Add them when those become the thing under change.
 
 ## Keeping it valid

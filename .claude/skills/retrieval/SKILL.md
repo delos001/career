@@ -62,11 +62,10 @@ Ask if this session is for a new retrieval run or to resume a previous one?
 **Loading the role-intake artifacts for this application.**
 
 - Input: application folder path (from the resume check), APP-NNN, slug.
-- Read `research.md` from the application folder. Extract the `## Critical Requirements` section (the matching target for all three scoring passes).
+- Confirm `research.md` and `jd.md` exist in the application folder. Do not extract or relay their content; Phase 2's `split` copies the Critical Requirements section and the JD into the scoring context file.
 - Read the session log (`session_log.md`) from the application folder. Extract the `## Axis Classification` section (used for the deterministic axis-scoring pass). The session log is the authoritative source for the classification per `retrieval-architecture-2026-05`.
-- Read `jd.md` from the application folder. The JD text is passed to the scorer subagent as supporting context.
 - Format the axis classification as a JSON object with one key per axis (`Industry`, `Specialty`, `Orientation`, `Level`, `Work-state`), each holding `{primary: <value>, secondary: <value or null>}`. Write to a scratch file (for example `<scratch>/<SLUG>_jd_axes.json`).
-- Output: critical-requirements text block, JD text, axis-classification JSON scratch-file path, session-log path (for Phase 5 QC cross-reference).
+- Output: axis-classification JSON scratch-file path, session-log path (for Phase 5 QC cross-reference).
 
 ## Phase 2 - Build payloads
 
@@ -79,27 +78,16 @@ Ask if this session is for a new retrieval run or to resume a previous one?
   - `python scripts/retrieval_payload.py themes` - prints JSON to stdout with the theme payload.
 - Capture each output to a scratch file: `<scratch>/<SLUG>_APP-NNN_inventory_payload.json`, `<scratch>/<SLUG>_APP-NNN_narratives_payload.json`, `<scratch>/<SLUG>_APP-NNN_themes_payload.json`.
 - Non-zero exit on any of these = halt per global rules.
-- Run `python scripts/retrieval_payload.py split --slug <slug> --app-id APP-NNN --temp-dir <scratch>`. This writes one JSON file per inventory chunk (`<scratch>/<SLUG>_APP-NNN_inv_chunk0.json`, etc.) and one JSON file per narrative chunk (`<scratch>/<SLUG>_APP-NNN_narr_chunk0.json`, etc.; narratives are batched by byte budget, not one file per narrative), and prints a plain-English summary of chunk counts and sizes per corpus and theme count. Non-zero exit = halt per global rules.
-- Output: three payload scratch-file paths, per-chunk scratch-file paths for both corpora, chunk counts and entry counts (from split output).
+- Run `python scripts/retrieval_payload.py split --slug <slug> --app-id APP-NNN --folder <app_folder> --temp-dir <scratch>`. This writes one JSON file per inventory chunk (`<scratch>/<SLUG>_APP-NNN_inv_chunk0.json`, etc.), one JSON file per narrative chunk (`<scratch>/<SLUG>_APP-NNN_narr_chunk0.json`, etc.; narratives are batched by byte budget, not one file per narrative), and the scoring context file (`<scratch>/<SLUG>_APP-NNN_scoring_context.md`: the Critical Requirements section and the JD, copied verbatim). It prints a plain-English summary of chunk counts, then one complete scorer prompt per dispatch between `=== PROMPT N ===` markers. Non-zero exit = halt per global rules.
+- Output: the printed scorer prompts, and the entry count per chunk (from split output).
 
 ## Phase 3 - Score all three corpora
 
 **Scoring inventory chunks, narratives, and themes against critical requirements.**
 
-- Input: critical-requirements block, JD text, per-chunk file paths for both corpora (from Phase 2 split output), themes payload file path.
-- Dispatch the scorer subagent in parallel. Each invocation receives: input file path, output file path, corpus type, critical requirements, JD text. The scorer writes results to the output file and returns only a brief confirmation — do not read or echo the scores in the main context.
-  - **One `retrieval-scorer` invocation per inventory chunk.**
-    - Input file: `<scratch>/<SLUG>_APP-NNN_inv_chunk{N}.json`
-    - Output file: `<scratch>/<SLUG>_APP-NNN_scores_inventory_chunk{N}.json`
-    - Corpus: `inventory`
-  - **One `retrieval-scorer` invocation per narrative chunk.**
-    - Input file: `<scratch>/<SLUG>_APP-NNN_narr_chunk{N}.json`
-    - Output file: `<scratch>/<SLUG>_APP-NNN_scores_narr_chunk{N}.json`
-    - Corpus: `narratives`
-  - **One `retrieval-scorer` invocation for themes.**
-    - Input file: `<scratch>/<SLUG>_APP-NNN_themes_payload.json`
-    - Output file: `<scratch>/<SLUG>_APP-NNN_scores_themes.json`
-    - Corpus: `themes`
+- Input: the scorer prompts printed by Phase 2's `split`.
+- Dispatch one `retrieval-scorer` per printed prompt, all in parallel. **The prompt is the text between its `=== PROMPT N ===` marker and the next marker, sent exactly as printed: nothing added, removed, reworded, or summarized.** Every input the scorer needs is in the files those lines name; if something looks missing, halt per global rules instead of supplying it by hand. The scorer writes results to the output file and returns only a brief confirmation; do not read or echo the scores in the main context.
+- A confirmation's entry count is the scorer's own tally and has miscounted before; the merge and QC below are the count authority.
 - After all scorers confirm completion, run `python scripts/retrieval_score_merge.py --slug <slug> --app-id APP-NNN --temp-dir <scratch>`. This reads all per-agent output files, merges by corpus, and writes `<scratch>/<SLUG>_APP-NNN_inventory_scores.json`, `<scratch>/<SLUG>_APP-NNN_narrative_scores.json`, and `<scratch>/<SLUG>_APP-NNN_theme_scores.json`. Non-zero exit = halt per global rules.
 - Output: three merged score file paths.
 

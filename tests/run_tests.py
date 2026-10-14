@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-run_tests.py - invariant checks for the profile-update machinery
+run_tests.py - invariant checks for the profile-update and retrieval machinery
 
 Runs the real command-line entry points against a disposable copy of the test
 corpus in tests/fixture/ and asserts the things that must always hold. Every
@@ -419,6 +419,80 @@ def test_checker_catches_an_unrecorded_departure():
     code, out = run('profile_update_qc.py', 'check', '--processed-pu', 'PU-003')
     assert code != 0, f'a PU entry vanished without a record and nothing complained:\n{out}'
     assert 'Migrated' in out, out
+
+
+# ---------------------------------------------------------------------------
+# Retrieval scoring context
+# The scorer's requirements and JD reach it through a file the split script
+# writes, never through a hand-composed prompt. These checks hold the script
+# to copying both verbatim and to refusing when either is absent. The expected
+# text is extracted independently here, so a bug in the script's own section
+# parser cannot also hide in the check.
+# ---------------------------------------------------------------------------
+
+FIXTURE_APP = os.path.join(RUN_DIR, 'applications', 'aldridge_APP-001_2026-01')
+FIXTURE_PREFIX = 'aldridge_APP-001'
+
+
+def split_fixture_payloads():
+    """Build the three payloads, run split; return (returncode, output, scratch)."""
+    scratch = os.path.join(FIXTURE_APP, 'scratch')
+    os.makedirs(scratch, exist_ok=True)
+    for corpus in ('inventory', 'narratives', 'themes'):
+        result = subprocess.run(
+            [sys.executable, os.path.join(SCRIPTS_DIR, 'retrieval_payload.py'), corpus],
+            capture_output=True, text=True, encoding='utf-8', cwd=SCRIPTS_DIR)
+        assert result.returncode == 0, f'{corpus} payload failed:\n{result.stderr}'
+        _util.write(os.path.join(scratch, f'{FIXTURE_PREFIX}_{corpus}_payload.json'),
+                    result.stdout)
+    code, out = run('retrieval_payload.py', 'split', '--slug', 'aldridge',
+                    '--app-id', 'APP-001', '--folder', FIXTURE_APP, '--temp-dir', scratch)
+    return code, out, scratch
+
+
+def test_scorer_context_is_copied_verbatim():
+    """Shipped 2026-10-14 (APP-023): scorer prompts were composed by hand, and
+    the requirements and JD arrived as file paths, then as a summarised JD.
+
+    The split script now copies both into one context file and prints every
+    prompt, so the check is that the copy is exact and every prompt names it.
+    """
+    code, out, scratch = split_fixture_payloads()
+    assert code == 0, f'split failed:\n{out}'
+    context_path = os.path.join(scratch, f'{FIXTURE_PREFIX}_scoring_context.md')
+    context = _util.read(context_path)
+
+    research = _util.read(os.path.join(FIXTURE_APP, 'research.md'))
+    requirements = research.split('## Critical Requirements\n', 1)[1] \
+                           .split('\n## ', 1)[0].strip('\n')
+    jd = _util.read(os.path.join(FIXTURE_APP, 'jd.md')).strip('\n')
+    assert requirements in context, 'Critical Requirements not copied verbatim'
+    assert jd in context, 'JD not copied verbatim'
+    assert context.index(requirements) < context.index('## Job Description'), \
+        'the JD must follow the requirements so its headings cannot cut them'
+
+    # One prompt per chunk plus themes, each naming the context file and a real input.
+    prompts = out.split('=== PROMPT ')[1:]
+    chunks = [f for f in os.listdir(scratch)
+              if f.startswith(f'{FIXTURE_PREFIX}_inv_chunk')
+              or f.startswith(f'{FIXTURE_PREFIX}_narr_chunk')]
+    assert len(prompts) == len(chunks) + 1, f'{len(prompts)} prompts for {len(chunks)} chunks + themes'
+    for prompt in prompts:
+        assert f'Context file: {context_path}' in prompt, f'prompt lacks the context file:\n{prompt}'
+        input_path = prompt.split('Input file: ', 1)[1].split('\n', 1)[0]
+        assert os.path.isfile(input_path), f'prompt names a missing input: {input_path}'
+
+
+def test_split_refuses_without_requirements():
+    """A context file with no requirements would score every entry against
+    nothing; split must stop instead of writing one."""
+    path = os.path.join(FIXTURE_APP, 'research.md')
+    research = _util.read(path)
+    _util.write(path, research.split('## Critical Requirements', 1)[0]
+                + '## Axis Gaps\n\nNone.\n')
+    code, out, _ = split_fixture_payloads()
+    assert code != 0, f'split wrote a context with no requirements:\n{out}'
+    assert 'Critical Requirements' in out, out
 
 
 # ---------------------------------------------------------------------------

@@ -21,10 +21,12 @@ subagent consumes alongside the critical requirements list. Three subcommands:
               triggers concatenated. One LLM call sees the whole list.
   split       Read the three payload files previously written to the temp
               directory, write one JSON file per inventory chunk and per
-              narrative chunk (byte-budgeted), and print a plain-English
-              summary (chunk counts and sizes per corpus, theme count).
-              Eliminates the need for ad-hoc inline Python between Phase 2
-              (build payloads) and Phase 3 (score).
+              narrative chunk (byte-budgeted), write the scoring context file
+              (the application's Critical Requirements section and jd.md,
+              copied verbatim), and print a plain-English summary plus the
+              complete prompt for every scorer dispatch. The skill sends those
+              prompts exactly as printed, so no scorer input is ever composed
+              by hand.
 
 Nothing repo-dependent is hardcoded; folder locations and filenames come from
 config.yaml. The script does not invoke any LLM itself: it only prepares
@@ -36,7 +38,7 @@ Project   : career
 Usage     : python scripts/retrieval_payload.py inventory [--chunk-size 50]
             python scripts/retrieval_payload.py narratives
             python scripts/retrieval_payload.py themes
-            python scripts/retrieval_payload.py split --slug <slug> --app-id <APP-NNN> [--temp-dir temp] [--narr-chunk-bytes 45000]
+            python scripts/retrieval_payload.py split --slug <slug> --app-id <APP-NNN> --folder <app_folder> [--temp-dir temp] [--narr-chunk-bytes 45000] [--context-max-bytes 45000]
 Depends   : pyyaml (via _config)
 """
 
@@ -545,6 +547,14 @@ def cmd_split(args, repo_root, cfg):
         os.remove(os.path.join(temp_dir, f"{prefix}_narr_chunk{idx}.json"))
         idx += 1
 
+    # Write the scoring context file every scorer reads its requirements and
+    # JD from. Copying both here, in code, is the point: hand-composed scorer
+    # prompts drifted on past runs (APP-006, APP-023: paths in place of content,
+    # a summarised JD).
+    context_path = os.path.join(temp_dir, f"{prefix}_scoring_context.md")
+    _util.write(context_path, build_scoring_context(
+        args.folder, cfg, prefix, args.context_max_bytes))
+
     # Print summary.
     sizes = '+'.join(str(n) for _, n in chunk_paths)
     print(f"Inventory: {inv_data['chunk_count']} chunks written ({sizes} = {inv_data['entry_count']} entries)")
@@ -555,6 +565,87 @@ def cmd_split(args, repo_root, cfg):
     for path, size in narr_chunk_paths:
         print(f"  {path} ({size} entries)")
     print(f"Themes: {th_data['entry_count']} entries (use {prefix}_themes_payload.json)")
+    print(f"Scoring context: {context_path}")
+
+    # Print one complete prompt per scorer dispatch. Output names match what
+    # retrieval_score_merge.py walks for.
+    dispatches = (
+        [('inventory', path, f"{prefix}_scores_inventory_chunk{i}.json")
+         for i, (path, _) in enumerate(chunk_paths)]
+        + [('narratives', path, f"{prefix}_scores_narr_chunk{i}.json")
+           for i, (path, _) in enumerate(narr_chunk_paths)]
+        + [('themes', th_path, f"{prefix}_scores_themes.json")]
+    )
+    print(f"\nScorer prompts ({len(dispatches)}). Dispatch each exactly as printed:")
+    for n, (corpus, in_path, out_name) in enumerate(dispatches, start=1):
+        print(f"\n=== PROMPT {n} ===")
+        print(scorer_prompt(corpus, in_path, os.path.join(temp_dir, out_name), context_path))
+    print("=== END ===")
+
+
+# ---------------------------------------------------------------------------
+# Scoring context and scorer prompts
+# The scorer's matching targets (Critical Requirements) and supporting context
+# (the JD) are copied byte for byte from the application folder into one file.
+# The section and the JD must both be present and non-empty, and the file must
+# fit under a byte budget so a scorer's single read is never truncated (the
+# APP-006 failure); any shortfall raises so the skill halts.
+# ---------------------------------------------------------------------------
+
+CR_HEADING = '## Critical Requirements'
+JD_HEADING = '## Job Description'
+
+
+def extract_section(text, heading):
+    """Return the body under an exact '## ' heading, up to the next '## '.
+
+    Returns None when the heading is absent. The body keeps its own lines
+    verbatim; only the leading and trailing blank lines are trimmed.
+    """
+    lines = text.split('\n')
+    try:
+        start = next(i for i, line in enumerate(lines) if line.rstrip() == heading)
+    except StopIteration:
+        return None
+    end = next((i for i in range(start + 1, len(lines))
+                if lines[i].startswith('## ')), len(lines))
+    return '\n'.join(lines[start + 1:end]).strip('\n')
+
+
+def build_scoring_context(app_folder, cfg, prefix, max_bytes):
+    """Build the scoring context text from research.md and jd.md; raise on gaps."""
+    research_path = os.path.join(app_folder, cfg['filenames']['research_file'])
+    jd_path = os.path.join(app_folder, cfg['filenames']['jd_file'])
+    for path in (research_path, jd_path):
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f'scoring context source missing: {path}')
+
+    requirements = extract_section(_util.read(research_path), CR_HEADING)
+    # A requirements table needs at least one row past its header and divider.
+    if not requirements or len([l for l in requirements.split('\n')
+                                if l.startswith('|')]) < 3:
+        raise ValueError(f'{research_path} has no populated "{CR_HEADING}" table')
+    jd_text = _util.read(jd_path).strip('\n')
+    if not jd_text.strip():
+        raise ValueError(f'{jd_path} is empty')
+
+    # JD goes last so any '## ' headings inside it cannot cut the requirements.
+    context = (f'# Scoring context: {prefix}\n\n'
+               f'{CR_HEADING}\n\n{requirements}\n\n'
+               f'{JD_HEADING}\n\n{jd_text}\n')
+    size = len(context.encode('utf-8'))
+    if size > max_bytes:
+        raise ValueError(f'scoring context is {size} bytes, over the {max_bytes}-byte '
+                         f'read budget; a scorer could not read it whole')
+    return context
+
+
+def scorer_prompt(corpus, input_path, output_path, context_path):
+    """Return the complete prompt for one retrieval-scorer dispatch."""
+    return (f'Corpus: {corpus}\n'
+            f'Input file: {input_path}\n'
+            f'Output file: {output_path}\n'
+            f'Context file: {context_path}')
 
 
 # ---------------------------------------------------------------------------
@@ -606,7 +697,13 @@ def main():
     )
     p_split.add_argument('--slug', required=True, help='role slug (e.g. takeda)')
     p_split.add_argument('--app-id', required=True, help='application ID (e.g. APP-006)')
+    p_split.add_argument('--folder', required=True,
+                         help='application folder holding research.md and jd.md')
     p_split.add_argument('--temp-dir', default='temp', help='temp directory (default: temp)')
+    p_split.add_argument(
+        '--context-max-bytes', type=int, default=45000,
+        help='maximum bytes for the scoring context file (default 45000)',
+    )
     p_split.add_argument(
         '--narr-chunk-bytes', type=int, default=45000,
         help='maximum serialized bytes per narrative chunk file (default 45000)',
