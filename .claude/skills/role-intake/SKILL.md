@@ -247,9 +247,8 @@ Ask if this session is for a new role or to resume a previous one?
   re-run produces. Skip the table only for purely mechanical fixes that have
   no meaningful "before" (filling a blank required field, a date, a path).
 - Cap the loop at **3 iterations**. Exit earlier on **PASS**. If findings
-  remain after the third iteration, stop looping and carry them into the
-  Phase 9 approval block so the user decides whether to approve as-is or
-  intervene.
+  remain after the third iteration, stop looping and carry them to Phase 9
+  Step 9a, where the user decides each one on its own.
 - Output: PASS verdict, or the unresolved findings after 3 iterations.
 
 ## Phase 9 - User approval and handoff
@@ -258,7 +257,14 @@ Ask if this session is for a new role or to resume a previous one?
 
 - Input: session log and research file - QC-passed, or with unresolved
   findings carried over after 3 QC iterations.
-- Present the approval block:
+- **Step 9a - unresolved findings, one at a time.** Skip if QC passed. Otherwise
+  present each carried-over finding as its own decision, one per response:
+  what is wrong, the recommended fix, and the before/after text. Wait for the
+  user's decision on it (apply, route back per *Phase routing on failure*, or
+  leave as-is) and act on it before presenting the next. Never fold a finding
+  into the approval block; the block holds a single decision.
+- **Step 9b - approval.** Only after every finding is decided, present the
+  approval block:
 
   ```
   Title / Company / Level / Industry: <values>
@@ -270,7 +276,8 @@ Ask if this session is for a new role or to resume a previous one?
     Work-state:   <value> - <rationale>
   Axis gaps: none  (all five axes are resolved by the Phase 6 gate; this line is
              a backstop and must read "none" - if it does not, return to Phase 6)
-  Unresolved QC findings: <listed in plain English, or "none">
+  Unresolved QC findings: none  (each was decided in Step 9a; this line is a
+             backstop and must read "none" - if it does not, return to Step 9a)
   Session log + Research file: <paths>
 
   Reply with corrections, or "approved" to hand off.

@@ -186,7 +186,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 - Input: application folder path, PU-NNN entries appended this run (from Step 6a).
 - **Step 7a - Mechanical checks (script).** Run `python scripts/gap_qc.py check --folder <app_folder>`, passing `--appended-pu PU-NNN` once per staging entry appended this run (omit the flag if none were appended). The script owns structure, header and session-log fields, requirement coverage, status taxonomy, Notes presence, closure linkage, ID existence, fit-score math, mirroring, and the recommendation label. On FAIL: translate the failed checks to plain English for the user, apply each per *Phase routing on failure*, re-run forward, and return to Step 7a.
 - **Step 7b - Judgment checks (subagent).** Only after Step 7a passes, dispatch `qc-gap-analysis` with the `gap_analysis.md` path. It verifies Notes substance only (mechanical checks are not re-run). **Loops on FINDINGS:** translate to plain English, apply per *Phase routing on failure*, re-run forward (Step 7a re-runs after any fix), return to Phase 7.
-- Cap the loop at **3 iterations** across both steps. Exit earlier when both PASS. If findings remain after the third iteration, carry them into Phase 8 so the user sees them. After the QC verdict is known, re-run Step 6c to refresh the session log section's QC verdict field.
+- Cap the loop at **3 iterations** across both steps. Exit earlier when both PASS. If findings remain after the third iteration, carry them to Phase 8 Step 8a, where the user decides each one on its own. After the QC verdict is known, re-run Step 6c to refresh the session log section's QC verdict field.
 - Output: PASS verdict, or unresolved findings after 3 iterations.
 
 ## Phase 8 - User decision and handoff
@@ -194,7 +194,8 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 **Presenting the recommendation and handing off to the user's pursue decision.**
 
 - Input: gap_analysis.md path, fit score, recommendation, unresolved QC findings (if any).
-- Present the decision block:
+- **Step 8a - unresolved findings, one at a time.** Skip if QC passed. Otherwise present each carried-over finding as its own decision, one per response: what is wrong, the recommended fix, and the before/after text. Wait for the user's decision on it (apply, route back per *Phase routing on failure*, or leave as-is) and act on it before presenting the next. Never fold a finding into the decision block; the block holds a single decision. After the last finding is decided, re-run Step 6c to refresh the session log section's QC verdict field.
+- **Step 8b - pursue decision.** Only after every finding is decided, present the decision block:
 
   ```
   Role: <title> at <company>
@@ -202,7 +203,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   Eligibility flags: <listed in plain English, or "none">
   Key gaps: <must-haves with status interview-deferred or unresolved; or "none">
   Partial matches: <must-haves with status partial-match (transferable but not a full match); or "none">
-  Unresolved QC findings: <listed in plain English, or "none">
+  Unresolved QC findings: none  (each was decided in Step 8a; this line is a backstop and must read "none" - if it does not, return to Step 8a)
   Gap analysis: <path>
 
   Pursue this role? Reply "yes" or "no".

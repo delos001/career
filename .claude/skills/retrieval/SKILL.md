@@ -120,7 +120,7 @@ Ask if this session is for a new retrieval run or to resume a previous one?
 - Input: application folder path, run date, inventory scored-entry count (from the `retrieval_score_merge.py` output in Phase 3).
 - Run `python scripts/retrieval_qc.py check --folder <app_folder> --scored-inventory <N> --date YYYY-MM-DD`. Every check is deterministic (structure, axis consistency, coverage counts, column population, link and ID existence, date); there is no judgment subagent for this artifact.
 - **Loops on FAIL:** translate the failed checks to plain English for the user, then apply each per *Phase routing on failure*, re-run forward, and return to Phase 5.
-- Cap the loop at **3 iterations**. Exit earlier on **PASS**. If failures remain after the third iteration, stop looping and carry them into the Phase 6 handoff so the user sees them.
+- Cap the loop at **3 iterations**. Exit earlier on **PASS**. If failures remain after the third iteration, stop looping and carry them to Phase 6 Step 6a, where the user decides each one on its own.
 - Output: PASS verdict, or unresolved failures after 3 iterations.
 
 ## Phase 6 - Handoff
@@ -128,7 +128,8 @@ Ask if this session is for a new retrieval run or to resume a previous one?
 **Reviewing the manifest, recording the run in the session log, and confirming readiness for downstream skills.**
 
 - Input: manifest (QC-passed, or with unresolved findings).
-- Write the run record to a scratch file (`<scratch>/<SLUG>_retrieval_section.md`) starting with `## Retrieval` and carrying: run date, manifest path, item counts per corpus, QC verdict. Then run `python scripts/session_log.py append-section --folder <app_folder> --heading Retrieval --body-file <scratch path>`. The script replaces the section on re-runs and appends it on first runs. Non-zero exit = halt per global rules.
+- **Step 6a - unresolved findings, one at a time.** Skip if QC passed. Otherwise present each carried-over failure as its own decision, one per response: what is wrong and the recommended fix. Wait for the user's decision on it (route back per *Phase routing on failure*, or leave as-is) and act on it before presenting the next. Never fold a failure into the summary below.
+- **Step 6b - record and summarize.** Only after every failure is decided, write the run record to a scratch file (`<scratch>/<SLUG>_retrieval_section.md`) starting with `## Retrieval` and carrying: run date, manifest path, item counts per corpus, QC verdict. Then run `python scripts/session_log.py append-section --folder <app_folder> --heading Retrieval --body-file <scratch path>`. The script replaces the section on re-runs and appends it on first runs. Non-zero exit = halt per global rules.
 - Present a compact summary to the user:
 
   ```
@@ -136,7 +137,7 @@ Ask if this session is for a new retrieval run or to resume a previous one?
   Inventory candidates: <N> entries surfaced (<M> via semantic, <P> via tag-pull only).
   Narratives: <N> surfaced (<M> semantic-scored, <P> linkage-only).
   Triggered themes: <N>.
-  Unresolved QC findings: <listed in plain English, or "none">
+  Unresolved QC findings: none  (each was decided in Step 6a; this line is a backstop and must read "none" - if it does not, return to Step 6a)
   Session log: ## Retrieval section written.
 
   Ready for gap analysis or CV creation.
