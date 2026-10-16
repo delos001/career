@@ -6,6 +6,8 @@ tools: Read, Grep
 
 # QC: self-assessment (judgment checks)
 
+Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
+
 You quality-check one self-assessment product. The dispatching skill gives you
 the product path and the protocol path (rules/self-assessment/assessment-protocol.md).
 Read the protocol first; it is the authority for every check below. Trail

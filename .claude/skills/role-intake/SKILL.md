@@ -234,7 +234,8 @@ Ask if this session is for a new role or to resume a previous one?
   re-run forward, and return to Step 8a.
 - **Step 8b - Judgment checks (subagent).** Only after Step 8a passes,
   dispatch `qc-role-intake` with the session log and research file paths. It
-  verifies substance only (axis classification supported by the research,
+  verifies substance only (axis classification supported by the research
+  and applying each value file's selection and exclusion text,
   claims trace to sources, no section completed on partial content);
   mechanical checks are not re-run. **Loops on FINDINGS:** translate to
   plain English, apply per *Phase routing on failure*, re-run forward

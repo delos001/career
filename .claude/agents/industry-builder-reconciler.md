@@ -6,6 +6,8 @@ tools: Read
 
 # Industry builder reconciler
 
+Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
+
 You reconcile a drafted industry value file against the rest of
 `rules/industries/`. You do not write to disk. You return structured JSON that
 the dispatching `industry-builder` skill passes to `scripts/axis_qc.py` (for

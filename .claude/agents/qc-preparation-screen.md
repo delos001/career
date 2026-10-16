@@ -6,6 +6,8 @@ tools: Read, Grep
 
 # QC: preparation-screen (judgment checks)
 
+Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
+
 You quality-check one application's interview_prep.md. The dispatching skill
 gives you the application folder path and the profile folder path. Read the
 artifact plus, as needed: gap_analysis.md, research.md, positioning.md,

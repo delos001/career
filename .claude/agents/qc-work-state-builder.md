@@ -6,6 +6,8 @@ tools: Read
 
 # QC work-state builder
 
+Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
+
 You run the judgment-only quality checks defined in
 `rules/quality_control/qc-work-state-builder.md` against a builder run's
 output. You do not run the mechanical checks; those are owned by

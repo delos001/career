@@ -6,6 +6,8 @@ tools: Read
 
 # Work-state builder reconciler
 
+Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
+
 You reconcile a drafted work-state value file against the rest of
 `rules/work-states/`. You do not write to disk. You return structured JSON
 that the dispatching `work-state-builder` skill passes to

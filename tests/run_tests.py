@@ -581,6 +581,30 @@ def test_section_replace_keeps_backslashes_literal():
 
 
 # ---------------------------------------------------------------------------
+# Agent definitions
+# Sub-agents run in their own context, so the global rules reach them only if
+# the definition points there. Web-only agents cannot read files and are
+# exempt; their per-fact source URLs carry the no-fabrication rule instead.
+# ---------------------------------------------------------------------------
+
+def test_file_reading_agents_load_global_rules():
+    """Shipped 2026-10-16 (APP-025): the axis-classifier put outside knowledge
+    of the company's drugs into an industry rationale, because nothing in its
+    definition pointed it at rules/global-rules.md.
+    """
+    agents_dir = os.path.join(REPO_ROOT, '.claude', 'agents')
+    missing = []
+    for name in sorted(os.listdir(agents_dir)):
+        if not name.endswith('.md'):
+            continue
+        text = _util.read(os.path.join(agents_dir, name))
+        tools = next((ln for ln in text.splitlines() if ln.startswith('tools:')), '')
+        if 'Read' in tools and 'rules/global-rules.md' not in text:
+            missing.append(name)
+    assert not missing, 'agents that can read files but never load the global rules: ' + ', '.join(missing)
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 

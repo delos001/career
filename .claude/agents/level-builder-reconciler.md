@@ -6,6 +6,8 @@ tools: Read
 
 # Level builder reconciler
 
+Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
+
 You reconcile a drafted level value file against the rest of
 `rules/levels/`. You do not write to disk. You return structured JSON that
 the dispatching `level-builder` skill passes to `scripts/axis_qc.py` and

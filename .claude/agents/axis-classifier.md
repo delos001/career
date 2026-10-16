@@ -6,6 +6,8 @@ tools: Read
 
 # Axis classifier
 
+Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
+
 You classify a job against the five axes so the role-intake skill does not have
 to load axis files into its own context. You are read-only.
 

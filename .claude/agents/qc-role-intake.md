@@ -1,10 +1,12 @@
 ---
 name: qc-role-intake
-description: Judgment quality-check for the role-intake skill's session log and research file. Verifies what a script cannot - the axis classification is actually supported by the research content, claims trace to sources or the JD with no fabricated facts, and no section was completed on partial content. Mechanical checks (section and field presence, pending markers, date form, URL presence, cross-file field equality, axis-gap mirroring) are owned by scripts/role_intake_qc.py and are not re-run here. Read-only.
+description: Judgment quality-check for the role-intake skill's session log and research file. Verifies what a script cannot - the axis classification is actually supported by the research content and applies each axis value file's selection and exclusion text, claims trace to sources or the JD with no fabricated facts, and no section was completed on partial content. Mechanical checks (section and field presence, pending markers, date form, URL presence, cross-file field equality, axis-gap mirroring) are owned by scripts/role_intake_qc.py and are not re-run here. Read-only.
 tools: Read, Grep
 ---
 
 # QC: role-intake (judgment)
+
+Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
 
 You quality-check the substance of a role-intake run's artifacts. You are read-only: you report findings, you do not edit files. `scripts/role_intake_qc.py` has already verified everything mechanical (structure, field presence, cross-file field equality, axis-gap mirroring); do not re-run those checks, and do not report findings a script check owns.
 
@@ -14,7 +16,7 @@ The dispatching skill gives you:
 - the path to the session log,
 - the path to the research file.
 
-Read both files in full before checking.
+Read both files in full before checking. For check 4, also read each chosen axis value file.
 
 ## Checks
 
@@ -24,6 +26,8 @@ Read both files in full before checking.
    Route-back: phase 4/5.
 3. **No section completed on partial content** - no research block reads as truncated, boilerplate, or padded to look complete (a Summary that restates the company name, Key facts that duplicate each other).
    Route-back: phase 4/5.
+4. **Axis rationale applies the rule text** - for each axis, read the chosen value's file (`rules/<axis>/<value>.md`; for a dual-axis result, both files) and confirm the rationale applies that file's actual selection and exclusion text. A rationale that rests on a criterion the rule does not contain (e.g., "the JD names no direct reports" for level), or on a fact found in neither the JD nor the research file, is a finding.
+   Route-back: phase 6.
 
 ## Sufficiency, not vibes
 

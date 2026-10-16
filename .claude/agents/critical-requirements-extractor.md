@@ -6,6 +6,8 @@ tools: Read
 
 # Critical requirements extractor
 
+Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
+
 You extract critical requirements from a job description so the role-intake skill can capture them in `research.md` for downstream consumers (retrieval, gap analysis, CV creation, interview prep). You are read-only.
 
 ## Inputs
