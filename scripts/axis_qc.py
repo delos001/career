@@ -214,11 +214,13 @@ def _check_a2_frontmatter_key(text, axis_key, value):
     if m and m.group(1).strip() == value:
         return text, _record('A2', True, False, f'{axis_key} matches value')
     new_line = f'{axis_key}: {value}'
+    # Lambda replacements so the value is inserted literally, never read as a
+    # regex template (same reason as the provisional-block insert above).
     if m:
-        new_fm = pattern.sub(new_line, fm)
+        new_fm = pattern.sub(lambda _m: new_line, fm)
     else:
         # Insert before the closing fence (same idiom A3 uses).
-        new_fm = re.sub(r'(---\n)$', new_line + '\n' + r'\1', fm, count=1)
+        new_fm = re.sub(r'(---\n)$', lambda fence: new_line + '\n' + fence.group(1), fm, count=1)
     return new_fm + body, _record('A2', True, True, f'corrected {axis_key} to {value}')
 
 
@@ -235,10 +237,10 @@ def _check_a3_last_researched(text):
         return text, _record('A3', True, False, f'last_researched is {current}')
     new_line = f'last_researched: {current}'
     if m:
-        new_fm = pattern.sub(new_line, fm)
+        new_fm = pattern.sub(lambda _m: new_line, fm)
     else:
         # Insert before closing fence.
-        new_fm = re.sub(r'(---\n)$', new_line + '\n' + r'\1', fm, count=1)
+        new_fm = re.sub(r'(---\n)$', lambda fence: new_line + '\n' + fence.group(1), fm, count=1)
     return new_fm + body, _record('A3', True, True, f'set last_researched to {current}')
 
 

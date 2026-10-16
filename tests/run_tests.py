@@ -559,6 +559,28 @@ def test_detector_context_refuses_without_requirements():
 
 
 # ---------------------------------------------------------------------------
+# Section replacement
+# Re-runs replace a session-log section in place. The new body is user and
+# path text, so it must land literally rather than as a regex template.
+# ---------------------------------------------------------------------------
+
+def test_section_replace_keeps_backslashes_literal():
+    """Shipped 2026-10-16 (APP-024): re-running retrieval died with 'bad escape
+    \\U' because the replacement body held a Windows path (C:\\Users\\...) and
+    was read as a regex template. First runs append, so only re-runs broke.
+    """
+    body = '## Retrieval\n\n- Manifest: C:\\Users\\cand\\retrieval.md\n- Ref: \\1 \\g<0>\n'
+    path = write_block('section_body.md', body)
+    for attempt in ('append', 'replace'):
+        code, out = run('session_log.py', 'append-section', '--folder', FIXTURE_APP,
+                        '--heading', 'Retrieval', '--body-file', path)
+        assert code == 0, f'{attempt} failed:\n{out}'
+    log = _util.read(os.path.join(FIXTURE_APP, 'session_log.md'))
+    assert log.count('## Retrieval') == 1, 'replace stacked a second section'
+    assert body.rstrip() in log, 'body was not written literally'
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 

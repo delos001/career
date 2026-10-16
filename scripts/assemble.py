@@ -355,8 +355,10 @@ def cmd_research(args, repo_root, cfg):
         # Re-run: replace only role-intake's sections and the completed-date
         # line, so a current-state refresh does not clobber anything else.
         text = _util.read(research_file)
+        # Lambda replacement: the value is inserted literally, never read as a
+        # regex template.
         text = re.sub(r'(?m)^\*\*Research completed:\*\* .*$',
-                      f'**Research completed:** {args.date}', text)
+                      lambda _m: f'**Research completed:** {args.date}', text)
         text = _replace_section(text, 'Company', company_block)
         text = _replace_section(text, 'Role', role_block)
         text = _replace_section(text, 'Industry', industry_block)

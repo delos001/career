@@ -110,9 +110,11 @@ def _bump_last_researched(text, ym):
     frontmatter, body = axis_utils.split_frontmatter(text)
     if frontmatter is None:
         raise ValueError('cannot bump last_researched: file has no frontmatter')
+    # Lambda replacement so the value is inserted literally, never read as a
+    # regex template.
     new_frontmatter = re.sub(
         r'(?m)^last_researched:[ \t]*.*$',
-        f'last_researched: {ym}',
+        lambda _m: f'last_researched: {ym}',
         frontmatter,
     )
     return new_frontmatter + body
