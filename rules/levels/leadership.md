@@ -11,7 +11,7 @@ last_researched: 2026-05
 
 The CV is framed as organizational leadership and the building or governance of capabilities, teams, and functions. Headline content reads as: cross-functional or portfolio ownership, organizational decision-making, capability-building, governance frameworks, multi-function influence, headcount and budget responsibility.
 
-Select this level when the target role carries people-management authority, organizational scope, or multi-function leadership. Do not select when the role's core work is individual technical execution (use ic). Job title and a JD's silence on direct reports do not decide the level.
+Select this level when the target role carries people-management authority, organizational scope, or multi-function leadership. Do not select when the role's core work is individual technical execution and it carries none of these (use ic). When a role has both, leadership takes precedence. Job title and a JD's silence on direct reports do not decide the level.
 
 ## Voice
 
