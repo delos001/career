@@ -1,6 +1,6 @@
 ---
 name: close-application
-description: Close out an evaluated job application - record the final outcome and its date in the session log, then wipe the application's run-scratch folder. Run when an application reaches a terminal state (offer accepted or declined, rejected, withdrawn, no response, or not pursued).
+description: Close out an evaluated job application - record the final outcome and its date in the session log, then wipe the application's run-scratch folder. Run when an application reaches a terminal state (offer accepted or declined, rejected, withdrawn, no response, not pursued, or role unavailable).
 ---
 
 # close-application - close out an application
@@ -32,7 +32,9 @@ pursuing" path).
 
 - Ask the user for the outcome and the date it occurred.
 - Outcome vocabulary (the user picks one, or supplies their own): `offer-accepted`,
-  `offer-declined`, `rejected`, `withdrawn`, `no-response`, `not-pursued`.
+  `offer-declined`, `rejected`, `withdrawn`, `no-response`, `not-pursued`,
+  `unavailable` (the role became unavailable without a decision on the candidate:
+  filled before or during the application, or the requisition pulled).
 - Outcome date: ask; default to today only if the user declines to specify.
 - Output: outcome value, outcome date.
 

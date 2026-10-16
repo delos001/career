@@ -102,7 +102,10 @@ def _replace_section(text, heading, new_section):
     if not pattern.search(text):
         raise ValueError(f'section not found: ## {heading}')
     # Normalise to one trailing blank line so sections stay visually separated.
-    return pattern.sub(new_section.rstrip() + '\n\n', text)
+    # Replacement via lambda so a section holding a backslash (a Windows path)
+    # is not read as a regex replacement template.
+    replacement = new_section.rstrip() + '\n\n'
+    return pattern.sub(lambda _m: replacement, text)
 
 
 # ---------------------------------------------------------------------------

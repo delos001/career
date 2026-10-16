@@ -11,7 +11,7 @@ last_researched: 2026-05
 
 The CV is framed as individual technical execution and depth in a domain or discipline. Headline content reads as: technical delivery, project or system ownership, architecture or design decisions, depth of expertise, technical influence within or across teams.
 
-Select this level when the target role is an individual contributor without direct people-management authority - engineer, analyst, scientist, lead (without management scope), Staff/Principal/Architect, specialist. Do not select when the role carries direct people-management authority, headcount or budget responsibility, or multi-function organizational governance (use leadership).
+Select this level when the target role's core work is individual technical execution. Do not select when the role carries people-management authority, organizational scope, or multi-function leadership (use leadership). Job title and a JD's silence on direct reports do not decide the level.
 
 ## Voice
 

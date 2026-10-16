@@ -74,8 +74,11 @@ def _replace_or_append_section(text, heading, new_section_body):
         re.DOTALL | re.MULTILINE,
     )
     if pattern.search(text):
-        # Replace; normalise to one trailing blank line.
-        return pattern.sub(new_section_body.rstrip() + '\n\n', text)
+        # Replace; normalise to one trailing blank line. Replacement via lambda
+        # so a body holding a backslash (a Windows path) is not read as a regex
+        # replacement template.
+        replacement = new_section_body.rstrip() + '\n\n'
+        return pattern.sub(lambda _m: replacement, text)
     # Append at the end. Ensure one blank line separates the new section
     # from whatever currently ends the file.
     return text.rstrip() + '\n\n' + new_section_body.rstrip() + '\n'
