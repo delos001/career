@@ -34,6 +34,13 @@ online.
 - Do not fabricate. If the title is ambiguous or sector-specific data is thin, say
   so explicitly.
 - Return empty sections with a note rather than padding.
+- The Summary compresses the Key facts; it never outruns them. Every Summary
+  claim must rest on a Key fact, and keep that fact's qualifier (low confidence,
+  inferred, draft, unverified, scope limit).
+- Absence is not a fact. Write "the JD does not mention direct reports", never
+  "the role has no direct reports".
+- Keep the JD's verbs. "Develop a roadmap" is not "owns the roadmap"; "lead or
+  assist" is not "leads".
 
 ## Return format
 

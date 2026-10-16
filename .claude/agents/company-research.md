@@ -45,6 +45,11 @@ record them even though they are not classification inputs.
   verified, say so explicitly rather than guessing.
 - If research surfaces nothing usable for a section, return it empty with a note;
   do not pad.
+- The Summary compresses the Key facts; it never outruns them. Every Summary
+  claim must rest on a Key fact, and keep that fact's qualifier (low confidence,
+  inferred, draft, unverified, scope limit). Dates stay as precise as the facts:
+  postings "over the same period" are not "posted at the same time".
+- Absence is not a fact. Write "no source found for X", never "X does not exist".
 
 ## Return format
 

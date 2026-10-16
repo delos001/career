@@ -30,6 +30,10 @@ Stop there. Do not produce competitive analysis, market sizing, or forecasts.
 - Cite every non-obvious claim with a source URL.
 - Do not fabricate. Flag uncertainty explicitly.
 - Return empty sections with a note rather than padding.
+- The Summary compresses the Key facts; it never outruns them. Every Summary
+  claim must rest on a Key fact, and keep that fact's qualifier (low confidence,
+  inferred, draft, unverified, scope limit).
+- Absence is not a fact. Write "no source found for X", never "X does not exist".
 
 ## Return format
 
