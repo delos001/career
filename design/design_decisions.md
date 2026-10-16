@@ -808,6 +808,48 @@ Refs: `industry-files-full-enumeration`, `initial-industry-pack-content-design`.
 Each industry file (`pharma.md`, `biotech.md`, `cro.md`, `med-device.md`) enumerates its full vocabulary, dialect, and stakeholder content. No `inherits from <other>.md` shorthand. Shorthand was attempted in initial biotech.md and cro.md drafts and broke `role-evaluation-axis-matching-protocol` (vocabulary axes match by overlap against the file's data sections; a matcher reading the file alone misses inherited terms). Resolution: full enumeration accepts cross-file content redundancy as the cost of discrete-industry granularity. Update propagation tracked via `registry-overlap-tracking`.
 Refs: `axes-file-schema`, `role-evaluation-axis-matching-protocol`, `industry-value-granularity`, `registry-overlap-tracking` (deferral).
 
+#### pr-objective-elements-schema-2026-10
+Decided 2026-10-16; **not yet built**. Until the build lands, the current PR schema in `templates/inventory.md` stays in force. Build plan: `design/pr_schema_plan.md`.
+
+PR entries stop sharing the EX shape. A project was being split across several EX-shaped entries (the career system across 8), each repeating name, role, axes and boilerplate, with free text drifting between Description and Context and Impact lines that were mostly restated descriptions (1 of 17 carried an observed result).
+
+**Block shape.** One block per objective:
+```
+ID: PR-NNN
+Project: {name}
+Role: RL-NNN            (or Company: {employer}; mutually exclusive, per pr-role-reference-2026-07)
+Industry: {value}       {optional}
+Specialty / Orientation / Level / Work-state: {values}   (separate lines, as today)
+Objective: {one sentence}
+Elements:
+  - PR-NNN.01: {what it is}
+    Outcome: {observed result}   {optional}
+  - PR-NNN.02: ...
+```
+- A project with a second objective gets a second block with the same `Project:`; blocks sharing a project must agree on Role/Company, Orientation, Level, Work-state. Test for a new objective vs a new element: could it stand on a CV alone?
+- `Elements:` is one multi-line field (modeled on `Coursework:`), so field-order checks and `set` treat the list as one field.
+- Element IDs are stable sub-IDs (`PR-NNN.NN`), assigned max+1 within the block, never reused.
+
+**Writing rules.**
+- Objective: one sentence stating the goal or problem; no methods, tools, or status (dates carry ongoing status). An exploratory project's Objective says so ("An exploration of..."); no flag field, because nothing would read one.
+- Element: what it is. No "why it's useful" (a value claim, the root of padded Impact).
+- Outcome: observed results only (a number or a concrete event). Optional, never padded. No block-level outcome field.
+- No Description, Impact, Context, or value-type labels on PR. Value-type labels were confirmed unread by any script, agent, or rule as data (2026-10-16 survey); they entered retrieval only as payload text.
+
+**Retrieval.** Scores the Objective as item `PR-NNN` and each element as item `PR-NNN.NN`, both inheriting the block's axes. Element payload = project name + element text + Outcome. Retrieval has no top-N cut (every scored item enters the manifest), so more items lengthen the manifest without displacing EX entries.
+
+**CV.** A project appears as its objective, framed for the role, with relevant elements folded in; never one bullet per element. A line citing an element must also cite its objective (`PR-015, PR-015.03`); `cv_qc.py` enforces this.
+
+**Checks.** Every ID pattern accepts an optional `.NN`, and every valid-ID set includes element IDs, so a fabricated element fails like a fabricated entry (today `\b...-\d+\b` reads `PR-015.03` as `PR-015`).
+
+**Architecture.** Entry parsing moves to a small shared core (entry boundaries, ID format, template roster) plus one module per entry type, so a PR change cannot break EX. Built first; the PR schema is chosen on its merits, not to fit the shared parser.
+
+**Migration.** Each project keeps its lowest existing PR ID as its block ID; the others retire to `personal/profile/inventory-ret.md` with a Notes value naming the element that absorbed them (e.g. "Merged into PR-001 as PR-001.05"). Narrative `Linked Inventory` refs repoint to surviving IDs. Content is rewritten one project at a time with user approval. Old application artifacts keep their old IDs.
+
+**Supersedes, for PR only, once built:** the Description/Impact/Context rules of `inventory-entry-structure-applied`, `impact-field-semantics-2026-05` and `outcome-folded-into-impact`; the "same field schema" clause of `experience-inventory-entry-types`; the PR half of the Description + Impact payload in `retrieval-architecture-2026-05`. EX is unchanged.
+
+Refs: `pr-role-reference-2026-07` (Company fallback kept), `cv-independent-project-placement-2026-06`, `feedback_design_for_generalization`, `feedback_in_progress_projects_positive_framing`.
+
 ### Skills System
 
 #### skill-registry-and-control-dissolved
