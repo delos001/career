@@ -12,8 +12,9 @@ Checks (IDs mirror the original qc-retrieval check numbering):
       expected column headers, in order.
   R2  Axis classification consistency: the manifest's per-axis values
       match the session log's ## Axis Classification values.
-  R3  Inventory coverage: source inventory entry count (the authoritative
-      baseline) == manifest inventory row count; with --scored-inventory,
+  R3  Inventory coverage: source inventory item count (the authoritative
+      baseline; each PR element counts as its own item) == manifest
+      inventory row count; with --scored-inventory,
       the three-way comparison distinguishes dropped-before-scoring from
       dropped-at-merge/assemble.
   R4  Signal column population: every inventory row fully populated;
@@ -22,8 +23,9 @@ Checks (IDs mirror the original qc-retrieval check numbering):
   R5  Narrative integrity: every Linked-from ID exists in the manifest's
       inventory table.
   R6  Theme integrity: every theme row ID exists in positioning.md.
-  R7  No fabricated IDs anywhere: every EX/PR/PB/PS, ST/DC, TH ID in the
-      manifest exists in its source profile document.
+  R7  No fabricated IDs anywhere: every EX/PR/PB/PS (including PR-NNN.NN
+      element), ST/DC, TH ID in the manifest exists in its source profile
+      document.
   R8  Generated date well-formed (and equal to --date when given).
 
 Output: one `<ID>  PASS|FAIL  <detail>` line per check, then a RESULT
@@ -43,6 +45,7 @@ import sys
 
 import _config
 import _util
+from inventory_model import pr
 
 
 # ---------------------------------------------------------------------------
@@ -282,7 +285,10 @@ def check_theme_ids(theme_rows, theme_ids, findings):
 def check_all_ids(manifest_text, inv_ids, narr_ids, theme_ids, findings):
     """R7: every profile ID token in the manifest exists in its source doc."""
     problems = []
-    fabricated_inv = sorted({t for t in re.findall(r'\b(?:EX|PR|PB|PS)-\d+\b', manifest_text)
+    # The optional '.NN' reads a PR element ID whole, so a made-up element of
+    # a real project is not waved through as its parent.
+    fabricated_inv = sorted({t for t in re.findall(r'\b(?:EX|PR|PB|PS)-\d+(?:\.\d+)?\b',
+                                                   manifest_text)
                              if t not in inv_ids})
     fabricated_narr = sorted({t for t in re.findall(r'\b(?:ST|DC)-\d+\b', manifest_text)
                               if t not in narr_ids})
@@ -332,7 +338,9 @@ def cmd_check(args, repo_root, cfg):
     narratives_text = _read(os.path.join(profile_dir, fn['narratives_file'])) or ''
     positioning_text = _read(os.path.join(profile_dir, fn['positioning_file'])) or ''
 
-    inv_ids = set(_INV_ID_RE.findall(inventory_text))
+    # Retrieval scores each PR element as its own item, so elements count
+    # toward coverage (R3) and are valid manifest IDs (R7).
+    inv_ids = set(_INV_ID_RE.findall(inventory_text)) | pr.element_ids(inventory_text)
     narr_ids = set(_NARR_ID_RE.findall(narratives_text))
     theme_ids = set(_THEME_ID_RE.findall(positioning_text))
 

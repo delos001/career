@@ -6,10 +6,12 @@ Reads the candidate profile documents (inventory.md, narratives.md,
 positioning.md) and emits the per-corpus payload that the retrieval-scorer
 subagent consumes alongside the critical requirements list. Three subcommands:
 
-  inventory   Read every EX/PR entry in inventory.md and emit a JSON list of
-              chunks, each chunk containing up to N entries (default 50,
-              configurable via --chunk-size). Each entry carries its ID, tag
-              axes, and a concatenated 'Description + Impact' payload text.
+  inventory   Read every EX/PR/PB/PS entry in inventory.md and emit a JSON list
+              of chunks, each bounded by serialized size (default 60000 bytes,
+              configurable via --chunk-bytes). Each item carries its ID, tag
+              axes, and a payload text: 'Description + Impact' for EX/PB/PS;
+              for a PR, one item for its Objective (PR-NNN) and one per element
+              (PR-NNN.NN), each led by the project name.
               Chunking mitigates attention degradation when the LLM ranks long
               lists in a single prompt.
   narratives  Read narratives.md and emit a JSON list of every narrative
@@ -35,7 +37,7 @@ inputs and writes structured JSON to stdout.
 Author    : Jason Delosh
 Created   : 2026-05-26
 Project   : career
-Usage     : python scripts/retrieval_payload.py inventory [--chunk-size 50]
+Usage     : python scripts/retrieval_payload.py inventory [--chunk-bytes 60000]
             python scripts/retrieval_payload.py narratives
             python scripts/retrieval_payload.py themes
             python scripts/retrieval_payload.py split --slug <slug> --app-id <APP-NNN> --folder <app_folder> [--temp-dir temp] [--narr-chunk-bytes 45000] [--context-max-bytes 45000]
@@ -50,6 +52,7 @@ import sys
 
 import _config
 import _util
+from inventory_model import document, entry_block, pr
 
 
 # ---------------------------------------------------------------------------
@@ -83,14 +86,17 @@ def _positioning_path(repo_root, cfg):
 # sections. Each entry begins with 'ID: <id>' and carries axis-tag lines
 # (Industry and Specialty always; Orientation, Level, Work-state where the
 # section's schema defines them), the Description, and optionally the Impact;
-# PR entries also carry a 'Company:' line (no Role: RL reference). The parser
-# scans the whole document by the anchored 'ID:' marker rather than by
-# section position, so it stays correct across section reordering. It
-# extracts the fields we need and concatenates Description + Impact into a
-# 'payload' text the LLM judges.
+# PR entries also carry a 'Company:' line (no Role: RL reference). Block
+# boundaries come from inventory_model.entry_block, shared with every other
+# inventory reader. This module extracts the fields retrieval needs and
+# concatenates Description + Impact into a 'payload' text the LLM judges.
 # ---------------------------------------------------------------------------
 
-# Regex: a line that opens an inventory entry. Captures the ID.
+# The entry types retrieval scores.
+_RETRIEVABLE = ('EX', 'PR', 'PB', 'PS')
+
+# Regex: a line that opens a retrievable entry. Captures the ID. Read by
+# gap_context.py to tell a scored section from an unscored one.
 _ENTRY_RE = re.compile(r'^ID:\s+((?:EX|PR|PB|PS)-\d+)\s*$')
 
 # Regex: a tag line (e.g. 'Industry: pharma', 'Specialty: clinical-operations | data-science').
@@ -104,9 +110,7 @@ _FIELD_RE = re.compile(r'^(Description|Impact):\s*(.*)$')
 # Regex: the Role tag linking an entry to its RL role record (its employer).
 _ROLE_RE = re.compile(r'^Role:\s+(RL-\d+)\s*$')
 
-# Regexes for Employment & Role History records: the RL id line and its
-# employer (Company).
-_ROLE_ENTRY_RE = re.compile(r'^ID:\s+(RL-\d+)\s*$')
+# Regex: an employer line - a PR entry's fallback employer, or an RL record's.
 _COMPANY_RE = re.compile(r'^Company:\s*(.+?)\s*$')
 
 # The five tag axes the retrieval pipeline cares about.
@@ -116,31 +120,6 @@ _AXES = ('Industry', 'Specialty', 'Orientation', 'Level', 'Work-state')
 def _split_pipe_values(raw):
     """Split a pipe-delimited tag value into a list, trimmed of whitespace."""
     return [v.strip() for v in raw.split('|') if v.strip()]
-
-
-def _section_bounds(text, heading_prefix):
-    """Return (start, end) line indices of the section opened by heading_prefix.
-
-    heading_prefix is the line text including the '## ' / '### ' prefix, e.g.
-    '## 8. Experience Entries'. The section ends at the next heading at
-    equal or shallower depth.
-    """
-    lines = text.split('\n')
-    depth = len(heading_prefix) - len(heading_prefix.lstrip('#'))
-    start = None
-    for i, line in enumerate(lines):
-        if line.startswith(heading_prefix):
-            start = i
-            break
-    if start is None:
-        raise ValueError(f'section not found: {heading_prefix!r}')
-    end = len(lines)
-    for j in range(start + 1, len(lines)):
-        m = re.match(r'^(#+)\s+', lines[j])
-        if m and len(m.group(1)) <= depth:
-            end = j
-            break
-    return start, end
 
 
 def _parse_inventory_entries(inventory_text):
@@ -156,75 +135,55 @@ def _parse_inventory_entries(inventory_text):
     `inventory-pb-ps-aw-entry-schemas-2026-07`) stay empty lists and never
     tag-match.
 
-    Entries are matched anywhere in the document by their anchored
-    'ID: <prefix>-NNN' opener (_ENTRY_RE owns the retrievable-prefix set:
-    EX, PR, PB, PS). Scanning by entry marker rather than section position
-    keeps the parser stable across section reordering
-    (`inventory-section-denumbering-and-reorder-2026-07`). A new '## '
-    section heading closes the open entry, so a non-entry section (e.g.
-    Industry Exposure Profile) cannot bleed into the last entry's fields.
+    Blocks come from entry_block.parse_blocks, filtered to the retrievable
+    prefixes; each block's lines are then read for the fields retrieval needs.
     """
     lines = inventory_text.split('\n')
     entries = []
-    current = None
-    for line in lines:
-        m = _ENTRY_RE.match(line)
-        if m:
-            # New entry starts; flush the previous one.
-            if current is not None:
-                entries.append(_finalise_entry(current))
-            current = {
-                'id': m.group(1),
-                'role': '',
-                'company': '',
-                'industry': [],
-                'specialty': [],
-                'orientation': [],
-                'level': [],
-                'work_state': [],
-                'description': '',
-                'impact': '',
-            }
+    for block in entry_block.parse_blocks(inventory_text):
+        if block['prefix'] not in _RETRIEVABLE:
             continue
-        # A new section heading ('## ') closes the current entry and resets
-        # state, bounding each entry to its own section without hardcoding a
-        # section number. '### RL-NNN' role-grouping subheaders are h3 and do
-        # not match, so they leave the open entry untouched.
-        if line.startswith('## '):
-            if current is not None:
-                entries.append(_finalise_entry(current))
-                current = None
-            continue
-        if current is None:
-            # Before the first entry, or between an entry's section and the
-            # next (e.g. the '### RL-NNN' role-grouping subheaders). Skip.
-            continue
-        m = _ROLE_RE.match(line)
-        if m:
-            current['role'] = m.group(1)
-            continue
-        m = _COMPANY_RE.match(line)
-        if m:
-            # Fallback employer: only a PR entry with no RL record carries a
-            # Company line (`pr-role-reference-2026-07`). EX entries never do.
-            current['company'] = m.group(1).strip()
-            continue
-        m = _TAG_RE.match(line)
-        if m:
-            axis_key = m.group(1).lower().replace('-', '_')
-            current[axis_key] = _split_pipe_values(m.group(2))
-            continue
-        m = _FIELD_RE.match(line)
-        if m:
-            # Description and Impact are single-line in the current convention;
-            # if a future schema spans multiple lines, this parser will need a
-            # multi-line continuation rule.
-            field = m.group(1).lower()
-            current[field] = m.group(2).strip()
-            continue
-    # Flush the last entry.
-    if current is not None:
-        entries.append(_finalise_entry(current))
+        current = {
+            'id': block['id'],
+            'role': '',
+            'company': '',
+            'industry': [],
+            'specialty': [],
+            'orientation': [],
+            'level': [],
+            'work_state': [],
+            'description': '',
+            'impact': '',
+        }
+        for line in lines[block['start'] + 1:block['end']]:
+            m = _ROLE_RE.match(line)
+            if m:
+                current['role'] = m.group(1)
+                continue
+            m = _COMPANY_RE.match(line)
+            if m:
+                # Fallback employer: only a PR entry with no RL record carries
+                # a Company line (`pr-role-reference-2026-07`). EX never does.
+                current['company'] = m.group(1).strip()
+                continue
+            m = _TAG_RE.match(line)
+            if m:
+                axis_key = m.group(1).lower().replace('-', '_')
+                current[axis_key] = _split_pipe_values(m.group(2))
+                continue
+            m = _FIELD_RE.match(line)
+            if m:
+                # Description and Impact are single-line in the current
+                # convention; a multi-line schema needs a continuation rule.
+                field = m.group(1).lower()
+                current[field] = m.group(2).strip()
+        if block['prefix'] == 'PR':
+            # A PR block is scored as its Objective plus one item per element
+            # (pr-objective-elements-schema-2026-10).
+            entries.extend(pr.retrieval_items(
+                current, lines[block['start']:block['end']]))
+        else:
+            entries.append(_finalise_entry(current))
     return entries
 
 
@@ -235,25 +194,22 @@ def _parse_role_companies(inventory_text):
     resolves an entry's Role tag to its employer for the retrieval manifest. Empty
     dict if the section is absent.
     """
-    try:
-        sec_start, sec_end = _section_bounds(
-            inventory_text, '## Employment & Role History')
-    except ValueError:
+    bounds = document.section_bounds(inventory_text, 'Employment & Role History')
+    if bounds is None:
         return {}
+    sec_start, sec_end = bounds
     lines = inventory_text.split('\n')
+    section_text = '\n'.join(lines[sec_start:sec_end])
+    section_lines = section_text.split('\n')
     companies = {}
-    current_rl = None
-    for i in range(sec_start, sec_end):
-        line = lines[i]
-        m = _ROLE_ENTRY_RE.match(line)
-        if m:
-            current_rl = m.group(1)
+    for block in entry_block.parse_blocks(section_text):
+        if block['prefix'] != 'RL':
             continue
-        if current_rl is not None:
+        for line in section_lines[block['start'] + 1:block['end']]:
             m = _COMPANY_RE.match(line)
             if m:
-                companies[current_rl] = m.group(1).strip()
-                current_rl = None
+                companies[block['id']] = m.group(1).strip()
+                break
     return companies
 
 
@@ -270,16 +226,35 @@ def _finalise_entry(entry):
 
 
 # ---------------------------------------------------------------------------
-# Inventory chunking
-# Split the parsed entry list into chunks of up to chunk_size entries each.
-# The retrieval skill dispatches one scorer subagent per chunk in parallel.
-# Smaller chunks improve attention quality at the cost of more LLM calls.
+# Chunking
+# Items are grouped into chunks bounded by serialized size, not by count. The
+# retrieval skill dispatches one scorer subagent per chunk in parallel, so
+# chunk count is scorer count. Inventory items vary in size (a PR element is a
+# fraction of an EX entry), and what a scorer can attend to and read in one
+# pass is a size limit, not an item count. Narratives use the same function.
 # ---------------------------------------------------------------------------
 
-def _chunk_entries(entries, chunk_size):
-    """Yield successive sublists of length up to chunk_size."""
-    for i in range(0, len(entries), chunk_size):
-        yield entries[i:i + chunk_size]
+def _chunk_by_bytes(entries, max_bytes):
+    """Group entries into chunks bounded by a serialized-byte budget.
+
+    Each chunk takes whole entries until adding the next would exceed
+    max_bytes; a single entry larger than the budget still gets its own chunk.
+    Returns a list of entry lists.
+    """
+    chunks = []
+    current = []
+    current_bytes = 0
+    for entry in entries:
+        entry_bytes = len(json.dumps(entry, ensure_ascii=False).encode('utf-8'))
+        if current and current_bytes + entry_bytes > max_bytes:
+            chunks.append(current)
+            current = []
+            current_bytes = 0
+        current.append(entry)
+        current_bytes += entry_bytes
+    if current:
+        chunks.append(current)
+    return chunks
 
 
 def cmd_inventory(args, repo_root, cfg):
@@ -287,14 +262,14 @@ def cmd_inventory(args, repo_root, cfg):
     inventory_text = _util.read(_inventory_path(repo_root, cfg))
     entries = _parse_inventory_entries(inventory_text)
     chunks = []
-    for chunk_index, sublist in enumerate(_chunk_entries(entries, args.chunk_size)):
+    for chunk_index, sublist in enumerate(_chunk_by_bytes(entries, args.chunk_bytes)):
         chunks.append({
             'index': chunk_index,
             'entries': sublist,
         })
     payload = {
         'corpus': 'inventory',
-        'chunk_size': args.chunk_size,
+        'chunk_bytes': args.chunk_bytes,
         'entry_count': len(entries),
         'chunk_count': len(chunks),
         'chunks': chunks,
@@ -464,31 +439,6 @@ def cmd_themes(args, repo_root, cfg):
 # and guarantees each scorer reads a bounded file rather than a large payload.
 # ---------------------------------------------------------------------------
 
-def _chunk_narratives_by_bytes(entries, max_bytes):
-    """Group narrative entries into chunks bounded by a serialized-byte budget.
-
-    Narrative bodies vary widely in size, and the failure mode being guarded
-    against is a scorer's file read exceeding its token cap, which is a byte
-    problem rather than a count problem. Each chunk takes whole entries until
-    adding the next would exceed max_bytes; a single entry larger than the
-    budget still gets its own chunk. Returns a list of entry lists.
-    """
-    chunks = []
-    current = []
-    current_bytes = 0
-    for entry in entries:
-        entry_bytes = len(json.dumps(entry, ensure_ascii=False).encode('utf-8'))
-        if current and current_bytes + entry_bytes > max_bytes:
-            chunks.append(current)
-            current = []
-            current_bytes = 0
-        current.append(entry)
-        current_bytes += entry_bytes
-    if current:
-        chunks.append(current)
-    return chunks
-
-
 def cmd_split(args, repo_root, cfg):
     """Split payload files into per-chunk files per corpus; print summary."""
     prefix = f"{args.slug}_{args.app_id}"
@@ -528,7 +478,7 @@ def cmd_split(args, repo_root, cfg):
         {k: v for k, v in entry.items() if k != 'body'}
         for entry in nar_data['entries']
     ]
-    narr_chunks = _chunk_narratives_by_bytes(slim_entries, args.narr_chunk_bytes)
+    narr_chunks = _chunk_by_bytes(slim_entries, args.narr_chunk_bytes)
     narr_chunk_paths = []
     for idx, entries in enumerate(narr_chunks):
         out_path = os.path.join(temp_dir, f"{prefix}_narr_chunk{idx}.json")
@@ -677,9 +627,11 @@ def main():
 
     # --- Subparser: inventory ---
     p_inv = sub.add_parser('inventory', help='build chunked inventory payload')
+    # 60000 bytes matches the largest chunk the former 50-entry count produced
+    # (about 61 KB of EX entries), so no scorer reads more than it did before.
     p_inv.add_argument(
-        '--chunk-size', type=int, default=50,
-        help='maximum entries per chunk (default 50)',
+        '--chunk-bytes', type=int, default=60000,
+        help='maximum serialized bytes per chunk (default 60000)',
     )
     p_inv.set_defaults(func=cmd_inventory)
 

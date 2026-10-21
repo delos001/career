@@ -116,7 +116,7 @@ Repeat every step below for one `PU-NNN` before naming the next.
   - **New entry** - the substance is not represented anywhere. Name the entry
     type and the role it belongs to.
   - **Enrichment** - an existing entry covers the substance but under-states or
-    mis-frames it. Name the entry.
+    mis-frames it, or a project needs a new or changed element. Name the entry.
   - **List item** - the substance is a named tool, platform, or exposure item
     rather than a piece of work. Name the list address it belongs under.
   - **Duplicate** - the substance is already carried accurately, so nothing
@@ -146,6 +146,11 @@ Repeat every step below for one `PU-NNN` before naming the next.
     `python scripts/profile_update.py set --id <ID> --pu PU-NNN --field <Field> --value-file temp/pu_value.md`,
     once per field changed. Open the value with a newline for a multi-line
     field such as `Coursework`. Never hand-edit `inventory.md`.
+  - A project element: write its one-line text to `temp/pu_value.md`, then run
+    `python scripts/profile_update.py element --id <ID> --pu PU-NNN --text-file temp/pu_value.md`,
+    with the project's `PR-NNN` to add an element or the element's `PR-NNN.NN`
+    to change one; add `--outcome-file` for an observed result. A new project
+    is inserted with an empty `Elements:` field and its elements added this way.
   - A tool, platform, or exposure item: some sections hold flat lists rather
     than entries, so they carry no ID for `insert` to assign or `set` to
     resolve. Run

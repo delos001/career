@@ -27,7 +27,9 @@ Depends   : pyyaml (via the scripts it drives)
 """
 
 import argparse
+import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -54,6 +56,7 @@ sys.path.insert(0, SCRIPTS_DIR)
 import _config          # noqa: E402
 import _util            # noqa: E402
 import profile_update as pu   # noqa: E402
+from inventory_model import document, entry_block, ex   # noqa: E402
 
 
 def _assert_isolated():
@@ -252,7 +255,7 @@ def test_concurrent_inserts_do_not_collide():
     second = ok('insert', '--prefix', 'EX', '--pu', 'PU-003',
                 '--block-file', os.path.join(RUN_DIR, 'b.md'))
     assert first != second, f'both inserts claimed {first}'
-    ids = [e['id'] for e in pu.parse_entries(docs()[0])]
+    ids = [e['id'] for e in entry_block.parse_blocks(docs()[0])]
     assert len(ids) == len(set(ids)), 'duplicate IDs in the inventory'
 
 
@@ -265,13 +268,13 @@ def test_new_entry_lands_in_its_role_group_in_order():
                 '--block-file', os.path.join(RUN_DIR, 'b.md'))
     inventory, _ = docs()
 
-    start, end = pu._section_bounds(inventory, 'RL-002')
+    start, end = document.section_bounds(inventory, 'RL-002')
     group = '\n'.join(inventory.split('\n')[start:end])
-    assert new_id in [e['id'] for e in pu.parse_entries(group)], \
+    assert new_id in [e['id'] for e in entry_block.parse_blocks(group)], \
         f'{new_id} did not land in its RL-002 group'
 
-    keys = [pu._ex_sort_key(e['field_map'], e['number'])
-            for e in pu.parse_entries(group) if e['prefix'] == 'EX']
+    keys = [ex.sort_key(e['field_map'], e['number'])
+            for e in entry_block.parse_blocks(group) if e['prefix'] == 'EX']
     assert keys == sorted(keys), f'RL-002 group is out of sort order: {keys}'
 
 
@@ -292,7 +295,7 @@ End Date: 2016-01
     role = ok('insert', '--prefix', 'RL', '--pu', 'PU-003',
               '--block-file', os.path.join(RUN_DIR, 'r.md'))
     inventory, _ = docs()
-    assert pu._section_bounds(inventory, role) is not None, \
+    assert document.section_bounds(inventory, role) is not None, \
         f'no "### {role}" group was created under Experience Entries'
 
     # And an entry for that role now has somewhere to go.
@@ -309,7 +312,7 @@ def test_list_add_is_additive():
     target = 'Technical Experience / Programming, Data & Analytics / Platforms'
     root, cfg = _config.load()
     tpl = _util.read(pu._template_path(root, cfg))
-    sections = pu.list_sections(tpl, pu.parse_template(tpl))
+    sections = pu.list_sections(tpl, document.parse_template(tpl))
     before = pu.split_items(pu.resolve_list_target(docs()[0], target, sections)['value'])
 
     ok('list-add', '--pu', 'PU-004', '--target', target, '--item', 'Tableau')
@@ -325,12 +328,12 @@ def test_enrichment_preserves_the_rest_of_the_entry():
     """set replaces one field's span; it must not drop a sibling, reorder the
     roster, or land on a neighbouring entry.
     """
-    before = {e['id']: e['field_map'] for e in pu.parse_entries(docs()[0])}
+    before = {e['id']: e['field_map'] for e in entry_block.parse_blocks(docs()[0])}
     write_block('v.md', 'Enrollment projections now run from one reviewed model.')
     ok('set', '--id', 'EX-003', '--pu', 'PU-003', '--field', 'Impact',
        '--value-file', os.path.join(RUN_DIR, 'v.md'))
 
-    after = {e['id']: e['field_map'] for e in pu.parse_entries(docs()[0])}
+    after = {e['id']: e['field_map'] for e in entry_block.parse_blocks(docs()[0])}
     assert set(before) == set(after), 'an entry appeared or vanished'
     assert after['EX-003']['Impact'] != before['EX-003']['Impact'], 'no change applied'
     assert set(after['EX-003']) == set(before['EX-003']), 'field roster changed'
@@ -363,6 +366,20 @@ def test_document_stays_valid_after_writes():
 # case below breaks the document deliberately and requires a complaint.
 # ---------------------------------------------------------------------------
 
+# The fixture project's last line, and a second objective block for the same
+# project that disagrees on Level, for the project-agreement breakage.
+PR_LAST_LINE = '    Outcome: Used by a small number of external groups for format conversion.\n'
+PR_SECOND_BLOCK = """ID: PR-002
+Project: Open Trial Metadata Toolkit
+Role: RL-002
+Specialty: data-engineering
+Orientation: platform-technology
+Level: leadership
+Work-state: greenfield
+Objective: Make the toolkit the reference converter for partner groups.
+Elements:
+"""
+
 BREAKAGES = [
     ('a missing required field',
      lambda t: t.replace('Impact: Enrollment projections moved from per-study '
@@ -387,6 +404,16 @@ BREAKAGES = [
     ('a fields-out-of-order entry',
      lambda t: t.replace('Level: ic\nWork-state: greenfield',
                          'Work-state: greenfield\nLevel: ic')),
+    ('an element numbered for another project',
+     lambda t: t.replace('  - PR-001.02:', '  - PR-002.02:')),
+    ('an element not padded to two digits',
+     lambda t: t.replace('  - PR-001.02:', '  - PR-001.2:')),
+    ('a duplicate element',
+     lambda t: t.replace('  - PR-001.02:', '  - PR-001.01:')),
+    ('an Outcome not under an element',
+     lambda t: t.replace('Elements:\n', 'Elements:\n    Outcome: Stray result.\n')),
+    ('two blocks of one project that disagree',
+     lambda t: t.replace(PR_LAST_LINE, PR_LAST_LINE + '\n' + PR_SECOND_BLOCK)),
 ]
 
 
@@ -419,6 +446,176 @@ def test_checker_catches_an_unrecorded_departure():
     code, out = run('profile_update_qc.py', 'check', '--processed-pu', 'PU-003')
     assert code != 0, f'a PU entry vanished without a record and nothing complained:\n{out}'
     assert 'Migrated' in out, out
+
+
+# ---------------------------------------------------------------------------
+# Project elements (pr-objective-elements-schema-2026-10)
+# A project is an Objective plus numbered elements. A CV cites an element by
+# its own ID, so an element number must never be reissued, a made-up one must
+# fail every ID check, and an element must travel with its objective.
+# ---------------------------------------------------------------------------
+
+def write_retired(*rows):
+    """Write inventory-ret.md into the run copy with the given ID rows."""
+    root, cfg = _config.load()
+    path = os.path.join(root, cfg['paths']['profile'],
+                        cfg['filenames']['inventory_retired_file'])
+    _util.write(path, '# Retired\n\n| ID | Retired | Notes |\n|---|---|---|\n'
+                + ''.join(f'| {r} | 2026-10-21 | Retired text: an old element. |\n'
+                          for r in rows))
+
+
+def element_ids_in_inventory():
+    """Return the fixture project's element IDs, read independently of pr.py."""
+    return re.findall(r'^  - (PR-001\.\d+):', docs()[0], re.MULTILINE)
+
+
+def test_element_numbers_are_never_reissued():
+    """An element a sent CV cites keeps its number for good: a new element
+    takes max+1 over the current and the retired ones, and an edit keeps the
+    number it changes.
+    """
+    write_block('el.md', 'Schema-validated output, so a malformed record fails at conversion')
+    assert ok('element', '--id', 'PR-001', '--pu', 'PU-003',
+              '--text-file', os.path.join(RUN_DIR, 'el.md')) == 'PR-001.04'
+    write_block('oc.md', 'Caught two malformed vendor files before load.')
+    assert ok('element', '--id', 'PR-001.04', '--pu', 'PU-003',
+              '--outcome-file', os.path.join(RUN_DIR, 'oc.md')) == 'PR-001.04'
+    assert element_ids_in_inventory() == ['PR-001.01', 'PR-001.02', 'PR-001.03', 'PR-001.04']
+
+    write_retired('PR-001.07')
+    assert ok('element', '--id', 'PR-001', '--pu', 'PU-003',
+              '--text-file', os.path.join(RUN_DIR, 'el.md')) == 'PR-001.08', \
+        'a retired element number was reissued'
+
+
+def test_elements_are_never_rewritten_as_a_field():
+    """set rewrites a whole field, which would drop or renumber cited elements;
+    changing the Objective must leave every element as it was."""
+    before = element_ids_in_inventory()
+    write_block('v.md', 'Let trial teams exchange study metadata without re-entry.')
+    ok('set', '--id', 'PR-001', '--pu', 'PU-003', '--field', 'Objective',
+       '--value-file', os.path.join(RUN_DIR, 'v.md'))
+    assert element_ids_in_inventory() == before, 'Objective change touched the elements'
+    out = fails('set', '--id', 'PR-001', '--pu', 'PU-003', '--field', 'Elements',
+                '--value-file', os.path.join(RUN_DIR, 'v.md'))
+    assert 'one element at a time' in out, out
+
+
+def test_new_project_cannot_bring_its_own_element_numbers():
+    """A new project's elements are numbered by the element command, never by
+    hand, so a pasted block cannot carry numbers that collide or skip."""
+    write_block('p.md', PR_SECOND_BLOCK.split('\n', 1)[1] + '  - PR-002.01: Pasted element\n')
+    out = fails('insert', '--prefix', 'PR', '--pu', 'PU-003',
+                '--block-file', os.path.join(RUN_DIR, 'p.md'))
+    assert 'element command' in out, out
+
+
+def test_element_lookup_and_retired_fallback():
+    """An element is read with its project; a retired one still resolves, so an
+    interview-prep run for a CV already sent can trace its citations."""
+    code, out = run('profile_slice.py', 'id', 'PR-001.02')
+    assert code == 0, out
+    assert 'Objective:' in out and 'PR-001.02:' in out and 'PR-001.01:' not in out, out
+
+    code, out = run('profile_slice.py', 'id', 'PR-001.07')
+    assert code != 0, f'a missing element resolved with no retired row:\n{out}'
+    write_retired('PR-001.07')
+    code, out = run('profile_slice.py', 'id', 'PR-001.07')
+    assert code == 0 and 'RETIRED' in out, out
+
+
+def test_retired_ids_stay_valid_history():
+    """A past migrated line names where content went then; an element retired
+    since is still a real target, not a fabrication."""
+    root, cfg = _config.load()
+    path = pu._staging_path(root, cfg)
+    text = _util.read(path)
+    _util.write(path, text.replace('## Migrated\n', '## Migrated\n\nPU-090: PR-001.07\n', 1))
+    code, out = run('profile_update_qc.py', 'check')
+    assert code != 0 and 'PR-001.07' in out, f'an unknown element target passed:\n{out}'
+    write_retired('PR-001.07')
+    code, out = run('profile_update_qc.py', 'check')
+    assert code == 0, f'a retired element was rejected as history:\n{out}'
+
+
+def test_retrieval_scores_objective_and_each_element():
+    """A project is scored as its objective plus one item per element, each led
+    by the project name and carrying the project's role."""
+    result = subprocess.run(
+        [sys.executable, os.path.join(SCRIPTS_DIR, 'retrieval_payload.py'), 'inventory'],
+        capture_output=True, text=True, encoding='utf-8', cwd=SCRIPTS_DIR)
+    assert result.returncode == 0, result.stderr
+    items = {e['id']: e for c in json.loads(result.stdout)['chunks'] for e in c['entries']}
+    expected = ['PR-001'] + element_ids_in_inventory()
+    assert [i for i in items if i.startswith('PR-')] == expected, list(items)
+    for item_id in expected:
+        assert items[item_id]['payload'].startswith('Open Trial Metadata Toolkit: '), items[item_id]
+        assert items[item_id]['role'] == 'RL-002', items[item_id]
+
+
+def cv_qc_report(cv_text):
+    """Run cv_qc.py on a CV text; return {check id: (passed, detail)}."""
+    path = write_block('cv_content.md', cv_text)
+    root, cfg = _config.load()
+    profile = os.path.join(root, cfg['paths']['profile'])
+    code, out = run('cv_qc.py', '--cv-file', path, '--level', 'ic',
+                    '--inventory', os.path.join(profile, 'inventory.md'),
+                    '--narratives', os.path.join(profile, 'narratives.md'))
+    assert code == 0, out
+    return {c['id']: (c['passed'], c['detail']) for c in json.loads(out)['checks']}
+
+
+def test_cv_cites_real_elements_with_their_objective():
+    """A made-up element must fail like a made-up entry; an element cited
+    without its project fails; the same element twice as a bullet's only
+    source is a duplicate."""
+    report = cv_qc_report(
+        '## Professional Summary\nText. <!-- src: EX-001 -->\n\n## Selected Projects\n'
+        '- A. <!-- src: PR-001, PR-001.99 -->\n'
+        '- B. <!-- src: PR-001.01 -->\n'
+        '- C. <!-- src: PR-001, PR-001.02 -->\n'
+        '- D. <!-- src: PR-001, PR-001.02 -->\n')
+    assert not report['C3'][0] and 'PR-001.99' in report['C3'][1], report['C3']
+    assert not report['C8'][0] and 'PR-001.01' in report['C8'][1], report['C8']
+    assert not report['N2'][0] and 'PR-001.02' in report['N2'][1], report['N2']
+
+    clean = cv_qc_report(
+        '## Professional Summary\nText. <!-- src: EX-001 -->\n\n## Selected Projects\n'
+        '- A. <!-- src: PR-001, PR-001.01 -->\n- B. <!-- src: PR-001, PR-001.02 -->\n')
+    for check in ('C3', 'C8', 'N2'):
+        assert clean[check][0], clean[check]
+
+
+def test_gap_and_retrieval_qc_catch_a_made_up_element():
+    """Before, PR-001.99 read as PR-001 and passed as a real ID."""
+    path = os.path.join(FIXTURE_APP, 'gap_analysis.md')
+    _util.write(path, _util.read(path).replace('**PR-001**', '**PR-001.99**'))
+    code, out = run('gap_qc.py', 'check', '--folder', FIXTURE_APP)
+    g8 = next(line for line in out.split('\n') if line.startswith('G8'))
+    assert 'FAIL' in g8 and 'PR-001.99' in g8, g8
+
+    _util.write(os.path.join(FIXTURE_APP, 'retrieval.md'),
+                '# Retrieval Manifest\n\nCites PR-001.02 and PR-001.99.\n')
+    code, out = run('retrieval_qc.py', 'check', '--folder', FIXTURE_APP)
+    r7 = next(line for line in out.split('\n') if line.startswith('R7'))
+    assert 'FAIL' in r7 and 'PR-001.99' in r7 and 'PR-001.02' not in r7, r7
+
+
+def test_objective_and_element_protect_each_other():
+    """A CV citing an element also uses its objective, so neither may be
+    offered for de-emphasis; an unrelated sibling element still may be."""
+    _util.write(os.path.join(FIXTURE_APP, 'retrieval.md'),
+                '# Retrieval Manifest\n\n## Inventory candidates\n')
+    reqs = write_block('reqs.json', json.dumps(
+        [{'status': 'covered', 'evidence': ['PR-001.02']}]))
+    out_path = os.path.join(RUN_DIR, 'candidates.json')
+    code, out = run('gap_de_emphasize.py', 'filter', '--folder', FIXTURE_APP,
+                    '--requirements-file', reqs, '--out', out_path)
+    assert code == 0, out
+    ids = {c['id'] for c in json.loads(_util.read(out_path))['candidates']}
+    assert 'PR-001' not in ids and 'PR-001.02' not in ids, ids
+    assert 'PR-001.01' in ids, ids
 
 
 # ---------------------------------------------------------------------------

@@ -21,7 +21,7 @@ The dispatching skill gives you:
 
 - the `PU-NNN` staging IDs processed this run;
 - the profile targets each one landed in: entry IDs (`EX-NNN`, `PR-NNN`,
-  `ST-NNN`, ...), list addresses (`Technical Experience / <Category> /
+  project elements `PR-NNN.NN`, `ST-NNN`, ...), list addresses (`Technical Experience / <Category> /
   <Label>`), or `duplicate` when the profile already carried the substance;
 - the paths to `personal/profile/profile_updates_pending.md` and the profile
   documents that were written to.
@@ -60,11 +60,13 @@ target: this skill does not write it
    the decision rather than lose the content.
    Route-back: phase 3, step 3c.
 
-5. **The Description / Impact / Context split holds.** Description names what
-   was done, in one bolded sentence. Impact carries the residual outcome, not a
-   restatement of Description's purpose clause, and not aspirational framing.
-   Context carries prior state, constraint, or a load-bearing scope bound.
-   Content in the wrong field is a finding.
+5. **Each field holds the right content.** Description names what was done, in
+   one bolded sentence. Impact carries the residual outcome, not a restatement
+   of Description's purpose clause, and not aspirational framing. Context
+   carries prior state, constraint, or a load-bearing scope bound. A project's
+   Objective states its goal in one sentence; each element names a technique
+   and the problem it solves, in the field's standard terms, with no benefit
+   claim. Content in the wrong field is a finding.
    Route-back: phase 3, step 3d.
 
 6. **Voice matches the document.** The entry reads like its neighbours: same

@@ -441,7 +441,10 @@ CV's level framing.
 
 **Standard rules still apply.** Entries are impact-first, one sentence per bullet,
 within the line limit, and each cites its inventory entry id (PR-NNN, or the
-relevant id for publications/research).
+relevant id for publications/research). A project appears as its objective,
+framed for the role, with the relevant elements folded in, never one bullet per
+element. A bullet using an element cites it with its objective
+(`PR-015, PR-015.03`), and an element's Outcome is the source for its impact.
 
 ## Credentials tail
 

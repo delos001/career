@@ -25,7 +25,7 @@ Checks (IDs mirror the original qc-gap-analysis check numbering):
       line once promoted; every --appended-pu ID is referenced from the
       artifact. (Closed-without-ref is legitimate for eligibility
       attestations, so ref presence anchors on --appended-pu.)
-  G8  No fabricated IDs: every profile-prefixed ID in the artifact exists
+  G8  No fabricated IDs: every profile-prefixed ID (PR elements included) in the artifact exists
       in the profile documents (the prefix set is derived from the
       documents' own `ID:` lines, so new sections are covered without a
       code change); every CR-NNN is within the requirements range; every
@@ -54,6 +54,7 @@ import sys
 
 import _config
 import _util
+from inventory_model import pr
 
 
 # ---------------------------------------------------------------------------
@@ -387,8 +388,10 @@ def check_ids(artifact_text, profile_ids, req_count, staging_entries, migrated,
         return
     # Citable prefixes are derived from the profile documents themselves, so a
     # new inventory section with a new ID prefix is covered without a code change.
+    # The optional '.NN' reads a PR element ID whole, so a made-up element of a
+    # real project is not waved through as its parent.
     prefixes = sorted({pid.split('-')[0] for pid in profile_ids})
-    id_re = re.compile(r'\b(?:' + '|'.join(prefixes) + r')-\d+\b')
+    id_re = re.compile(r'\b(?:' + '|'.join(prefixes) + r')-\d+(?:\.\d+)?\b')
     fabricated = sorted({t for t in id_re.findall(artifact_text)
                          if t not in profile_ids})
     if fabricated:
@@ -491,6 +494,7 @@ def cmd_check(args, repo_root, cfg):
     narratives_text = _read(os.path.join(profile_dir, fn['narratives_file'])) or ''
 
     profile_ids = set(_ID_LINE_RE.findall(inventory_text))
+    profile_ids.update(pr.element_ids(inventory_text))
     profile_ids.update(_ID_LINE_RE.findall(narratives_text))
     staging_entries = _parse_staging_entries(staging_text)
     migrated = _parse_migrated(staging_text)

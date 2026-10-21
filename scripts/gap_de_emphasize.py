@@ -14,7 +14,8 @@ Condition mechanics:
   1. Exclusion set = evidence IDs of every requirement whose status the CV
      cites (covered / closed / language-shift / partial-match), computed by
      the same function gap_assemble.py uses for its downstream safety net,
-     so the two can never drift.
+     so the two can never drift. A PR objective (PR-NNN) and its elements
+     (PR-NNN.NN) protect each other: a citation of one excludes the others.
   2. Signal cutoffs come from config.yaml (gap_analysis.de_emphasize):
      candidate if axis exact-match <= max_axis_exact AND adjacency-weighted
      score <= max_axis_adj. An entry absent from the manifest has no signals
@@ -37,6 +38,7 @@ import _config
 import _util
 import gap_assemble
 import retrieval_payload
+from inventory_model import pr
 
 
 # ---------------------------------------------------------------------------
@@ -63,7 +65,7 @@ def _parse_manifest_signals(manifest_text):
             continue
         cells = [c.strip() for c in line.split('|')[1:-1]]
         # Skip the header and the |----| separator; data rows open with an ID.
-        if len(cells) < 5 or not re.fullmatch(r'(?:EX|PR|PB|PS)-\d+', cells[0]):
+        if len(cells) < 5 or not re.fullmatch(r'(?:EX|PR|PB|PS)-\d+(?:\.\d+)?', cells[0]):
             continue
         try:
             signals[cells[0]] = (int(cells[3]), float(cells[4]))
@@ -99,7 +101,9 @@ def cmd_filter(args, repo_root, cfg):
     excluded_signals = 0
     for entry in entries:
         eid = entry['id']
-        if eid in cited:
+        # A PR objective and its elements protect each other: the CV cites an
+        # element together with its objective.
+        if pr.is_cited(eid, cited):
             excluded_evidence += 1
             continue
         sig = signals.get(eid)

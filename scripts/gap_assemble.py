@@ -51,6 +51,7 @@ import sys
 
 import _config
 import _util
+from inventory_model import pr
 
 
 # ---------------------------------------------------------------------------
@@ -420,12 +421,13 @@ def cmd_assemble(args, repo_root, cfg):
     # the de-emphasize-identifier returned - the sub-agent is an LLM and cannot be
     # trusted to enforce this set-membership constraint perfectly (see design
     # decision de-emphasize-cited-evidence-filter-2026-06).
+    # A PR objective and its elements protect each other (pr.is_cited).
     cited_ids = _cited_evidence_ids(requirements)
     dropped = [d.get('entry_id') for d in de_emphasize_items
-               if d.get('entry_id') in cited_ids]
+               if pr.is_cited(d.get('entry_id'), cited_ids)]
     if dropped:
         de_emphasize_items = [d for d in de_emphasize_items
-                              if d.get('entry_id') not in cited_ids]
+                              if not pr.is_cited(d.get('entry_id'), cited_ids)]
         plural = 'y' if len(dropped) == 1 else 'ies'
         print(f'Dropped {len(dropped)} de-emphasize entr{plural} also cited as '
               f'CV evidence: {", ".join(dropped)}')

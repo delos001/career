@@ -30,7 +30,8 @@ Drafter -> QC output contract (cv_content.md):
 Checks (all report-only):
   C1   every experience / work-output bullet carries a src citation
   C2   Core Competencies and the summary carry a src citation
-  C3   every cited EX/PR/PB/PS/ST id is well-formed and exists in the corpus
+  C3   every cited EX/PR/PB/PS/ST id (including PR-NNN.NN elements) is
+       well-formed and exists in the corpus
   C4   (with --gap-analysis) subheading cr markers name a real CR-NNN
   C5   experience bullets attributed to the right employer/role (per-block
        distinct Role tags do not exceed the block's role-title count)
@@ -38,6 +39,7 @@ Checks (all report-only):
        Experience (they belong in the Selected Projects work-output section)
   C7   every Professional Experience company block carries a role-title line
        (Selected Projects / work-output project headers are exempt)
+  C8   a cited PR element (PR-NNN.NN) is cited with its objective (PR-NNN)
   B1   one sentence per bullet
   B2   bullet within the line limit (<=3 estimated rendered lines)
   S1   section order valid (evidence band, then credentials tail; Tech last)
@@ -71,6 +73,7 @@ from collections import Counter
 
 import _config
 import _util
+from inventory_model import pr
 
 
 # ---------------------------------------------------------------------------
@@ -124,7 +127,9 @@ REQUIRED_SECTIONS = [
 
 SRC_RE = re.compile(r'<!--\s*src:\s*([^>]+?)\s*-->')
 CR_MARK_RE = re.compile(r'<!--\s*cr:\s*([^>]+?)\s*-->')
-ENTRY_ID_RE = re.compile(r'\b(?:EX|PR|PB|PS|ST)-\d+\b')
+# The optional '.NN' reads a PR element ID (PR-015.03) whole, so a made-up
+# element of a real project fails C3 like any fabricated entry.
+ENTRY_ID_RE = re.compile(r'\b(?:EX|PR|PB|PS|ST)-\d+(?:\.\d+)?\b')
 CR_ID_RE = re.compile(r'\bCR-\d+\b')
 ANY_COMMENT_RE = re.compile(r'<!--.*?-->')
 EM_DASH = '—'
@@ -314,6 +319,26 @@ def _check_c3_ids_exist(text, valid_ids):
     return _record('C3', True, f'all {len(cited)} cited id(s) exist in the corpus')
 
 
+def _check_c8_element_with_objective(text):
+    """C8: a cited PR element is cited together with its objective.
+
+    An element (PR-015.03) means something only inside its project, so every
+    src marker naming one also names its block (PR-015); the CV presents a
+    project as its objective with elements folded in
+    (pr-objective-elements-schema-2026-10).
+    """
+    orphans = set()
+    for m in SRC_RE.finditer(text):
+        ids = set(ENTRY_ID_RE.findall(m.group(1)))
+        orphans.update(i for i in ids
+                       if pr.parent_id(i) and pr.parent_id(i) not in ids)
+    if orphans:
+        return _record('C8', False,
+                       'element(s) cited without their objective (cite PR-NNN '
+                       f'alongside PR-NNN.NN): {", ".join(sorted(orphans))}')
+    return _record('C8', True, 'every cited element is cited with its objective')
+
+
 def _check_c4_subheading_crs(text, valid_crs):
     """C4 (with --gap-analysis): subheading cr markers name a real CR-NNN."""
     cited = set()
@@ -412,7 +437,7 @@ def _check_c6_no_project_in_experience(sections):
     pr_cited = set()
     for line in _bullets(pe_body):
         for m in SRC_RE.finditer(line):
-            pr_cited.update(re.findall(r'\bPR-\d+\b', m.group(1)))
+            pr_cited.update(re.findall(r'\bPR-\d+(?:\.\d+)?\b', m.group(1)))
     if pr_cited:
         return _record('C6', False,
                        'independent project entr(y/ies) cited in Professional Experience '
@@ -705,7 +730,12 @@ def _check_n1_chronology(sections):
 
 
 def _check_n2_no_duplicate_ids(sections):
-    """N2: no entry id is the sole src on more than one bullet (likely duplicate)."""
+    """N2: no entry id is the sole src on more than one bullet (likely duplicate).
+
+    A PR element is cited together with its objective ('PR-015, PR-015.03'),
+    so the objective is dropped when one of its own elements sits beside it:
+    that citation's sole source is the element.
+    """
     sole_use = {}
     for raw, body in _experience_sections(sections):
         for line in _bullets(body):
@@ -713,6 +743,8 @@ def _check_n2_no_duplicate_ids(sections):
             if not m:
                 continue
             ids = ENTRY_ID_RE.findall(m.group(1))
+            parents = {pr.parent_id(i) for i in ids}
+            ids = [i for i in ids if i not in parents]
             if len(ids) == 1:
                 sole_use[ids[0]] = sole_use.get(ids[0], 0) + 1
     dups = sorted(i for i, c in sole_use.items() if c > 1)
@@ -754,6 +786,7 @@ def run_qc(args):
     checks.append(_check_c5_role_attribution(sections, ex_to_rl))
     checks.append(_check_c6_no_project_in_experience(sections))
     checks.append(_check_c7_role_titles_present(sections))
+    checks.append(_check_c8_element_with_objective(text))
 
     # --- Group B: bullet rules ---
     checks.append(_check_b1_one_sentence(sections))

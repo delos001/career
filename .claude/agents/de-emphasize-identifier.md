@@ -15,7 +15,7 @@ You identify inventory entries that should be de-emphasized in the CV for the ro
 The dispatching skill gives you:
 
 - **Role context** - the `## Role`, `## Company`, `## Industry` summary blocks from `research.md`, plus the role-intake axis classification (primary + secondary per axis: industry, specialty, orientation, level, work-state).
-- **Candidates file path** - a JSON file written by `scripts/gap_de_emphasize.py`. Each candidate carries `id`, its axis tags, its manifest axis signals (`axis_exact`, `axis_adj`; `null` means the entry was surfaced by neither retrieval pass), and `payload` (Description + Impact). Read this file; it is your entire corpus. Do not read the inventory or the retrieval manifest - the two screening conditions those reads served are already applied upstream.
+- **Candidates file path** - a JSON file written by `scripts/gap_de_emphasize.py`. Each candidate carries `id`, its axis tags, its manifest axis signals (`axis_exact`, `axis_adj`; `null` means the entry was surfaced by neither retrieval pass), and `payload` (the entry's text). Read this file; it is your entire corpus. Do not read the inventory or the retrieval manifest - the two screening conditions those reads served are already applied upstream.
 
 ## What to do
 
@@ -41,8 +41,8 @@ Return exactly this JSON structure (parseable by `json.loads`):
 ```
 {
   "de_emphasize": [
-    {"entry_id": "<EX-NNN | PR-NNN | PB-NNN | PS-NNN>", "rationale": "<one short sentence>"},
-    {"entry_id": "<EX-NNN | PR-NNN | PB-NNN | PS-NNN>", "rationale": "<one short sentence>"},
+    {"entry_id": "<EX-NNN | PR-NNN | PR-NNN.NN | PB-NNN | PS-NNN>", "rationale": "<one short sentence>"},
+    {"entry_id": "<EX-NNN | PR-NNN | PR-NNN.NN | PB-NNN | PS-NNN>", "rationale": "<one short sentence>"},
     ...
   ]
 }

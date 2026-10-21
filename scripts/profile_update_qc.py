@@ -29,7 +29,12 @@ Checks:
   P9  PU entries finished this run left the queue and are recorded as migrated
   P10 PU entries still in the queue carry a Requirement anchor
   P11 List sections hold content and repeat no item within a category
-  P12 The migrated record is well-formed and its outcomes resolve
+  P12 The migrated record is well-formed and its outcomes resolve (an ID
+      logged in inventory-ret.md counts as resolved history)
+  P13 PR elements are well-formed, sit in their own block, and are unique;
+      every Outcome sits under an element
+  P14 Blocks sharing a Project agree on Role/Company, Orientation, Level and
+      Work-state
 
 Author    : Jason Delosh
 Created   : 2026-08-24
@@ -47,6 +52,7 @@ import sys
 import _config
 import _util
 import profile_update as pu
+from inventory_model import document, entry_block, ex, pr
 
 
 # ---------------------------------------------------------------------------
@@ -80,10 +86,14 @@ class Findings:
         self.ran.append(check)
 
     def _in_scope(self, where):
-        """Return True when a finding must fail the run."""
+        """Return True when a finding must fail the run.
+
+        A PR block and its elements are in scope together: a run that wrote
+        PR-015.03 owns findings on PR-015, and the reverse.
+        """
         if not self.scope:
             return True
-        return where is None or where in self.scope
+        return where is None or pr.is_cited(where, self.scope)
 
     def report(self):
         """Print the verdict and every finding; return the process exit code."""
@@ -111,9 +121,9 @@ class Findings:
 def check_sections(findings, inventory_text, template_text):
     """P1: every template section is present, in canonical order."""
     findings.mark('P1')
-    expected = [heading for _, heading in pu.template_sections(template_text)]
+    expected = [heading for _, heading in document.template_sections(template_text)]
     lines = inventory_text.split('\n')
-    fenced = pu._fence_mask(lines)
+    fenced = document.fence_mask(lines)
     actual = [m.group(2) for i, line in enumerate(lines) if not fenced[i]
               for m in [re.match(r'^(#{2,3})\s+(.+?)\s*$', line)] if m]
     for heading in expected:
@@ -186,7 +196,7 @@ def check_ids(findings, entries):
 def check_ex_placement(findings, inventory_text):
     """P4: EX entries sit under their role's group, in sort order."""
     findings.mark('P4')
-    bounds = pu._section_bounds(inventory_text, 'Experience Entries')
+    bounds = document.section_bounds(inventory_text, 'Experience Entries')
     if bounds is None:
         findings.add('P4', 'no "Experience Entries" section to check')
         return
@@ -201,7 +211,7 @@ def check_ex_placement(findings, inventory_text):
             continue
         if not re.match(r'^ID:\s+EX-\d+\s*$', lines[i]):
             continue
-        entry = pu.parse_entries('\n'.join(lines[i:end]))[0]
+        entry = entry_block.parse_blocks('\n'.join(lines[i:end]))[0]
         role = entry['field_map'].get('Role', '').strip()
         if group is None:
             findings.add('P4', f"{entry['id']} sits outside any role group",
@@ -210,7 +220,7 @@ def check_ex_placement(findings, inventory_text):
         if role != group:
             findings.add('P4', f"{entry['id']} carries Role: {role} but sits in "
                                f'the {group} group', entry['id'])
-        key = pu._ex_sort_key(entry['field_map'], entry['number'])
+        key = ex.sort_key(entry['field_map'], entry['number'])
         if previous is not None and key < previous:
             findings.add('P4', f"{entry['id']} is out of sort order within "
                                f'{group}', entry['id'])
@@ -235,9 +245,7 @@ def check_references(findings, entries):
                 findings.add('P5', f"{entry['id']} references {label}: {ref}, "
                                    f'which does not exist', entry['id'])
         if entry['prefix'] == 'PR':
-            has_role = bool(entry['field_map'].get('Role', '').strip())
-            has_company = bool(entry['field_map'].get('Company', '').strip())
-            if has_role and has_company:
+            if pr.role_company_conflict(entry['field_map']):
                 findings.add('P5', f"{entry['id']} carries both Role: and "
                                    f'Company:; they are mutually exclusive',
                              entry['id'])
@@ -284,7 +292,7 @@ def _axis_vocabularies(repo_root, cfg):
 def check_toc(findings, inventory_text):
     """P7: the table of contents matches the document's headings."""
     findings.mark('P7')
-    if pu.rebuild_toc(inventory_text) != inventory_text:
+    if document.rebuild_toc(inventory_text) != inventory_text:
         findings.add('P7', 'the table of contents does not match the document '
                            'headings; regenerate it rather than editing it')
 
@@ -300,7 +308,7 @@ def check_empty_markers(findings, inventory_text, schemas, spans):
     findings.mark('P8')
     for prefix, schema in schemas.items():
         for heading in spans.get(schema['section'], [schema['section']]):
-            bounds = pu._section_bounds(inventory_text, heading)
+            bounds = document.section_bounds(inventory_text, heading)
             if bounds is None:
                 continue
             start, end = bounds
@@ -404,10 +412,10 @@ def check_list_sections(findings, inventory_text, template_text, schemas):
 # ---------------------------------------------------------------------------
 
 def check_migrated(findings, staging_text, inventory_text, narratives_text,
-                   template_text, schemas):
+                   template_text, schemas, retired_text=''):
     """P12: the migrated record is well-formed and its outcomes resolve."""
     findings.mark('P12')
-    bounds = pu._section_bounds(staging_text, pu.MIGRATED_HEADING)
+    bounds = document.section_bounds(staging_text, pu.MIGRATED_HEADING)
     if bounds is None:
         findings.add('P12', 'the staging file has no "## Migrated" section; '
                             'every PU entry that leaves the queue is recorded '
@@ -437,10 +445,47 @@ def check_migrated(findings, staging_text, inventory_text, narratives_text,
         if outcome in (pu.DROPPED_OUTCOME, pu.DUPLICATE_TARGET):
             continue
         targets = [t.strip() for t in outcome.split(pu.TARGET_SEP) if t.strip()]
+        # Past records may name an ID that has since retired; the retired log
+        # keeps it valid history (pr-objective-elements-schema-2026-10).
         for problem in pu.verify_targets(targets, inventory_text,
                                          narratives_text, template_text,
-                                         schemas):
+                                         schemas, retired_text):
             findings.add('P12', f'{pu_id} records {problem}', pu_id)
+
+
+# ---------------------------------------------------------------------------
+# P13 / P14 - PR elements and project agreement
+# An element ID is cited by CVs on its own, so it must be well-formed, belong
+# to the block it sits in, and be unique across the document; an Outcome is
+# an element's observed result and means nothing detached from one. A project
+# split into several objective blocks is still one piece of work, so its
+# blocks agree on employer and framing.
+# ---------------------------------------------------------------------------
+
+def check_elements(findings, inventory_text, entries):
+    """P13: every PR element is well-formed, in its own block, and unique."""
+    findings.mark('P13')
+    lines = inventory_text.split('\n')
+    seen = set()
+    for entry in entries:
+        if entry['prefix'] != 'PR':
+            continue
+        body = lines[entry['start']:entry['end']]
+        for problem in pr.element_problems(entry['id'], body):
+            findings.add('P13', problem, entry['id'])
+        for element in pr.parse_elements(body):
+            if element['id'] in seen:
+                findings.add('P13', f"duplicate element ID {element['id']}",
+                             element['id'])
+            seen.add(element['id'])
+
+
+def check_project_agreement(findings, entries):
+    """P14: blocks sharing a Project agree on Role/Company and framing axes."""
+    findings.mark('P14')
+    for where, problem in pr.project_conflicts(
+            [e for e in entries if e['prefix'] == 'PR']):
+        findings.add('P14', problem, where)
 
 
 # ---------------------------------------------------------------------------
@@ -453,8 +498,8 @@ def cmd_check(args, repo_root, cfg):
     """Run every mechanical check and report the verdict."""
     inventory_text = _util.read(pu._inventory_path(repo_root, cfg))
     template_text = _util.read(pu._template_path(repo_root, cfg))
-    schemas = pu.parse_template(template_text)
-    entries = pu.parse_entries(inventory_text)
+    schemas = document.parse_template(template_text)
+    entries = entry_block.parse_blocks(inventory_text)
 
     findings = Findings(args.scope_id + args.processed_pu)
     check_sections(findings, inventory_text, template_text)
@@ -465,9 +510,14 @@ def cmd_check(args, repo_root, cfg):
     check_axis_values(findings, entries, repo_root, cfg)
     check_toc(findings, inventory_text)
     check_empty_markers(findings, inventory_text, schemas,
-                        pu.template_spans(template_text))
+                        document.template_spans(template_text))
     check_list_sections(findings, inventory_text, template_text, schemas)
+    check_elements(findings, inventory_text, entries)
+    check_project_agreement(findings, entries)
 
+    retired_path = pu._retired_path(repo_root, cfg)
+    retired_text = (_util.read(retired_path)
+                    if os.path.exists(retired_path) else '')
     staging_path = pu._staging_path(repo_root, cfg)
     if os.path.exists(staging_path):
         staging_text = _util.read(staging_path)
@@ -476,7 +526,7 @@ def cmd_check(args, repo_root, cfg):
         check_staging_integrity(findings, pu.parse_staging(staging_text))
         check_migrated(findings, staging_text, inventory_text,
                        _util.read(pu._narratives_path(repo_root, cfg)),
-                       template_text, schemas)
+                       template_text, schemas, retired_text)
     elif args.processed_pu:
         # Nothing to verify a reported closure against. Silence here would read
         # as a pass on the one bookkeeping claim the run actually made.

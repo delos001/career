@@ -15,10 +15,14 @@ Two subcommands:
             EX/PR/PB/PS-NNN -> inventory.md entry blocks (Experience Entries,
                                Independent & Volunteer Projects, Publications,
                                Presentations)
+            PR-NNN.NN       -> one PR element, with its block's header and
+                               Objective
             RL-NNN          -> inventory.md Employment & Role History records
             ED/CERT/AFF/TR/AW -> inventory.md credential/reference blocks
             ST-NNN, DC-NNN  -> narratives.md '## Title' blocks
             TH-NNN          -> positioning.md '## TH-NNN ...' blocks
+          An inventory ID missing from inventory.md is looked up in the retired
+          file (inventory-ret.md) and returned marked RETIRED.
 
   section Fetch a named section from a profile file. Output is the raw
           section body on stdout, no JSON wrapper. <file> is one of
@@ -47,6 +51,7 @@ import sys
 
 import _config
 import _util
+from inventory_model import entry_block, pr
 
 
 # ---------------------------------------------------------------------------
@@ -126,41 +131,6 @@ def _file_for_id(entry_id):
 
 
 # ---------------------------------------------------------------------------
-# Metadata-block extraction (inventory EX, PR, RL entries)
-# An inventory entry starts with 'ID: <id>' on its own line and continues
-# until the next 'ID: ' line, the next '### ' RL grouping header, or the
-# next '## '/'#' top-level heading. The block ends just before that
-# terminator. Output is the block text with trailing whitespace trimmed.
-# ---------------------------------------------------------------------------
-
-def _extract_metadata_block(text, target_id):
-    """Extract the inventory metadata-block for the given ID.
-
-    Returns the block text trimmed of trailing whitespace, or None if the
-    ID is not present in the file.
-    """
-    lines = text.split('\n')
-    target_line = f'ID: {target_id}'
-    start = None
-    for i, line in enumerate(lines):
-        if line.strip() == target_line:
-            start = i
-            break
-    if start is None:
-        return None
-    # Walk forward to the next entry or heading.
-    end = len(lines)
-    for j in range(start + 1, len(lines)):
-        if (lines[j].lstrip().startswith('ID: ')
-                or lines[j].startswith('### ')
-                or lines[j].startswith('## ')
-                or lines[j].startswith('# ')):
-            end = j
-            break
-    return '\n'.join(lines[start:end]).rstrip()
-
-
-# ---------------------------------------------------------------------------
 # Heading-block extraction (narrative ST/DC, theme TH)
 # A heading-block starts at a '## ...' heading that either contains the ID
 # directly (themes: '## TH-001 Title here') or wraps a 'ID: <id>' line in
@@ -217,13 +187,42 @@ def _fetch_id(entry_id, repo_root, cfg):
         raise FileNotFoundError(f'profile file missing: {file_path}')
     text = _util.read(file_path)
     prefix = entry_id.split('-', 1)[0]
-    if prefix in ('EX', 'PR', 'PB', 'PS', 'RL', 'ED', 'CERT', 'AFF', 'TR', 'AW'):
-        block = _extract_metadata_block(text, entry_id)
+    element = pr.ELEMENT_ID_RE.match(entry_id)
+    if element:
+        # A PR element comes with its block's header and Objective.
+        block = entry_block.find_block(text, element.group(1))
+        if block is not None:
+            block = pr.slice_element(block, entry_id)
+    elif prefix in ('EX', 'PR', 'PB', 'PS', 'RL', 'ED', 'CERT', 'AFF', 'TR', 'AW'):
+        # Inventory ID blocks are read by the shared inventory data model.
+        block = entry_block.find_block(text, entry_id)
     else:
         block = _extract_heading_block_by_id(text, entry_id)
+    if block is None and logical_name == 'inventory':
+        block = _retired_row(entry_id, repo_root, cfg)
     if block is None:
         raise ValueError(f'ID not found in {logical_name}: {entry_id}')
     return block
+
+
+# ---------------------------------------------------------------------------
+# Retired-ID fallback
+# An entry or element removed from the inventory is logged in the retired file
+# (inventory-ret.md) and its ID is never reused. A CV already sent can still
+# cite it, so an ID missing from the inventory is looked up there and returned
+# marked retired, rather than failing the lookup an interview-prep run makes.
+# ---------------------------------------------------------------------------
+
+def _retired_row(entry_id, repo_root, cfg):
+    """Return a retired ID's log row as labelled lines, or None."""
+    path = os.path.join(_profile_dir(repo_root, cfg),
+                        cfg['filenames']['inventory_retired_file'])
+    if not os.path.exists(path):
+        return None
+    row = entry_block.retired_rows(_util.read(path)).get(entry_id)
+    if row is None:
+        return None
+    return f'ID: {entry_id}\nStatus: RETIRED {row[0]}\nNotes: {row[1]}'
 
 
 # ---------------------------------------------------------------------------

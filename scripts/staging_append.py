@@ -67,6 +67,7 @@ import sys
 import _config
 import _util
 import profile_update as pu
+from inventory_model import document
 
 
 # ---------------------------------------------------------------------------
@@ -240,7 +241,7 @@ def _append_entry(staging_text, entry_block):
     Raises if '## Entries' is missing - the file is malformed and the caller
     should not silently rebuild it (could clobber unprocessed entries).
     """
-    bounds = pu._section_bounds(staging_text, pu.ENTRIES_HEADING)
+    bounds = document.section_bounds(staging_text, pu.ENTRIES_HEADING)
     if bounds is None:
         raise ValueError("staging file missing '## Entries' section")
     start, end = bounds

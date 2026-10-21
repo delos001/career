@@ -189,13 +189,36 @@ Specialty: {value}
 Orientation: {value}
 Level: {value}
 Work-state: {value}
-Description: **{what was done}**
-Impact: {value-type}: {residual outcome}
-Context: {situation, constraint, or scope bound} {optional}
+Objective: {one sentence}
+Elements:
 ```
 
 `Role:` and `Company:` are mutually exclusive. Use `Role:` whenever a role
 record exists; `Company:` is the fallback for a project with no role record.
+
+One block per objective. A project with a second objective gets a second block
+with the same `Project:`; blocks sharing a project agree on Role or Company,
+Orientation, Level and Work-state. A new objective is one that could stand on a
+CV alone; anything else is an element.
+
+`Objective:` states the goal or problem in one sentence: no methods, tools or
+status. The dates of the role carry whether the work is ongoing. An exploratory
+project says so ("An exploration of ...").
+
+`Elements:` is a multi-line field: the label sits on its own line and each
+element follows, indented two spaces, as `- PR-{NNN}.{NN}: {element}`. An
+optional `Outcome: {observed result}` line sits under its element, indented four
+spaces.
+
+- An element states the technique and the problem it solves. No benefit claims.
+- Name a technique by the field's standard term; no coined or internal terms.
+- One line; a second only when the element is too complex for one.
+- Work not yet built starts with Designed, Proposed or Planned. Built work is
+  stated plainly. No progress wording.
+- An Outcome records an observed result only: a number or a concrete event.
+- Element numbers are two digits, assigned max+1 within the block, never reused.
+  A removed element retires to `inventory-ret.md` with its text in Notes, so a
+  CV that already cites it can still be traced.
 
 ### ED - Education
 
@@ -326,14 +349,16 @@ work entry it recognizes so cv-targeted can pull it alongside a cited entry.
   an industry outside the registry can never match a job classified against it.
   In both cases the field is omitted rather than filled with an invented value:
   scoring is identical either way (no match, 0.0), and the entry still reaches
-  retrieval on its other axes. Keep the real industry as prose in `Context:`
-  where it is worth recording; for self-directed work the role record already
+  retrieval on its other axes. Keep the real industry as prose in an EX entry's
+  `Context:` where it is worth recording; for self-directed work the role record already
   carries `Type: Independent`. Never widen the registry to cover a source
   industry the candidate does not target.
 - **Retrieval participation.** EX, PR, PB, and PS entries are axis-tagged and
   scored during retrieval. RL, ED, TR, CERT, AFF, and AW entries are reference
   content: they are addressable by ID and by section heading, and they are not
   scored.
+- **PR entries** carry Objective and Elements in place of Description, Impact
+  and Context; their rules sit with the PR schema above.
 - **Description** is one bolded sentence naming what was done. Activity and
   methodology stay here; a realized outcome belongs in Impact.
 - **Impact** is a value-type prefix plus optional residual-outcome prose. The

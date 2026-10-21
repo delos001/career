@@ -127,9 +127,12 @@ Specialty: data-engineering
 Orientation: platform-technology
 Level: ic
 Work-state: greenfield
-Description: **Published a toolkit that converts trial metadata between two common interchange formats.** Wrote the converter, the test corpus, and the documentation.
-Impact: The toolkit is used by a small number of external groups for format conversion.
-Context: Built outside working hours; no employer resources involved.
+Objective: Let trial teams move study metadata between two common interchange formats without manual re-entry.
+Elements:
+  - PR-001.01: Format converter between the two interchange standards, so metadata authored in one can be loaded by tools built for the other
+  - PR-001.02: Regression test corpus of real-world metadata files, so a converter change cannot silently break a format edge case
+  - PR-001.03: Published documentation and usage examples, so external groups can adopt the toolkit without support
+    Outcome: Used by a small number of external groups for format conversion.
 
 ---
 

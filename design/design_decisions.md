@@ -258,7 +258,7 @@ Retrieval is a standalone skill that runs after role-intake and serves multiple 
 
 **Three parallel retrieval passes; results unioned into the manifest:**
 
-1. **Inventory semantic pass (LLM-judgment, chunked).** EX/PR corpus split into chunks of approximately 50 entries each. Each chunk sent to Claude alongside the critical requirements list, with payload format `EX-NNN: <Description + Impact concatenated>`. Returns semantic score (0-1) plus one-line reason per entry. Chunking mitigates attention degradation that affects ranking long lists in a single prompt. Cost scales linearly with corpus size: one LLM call per chunk.
+1. **Inventory semantic pass (LLM-judgment, chunked).** EX/PR corpus split into chunks by size (`--chunk-bytes`, default 60000; changed 2026-10-21 from approximately 50 entries, since PR elements are short items). Each chunk sent to Claude alongside the critical requirements list, with payload format `EX-NNN: <Description + Impact concatenated>` (PR items per `pr-objective-elements-schema-2026-10`). Returns semantic score (0-1) plus one-line reason per entry. Chunking mitigates attention degradation that affects ranking long lists in a single prompt. Cost scales linearly with corpus size: one LLM call per chunk.
 
 2. **Inventory tag-pull pass (deterministic).** For each axis in the JD classification, include every EX/PR entry whose tag for that axis is an exact match OR an adjacency-match per the axis file's Adjacency section. Inclusion criterion: N≥1 axes (single-axis floor). Broad recall preserves the "no false-positive gaps" goal in downstream gap analysis.
 
@@ -448,7 +448,7 @@ Every retrievable entry (EX-NNN, PR-NNN) carries `Industry:` and `Specialty:` fi
 Per-entry fields for Orientation and Work-state pending `retrieval-method-for-discrete-elements` resolution.
 
 #### experience-inventory-entry-types
-`EX-NNN` (employment, Section 8), `PR-NNN` (independent and volunteer, Section 10). Same field schema. Differ in ID prefix, the `Project:` descriptor field PR adds, and section. New categories add new prefix ad hoc. (Both reference their role record via `Role: RL-NNN` per `pr-role-reference-2026-07`; before that, PR named its employer directly.)
+`EX-NNN` (employment, Section 8), `PR-NNN` (independent and volunteer, Section 10). Same field schema (superseded for PR by `pr-objective-elements-schema-2026-10`). Differ in ID prefix, the `Project:` descriptor field PR adds, and section. New categories add new prefix ad hoc. (Both reference their role record via `Role: RL-NNN` per `pr-role-reference-2026-07`; before that, PR named its employer directly.)
 
 #### experience-inventory-section-6-rename
 Renamed "Therapeutic Area and Domain Exposure" → "Industry Exposure Profile". `**Bold:**` lines → `### Sub-section` headings.
@@ -674,7 +674,7 @@ Refs: `axes-file-schema`, `initial-specialty-pack-content-design` (extended here
 #### outcome-folded-into-impact
 `Outcome:` field removed from inventory entries. Closed-enum value (Capability Building, Risk Reduction, Quality Improvement, Efficiency Gain, Cost Savings, Scalability/Growth Enablement) folded into `Impact:` field as a colon-delimited prefix: `Impact: <value-type>: <prose>` when prose exists, `Impact: <value-type>` when prose was absent.
 Rationale: Outcome was not called out as a retrieval signal in `cv-targeted-content-rules-from-axes`; coverage was 64% (126/197) so it added a sparse field with no committed downstream consumer. Folding into Impact preserves the value-type signal (grep-extractable via the leading colon-delimited token) while collapsing schema. Reads as natural narrative — the value-type clause is not "wrong" as the leading word of impact prose.
-Supersedes the prior `field-rename-outcome-purpose` decision (Outcome was to be renamed to Purpose; now removed entirely).
+Supersedes the prior `field-rename-outcome-purpose` decision (Outcome was to be renamed to Purpose; now removed entirely). **Superseded for PR by `pr-objective-elements-schema-2026-10`**, which restores an observed-result `Outcome:` line under PR elements; EX unchanged.
 Refs: `inventory-entry-structure-applied`, `inventory-field-drift-cleanup` (deferral), `cv-targeted-content-rules-from-axes` (deferral).
 
 #### competency-field-and-registry
@@ -750,7 +750,7 @@ Existing profile documents (user-info, inventory, narratives, positioning) updat
 
 #### inventory-entry-structure-applied
 EX-NNN entries carry, in order: ID, Role, Industry, Specialty, Orientation, Level, Work-state, Description (`Description:` label, bold preserved on value), Impact, Context.
-PR-NNN entries carry, in order: ID, Project, Role, Industry, Specialty, Orientation, Level, Work-state, Description, Impact, Context.
+PR-NNN entries carry, in order: ID, Project, Role, Industry, Specialty, Orientation, Level, Work-state, Description, Impact, Context. **PR shape superseded by `pr-objective-elements-schema-2026-10`**; the EX shape stands.
 Schemas diverge on the descriptor field: EX has none (the RL record names the role); PR carries `Project:` for the project name. Both reference their role record via `Role: RL-NNN` (per `inventory-role-rl-reference-applied-2026-05`, extended to PR by `pr-role-reference-2026-07`). Title field on EX entries dropped; RL is canonical for role title and company. PR's `Company:` field is retired in favor of the RL reference, retained in the schema only as the fallback for a project with no role record (see `pr-role-reference-2026-07`).
 Prose section order at end of block: Description (Action), then Impact (Result), then Context (Situation). Impact is sparse-permitted, may carry a colon-delimited value-type prefix per `outcome-folded-into-impact` (e.g., `Impact: Risk Reduction: <prose>` or `Impact: Risk Reduction`). Context is sparse-permitted, free prose.
 Competency field removed per `competency-field-and-registry-removed-2026-05` (originally listed between Work-state and the since-dropped Added stamp). `Added` / `Last Used` dropped per `provenance-stamps-dropped-2026-07`. `Company:` replaced by `Role:` on PR entries per `pr-role-reference-2026-07`.
@@ -772,7 +772,7 @@ Apply-time sweep: `retrieval_payload.py` / `retrieval_apply.py` docstrings and t
 Refs: `inventory-entry-structure-applied`, `inventory-role-rl-reference-applied-2026-05`, `experience-inventory-entry-types`, `inventory-section-8-rl-grouping-2026-05` (the `Entries:` field's origin), `inventory-external-visibility-sections-2026-07` (empty-section convention, unaffected), `feedback_design_for_generalization`.
 
 #### impact-field-semantics-2026-05
-Refines `outcome-folded-into-impact` based on 2026-05-04/05 reconciliation pass against existing entries.
+Refines `outcome-folded-into-impact` based on 2026-05-04/05 reconciliation pass against existing entries. **Superseded for PR by `pr-objective-elements-schema-2026-10`**; EX unchanged.
 
 **Multi-value-type prefix permitted.** Impact value-type prefix may be a single value or comma-delimited list (e.g., `Impact: Capability Building, Quality Improvement, Risk Reduction` or `Impact: Capability Building, Quality Improvement, Risk Reduction: <prose>`). The Impact field is free-text prose with structured value-type prefix; the prefix is grep-extractable in either single or multi-value form. Multi-value reflects that real work often produces value across multiple types.
 
@@ -809,7 +809,7 @@ Each industry file (`pharma.md`, `biotech.md`, `cro.md`, `med-device.md`) enumer
 Refs: `axes-file-schema`, `role-evaluation-axis-matching-protocol`, `industry-value-granularity`, `registry-overlap-tracking` (deferral).
 
 #### pr-objective-elements-schema-2026-10
-Decided 2026-10-16; **not yet built**. Until the build lands, the current PR schema in `templates/inventory.md` stays in force. Build plan: `design/pr_schema_plan.md`.
+Decided 2026-10-16; built and in force 2026-10-21. Build plan: `design/pr_schema_plan.md`.
 
 PR entries stop sharing the EX shape. A project was being split across several EX-shaped entries (the career system across 8), each repeating name, role, axes and boilerplate, with free text drifting between Description and Context and Impact lines that were mostly restated descriptions (1 of 17 carried an observed result).
 
@@ -828,11 +828,11 @@ Elements:
 ```
 - A project with a second objective gets a second block with the same `Project:`; blocks sharing a project must agree on Role/Company, Orientation, Level, Work-state. Test for a new objective vs a new element: could it stand on a CV alone?
 - `Elements:` is one multi-line field (modeled on `Coursework:`), so field-order checks and `set` treat the list as one field.
-- Element IDs are stable sub-IDs (`PR-NNN.NN`), assigned max+1 within the block, never reused.
+- Element IDs are stable sub-IDs (`PR-NNN.NN`), assigned max+1 within the block, never reused. A removed element retires to `inventory-ret.md`; `profile_slice.py` falls back to it, so a sent CV's citations still resolve during interview prep.
 
 **Writing rules.**
 - Objective: one sentence stating the goal or problem; no methods, tools, or status (dates carry ongoing status). An exploratory project's Objective says so ("An exploration of..."); no flag field, because nothing would read one.
-- Element: what it is. No "why it's useful" (a value claim, the root of padded Impact).
+- Element: the technique and the problem it solves (e.g. "Deterministic scripts build every subagent prompt, reducing errors and variation in LLM output"). No benefit claims (the root of padded Impact). One line; a second only when the element is too complex for one. Techniques named by the field's standard term, never coined or internal terms, so retrieval and ATS match the market's vocabulary. Unbuilt work opens with Designed, Proposed or Planned; built work is stated plainly; no progress wording.
 - Outcome: observed results only (a number or a concrete event). Optional, never padded. No block-level outcome field.
 - No Description, Impact, Context, or value-type labels on PR. Value-type labels were confirmed unread by any script, agent, or rule as data (2026-10-16 survey); they entered retrieval only as payload text.
 
@@ -844,9 +844,9 @@ Elements:
 
 **Architecture.** Entry parsing moves to a small shared core (entry boundaries, ID format, template roster) plus one module per entry type, so a PR change cannot break EX. Built first; the PR schema is chosen on its merits, not to fit the shared parser.
 
-**Migration.** Each project keeps its lowest existing PR ID as its block ID; the others retire to `personal/profile/inventory-ret.md` with a Notes value naming the element that absorbed them (e.g. "Merged into PR-001 as PR-001.05"). Narrative `Linked Inventory` refs repoint to surviving IDs. Content is rewritten one project at a time with user approval. Old application artifacts keep their old IDs.
+**Migration.** Each project keeps its lowest existing PR ID as its block ID; the others retire to `personal/profile/inventory-ret.md` with a Notes value naming the block that absorbed them (e.g. "Merged into PR-001"); an old entry's content usually spread across several elements, so no single element is named. Narrative `Linked Inventory` refs repoint to surviving IDs. Content is rewritten one project at a time with user approval. Old application artifacts keep their old IDs.
 
-**Supersedes, for PR only, once built:** the Description/Impact/Context rules of `inventory-entry-structure-applied`, `impact-field-semantics-2026-05` and `outcome-folded-into-impact`; the "same field schema" clause of `experience-inventory-entry-types`; the PR half of the Description + Impact payload in `retrieval-architecture-2026-05`. EX is unchanged.
+**Supersedes, for PR only:** the Description/Impact/Context rules of `inventory-entry-structure-applied`, `impact-field-semantics-2026-05` and `outcome-folded-into-impact`; the "same field schema" clause of `experience-inventory-entry-types`; the PR half of the Description + Impact payload in `retrieval-architecture-2026-05`. EX is unchanged.
 
 Refs: `pr-role-reference-2026-07` (Company fallback kept), `cv-independent-project-placement-2026-06`, `feedback_design_for_generalization`, `feedback_in_progress_projects_positive_framing`.
 
