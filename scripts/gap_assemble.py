@@ -17,7 +17,6 @@ Inputs (JSON files written by the dispatching skill):
                             closure_ref, language_shift. Text and type are
                             resolved from --research-file.
   --eligibility-file        Phase 2 flags + user decisions.
-  --de-emphasize-file       de-emphasize-identifier output.
 
 Plus header scalars (--fit-score, --unmet-must-haves, --recommendation-label,
 --recommendation-rationale, --app-id, --date, --company, --role) and
@@ -40,7 +39,7 @@ Usage     : python scripts/gap_assemble.py assemble \\
                 --fit-score ... --unmet-must-haves ... \\
                 --recommendation-label ... --recommendation-rationale-file ... \\
                 --research-file ... --requirements-file ... \\
-                --eligibility-file ... --de-emphasize-file ...
+                --eligibility-file ...
 Depends   : pyyaml (via _config)
 """
 
@@ -51,7 +50,6 @@ import sys
 
 import _config
 import _util
-from inventory_model import pr
 
 
 # ---------------------------------------------------------------------------
@@ -320,22 +318,6 @@ def _render_partial_match(requirements, req_lookup):
     return '\n\n'.join(parts)
 
 
-def _render_de_emphasize(items):
-    """Render the De-emphasize block.
-
-    `items` is a list of {entry_id, rationale}. One bullet per item;
-    '_(none)_' when empty.
-    """
-    if not items:
-        return '_(none)_'
-    lines = []
-    for it in items:
-        entry_id = it.get('entry_id', '')
-        rationale = it.get('rationale', '')
-        lines.append(f'- **{entry_id}**: {rationale}')
-    return '\n'.join(lines)
-
-
 def _render_cv_notes(notes_text):
     """Render the CV Notes block.
 
@@ -351,36 +333,6 @@ def _render_recommendation(label, rationale):
     """Render the Recommendation block: '**<label>.** <rationale>'."""
     rationale = (rationale or '').strip()
     return f'**{label}.** {rationale}'
-
-
-# Statuses whose evidence the CV actually cites. An entry serving as evidence for
-# one of these has a job in the CV, so it must never appear in the de-emphasize
-# list (de-emphasizing an entry the CV cites is contradictory). interview-deferred
-# and unresolved are excluded: the CV cites no evidence for them.
-_CV_CITED_STATUSES = {'covered', 'closed', 'language-shift', 'partial-match'}
-
-
-def _cited_evidence_ids(requirements):
-    """Return the set of inventory IDs cited as evidence by any CV-citing requirement.
-
-    Evidence is either a flat list of ID strings (compact shape) or a list of
-    {id, ...} dicts (full shape); both are normalized to plain IDs here.
-    """
-    cited = set()
-    for req in requirements:
-        if req.get('status') not in _CV_CITED_STATUSES:
-            continue
-        for e in req.get('evidence', []) or []:
-            if isinstance(e, str):
-                cited.add(e)
-            elif isinstance(e, dict) and e.get('id'):
-                cited.add(e['id'])
-    return cited
-
-
-# Cross-script alias: gap_de_emphasize.py imports this so its candidate
-# pre-filter excludes exactly the same entries this module's safety net drops.
-cited_evidence_ids = _cited_evidence_ids
 
 
 # ---------------------------------------------------------------------------
@@ -405,39 +357,15 @@ def cmd_assemble(args, repo_root, cfg):
         else eligibility_doc
     )
 
-    de_emphasize_doc = _util.load_json(args.de_emphasize_file)
-    de_emphasize_items = (
-        de_emphasize_doc.get('de_emphasize', de_emphasize_doc)
-        if isinstance(de_emphasize_doc, dict)
-        else de_emphasize_doc
-    )
-
     rationale = _util.read(args.recommendation_rationale_file).strip()
     cv_notes_text = _util.read(args.cv_notes_file).strip() if args.cv_notes_file else ''
     req_lookup = _parse_requirements_from_research(args.research_file)
-
-    # Deterministic safety net: an entry cited as CV evidence has a job in the CV,
-    # so it can never be de-emphasized. Drop any such collision regardless of what
-    # the de-emphasize-identifier returned - the sub-agent is an LLM and cannot be
-    # trusted to enforce this set-membership constraint perfectly (see design
-    # decision de-emphasize-cited-evidence-filter-2026-06).
-    # A PR objective and its elements protect each other (pr.is_cited).
-    cited_ids = _cited_evidence_ids(requirements)
-    dropped = [d.get('entry_id') for d in de_emphasize_items
-               if pr.is_cited(d.get('entry_id'), cited_ids)]
-    if dropped:
-        de_emphasize_items = [d for d in de_emphasize_items
-                              if not pr.is_cited(d.get('entry_id'), cited_ids)]
-        plural = 'y' if len(dropped) == 1 else 'ies'
-        print(f'Dropped {len(dropped)} de-emphasize entr{plural} also cited as '
-              f'CV evidence: {", ".join(dropped)}')
 
     # Render the per-section blocks.
     eligibility_block = _render_eligibility(flags)
     requirements_block = _render_requirements(requirements, req_lookup)
     language_shift_block = _render_language_shift(requirements, req_lookup)
     partial_match_block = _render_partial_match(requirements, req_lookup)
-    de_emphasize_block = _render_de_emphasize(de_emphasize_items)
     cv_notes_block = _render_cv_notes(cv_notes_text)
     recommendation_block = _render_recommendation(args.recommendation_label, rationale)
 
@@ -456,7 +384,6 @@ def cmd_assemble(args, repo_root, cfg):
         'requirements_block': requirements_block,
         'language_shift_block': language_shift_block,
         'partial_match_block': partial_match_block,
-        'de_emphasize_block': de_emphasize_block,
         'cv_notes_block': cv_notes_block,
         'recommendation_block': recommendation_block,
     })
@@ -501,8 +428,6 @@ def main():
                        help='JSON: per-requirement decisions (status, evidence IDs, notes, language_shift, closure_ref)')
     p_asm.add_argument('--eligibility-file', required=True,
                        help='JSON: Phase 2 flags + decisions')
-    p_asm.add_argument('--de-emphasize-file', required=True,
-                       help='JSON: de-emphasize-identifier output')
     p_asm.set_defaults(func=cmd_assemble)
 
     args = parser.parse_args()

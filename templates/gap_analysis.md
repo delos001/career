@@ -12,7 +12,7 @@ key gaps).
 
 `scripts/assemble.py gap-analysis` renders the skeleton below: tokens in
 `{{double braces}}` are substituted. Per-record blocks (Eligibility Flags,
-Requirements, Language-Shift Cases, Partial-Match Cases, De-emphasize) are
+Requirements, Language-Shift Cases, Partial-Match Cases) are
 rendered from structured inputs the skill passes to the script.
 
 ## Skeleton
@@ -41,10 +41,6 @@ rendered from structured inputs the skill passes to the script.
 ## Partial-Match Cases
 
 {{partial_match_block}}
-
-## De-emphasize
-
-{{de_emphasize_block}}
 
 ## CV Notes
 
@@ -108,9 +104,6 @@ rendered from structured inputs the skill passes to the script.
   Evidence to cite is the `entries_to_reframe` list when the case carries
   language-shift framing, otherwise the requirement's evidence IDs. Renders
   `_(none)_` when no partial-match cases.
-
-- **{{de_emphasize_block}}** - one bullet per item in the format
-  `- **<entry_id>**: <rationale>.` Renders `_(none)_` when no items.
 
 - **{{cv_notes_block}}** - free-text general framing guidance for the CV
   architect captured during the Phase 4 gap-closure loop (not tied to any

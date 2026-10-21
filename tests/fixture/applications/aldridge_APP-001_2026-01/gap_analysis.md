@@ -58,10 +58,6 @@
 - **Remaining gap:** no line-management relationship and no headcount evidence
 - **Entries to cite:** EX-004
 
-## De-emphasize
-
-- **PR-001** - Independent toolkit work; unrelated to the vendor-oversight and governance core of this role.
-
 ## CV Notes
 
 Lead on the operating-model work rather than the warehouse build; the role is

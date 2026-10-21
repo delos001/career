@@ -9,7 +9,7 @@ keeps only what a script cannot verify (whether Notes content actually
 names valid reasoning).
 
 Checks (IDs mirror the original qc-gap-analysis check numbering):
-  G1  Section structure: H1 + the seven H2 sections present, in order.
+  G1  Section structure: H1 + the six H2 sections present, in order.
   G2  Header completeness: APP-NNN / Date / Fit Score / Unmet Must-Haves /
       Recommendation fields present and non-empty.
   G3  Session log ## Gap Analysis section carries Run date, Gap analysis
@@ -61,10 +61,10 @@ from inventory_model import pr
 # Constants: locked vocabularies from the gap-analysis design
 # ---------------------------------------------------------------------------
 
-# The seven H2 sections of gap_analysis.md, in canonical order.
+# The six H2 sections of gap_analysis.md, in canonical order.
 SECTIONS = [
     'Eligibility Flags', 'Requirements', 'Language-Shift Cases',
-    'Partial-Match Cases', 'De-emphasize', 'CV Notes', 'Recommendation',
+    'Partial-Match Cases', 'CV Notes', 'Recommendation',
 ]
 
 # Required header fields (bold-label lines under the H1).
@@ -263,7 +263,7 @@ def _parse_pct(value):
 # ---------------------------------------------------------------------------
 
 def check_structure(artifact_text, findings):
-    """G1: H1 present; the seven H2 sections present in canonical order."""
+    """G1: H1 present; the six H2 sections present in canonical order."""
     problems = []
     if not re.match(r'^# Gap Analysis: ', artifact_text):
         problems.append('missing `# Gap Analysis:` H1')

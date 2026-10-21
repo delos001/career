@@ -65,8 +65,7 @@ gap-analysis: |
   requirements + role context) and the retrieval manifest (scored inventory,
   narratives, themes), then evaluates fit per critical requirement, walks
   any gaps interactively with you to close or categorize them, scores fit,
-  identifies experience to de-emphasize, and produces a gap analysis
-  artifact. This is a stopping point: you read the artifact and decide
+  and produces a gap analysis artifact. This is a stopping point: you read the artifact and decide
   whether to pursue the role.
 
   Steps:
@@ -79,8 +78,8 @@ gap-analysis: |
        arc level first, then entry level.
     5. Walk gaps with you: you may provide clarifying information that
        closes a gap. New information is queued for the staging file.
-    6. Compute fit score, identify experience to de-emphasize, generate
-       recommendation (Proceed / Proceed with caution / Do not pursue).
+    6. Compute fit score and generate the recommendation (Proceed /
+       Proceed with caution / Do not pursue).
     7. Write the gap analysis artifact, append staging entries, write the
        session log section, then QC.
     8. Present the decision block and ask whether to pursue.

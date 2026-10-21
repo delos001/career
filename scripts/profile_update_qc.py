@@ -93,7 +93,7 @@ class Findings:
         """
         if not self.scope:
             return True
-        return where is None or pr.is_cited(where, self.scope)
+        return where is None or pr.is_related(where, self.scope)
 
     def report(self):
         """Print the verdict and every finding; return the process exit code."""

@@ -43,23 +43,12 @@ filenames:
   interview_prep_template: interview_prep.md   # in the templates/ folder; structure authority parsed by prep_qc.py
   interview_notes_file: interview_notes.md     # written into each application folder by the interview-notes skill; hand-filled during interviews
   interview_notes_template: interview_notes.md # in the templates/ folder; structure authority parsed by notes_assemble.py
-  drafting_plan_file: drafting_plan.md          # cv-targeted internal working file (framing, page budget, de-emphasis, arbitration log); application folder
+  drafting_plan_file: drafting_plan.md          # cv-targeted internal working file (framing, page budget, arbitration log); application folder
   cv_collaboration_log_file: cv_collaboration_log.md  # cv-targeted per-round record of stakeholder contributions, integration, and QC; application folder
   scratch_subdir: scratch                      # run-scratch subfolder name; per-application pipeline scratch is <app-folder>/scratch/ (wiped at decline/close), axis-builder scratch is rules/scratch/ (wiped at end of build); both via scratch_cleanup.py
   company_slugs_file: company-slugs.yaml       # at the personal/ root; maps a company name to its preferred folder slug for reuse across applications
   assessment_protocol: assessment-protocol.md  # in rules/self-assessment/; the versioned self-assessment protocol (single authority)
   assessment_bootstrap: bootstrap-prompt.md    # in rules/self-assessment/; portable starter prompt, zero method content
-
-# Gap-analysis de-emphasize pre-filter cutoffs. Consumed by
-# scripts/gap_de_emphasize.py. An inventory entry is a de-emphasize candidate
-# when no CV-citing requirement cites it as evidence AND its axis signals sit
-# at or below BOTH cutoffs (an entry absent from the retrieval manifest has no
-# signals and counts as maximally distant). The judgment agent then decides
-# dilution on the candidate set only.
-gap_analysis:
-  de_emphasize:
-    max_axis_exact: 1     # candidate if axis exact-match count <= this
-    max_axis_adj: 2.5     # and adjacency-weighted score <= this
 
 # Per-axis schema. Consumed by scripts/axis_qc.py and by the axis-builder
 # skills. Each entry defines the value-file frontmatter key, the required

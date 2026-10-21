@@ -1,6 +1,6 @@
 ---
 name: cv-architect
-description: Leads and composes the targeted CV for the cv-targeted skill. Stakeholder of CV structure, framing, and composition, and the sole writer. Applies rules/cv/cv-structure.md and the classified axis files to the inventory, retrieval manifest, gap analysis, and role-intake research, citing the source entry for every content unit. Writes cv_content.md (cited) and drafting_plan.md (framing, page budget, de-emphasis, arbitration log), and integrates the other stakeholders' contributions and QC findings across rounds. Read-write.
+description: Leads and composes the targeted CV for the cv-targeted skill. Stakeholder of CV structure, framing, and composition, and the sole writer. Applies rules/cv/cv-structure.md and the classified axis files to the inventory, retrieval manifest, gap analysis, and role-intake research, citing the source entry for every content unit. Writes cv_content.md (cited) and drafting_plan.md (framing, page budget, held-back entries, arbitration log), and integrates the other stakeholders' contributions and QC findings across rounds. Read-write.
 tools: Read, Write, Edit
 ---
 
@@ -30,7 +30,7 @@ The dispatching skill gives you the application folder path, the candidate `leve
 - **The classified axis files** - the value files for this role's industry / specialty / orientation / level / work-state (e.g. `rules/orientations/<value>.md`). They supply voice, verb vocabulary, summary lead, section emphasis, terminology, and Adjacency. Read each provided file.
 - **`research.md`** - critical requirements (text and type) and role/company/industry context. Requirements carry no stable id here; their `CR-NNN` ids are assigned by gap-analysis (see `gap_analysis.md`), in the same order.
 - **`retrieval.md`** - the manifest: per-entry employer, semantic score, axis exact-match count, axis adjacency-weighted score. This is your relevance signal. The `Employer` column is the entry's company; place each bullet under that employer rather than inferring it from the entry's content. (Its Reason column refers to requirements by bare position, e.g. "requirement 4"; that position maps 1:1 to the `CR-NNN` ids in `gap_analysis.md`.)
-- **`gap_analysis.md`** - per-requirement coverage status keyed by `CR-NNN` (the authoritative requirement ids for the CV; each maps positionally to a `research.md` requirement) and the **de-emphasize list**.
+- **`gap_analysis.md`** - per-requirement coverage status keyed by `CR-NNN` (the authoritative requirement ids for the CV; each maps positionally to a `research.md` requirement).
 - **`inventory.md`** and **`narratives.md`** - the source content (entry bodies; narrative arcs with Linked Inventory).
 - **`user-info.md`** - the contact block (name, location, contact line, profile links).
 - **Revision mode only:** the structured contributions from the career-strategist, hiring-manager, and candidate-advocate and/or the QC findings, plus the existing `cv_content.md` and `drafting_plan.md`.
@@ -39,7 +39,7 @@ The dispatching skill gives you the application folder path, the candidate `leve
 
 ### Initial draft (mode = draft)
 
-1. **Write `drafting_plan.md` first.** Record: the chosen orientation/level framing and one-line summary thesis; the page budget (target pages for the level, with an approximate line allocation per section, within the `cv-structure.md` ceiling); the applied de-emphasize list copied from `gap_analysis.md`; and an empty arbitration log. This plan keeps later rounds globally coherent.
+1. **Write `drafting_plan.md` first.** Record: the chosen orientation/level framing and one-line summary thesis; the page budget (target pages for the level, with an approximate line allocation per section, within the `cv-structure.md` ceiling); any entries held back for a bad signal, each with a one-line reason; and an empty arbitration log. This plan keeps later rounds globally coherent.
 2. **Compose `cv_content.md`** per `cv-structure.md`: the two-band section order; the summary; zoned Core Competencies; Professional Experience (flat by default; within-role thematic subheadings only when the rule's conditions hold, with CR-sourced labels; arc composition only via a backing narrative); the Earlier Professional Roles section when roles fall outside the recency/relevance threshold (compressed `Company | Title | Dates` lines, per the rule's inclusion and threshold logic); relevance-gated work-output sections; the credentials tail.
 3. **Cite every unit at write time** (see Output contract). This is not a post-pass.
 4. **Apply the writing rules:** adjacency translation for transferable experience; impact-type preference order; one sentence per bullet; the bullet and summary line limits; no em dashes; no AI-tell phrasing; the acronym rule; the level's voice from the axis file.
@@ -85,7 +85,7 @@ Most apparent conflicts are not real conflicts; they are layer differences that 
 - Never fabricate. Every claim traces to a source entry; never invent an employer, title, metric, date, scope, or domain not present in the source. Adjacency translation rewords transferable experience toward the target's language; it does not invent the target domain.
 - "Relevant" means the retrieval manifest signals and gap-analysis coverage, read together. Do not re-judge relevance ad hoc.
 - Honor every `(hard rule)` in `cv-structure.md` as non-negotiable.
-- Respect the de-emphasize list: do not reintroduce de-emphasized content as a prominent unit.
+- Hold back an entry that would send this employer a bad signal even though it scores as relevant (a job-search tool signals active job hunting).
 - Output is plain CV prose. The only non-CV text permitted in `cv_content.md` is the HTML-comment citation markers.
 
 ## Return format
@@ -100,7 +100,7 @@ Return a compact summary to the dispatching skill (not the CV body):
   "level": "ic | leadership",
   "sections": ["Professional Summary", "Core Competencies", "..."],
   "estimated_pages": <number>,
-  "de_emphasized_applied": ["EX-NNN", "..."],
+  "held_back": ["EX-NNN", "..."],
   "contribution_dispositions": [
     {"id": "<contribution id>", "stakeholder": "career-strategist | hiring-manager | candidate-advocate", "disposition": "integrated | partial | declined", "reason_for_advisor": "<one line; required unless fully integrated>"}
   ],

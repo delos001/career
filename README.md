@@ -36,9 +36,9 @@ Every phase either interacts directly with the user or is gated for human review
 
 - **Decide the positioning.**
   - which strengths lead,
-  - which real experience gets de-emphasized because it dilutes the narrative for this role,
+  - which real experience is held back because it would work against the candidate for this role,
   - what the candidate is choosing to be in this application.
-  - de-emphasis decisions and the arbitration behind them are recorded, so a choice can be revisited rather than re-argued.
+  - hold-back decisions and the arbitration behind them are recorded, so a choice can be revisited rather than re-argued.
 
 - **Hold a stance.**
   - Preparation produces
@@ -259,7 +259,6 @@ career/
 │   │   ├── axis-classifier.md
 │   │   ├── retrieval-scorer.md
 │   │   ├── gap-detector.md
-│   │   ├── de-emphasize-identifier.md
 │   │   ├── cv-architect.md              # CV: lead writer, sole writer of cv_content.md
 │   │   ├── career-strategist.md         # CV: stakeholder, craft
 │   │   ├── hiring-manager.md            # CV: stakeholder, employer fit
@@ -321,7 +320,6 @@ career/
 │   ├── retrieval_score_merge.py         # merge per-chunk scores
 │   ├── retrieval_apply.py               # adjacency-weighted axis signals -> manifest
 │   ├── gap_assemble.py                  # gap_analysis.md assembly
-│   ├── gap_de_emphasize.py              # deterministic pre-filter before the judgment agent
 │   ├── staging_append.py                # the only path for a new candidate fact
 │   ├── profile_update.py                # the only writer to the profile documents
 │   ├── axis_registry.py, axis_apply.py  # axis-builder read and write

@@ -590,7 +590,8 @@ def test_cv_cites_real_elements_with_their_objective():
 def test_gap_and_retrieval_qc_catch_a_made_up_element():
     """Before, PR-001.99 read as PR-001 and passed as a real ID."""
     path = os.path.join(FIXTURE_APP, 'gap_analysis.md')
-    _util.write(path, _util.read(path).replace('**PR-001**', '**PR-001.99**'))
+    _util.write(path, _util.read(path).replace('**Evidence:** EX-003',
+                                               '**Evidence:** EX-003, PR-001.99'))
     code, out = run('gap_qc.py', 'check', '--folder', FIXTURE_APP)
     g8 = next(line for line in out.split('\n') if line.startswith('G8'))
     assert 'FAIL' in g8 and 'PR-001.99' in g8, g8
@@ -602,20 +603,26 @@ def test_gap_and_retrieval_qc_catch_a_made_up_element():
     assert 'FAIL' in r7 and 'PR-001.99' in r7 and 'PR-001.02' not in r7, r7
 
 
-def test_objective_and_element_protect_each_other():
-    """A CV citing an element also uses its objective, so neither may be
-    offered for de-emphasis; an unrelated sibling element still may be."""
-    _util.write(os.path.join(FIXTURE_APP, 'retrieval.md'),
-                '# Retrieval Manifest\n\n## Inventory candidates\n')
-    reqs = write_block('reqs.json', json.dumps(
-        [{'status': 'covered', 'evidence': ['PR-001.02']}]))
-    out_path = os.path.join(RUN_DIR, 'candidates.json')
-    code, out = run('gap_de_emphasize.py', 'filter', '--folder', FIXTURE_APP,
-                    '--requirements-file', reqs, '--out', out_path)
-    assert code == 0, out
-    ids = {c['id'] for c in json.loads(_util.read(out_path))['candidates']}
-    assert 'PR-001' not in ids and 'PR-001.02' not in ids, ids
-    assert 'PR-001.01' in ids, ids
+def test_objective_and_element_share_qc_scope():
+    """A run that wrote a project owns findings on its elements, and a run that
+    wrote an element owns findings on its project; a run that touched only an
+    unrelated entry owns neither."""
+    root, cfg = _config.load()
+    path = pu._inventory_path(root, cfg)
+    pristine = _util.read(path)
+    cases = [
+        # A duplicate element is reported on the element ID.
+        (pristine.replace('  - PR-001.02:', '  - PR-001.01:'), 'PR-001'),
+        # A stray Outcome is reported on the project ID.
+        (pristine.replace('Elements:\n', 'Elements:\n    Outcome: Stray result.\n'), 'PR-001.01'),
+    ]
+    for broken, scope in cases:
+        _util.write(path, broken)
+        code, out = run('profile_update_qc.py', 'check', '--scope-id', scope)
+        assert code != 0, f'a related finding did not fail a run scoped to {scope}:\n{out}'
+        code, out = run('profile_update_qc.py', 'check', '--scope-id', 'EX-001')
+        assert code == 0, f'a project finding failed a run scoped to EX-001:\n{out}'
+    _util.write(path, pristine)
 
 
 # ---------------------------------------------------------------------------

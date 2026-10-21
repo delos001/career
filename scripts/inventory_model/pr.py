@@ -289,9 +289,8 @@ def retrieval_items(base, block_lines):
 
 # ---------------------------------------------------------------------------
 # Parent and child IDs
-# An element is cited alongside its objective, so a citation of either one
-# protects the other: neither may be de-emphasized while the CV uses its
-# partner.
+# A block and its elements are one unit for QC scope: a run that wrote either
+# one owns findings on the other.
 # ---------------------------------------------------------------------------
 
 def parent_id(entry_id):
@@ -300,13 +299,13 @@ def parent_id(entry_id):
     return m.group(1) if m else None
 
 
-def is_cited(entry_id, cited_ids):
-    """Return True when an ID, its parent block, or one of its elements is cited."""
-    if entry_id in cited_ids:
+def is_related(entry_id, ids):
+    """Return True when an ID, its parent block, or one of its elements is in ids."""
+    if entry_id in ids:
         return True
-    if parent_id(entry_id) in cited_ids:
+    if parent_id(entry_id) in ids:
         return True
-    return any(parent_id(c) == entry_id for c in cited_ids)
+    return any(parent_id(i) == entry_id for i in ids)
 
 
 # ---------------------------------------------------------------------------

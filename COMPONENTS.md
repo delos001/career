@@ -138,16 +138,15 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### gap-analysis
 
-- **Purpose**: Evaluate candidate-to-role fit. Detects per-requirement coverage gaps, walks them interactively with the user to close or categorize, scores fit, identifies experience to de-emphasize, and produces a gap analysis artifact plus session log entries. Stopping point for the user's pursue / don't-pursue decision; handoff to CV creation, interview prep, and career brief if pursued. Per `gap-analysis-architecture-2026-05`.
+- **Purpose**: Evaluate candidate-to-role fit. Detects per-requirement coverage gaps, walks them interactively with the user to close or categorize, scores fit, and produces a gap analysis artifact plus session log entries. Stopping point for the user's pursue / don't-pursue decision; handoff to CV creation, interview prep, and career brief if pursued. Per `gap-analysis-architecture-2026-05`.
 - **Status**: Designed
 - **Inputs**:
   - Rules: `rules/global-rules.md`; `rules/<axis>/<value>.md` Adjacency sections (read indirectly via the gap-detector sub-agent and `retrieval.md`).
-  - Agents: `gap-detector`, `de-emphasize-identifier`, `qc-gap-analysis`.
-  - Scripts: `scripts/display/introduce.py`, `scripts/gap_context.py`, `scripts/gap_assemble.py`, `scripts/gap_de_emphasize.py`, `scripts/staging_append.py`, `scripts/session_log.py`, `scripts/gap_qc.py`.
+  - Agents: `gap-detector`, `qc-gap-analysis`.
+  - Scripts: `scripts/display/introduce.py`, `scripts/gap_context.py`, `scripts/gap_assemble.py`, `scripts/staging_append.py`, `scripts/session_log.py`, `scripts/gap_qc.py`.
   - Templates: `templates/gap_analysis.md`, `templates/profile_updates_pending.md`.
   - Profile docs: `personal/profile/inventory.md`, `personal/profile/narratives.md`, `personal/profile/user-info.md` (eligibility sections).
   - Application artifacts: `personal/applications/<SLUG>/research.md` (critical requirements + role/company/industry blocks), `personal/applications/<SLUG>/retrieval.md`.
-  - Session log: `## Axis Classification` (passed to de-emphasize-identifier as role-context input).
   - User input: APP-NNN (resume) or implicit (new run; folder must exist with research.md and retrieval.md). Phase 2 eligibility-flag decisions, Phase 4 gap-closure inputs, Phase 8 pursue / don't-pursue decision.
 - **Outputs**:
   - Files: `personal/applications/<SLUG>_APP-NNN_YYYY-MM/gap_analysis.md` (the artifact); appended entries in `personal/profile/profile_updates_pending.md` (cross-application staging); `## Gap Analysis` section in the session log.
@@ -158,7 +157,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Update Triggers**:
   - When the gap_analysis.md template, the staging-file schema, or the session-log section schema change.
   - When the fit-score formula or recommendation logic change.
-  - When the gap-detector or de-emphasize-identifier output JSON contracts change.
+  - When the gap-detector output JSON contract changes.
   - When the QC check set in `scripts/gap_qc.py` or `qc-gap-analysis` changes.
   - When downstream consumers (CV creation, interview prep, career brief, profile-update skill) require additional fields.
 
@@ -301,7 +300,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 **Built** (detailed entries below):
 - company-research, role-research, industry-research, critical-requirements-extractor, axis-classifier, qc-role-intake
 - retrieval-scorer (retrieval skill family)
-- gap-detector, de-emphasize-identifier, qc-gap-analysis (gap-analysis skill family)
+- gap-detector, qc-gap-analysis (gap-analysis skill family)
 - industry-builder-research, level-builder-research, orientation-builder-research, specialty-builder-research, work-state-builder-research (axis-builder research agent family; one per axis)
 - industry-builder-reconciler, level-builder-reconciler, orientation-builder-reconciler, specialty-builder-reconciler, work-state-builder-reconciler (axis-builder reconciler agent family; one per axis)
 - qc-industry-builder, qc-level-builder, qc-orientation-builder, qc-specialty-builder, qc-work-state-builder (axis-builder QC agent family; one per axis)
@@ -405,24 +404,6 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Outputs**: JSON `{assessments: [{requirement_id, requirement_text, requirement_type, verdict, evidence, missing, language_shift, reasoning}, ...]}` returned to the caller.
 - **Triggers**: Invoked by `gap-analysis` Phase 3.
 - **Update Triggers**: When the critical-requirements schema, the gap status taxonomy, the per-requirement output contract, or the arc-first rule changes.
-
-#### de-emphasize-identifier
-
-- **Purpose**: Judge substantive dilution for de-emphasize candidates in the gap-analysis skill. Reads the pre-filtered candidates file (evidence exclusion and axis-distance screening already applied by `scripts/gap_de_emphasize.py`) and decides, per candidate, whether its substance would dilute the CV's narrative for the role. Does not read the inventory or the retrieval manifest.
-- **Status**: Designed
-- **Inputs**: Skill-passed (by `gap-analysis`): role context (research summaries + axis classification), candidates file path. Tools: Read.
-- **Outputs**: JSON `{de_emphasize: [{entry_id, rationale}, ...]}` returned to the caller; empty list is valid.
-- **Triggers**: Invoked by `gap-analysis` Phase 5, after the pre-filter script.
-- **Update Triggers**: When the dilution criterion, the entry-level vs finer-grained scope, the candidates-file schema, or the output contract changes.
-
-#### scripts/gap_de_emphasize.py
-
-- **Purpose**: Deterministic pre-filter for de-emphasize candidates. Applies the two data-lookup conditions - entry not cited as CV evidence (via `gap_assemble.cited_evidence_ids`, the same function the downstream safety net uses) and axis signals at or below the config cutoffs (`gap_analysis.de_emphasize` in config.yaml; entries absent from the manifest count as maximally distant) - and writes a bounded candidates file (id, axis tags, signals, payload) for the judgment agent.
-- **Status**: Designed
-- **Inputs**: Args (`filter --folder <app_folder> --requirements-file <path> --out <path>`). Config: `config.yaml` (profile path, filenames, de-emphasize cutoffs). Filesystem: retrieval.md in the folder, inventory.md in the profile folder, the Phase 4 requirements scratch file. Imports `retrieval_payload.parse_inventory_entries` and `gap_assemble.cited_evidence_ids`.
-- **Outputs**: Candidates JSON at `--out`; plain-English count summary to stdout. Errors to stderr with exit 1.
-- **Triggers**: Invoked by `gap-analysis` Phase 5 Step 5b, before the `de-emphasize-identifier` agent.
-- **Update Triggers**: When the manifest table layout, the requirements-record schema, the cutoff semantics, or the candidates-file schema change.
 
 #### qc-gap-analysis
 
@@ -626,9 +607,9 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/gap_assemble.py
 
-- **Purpose**: Render the gap analysis artifact from collected signals — the deterministic portion of the gap-analysis Phase 6. Reads structured JSON inputs the dispatching skill prepares (per-requirement records, eligibility flags, de-emphasize items, recommendation rationale), substitutes tokens into `templates/gap_analysis.md`, writes the wholesale artifact to the application folder.
+- **Purpose**: Render the gap analysis artifact from collected signals — the deterministic portion of the gap-analysis Phase 6. Reads structured JSON inputs the dispatching skill prepares (per-requirement records, eligibility flags, recommendation rationale), substitutes tokens into `templates/gap_analysis.md`, writes the wholesale artifact to the application folder.
 - **Status**: Designed
-- **Inputs**: Subcommand args (`--folder`, `--slug`, `--app-id`, `--date`, `--company`, `--role`, `--fit-score`, `--unmet-must-haves`, `--recommendation-label`, `--recommendation-rationale-file`, `--requirements-file`, `--eligibility-file`, `--de-emphasize-file`). Config: `config.yaml` (templates path, gap_analysis filename, gap_analysis_template name) via `scripts/_config.py`. Filesystem: the template under `templates/`.
+- **Inputs**: Subcommand args (`--folder`, `--slug`, `--app-id`, `--date`, `--company`, `--role`, `--fit-score`, `--unmet-must-haves`, `--recommendation-label`, `--recommendation-rationale-file`, `--requirements-file`, `--eligibility-file`, `--cv-notes-file`). Config: `config.yaml` (templates path, gap_analysis filename, gap_analysis_template name) via `scripts/_config.py`. Filesystem: the template under `templates/`.
 - **Outputs**: `<folder>/gap_analysis.md` and its path printed to stdout. Errors to stderr with exit 1.
 - **Triggers**: Invoked by `gap-analysis` Phase 6 (Step 6a).
 - **Update Triggers**: When the gap_analysis.md template schema changes; when the per-section block rendering shapes change; when the recommendation-label set changes.
@@ -666,7 +647,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Status**: Designed
 - **Inputs**: Document text passed in by the caller; reads no files itself.
 - **Outputs**: Parsed blocks and elements, and updated document text. Never writes to disk; `profile_update.py` is the only writer.
-- **Triggers**: Imported by `profile_update.py`, `profile_update_qc.py`, `staging_append.py`, `profile_slice.py`, `retrieval_payload.py`, `retrieval_qc.py`, `gap_assemble.py`, `gap_de_emphasize.py`, `gap_qc.py`, `cv_qc.py`.
+- **Triggers**: Imported by `profile_update.py`, `profile_update_qc.py`, `staging_append.py`, `profile_slice.py`, `retrieval_payload.py`, `retrieval_qc.py`, `gap_qc.py`, `cv_qc.py`.
 - **Update Triggers**: When an entry type gains a rule of its own; when `templates/inventory.md` changes how blocks are laid out.
 
 #### scripts/axis_registry.py

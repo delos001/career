@@ -1,6 +1,6 @@
 ---
 name: gap-analysis
-description: Evaluate candidate-to-role fit. Reads role-intake's research file and the retrieval manifest, detects gaps per critical requirement, runs an interactive loop with the user to close or categorize each gap, scores fit, surfaces items to de-emphasize, and produces a gap analysis artifact plus session log entries for downstream CV creation, interview prep, and career brief. New information surfaced during the loop is captured to a profile-level staging file for a separate profile-update skill. Run this after retrieval.
+description: Evaluate candidate-to-role fit. Reads role-intake's research file and the retrieval manifest, detects gaps per critical requirement, runs an interactive loop with the user to close or categorize each gap, scores fit, and produces a gap analysis artifact plus session log entries for downstream CV creation, interview prep, and career brief. New information surfaced during the loop is captured to a profile-level staging file for a separate profile-update skill. Run this after retrieval.
 ---
 
 # gap-analysis - evaluate candidate-to-role fit
@@ -73,14 +73,13 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 - Read `research.md` from the application folder. Extract:
   - `## Critical Requirements` section (the per-requirement scoring target).
   - `## Role`, `## Company`, `## Industry` summary blocks (role context for downstream judgment).
-- Read the session log (`session_log.md`) from the application folder. Extract the `## Axis Classification` section (passed to `de-emphasize-identifier` as role-context input).
 - Read `user-info.md` from the profile folder. Extract the eligibility / fit-signal sections:
   - `## Work Authorization` (Status, Sponsorship Required).
   - `## Geographic Preferences` (Modality, Willing to Relocate, Travel).
   - `## Availability` (Start).
   - `## Exclusions` (Industries / Company Types).
-- Note the corpus paths the downstream consumers will read (`retrieval.md` in the application folder; `inventory.md` and `narratives.md` in the profile folder). These files are NOT loaded into main skill context; the `gap-detector` sub-agent reads them in isolated context, and the Phase 5 de-emphasize pre-filter script reads them to build the bounded candidates file.
-- Output: critical-requirements block, role/company/industry summary, axis classification, user-info eligibility sections, paths to `retrieval.md`, `inventory.md`, `narratives.md`.
+- Note the corpus paths the downstream consumers will read (`retrieval.md` in the application folder; `inventory.md` and `narratives.md` in the profile folder). These files are NOT loaded into main skill context; the `gap-detector` sub-agent reads them in isolated context.
+- Output: critical-requirements block, role/company/industry summary, user-info eligibility sections, paths to `retrieval.md`, `inventory.md`, `narratives.md`.
 
 ## Phase 2 - Eligibility / fit-signal check
 
@@ -148,9 +147,9 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   Writing here keeps the main context free of structured data through Phase 5 and 6. Only the staging queue and scratch file paths are carried forward.
 - Output: `gap_requirements.json`, `gap_eligibility.json`, `gap_cv_notes.txt` written to `<scratch>`; queued staging-file entries held in memory for Phase 6.
 
-## Phase 5 - Fit scoring, de-emphasize, recommendation
+## Phase 5 - Fit scoring and recommendation
 
-**Computing fit, identifying de-emphasize items, and generating the recommendation.**
+**Computing fit and generating the recommendation.**
 
 - Input: per-requirement final status list, Phase 2 flags + decisions.
 - **Step 5a - Fit score.** Compute deterministically (in skill body):
@@ -158,27 +157,24 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - Per-requirement coverage credit by status: `covered | closed | language-shift = 1.0`; `partial-match = 0.5`; `interview-deferred | unresolved = 0.0`.
   - Fit score = `sum(weight × credit) / sum(weight)`. Render as percentage with one decimal place (e.g., `78.3%`).
   - Count unmet must-haves: must-have requirements with status `interview-deferred` or `unresolved`.
-- **Step 5b - De-emphasize identification.** Two sub-steps:
-  - **Pre-filter (script).** Run `python scripts/gap_de_emphasize.py filter --folder <app_folder> --requirements-file <scratch>/gap_requirements.json --out <scratch>/de_emphasize_candidates.json`. The script applies the two deterministic conditions (not cited as CV evidence; axis signals at or below the config cutoffs) and writes the bounded candidates file. Non-zero exit = halt per global rules.
-  - **Dilution judgment (sub-agent).** Dispatch `de-emphasize-identifier` with role context (research summaries + axis classification) and the candidates file path. The agent reads only the candidates file (not `inventory.md`, not `retrieval.md`) and judges the third condition - substantive dilution - returning `{entry_id, rationale}` items. **Write `<scratch>/gap_de_emphasize.json` to disk immediately when the sub-agent returns.** Do not hand-reconcile the list against the evidence: `gap_assemble.py` (Phase 6b) deterministically drops any entry also cited as evidence for a covered/closed/language-shift/partial-match requirement (same exclusion function the pre-filter imports), so a collision cannot reach the artifact.
-- **Step 5c - Recommendation.** Generate one of three labels in main skill, with a 1-2 sentence rationale:
+- **Step 5b - Recommendation.** Generate one of three labels in main skill, with a 1-2 sentence rationale:
   - **`Proceed`** - strong signals across fit, must-haves, eligibility (high fit, zero unmet must-haves, no overriding eligibility flag).
   - **`Proceed with caution`** - mixed signals (moderate fit, 1-2 unmet must-haves, or an overridden eligibility flag).
   - **`Do not pursue`** - weak signals (low fit, multiple unmet must-haves).
   - Soft anchors (consistency, not threshold): fit ≥ ~75% reads as high; 50-75% moderate; < 50% low. Adapt to role context.
   **Write `<scratch>/gap_rationale.txt` to disk immediately when the recommendation is generated.**
-- Output: fit score (%), unmet must-haves count; `gap_de_emphasize.json` and `gap_rationale.txt` written to `<scratch>`.
+- Output: fit score (%), unmet must-haves count; `gap_rationale.txt` written to `<scratch>`.
 
 ## Phase 6 - Assemble outputs
 
 **Writing the gap analysis artifact, session log section, and staging-file additions.**
 
-- Input: scratch file paths from Phase 4 (`gap_requirements.json`, `gap_eligibility.json`, `gap_cv_notes.txt`) and Phase 5 (`gap_de_emphasize.json`, `gap_rationale.txt`); Phase 4 queued staging entries; Phase 5 fit score and unmet must-haves count (for session log); APP-NNN, slug, company, role.
+- Input: scratch file paths from Phase 4 (`gap_requirements.json`, `gap_eligibility.json`, `gap_cv_notes.txt`) and Phase 5 (`gap_rationale.txt`); Phase 4 queued staging entries; Phase 5 fit score and unmet must-haves count (for session log); APP-NNN, slug, company, role.
 - **Step 6a - Append staging entries (assign PU-NNN).** For each queued staging entry, run `python scripts/staging_append.py --folder <app_folder> --requirement <CR-NNN> --requirement-text-short "<text>" --content-file <path> --label "<short-label>"`. When no requirement anchors the capture, pass `--requirement "n/a (<short reason>)"` and omit `--requirement-text-short`. The capture date, APP-NNN, company, role, and the five axis values are read from the session log; pass them explicitly only to override a derived value.
 
   Script assigns the next `PU-NNN` and prints the assigned ID. Track which of those came from a **fully closed** gap: only those are closure refs at Step 6b and only those are passed to `--appended-pu` at Phase 7. Entries from partial-match or covered requirements are staged the same way but are neither. This runs before the artifact is assembled so the closure pointers exist when the document is rendered.
-- **Step 6b - Inject closure refs, then write gap_analysis.md.** For each `PU-NNN` captured in Step 6a, set the `closure_ref` field to that `PU-NNN` on the matching `CR-NNN` record in `<scratch>/gap_requirements.json`, and re-write the file. Then run `python scripts/gap_assemble.py assemble --folder <app_folder> --app-id APP-NNN --date YYYY-MM-DD --company <company> --role <role> --fit-score <pct> --unmet-must-haves <count> --recommendation-label <label> --recommendation-rationale-file <scratch>/gap_rationale.txt --research-file <app_folder/research.md> --requirements-file <scratch>/gap_requirements.json --eligibility-file <scratch>/gap_eligibility.json --de-emphasize-file <scratch>/gap_de_emphasize.json --cv-notes-file <scratch>/gap_cv_notes.txt`. Renders `templates/gap_analysis.md` with substituted blocks; for each `closed` record carrying a `closure_ref`, the renderer appends `Closure ref: PU-NNN` to that requirement's Notes. Capture the printed path. Non-zero exit = halt per global rules.
-- **Step 6c - Write session log section.** Build the `## Gap Analysis` section body in a scratch file (`<scratch>/...`) with: Run date, Gap analysis file path, Fit score, QC verdict (filled after Phase 7). Run `python scripts/session_log.py append-section --folder <app_folder> --heading "Gap Analysis" --body-file <path>`. Script replaces the section on re-runs and appends it on first runs. Detail (requirements, language-shift cases, eligibility flags, de-emphasize, recommendation rationale) lives in `gap_analysis.md`; the session log section is a pointer + headline.
+- **Step 6b - Inject closure refs, then write gap_analysis.md.** For each `PU-NNN` captured in Step 6a, set the `closure_ref` field to that `PU-NNN` on the matching `CR-NNN` record in `<scratch>/gap_requirements.json`, and re-write the file. Then run `python scripts/gap_assemble.py assemble --folder <app_folder> --app-id APP-NNN --date YYYY-MM-DD --company <company> --role <role> --fit-score <pct> --unmet-must-haves <count> --recommendation-label <label> --recommendation-rationale-file <scratch>/gap_rationale.txt --research-file <app_folder/research.md> --requirements-file <scratch>/gap_requirements.json --eligibility-file <scratch>/gap_eligibility.json --cv-notes-file <scratch>/gap_cv_notes.txt`. Renders `templates/gap_analysis.md` with substituted blocks; for each `closed` record carrying a `closure_ref`, the renderer appends `Closure ref: PU-NNN` to that requirement's Notes. Capture the printed path. Non-zero exit = halt per global rules.
+- **Step 6c - Write session log section.** Build the `## Gap Analysis` section body in a scratch file (`<scratch>/...`) with: Run date, Gap analysis file path, Fit score, QC verdict (filled after Phase 7). Run `python scripts/session_log.py append-section --folder <app_folder> --heading "Gap Analysis" --body-file <path>`. Script replaces the section on re-runs and appends it on first runs. Detail (requirements, language-shift cases, eligibility flags, recommendation rationale) lives in `gap_analysis.md`; the session log section is a pointer + headline.
 - Output: gap_analysis.md written; staging entries appended; session log section written.
 
 ## Phase 7 - QC
@@ -228,7 +224,6 @@ Consumed by Phase 7 (QC failures). Route back, fix, re-run forward (Phase 7 alwa
 | Non-covered requirement missing Notes | Phase 4 |
 | Closure / staging linkage broken | Phase 6 |
 | Fabricated profile ID in Requirements evidence | Phase 3 |
-| Fabricated profile ID in De-emphasize | Phase 5 |
 | Fabricated PU-NNN reference | Phase 6 |
 | Session log mirroring divergence | Phase 6 |
 | Fit-score math wrong or unmet-must-haves count wrong | Phase 5 |

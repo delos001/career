@@ -90,12 +90,10 @@ Ask if this session is for a new CV or to resume a previous one.
     are gap-analysis's id space and are the authoritative requirement ids for
     the CV; each maps positionally (same order) to a `research.md` requirement,
     and to the bare "requirement N" references in `retrieval.md`.
-  - The `## De-emphasize` list (entry ids to down-weight).
   - The `## CV Notes` section. This is general framing guidance from the
     gap-closure session that applies across the CV rather than to a single
-    requirement. Surface it as a named input alongside the requirement statuses
-    and de-emphasize list; the cv-architect must review and apply it before
-    drafting begins.
+    requirement. Surface it as a named input alongside the requirement
+    statuses; the cv-architect must review and apply it before drafting begins.
 - Read `user-info.md` from the profile folder (`personal/profile/`). Extract the
   contact block (name, location, contact line, profile links) for the CV header.
 - **Resolve the axis value files.** For each classified axis value, resolve its
@@ -118,7 +116,7 @@ Ask if this session is for a new CV or to resume a previous one.
   `rules/cv/cv-structure.md`, `rules/cv/cv-best-practices.md`, and the resolved
   axis files.
 - Output: critical requirements; axis classification with resolved axis-file
-  paths (and any deferred-axis note); level; de-emphasize list; per-requirement
+  paths (and any deferred-axis note); level; per-requirement
   coverage; CV Notes (general framing guidance, or empty); contact block;
   staleness warning (if any); corpus paths.
 
@@ -142,10 +140,10 @@ Ask if this session is for a new CV or to resume a previous one.
   `drafting_plan.md` first (recording how CV Notes constraints and partial-match
   framings were applied), then composes `cv_content.md` with a citation on every
   unit, and returns its compact summary
-  (paths, sections, estimated pages, de-emphasized applied, self-flagged issues).
+  (paths, sections, estimated pages, entries held back, self-flagged issues).
 - **Initialize the collaboration log.** Write `cv_collaboration_log.md` with a
   header (APP-NNN, role, company, date) and a Round 0 record of the initial draft
-  (the architect's summary: sections, estimated pages, de-emphasized applied,
+  (the architect's summary: sections, estimated pages, entries held back,
   self-flagged). The orchestrator writes this log directly throughout; it is an
   internal record, not handed to cv-render.
 - Output: `cv_content.md`, `drafting_plan.md`, and `cv_collaboration_log.md` on
