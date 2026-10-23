@@ -120,10 +120,11 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - Language-shift items: for each, critically assess the strength of the translation before asking — is the underlying capability clearly present with only a vocabulary difference, or is it transferable but not a full match with a real gap underneath? State the assessment and rationale in one line, then ask: `strong-shift` (capability clearly present, vocabulary only) / `partial-match` (transferable but not a full match, real gap remains) / `no-shift-needed` (not a real shift, drop it).
   - The backticked labels are internal; they go only into scratch files. Ask the user with plain-English numbered choices, e.g. "1. Check for evidence / 2. Leave it for the interview / 3. Accept the gap" and "1. Strong shift / 2. Partial match / 3. Not a real shift". A label such as `evidence?` carries its own question mark and reads as a question when spoken.
 - **Step 4c - Walk `evidence?` items one at a time.** For each, surface the requirement text and the sub-agent's `missing` field; the user provides clarifying information. Judge critically in main skill — does the information fully close the gap, partially address it, or not close it? A full closure means the candidate can honestly claim the requirement on the CV without qualification. A partial match means genuine transferable experience exists but a real gap remains underneath. State the assessment and reasoning explicitly before assigning status. Do not accept context at face value; push back if coverage is thin. Outcomes:
-  - Fully closes the gap → assign `closed`; queue a staging entry per [[respect-profile-doc-conventions]], and record its `PU-NNN` as this requirement's closure ref at Step 6b.
-  - Partially addresses it (transferable but not a full match) → assign `partial-match`; note the transferable element and the gap that remains. When the user surfaced substantive experience the inventory under-represents, queue a staging entry for it. It carries no closure ref: a partial match closed nothing.
+  - Fully closes the gap → assign `closed`; queue a staging capture anchored to this requirement.
+  - Partially addresses it (transferable but not a full match) → assign `partial-match`; note the transferable element and the gap that remains. When the user surfaced substantive experience the inventory under-represents, queue a staging capture for it.
   - Does not close it → re-categorize as `interview-deferred` or `unresolved`.
-- A `covered` requirement can also surface under-represented experience during the walk. Queue a staging entry for that too; it changes no status, no score, and carries no closure ref.
+- A `covered` requirement can also surface under-represented experience during the walk. Queue a staging capture for that too; it changes no status and no score.
+- **Captures follow `rules/profile/staging-writing.md`** (run `python scripts/rules_slice.py staging-writing` before the first one). Ask the questions it lists while the user is still in the conversation; the profile-update run cannot ask them later.
 - **Step 4d - Final statuses.** Map intents to final statuses per the locked taxonomy:
   - `covered` (from Phase 3, no user input needed; credit 1.0).
   - `closed` (was a gap; closed via user input; staging entry queued; credit 1.0).
@@ -133,19 +134,19 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - `unresolved` (gap acknowledged, no plan to close; credit 0.0).
 - Initial categorizations from Step 4b are not binding; the user may re-categorize during the walk.
 - **Step 4e - Capture notes.** Compose a one-sentence `notes` string for every requirement with status other than `covered` or `language-shift`:
-  - `closed` - short paraphrase of what the user surfaced (e.g., "User cited 18 months of healthcare regulatory work at Acme"). The `Closure ref: PU-NNN` pointer is appended automatically by the renderer in Phase 6; do not add it here.
+  - `closed` - short paraphrase of what the user surfaced (e.g., "User cited 18 months of healthcare regulatory work at Acme"). A CV that uses this fact before it reaches the inventory cites `GAP CR-NNN`, so the note must carry the fact itself.
   - `partial-match` - describe the transferable element and the gap that remains (e.g., "Spotfire and SQL Server dashboard experience is transferable but Power BI specifically has only sparse usage; CV cites dashboard expertise, gap visible at interview").
   - `interview-deferred` - user's stated reason for deferring (or default: "Deferred to interview; no CV-side evidence to cite").
   - `unresolved` - user's stated acknowledgment (or default: "Acknowledged gap; no plan to close").
   `covered` and `language-shift` requirements do not need notes.
 - **Step 4f - General CV notes.** Ask the user: "Before we score: any general CV framing guidance from this session that isn't tied to a specific requirement? For example, overall positioning cues, things the CV architect should avoid throughout, or cross-cutting narrative priorities. Reply with your notes, or say 'none' to continue." Capture the response as free-text general CV notes (empty string if the user says none).
 - **Step 4g - Write Phase 4 scratch files.** Immediately after Step 4f, write three scratch files to disk before proceeding to Phase 5:
-  - `<scratch>/gap_requirements.json` — the per-requirement final records (each carrying `requirement_id` / `status` / `evidence` / `notes` / optional `language_shift` — omit `requirement_text` and `requirement_type`; the `closure_ref` pointer is NOT set here, it is injected in Phase 6 after staging assigns each `PU-NNN`)
+  - `<scratch>/gap_requirements.json` — the per-requirement final records (each carrying `requirement_id` / `status` / `evidence` / `notes` / optional `language_shift` — omit `requirement_text` and `requirement_type`)
   - `<scratch>/gap_eligibility.json` — the Phase 2 eligibility flags
   - `<scratch>/gap_cv_notes.txt` — the general CV notes (write even if empty)
 
-  Writing here keeps the main context free of structured data through Phase 5 and 6. Only the staging queue and scratch file paths are carried forward.
-- Output: `gap_requirements.json`, `gap_eligibility.json`, `gap_cv_notes.txt` written to `<scratch>`; queued staging-file entries held in memory for Phase 6.
+  Writing here keeps the main context free of structured data through Phase 5 and 6. Only the queued captures and scratch file paths are carried forward.
+- Output: `gap_requirements.json`, `gap_eligibility.json`, `gap_cv_notes.txt` written to `<scratch>`; queued staging captures held in memory for Phase 6.
 
 ## Phase 5 - Fit scoring and recommendation
 
@@ -169,20 +170,18 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 
 **Writing the gap analysis artifact, session log section, and staging-file additions.**
 
-- Input: scratch file paths from Phase 4 (`gap_requirements.json`, `gap_eligibility.json`, `gap_cv_notes.txt`) and Phase 5 (`gap_rationale.txt`); Phase 4 queued staging entries; Phase 5 fit score and unmet must-haves count (for session log); APP-NNN, slug, company, role.
-- **Step 6a - Append staging entries (assign PU-NNN).** For each queued staging entry, run `python scripts/staging_append.py --folder <app_folder> --requirement <CR-NNN> --requirement-text-short "<text>" --content-file <path> --label "<short-label>"`. When no requirement anchors the capture, pass `--requirement "n/a (<short reason>)"` and omit `--requirement-text-short`. The capture date, APP-NNN, company, role, and the five axis values are read from the session log; pass them explicitly only to override a derived value.
-
-  Script assigns the next `PU-NNN` and prints the assigned ID. Track which of those came from a **fully closed** gap: only those are closure refs at Step 6b and only those are passed to `--appended-pu` at Phase 7. Entries from partial-match or covered requirements are staged the same way but are neither. This runs before the artifact is assembled so the closure pointers exist when the document is rendered.
-- **Step 6b - Inject closure refs, then write gap_analysis.md.** For each `PU-NNN` captured in Step 6a, set the `closure_ref` field to that `PU-NNN` on the matching `CR-NNN` record in `<scratch>/gap_requirements.json`, and re-write the file. Then run `python scripts/gap_assemble.py assemble --folder <app_folder> --app-id APP-NNN --date YYYY-MM-DD --company <company> --role <role> --fit-score <pct> --unmet-must-haves <count> --recommendation-label <label> --recommendation-rationale-file <scratch>/gap_rationale.txt --research-file <app_folder/research.md> --requirements-file <scratch>/gap_requirements.json --eligibility-file <scratch>/gap_eligibility.json --cv-notes-file <scratch>/gap_cv_notes.txt`. Renders `templates/gap_analysis.md` with substituted blocks; for each `closed` record carrying a `closure_ref`, the renderer appends `Closure ref: PU-NNN` to that requirement's Notes. Capture the printed path. Non-zero exit = halt per global rules.
+- Input: scratch file paths from Phase 4 (`gap_requirements.json`, `gap_eligibility.json`, `gap_cv_notes.txt`) and Phase 5 (`gap_rationale.txt`); Phase 4 queued staging captures; Phase 5 fit score and unmet must-haves count (for session log); APP-NNN, slug, company, role.
+- **Step 6a - Stage the captures.** For each queued capture, run the command in `rules/profile/staging-writing.md`, anchored to its `CR-NNN`. The script refuses a capture with a field missing; when it does, ask the user for the missing fact rather than filling it in.
+- **Step 6b - Write gap_analysis.md.** Run `python scripts/gap_assemble.py assemble --folder <app_folder> --app-id APP-NNN --date YYYY-MM-DD --company <company> --role <role> --fit-score <pct> --unmet-must-haves <count> --recommendation-label <label> --recommendation-rationale-file <scratch>/gap_rationale.txt --research-file <app_folder/research.md> --requirements-file <scratch>/gap_requirements.json --eligibility-file <scratch>/gap_eligibility.json --cv-notes-file <scratch>/gap_cv_notes.txt`. Renders `templates/gap_analysis.md` with substituted blocks. Capture the printed path. Non-zero exit = halt per global rules.
 - **Step 6c - Write session log section.** Build the `## Gap Analysis` section body in a scratch file (`<scratch>/...`) with: Run date, Gap analysis file path, Fit score, QC verdict (filled after Phase 7). Run `python scripts/session_log.py append-section --folder <app_folder> --heading "Gap Analysis" --body-file <path>`. Script replaces the section on re-runs and appends it on first runs. Detail (requirements, language-shift cases, eligibility flags, recommendation rationale) lives in `gap_analysis.md`; the session log section is a pointer + headline.
-- Output: gap_analysis.md written; staging entries appended; session log section written.
+- Output: gap_analysis.md written; staging items appended; session log section written.
 
 ## Phase 7 - QC
 
 **Running QC on the gap analysis artifact, session log, and staging additions.**
 
-- Input: application folder path, PU-NNN entries appended this run (from Step 6a).
-- **Step 7a - Mechanical checks (script).** Run `python scripts/gap_qc.py check --folder <app_folder>`, passing `--appended-pu PU-NNN` once per staging entry appended this run (omit the flag if none were appended). The script owns structure, header and session-log fields, requirement coverage, status taxonomy, Notes presence, closure linkage, ID existence, fit-score math, mirroring, and the recommendation label. On FAIL: translate the failed checks to plain English for the user, apply each per *Phase routing on failure*, re-run forward, and return to Step 7a.
+- Input: application folder path.
+- **Step 7a - Mechanical checks (script).** Run `python scripts/gap_qc.py check --folder <app_folder>`. The script owns structure, header and session-log fields, requirement coverage, status taxonomy, Notes presence, staging anchors, ID existence, fit-score math, mirroring, and the recommendation label. On FAIL: translate the failed checks to plain English for the user, apply each per *Phase routing on failure*, re-run forward, and return to Step 7a.
 - **Step 7b - Judgment checks (subagent).** Only after Step 7a passes, dispatch `qc-gap-analysis` with the `gap_analysis.md` path. It verifies Notes substance only (mechanical checks are not re-run). **Loops on FINDINGS:** translate to plain English, apply per *Phase routing on failure*, re-run forward (Step 7a re-runs after any fix), return to Phase 7.
 - Cap the loop at **3 iterations** across both steps. Exit earlier when both PASS. If findings remain after the third iteration, carry them to Phase 8 Step 8a, where the user decides each one on its own. After the QC verdict is known, re-run Step 6c to refresh the session log section's QC verdict field.
 - Output: PASS verdict, or unresolved findings after 3 iterations.
@@ -222,9 +221,8 @@ Consumed by Phase 7 (QC failures). Route back, fix, re-run forward (Phase 7 alwa
 | Critical requirement dropped from Requirements section | Phase 3 |
 | Requirement status missing or off-taxonomy | Phase 4 |
 | Non-covered requirement missing Notes | Phase 4 |
-| Closure / staging linkage broken | Phase 6 |
+| Staged item anchored to a requirement not in the artifact | Phase 6 |
 | Fabricated profile ID in Requirements evidence | Phase 3 |
-| Fabricated PU-NNN reference | Phase 6 |
 | Session log mirroring divergence | Phase 6 |
 | Fit-score math wrong or unmet-must-haves count wrong | Phase 5 |
 | Recommendation label off-set | Phase 5 |

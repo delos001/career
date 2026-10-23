@@ -225,7 +225,7 @@ Ask if this session is for a new CV or to resume a previous one.
   --gap-analysis <gap_analysis.md>`. Parse the per-check JSON (this includes the
   L1 page-length guard). A non-zero exit is a script error: halt per global rules.
 - **Step 4b - Judgment QC.** Dispatch `qc-cv-targeted` with `cv_content.md`,
-  `inventory.md`, `narratives.md`, `research.md`, and `level`. It returns a verdict
+  `inventory.md`, `narratives.md`, `gap_analysis.md`, `research.md`, and `level`. It returns a verdict
   and any semantic-traceability / acronym / summary-support / judgment-AI-tell
   findings.
 - **Step 4c - Aggregate and log.** Combine the mechanical check failures and the

@@ -50,6 +50,6 @@ If it is not those two lines, the user replies "plain" and it is redone.
 
 ## Stage New Candidate Facts, Never Write Them Direct
 
-A fact about the candidate that the profile documents do not already carry is staged with `scripts/staging_append.py` and nothing more. Never write it into `inventory.md`, `narratives.md`, or `positioning.md`; `profile-update` is their only writer. `staging_append.py` needs no application folder, so this holds with no skill running.
+A fact about the candidate that the profile documents do not already carry is staged with `scripts/staging_append.py` and nothing more, following `rules/profile/staging-writing.md`. Never write it into `inventory.md`, `narratives.md`, or `positioning.md`; `profile-update` is their only writer. `staging_append.py` needs no application folder, so this holds with no skill running.
 
-Amend a staged entry in place when better information arrives before promotion. The staging file is a queue, not a record.
+When better information arrives before promotion, replace the staged item: remove it and stage it again. The staging file is a queue, not a record.

@@ -225,11 +225,8 @@ Cue / Avoid / If probed keep their labels).
   Interviewer-structural changes (single to panel, add/remove a person) are the
   skill plus the `interview-notes` AMEND flow, not this op.
 - Staging: new GENERAL (role-independent) candidate facts - list them, ask
-  which to stage, write each approved item's content to a file (2-3 sentences
-  of context), then run `python scripts/staging_append.py --folder <app_folder>
-  --requirement "n/a (<short reason>)" --content-file <path> --label "<3-5 word
-  descriptor>"`. When the fact surfaced against a known requirement, pass
-  `--requirement <CR-NNN> --requirement-text-short "<text>"` instead. Never
-  hand-write into the staging file.
+  which to stage, and stage each approved one per
+  `rules/profile/staging-writing.md` (run
+  `python scripts/rules_slice.py staging-writing`).
 - Handoff in plain English: where the doc is, read the main body plus this
   interview's Appendix, speak the arcs aloud.

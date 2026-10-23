@@ -151,7 +151,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Outputs**:
   - Files: `personal/applications/<SLUG>_APP-NNN_YYYY-MM/gap_analysis.md` (the artifact); appended entries in `personal/profile/profile_updates_pending.md` (cross-application staging); `## Gap Analysis` section in the session log.
   - Skills: hands off to CV creation, interview prep, career brief (downstream readers of gap_analysis.md). At Phase 8, prompts user to run the separate profile-update skill now or defer.
-  - Side effects: assigns next `PU-NNN` per staging entry appended; on a "no" decision, records the `not-pursued` outcome in the session log's `## Closed` section and wipes the application scratch.
+  - Side effects: appends one staging item per capture (per `rules/profile/staging-writing.md`); on a "no" decision, records the `not-pursued` outcome in the session log's `## Closed` section and wipes the application scratch.
 - **Triggers**:
   - User invocation: `/gap-analysis` after a retrieval run has completed for the same APP-NNN. Resumes prior runs via the APP-NNN probe.
 - **Update Triggers**:
@@ -272,18 +272,18 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### profile-update
 
-- **Purpose**: Promote staged `PU-NNN` entries into the profile documents. Walks each PU entry with the user one at a time and writes it into `inventory.md` as a new entry, as an enrichment of an existing entry, or as an item on one of the flat-list sections, then closes that PU-NNN off the queue and records `PU-NNN: <targets>` under the staging file's `## Migrated` section. Dispositions that write nothing still migrate: `duplicate` (profile already carried it) and `dropped` (user retraction). The only skill that writes to the profile documents; every other skill reads them. Mode parameter: `adhoc` (user-invoked) / `inline` (from gap-analysis Phase 8).
+- **Purpose**: Promote staged items into the profile. Walks each item with the user one at a time, routes it per `rules/profile/routing.md`, drafts it per `rules/profile/inventory-writing.md`, and writes it into `inventory.md` as a new entry, an addition to an existing entry, or an item on one of the flat-list sections. Items are deleted from the queue only after their entries pass review; nothing records where they went (#70). Narrative- and positioning-bound items stay in the queue. The only skill that writes to the profile documents; every other skill reads them. Mode parameter: `adhoc` (user-invoked) / `inline` (from gap-analysis Phase 8).
 - **Status**: Designed
 - **Inputs**:
-  - Rules: `rules/global-rules.md`; `rules/<axis>/registry.md` (read by the QC script for axis-value validation).
+  - Rules: `rules/global-rules.md`; `rules/profile/routing.md` and `rules/profile/inventory-writing.md` (read through `scripts/rules_slice.py`); `rules/<axis>/registry.md` (read by the QC script for axis-value validation).
   - Agents: `qc-profile-update`.
-  - Scripts: `scripts/display/introduce.py`, `scripts/profile_update.py`, `scripts/profile_slice.py`, `scripts/profile_update_qc.py`.
+  - Scripts: `scripts/display/introduce.py`, `scripts/profile_update.py`, `scripts/profile_slice.py` (`related`), `scripts/rules_slice.py`, `scripts/profile_update_qc.py`.
   - Templates: `templates/inventory.md` (structure authority), `templates/profile_updates_pending.md`.
-  - Profile docs: `personal/profile/profile_updates_pending.md` (the work list), `personal/profile/inventory.md`, `personal/profile/narratives.md` (written, and read for its `ST`/`DC` ID roster when verifying targets). `positioning.md` is not read or written.
-  - User input: run scope (which `PU-NNN` to process), per-entry disposition approval, and the approved entry text.
+  - Profile docs: `personal/profile/profile_updates_pending.md` (the work list), `personal/profile/inventory.md`. `narratives.md` and `positioning.md` are not written.
+  - User input: run scope (which items to process), per-item outcome approval, and the approved entry text.
 - **Outputs**:
-  - Files: new and edited entries in `personal/profile/inventory.md` (incl. appended items on its flat-list sections); edited entries in `narratives.md`; each processed PU entry removed from the staging file's `## Entries` and recorded as one line under its `## Migrated`.
-  - Side effects: assigns the next ID per inventory entry created; regenerates the inventory table of contents on every insert. The migrated record is what keeps `PU-NNN` monotonic in `staging_append.py` and keeps a past `gap_analysis.md`'s `Closure ref:` resolvable in `gap_qc.py` G7/G8.
+  - Files: new and edited entries in `personal/profile/inventory.md` (incl. appended items on its flat-list sections); processed items removed from the staging file.
+  - Side effects: assigns the next ID per inventory entry created; regenerates the inventory table of contents on every insert.
 - **Triggers**:
   - User invocation: `/profile-update` at any time.
   - Skill handoff: gap-analysis Phase 8 offers an inline run.
@@ -307,7 +307,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - prep-research, qc-preparation-screen (preparation-screen skill family; detailed entries below)
 - qc-preparation-interview (preparation-interview skill family; shares prep-research; detailed entry below)
 - qc-self-assessment (self-assessment skill family; judgment QC of a product against `rules/self-assessment/assessment-protocol.md`; mechanical checks owned by `scripts/self_assessment_qc.py`; see `.claude/agents/qc-self-assessment.md`)
-- qc-profile-update (profile-update skill family; judgment QC that each promoted entry is supported by its staged PU-NNN and that framing guards and hedges survived; mechanical checks owned by `scripts/profile_update_qc.py`; see `.claude/agents/qc-profile-update.md`)
+- qc-profile-update (profile-update skill family; judgment QC that each promoted entry is supported by its staged item, that limits survived, and that each field follows the writing rules; reads one context file written by `profile_update_qc.py context`; mechanical checks owned by `scripts/profile_update_qc.py`; see `.claude/agents/qc-profile-update.md`)
 
 **Planned** (from `design/design_decisions.md`):
 - qc_cv_format, qc_cv_structural, qc_cv_content
@@ -416,9 +416,9 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/gap_qc.py
 
-- **Purpose**: Deterministic QC for gap-analysis artifacts. Owns the mechanical checks (G1-G11): section structure, header and session-log fields, requirement coverage against research.md, status taxonomy, Notes presence, closure linkage against the staging file's queued and migrated PU entries alike, ID existence against the profile documents (`PU-NNN` included), fit-score math, session-log mirroring, and the recommendation label set.
+- **Purpose**: Deterministic QC for gap-analysis artifacts. Owns the mechanical checks (G1-G11): section structure, header and session-log fields, requirement coverage against research.md, status taxonomy, Notes presence, staging anchors (each waiting item this application staged names a real `CR-NNN`), ID existence against the profile documents, fit-score math, session-log mirroring, and the recommendation label set.
 - **Status**: Designed
-- **Inputs**: Args (`check --folder <app_folder>`, repeatable `--appended-pu`). Config: `config.yaml` (profile path + filenames) via `scripts/_config.py`. Filesystem: gap_analysis.md, research.md, session_log.md in the folder; inventory.md, narratives.md, profile_updates_pending.md in the profile folder.
+- **Inputs**: Args (`check --folder <app_folder>`). Config: `config.yaml` (profile path + filenames) via `scripts/_config.py`. Filesystem: gap_analysis.md, research.md, session_log.md in the folder; inventory.md, narratives.md, profile_updates_pending.md in the profile folder.
 - **Outputs**: Per-check `PASS`/`FAIL` lines and a `RESULT` line to stdout; exit 0 when all pass, 1 otherwise.
 - **Triggers**: Invoked by `gap-analysis` Phase 7 Step 7a, before the `qc-gap-analysis` judgment agent.
 - **Update Triggers**: When the gap_analysis.md template, research-requirements format, staging-entry schema, session-log section schema, fit-score formula, or status taxonomy change.
@@ -564,9 +564,9 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 - **Purpose**: Deterministic slicer for the candidate profile documents. Subcommands: `id <ID>...` (fetch one or more entries by ID; ID prefix selects the file - EX/PR/RL and credential entries ED/CERT/AFF/TR from inventory.md, ST/DC from narratives.md, TH from positioning.md; a PR element `PR-NNN.NN` returns with its project's header and Objective; an inventory ID no longer in the inventory is returned from `inventory-ret.md` marked retired) and `section <file> <slug>` (fetch a named section from inventory, narratives, positioning, or user-info). Used by retrieval to fetch full content for IDs in its manifest, and by every downstream skill (gap analysis, CV creation, interview prep) that needs to load specific profile content on demand.
 - **Status**: Designed
-- **Inputs**: Subcommand args (`<ID>...` or `<file> <slug>`). Config: `config.yaml` (profile path + per-file filenames) via `scripts/_config.py`. Filesystem: `personal/profile/inventory.md`, `narratives.md`, `positioning.md`, `user-info.md`.
-- **Outputs**: Raw text on stdout (block text for IDs separated by blank lines; section body for section subcommand). Errors to stderr with exit 1 on missing file or missing ID/section.
-- **Triggers**: Invoked by retrieval (on-demand content fetch) and by downstream skills (gap analysis, CV creation, interview prep) when JD-named qualifications or specific entries need to be loaded.
+- **Inputs**: Subcommand args (`<ID>...`, `<file> <slug>`, or `related --item <label> [--part N]`). Config: `config.yaml` (profile path + per-file filenames, `related_pull`) via `scripts/_config.py`. Filesystem: `personal/profile/inventory.md`, `narratives.md`, `positioning.md`, `user-info.md`, `profile_updates_pending.md`.
+- **Outputs**: Raw text on stdout (block text for IDs separated by blank lines; section body for section subcommand; for `related`, the prose fields of every entry in the staged item's Work role plus entries sharing key words with its Did field, split into parts above `related_pull.max_chars`). Errors to stderr with exit 1 on missing file or missing ID/section/item.
+- **Triggers**: Invoked by retrieval (on-demand content fetch), by downstream skills (gap analysis, CV creation, interview prep) when specific entries need to be loaded, and by `profile-update` routing (`related`).
 - **Update Triggers**: When the inventory, narratives, or positioning file schemas change (entry headers, ID metadata line, or section heading conventions).
 
 #### scripts/retrieval_payload.py
@@ -616,30 +616,48 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/staging_append.py
 
-- **Purpose**: Append a `Profile Updates Pending` entry to the cross-application staging file at `personal/profile/profile_updates_pending.md`. Assigns the next `PU-NNN` by scanning every ID the file records, queued and migrated alike, so the counter stays monotonic as PU entries are promoted out of the queue and never reissues a number an old `gap_analysis.md` already cites. Appends into `## Entries` specifically, since the file carries two sections and a placeholder in each. Creates the file from `templates/profile_updates_pending.md` if missing. Echoes the assigned PU-NNN on stdout so the caller can reference it inline in `gap_analysis.md`. One entry shape: every entry carries a `Requirement:` anchor naming where the fact surfaced (a `CR-NNN`, or `n/a` plus a reason). Whether the fact closed a gap is not recorded here; that belongs to the originating application's `gap_analysis.md`.
+- **Purpose**: Append one item to the cross-application staging file at `personal/profile/profile_updates_pending.md`. The capture fields (Work role, Did, Others did, Outcome, Limits) are read from the template's per-entry schema and are all required; a missing, blank, or unknown field, or a Work role that is not a real `RL-NNN`, `new: ...`, or `n/a (...)`, is refused before the file is touched. The label is the item's handle and must be unique in the queue. Creates the file from `templates/profile_updates_pending.md` if missing. Every item carries a `Requirement:` anchor (a `CR-NNN`, or `n/a` plus a reason); a CV citing the fact before promotion cites `GAP CR-NNN`.
 - **Status**: Designed
-- **Inputs**: Subcommand args (`--folder`, `--requirement`, `--requirement-text-short`, `--content-file`, `--label`). Given `--folder`, the date, `APP-NNN`, company, role, and the five axis values are read from that application's session log; each has an explicit override flag (`--captured`, `--from-app`, `--company`, `--role`, `--industry`, `--specialty`, `--orientation`, `--level`, `--work-state`) for when the log is absent or a value needs correcting. Config: `config.yaml` (profile path, templates path, staging_file and session_log_file filenames) via `scripts/_config.py`. Filesystem: the application session log, the staging file (may not exist on first call), the template under `templates/`.
-- **Outputs**: Updated staging file; assigned `PU-NNN` printed to stdout. Errors to stderr with exit 1.
-- **Triggers**: Invoked by `gap-analysis` Phase 6 (Step 6a), once per PU entry; by the prep skills for facts surfaced during interview preparation.
-- **Update Triggers**: When the staging-file per-entry schema changes; when the staging-file location or filename changes; when the `PU-NNN` digit width changes.
+- **Inputs**: Args (`--folder`, `--requirement`, `--requirement-text-short`, `--capture-file`, `--label`). Given `--folder`, the date, `APP-NNN`, company, role, and the five axis values are read from that application's session log; each has an explicit override flag (`--captured`, `--from-app`, `--company`, `--role`, `--industry`, `--specialty`, `--orientation`, `--level`, `--work-state`) for when the log is absent or a value needs correcting. Config: `config.yaml` (profile path, templates path, staging_file and session_log_file filenames) via `scripts/_config.py`. Filesystem: the application session log, the staging file (may not exist on first call), the template under `templates/`.
+- **Outputs**: Updated staging file; the label printed to stdout. Errors to stderr with exit 1.
+- **Triggers**: Invoked per `rules/profile/staging-writing.md` by `gap-analysis` Phase 6 (Step 6a) and by the prep skills.
+- **Update Triggers**: When the staging-file per-entry schema changes; when the staging-file location or filename changes.
 
 #### scripts/profile_update.py
 
-- **Purpose**: Deterministic mutations for `inventory.md` and the staging file, for the `profile-update` skill. Subcommands: `pending` (queued PU entries, compact), `show` (one PU entry in full), `insert` (place a new entry in sorted position, assigning its ID and rebuilding the table of contents), `set` (replace one field's value on one entry, the enrichment path), `element` (add a project element with the next `PR-NNN.NN`, or change one), `list-add` (append one item to a list line in a section that holds flat lists rather than ID-bearing entries), `record` (leave a Written bullet for a hand edit in `narratives.md` / `positioning.md`), `close` (migrate a PU entry off the queue and record where its content landed), `drop` (retract a PU entry, recording `dropped`). The write subcommands each take `--pu` and leave a `- **Written:**` bullet on that PU entry naming what they changed; `close` builds its migrated line from those bullets rather than from a target list passed in, because only a newly inserted entry proves its own write - an enriched entry and a list category both existed beforehand, so checking that they exist says nothing about whether anything reached them. Reads and changes the inventory through `scripts/inventory_model/`. Owns the staging file's section layout and its target-resolution rule; the QC script and `staging_append.py` import them rather than re-implementing them.
+- **Purpose**: Deterministic mutations for `inventory.md` and the staging file, for the `profile-update` skill. Subcommands: `pending` (queued items, compact), `show` (one item in full, by label), `insert` (place a new entry in sorted position, assigning its ID and rebuilding the table of contents), `set` (replace one field's value on one entry), `element` (add a project element with the next `PR-NNN.NN`, or change one), `list-add` (append one item to a list line in a section that holds flat lists rather than ID-bearing entries), `remove` (delete one item from the queue after review passes, printing what it held). Writes do not depend on the queue, so a review fix after the first write succeeds (#70). Reads and changes the inventory through `scripts/inventory_model/`. Owns the staging file's section layout; the QC scripts, `staging_append.py`, and `profile_slice.py` import it rather than re-implementing it.
 - **Status**: Designed
-- **Inputs**: Subcommand args (`--pu`, `--prefix`, `--block-file`, `--subsection`, `--id`, `--field`, `--value-file`, `--target`, `--item`, `--duplicate`). Config: `config.yaml` (profile path, templates path, inventory_file, inventory_template, staging_file) via `scripts/_config.py`. Filesystem: `personal/profile/inventory.md`, `personal/profile/profile_updates_pending.md`, `templates/inventory.md` (the section roster and per-prefix field rosters are parsed from it at run time, never hardcoded).
-- **Outputs**: Updated `inventory.md` (entry placed, ToC regenerated; or one field replaced; or one list item appended) or updated staging file; assigned ID, list address, or confirmation printed to stdout. Errors to stderr with exit 1. `insert` rejects a block whose fields are missing, unknown, or out of template order, and rejects a block carrying its own `ID:` line (the script assigns IDs so two inserts in one run cannot collide). `list-add` appends only, never rewrites a line, and rejects an item already present or one carrying the line's own separator. `close` re-verifies every recorded target, entry ID or list address, before moving anything, joins them with `; ` because a list address can itself carry a comma, and refuses a PU entry that recorded no writes - which is what catches a write that failed or was skipped. `--duplicate` is refused on a PU entry that recorded writes.
+- **Inputs**: Subcommand args (`--prefix`, `--block-file`, `--subsection`, `--id`, `--field`, `--value-file`, `--target`, `--item`). Config: `config.yaml` (profile path, templates path, inventory_file, inventory_template, staging_file) via `scripts/_config.py`. Filesystem: `personal/profile/inventory.md`, `personal/profile/profile_updates_pending.md`, `templates/inventory.md` (the section roster and per-prefix field rosters are parsed from it at run time, never hardcoded).
+- **Outputs**: Updated `inventory.md` (entry placed, ToC regenerated; or one field replaced; or one list item appended) or updated staging file; assigned ID, list address, or confirmation printed to stdout. Errors to stderr with exit 1. `insert` rejects a block whose fields are missing, unknown, or out of template order, and rejects a block carrying its own `ID:` line (the script assigns IDs so two inserts in one run cannot collide). `list-add` appends only, never rewrites a line, and rejects an item already present or one carrying the line's own separator. `remove` restores the queue's empty marker when it takes the last item.
 - **Triggers**: Invoked by `profile-update` Phases 1, 3, and 4.
 - **Update Triggers**: When `templates/inventory.md` changes shape (the parse contract is the `## Document skeleton` fence and the `### <PREFIX> - <Section>` fences); when the entry sort rule changes; when a new profile document gains a template and comes into the skill's write scope.
 
 #### scripts/profile_update_qc.py
 
-- **Purpose**: Mechanical quality checks for the `profile-update` skill. Fourteen checks: section roster and order (P1), per-entry field rosters (P2), ID integrity (P3), EX placement and within-group sort order (P4), `Role` / `Recognizes` reference resolution (P5), axis values against the registries (P6), table-of-contents accuracy (P7), empty-section markers (P8), PU entries closed this run gone from the queue and recorded as migrated (P9), staging entry integrity (P10), list-section content and per-category duplicate items (P11), migrated-record form and target resolution, retired IDs counting as history (P12), project elements well-formed and unique (P13), blocks of one project agreeing on employer and framing (P14). Judgment checks belong to `qc-profile-update`.
+- **Purpose**: Mechanical quality checks for the `profile-update` skill, plus the judgment reviewer's context file. `check`: section roster and order (P1), per-entry field rosters (P2), ID integrity (P3), EX placement and within-group sort order (P4), `Role` / `Recognizes` reference resolution (P5), axis values against the registries (P6), table-of-contents accuracy (P7), empty-section markers (P8), every queued staging item complete under a unique label (P10), list-section content and per-category duplicate items (P11), project elements well-formed and unique (P13), blocks of one project agreeing on employer and framing (P14), mechanical wording in prose fields: first person, banned phrases, em dashes, AI-tells, sentences ending in periods (P15). P9 and P12 retired with the PU numbering (#70). `context`: writes the staged items, the written entries, and the matching rules slices verbatim into one file and prints the `qc-profile-update` dispatch prompt. Judgment checks belong to `qc-profile-update`.
 - **Status**: Designed
-- **Inputs**: Subcommand args (`check`, repeatable `--processed-pu` and `--scope-id`). Config: `config.yaml` via `scripts/_config.py`. Filesystem: `personal/profile/inventory.md`, `personal/profile/profile_updates_pending.md`, `templates/inventory.md`, `rules/<axis>/registry.md`, `personal/profile/inventory-ret.md`. Imports `scripts/profile_update.py` and `scripts/inventory_model/` for parsing.
+- **Inputs**: Subcommand args (`check` with repeatable `--scope-id`; `context` with repeatable `--item` and `--scope-id`, optional `--out`). Config: `config.yaml` via `scripts/_config.py`. Filesystem: `personal/profile/inventory.md`, `personal/profile/profile_updates_pending.md`, `templates/inventory.md`, `templates/profile_updates_pending.md`, `rules/<axis>/registry.md`, `rules/profile/inventory-writing.md`. Imports `profile_update.py`, `staging_append.py`, `profile_slice.py`, `rules_slice.py`, `_wording.py`, and `scripts/inventory_model/`.
 - **Outputs**: Check tally and verdict on stdout; findings listed per check. Exit 1 on any blocking finding. Findings outside the declared `--scope-id` set (which holds entry IDs and list addresses alike) are reported as pre-existing advisories and do not fail the run; with no scope declared, the whole document is in scope.
-- **Triggers**: Invoked by `profile-update` Phase 4 (Step 4a). Also runnable with no scope as a full-document inventory audit.
+- **Triggers**: Invoked by `profile-update` Phase 4 (Steps 4a and 4b). Also runnable with no scope as a full-document inventory audit.
 - **Update Triggers**: When `templates/inventory.md` changes; when the axis registries change location or bullet format; when the staging-file schema changes; when a check is added or retired.
+
+#### scripts/rules_slice.py
+
+- **Purpose**: Print the part of a `rules/profile/` writing-rules file a task needs: the opening text, every shared `## ` section, and only the requested type's `## <KEY>: <name>` section. Without `--type`, the whole file. A requested type with no section is an error. The one way skills and agents read these files, so each rule is written once.
+- **Status**: Designed
+- **Inputs**: Args (`<name>`, `--type`). Config: `config.yaml` (`paths.profile_rules`).
+- **Outputs**: Rules text on stdout. Errors to stderr with exit 1.
+- **Triggers**: `profile-update` Steps 3b-3c; `gap-analysis` Phase 4 and the prep skills (staging rules); `profile_update_qc.py context`.
+- **Update Triggers**: When the section heading pattern of the rules files changes.
+
+#### scripts/_wording.py
+
+- **Purpose**: The mechanical wording tells (em dash, AI-tell patterns with their domain-use exceptions), held once for every QC script that judges prose: `cv_qc.py` (F1, F2) and `profile_update_qc.py` (P15).
+- **Status**: Designed
+- **Inputs**: Text passed in by the caller.
+- **Outputs**: Formatted hit strings.
+- **Triggers**: Imported by `cv_qc.py` and `profile_update_qc.py`.
+- **Update Triggers**: When a tell is added or a domain-use exception is found.
 
 #### scripts/inventory_model/
 

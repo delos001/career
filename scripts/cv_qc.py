@@ -40,6 +40,8 @@ Checks (all report-only):
   C7   every Professional Experience company block carries a role-title line
        (Selected Projects / work-output project headers are exempt)
   C8   a cited PR element (PR-NNN.NN) is cited with its objective (PR-NNN)
+  C9   a 'GAP CR-NNN' citation (a gap-analysis fact not yet in the inventory)
+       names a closed or partial-match requirement in --gap-analysis
   B1   one sentence per bullet
   B2   bullet within the line limit (<=3 estimated rendered lines)
   S1   section order valid (evidence band, then credentials tail; Tech last)
@@ -69,10 +71,10 @@ import json
 import math
 import re
 import sys
-from collections import Counter
 
 import _config
 import _util
+import _wording
 from inventory_model import pr
 
 
@@ -131,8 +133,13 @@ CR_MARK_RE = re.compile(r'<!--\s*cr:\s*([^>]+?)\s*-->')
 # element of a real project fails C3 like any fabricated entry.
 ENTRY_ID_RE = re.compile(r'\b(?:EX|PR|PB|PS|ST)-\d+(?:\.\d+)?\b')
 CR_ID_RE = re.compile(r'\bCR-\d+\b')
+# A fact the user surfaced in this application's gap analysis that the
+# inventory does not carry yet is cited by its requirement: 'GAP CR-005' (#70).
+GAP_CITE_RE = re.compile(r'\bGAP (CR-\d+)\b')
+# The statuses under which the user surfaced something a CV may cite.
+GAP_CITABLE_STATUSES = {'closed', 'partial-match'}
 ANY_COMMENT_RE = re.compile(r'<!--.*?-->')
-EM_DASH = '—'
+EM_DASH = _wording.EM_DASH
 
 # C5 attribution. _EX_ROLE_RE maps an inventory EX/PR entry to its RL role record
 # (the Role tag sits on the line immediately after the ID line). The other two
@@ -150,32 +157,7 @@ _BOLD_LINE_RE = re.compile(r'^\*\*.+\*\*')
 _SENT_END_RE = re.compile(r'[.!?](?:\s|$)')
 _ABBREVIATIONS = ['e.g.', 'i.e.', 'etc.', 'vs.', 'U.S.', 'Ph.D.', 'approx.', 'No.']
 
-# AI-tell patterns. Each entry is (label, compiled-regex). Reported, not fixed.
-_AI_TELL_PATTERNS = [
-    ('negation-contrast', re.compile(
-        r"\bnot just\b.*?\bbut\b"
-        r"|\bit'?s not\b.*?\bit'?s\b"
-        r"|\bnot\b[^,.]*,\s*but\b"
-        r"|\bless about\b.*?\bmore about\b", re.IGNORECASE)),
-    ('marketing-copula', re.compile(
-        r"\b(?:serves as|stands as|is designed to|designed to)\b", re.IGNORECASE)),
-    ('vague-intensifier', re.compile(
-        r"\b(?:significantly|greatly|successfully|substantially)\b", re.IGNORECASE)),
-    ('buzzword', re.compile(
-        r"\b(?:leverage[ds]?|robust|seamless(?:ly)?|pivotal|crucial|"
-        r"foster(?:ed|ing)?|underscore[ds]?|showcase[ds]?|groundbreaking|"
-        r"world-class|cutting-edge|transformative)\b", re.IGNORECASE)),
-]
-
-# Domain-legitimate uses of an AI-tell token: when the token appears in one of
-# these phrase contexts it is professional terminology, not marketing fluff, and
-# is not flagged. (E.g. "pivotal study/trial/Phase/program" is the registrational-
-# trial sense, not "pivotal" used as a synonym for "crucial".) A flagged match
-# whose position falls inside one of these spans is excluded. Extend as real
-# collisions surface; do not add speculative entries.
-_AI_TELL_DOMAIN_USES = re.compile(
-    r"\bpivotal[\s-]+(?:phase|stud(?:y|ies)|trials?|programs?|programmes?)\b",
-    re.IGNORECASE)
+# AI-tell patterns live in _wording.py, shared with profile_update_qc.py.
 
 
 # ---------------------------------------------------------------------------
@@ -350,6 +332,47 @@ def _check_c4_subheading_crs(text, valid_crs):
                        f'subheading cr marker(s) not in gap analysis: {", ".join(bad)}')
     return _record('C4', True,
                    f'{len(cited)} subheading cr marker(s) reconcile with gap analysis')
+
+
+def _gap_statuses(gap_text):
+    """Return {CR-NNN: status} from a gap_analysis.md Requirements section."""
+    statuses, current = {}, None
+    for line in gap_text.split('\n'):
+        m = re.match(r'^### (CR-\d+) - ', line)
+        if m:
+            current = m.group(1)
+            continue
+        m = re.match(r'^- \*\*Status:\*\*\s*(\S+)', line)
+        if m and current:
+            statuses[current] = m.group(1)
+    return statuses
+
+
+def _check_c9_gap_citations(text, gap_text):
+    """C9: every 'GAP CR-NNN' citation names a requirement the user closed.
+
+    The citation stands in for an inventory entry, so the requirement must
+    exist in this application's gap analysis with a status under which the user
+    surfaced something: closed or partial-match. Without the gap analysis there
+    is nothing to verify against, which fails rather than passes.
+    """
+    cited = set()
+    for m in SRC_RE.finditer(text):
+        cited.update(GAP_CITE_RE.findall(m.group(1)))
+    if not cited:
+        return _record('C9', True, 'no gap analysis citations')
+    if gap_text is None:
+        return _record('C9', False,
+                       'GAP citations present but no --gap-analysis to verify them: '
+                       + ', '.join(sorted(cited)))
+    statuses = _gap_statuses(gap_text)
+    bad = sorted(f"{cr} ({statuses.get(cr, 'not in gap analysis')})"
+                 for cr in cited if statuses.get(cr) not in GAP_CITABLE_STATUSES)
+    if bad:
+        return _record('C9', False,
+                       'GAP citation(s) not on a closed or partial-match '
+                       f'requirement: {", ".join(bad)}')
+    return _record('C9', True, f'all {len(cited)} GAP citation(s) resolve')
 
 
 def _check_c5_role_attribution(sections, ex_to_rl):
@@ -667,29 +690,8 @@ def _check_f2_ai_tells(text):
     negation-contrast clause) are truncated to keep the line readable.
     """
     # Strip comments so citation/cr markers do not get scanned for tells.
-    visible = ANY_COMMENT_RE.sub('', text)
-    # Character spans covered by a domain-legitimate use (e.g. "pivotal trial");
-    # a flagged token whose start falls inside one of these is professional
-    # terminology, not fluff, and is excluded.
-    allow_spans = [m.span() for m in _AI_TELL_DOMAIN_USES.finditer(visible)]
-
-    def _allowed(start):
-        return any(s <= start < e for s, e in allow_spans)
-
-    hits = []
-    for label, pattern in _AI_TELL_PATTERNS:
-        # Collapse internal whitespace and lowercase so casing/spacing variants
-        # of the same term collapse into one count; drop domain-legitimate uses.
-        terms = [re.sub(r'\s+', ' ', m.group(0)).strip().lower()
-                 for m in pattern.finditer(visible) if not _allowed(m.start())]
-        if not terms:
-            continue
-        counts = Counter(terms)
-        parts = []
-        for term, n in counts.items():
-            shown = term if len(term) <= 40 else term[:40] + '...'
-            parts.append(f'{shown} x{n}' if n > 1 else shown)
-        hits.append(f'{label}: {", ".join(parts)}')
+    # Domain-legitimate uses (e.g. "pivotal trial") are excluded inside _wording.
+    hits = _wording.ai_tell_hits(ANY_COMMENT_RE.sub('', text))
     if hits:
         return _record('F2', False, 'AI-tell phrasing flagged: ' + '; '.join(hits))
     return _record('F2', True, 'no mechanical AI-tell phrasing flagged')
@@ -780,9 +782,11 @@ def run_qc(args):
     checks.append(_check_c1_bullets_cited(sections))
     checks.append(_check_c2_competencies_summary_cited(sections))
     checks.append(_check_c3_ids_exist(text, valid_ids))
-    if args.gap_analysis:
-        valid_crs = set(CR_ID_RE.findall(_util.read(args.gap_analysis)))
+    gap_text = _util.read(args.gap_analysis) if args.gap_analysis else None
+    if gap_text is not None:
+        valid_crs = set(CR_ID_RE.findall(gap_text))
         checks.append(_check_c4_subheading_crs(text, valid_crs))
+    checks.append(_check_c9_gap_citations(text, gap_text))
     checks.append(_check_c5_role_attribution(sections, ex_to_rl))
     checks.append(_check_c6_no_project_in_experience(sections))
     checks.append(_check_c7_role_titles_present(sections))
@@ -826,7 +830,8 @@ def main():
     parser.add_argument('--narratives', required=True, help='path to narratives.md (ST id validation)')
     parser.add_argument('--level', required=True, choices=['ic', 'leadership'])
     parser.add_argument('--gap-analysis', default=None,
-                        help='path to gap_analysis.md; enables the CR-NNN subheading check (C4)')
+                        help='path to gap_analysis.md; enables the CR-NNN subheading check (C4) '
+                             'and verifies GAP citations (C9)')
 
     args = parser.parse_args()
 

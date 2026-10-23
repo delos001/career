@@ -59,7 +59,7 @@ The dispatching skill gives you the application folder path, the candidate `leve
 
 - Sections are `## <Section Name>` headings, in the two-band order.
 - Within-role thematic subheadings are `### <short theme label>` (a few words condensed from the requirement, not the full requirement sentence) immediately followed by a `<!-- cr: CR-NNN -->` marker naming the critical requirement the label mirrors.
-- Every experience and work-output bullet is a markdown list item (`- `) ending with a citation comment naming its source entries: `- <one sentence>. <!-- src: EX-12 -->` or, for a synthesized arc bullet, `<!-- src: EX-12, EX-15, EX-23 -->`. A project element is always cited with its objective: `<!-- src: PR-015, PR-015.03 -->`.
+- Every experience and work-output bullet is a markdown list item (`- `) ending with a citation comment naming its source entries: `- <one sentence>. <!-- src: EX-12 -->` or, for a synthesized arc bullet, `<!-- src: EX-12, EX-15, EX-23 -->`. A project element is always cited with its objective: `<!-- src: PR-015, PR-015.03 -->`. A fact the user surfaced in this application's gap analysis that the inventory does not carry yet is cited by its requirement: `<!-- src: GAP CR-005 -->`, only for a requirement with status `closed` or `partial-match`, and claiming no more than that requirement's Notes say.
 - Core Competencies are a single-level bulleted list or a pipe-delimited run; each zone (or the section, if unzoned) carries at least one `<!-- src: ... -->`.
 - The Professional Summary is prose carrying at least one `<!-- src: ... -->`.
 - Company / role header lines are plain text, not list items.

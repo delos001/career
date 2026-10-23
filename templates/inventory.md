@@ -173,7 +173,7 @@ Orientation: {value}
 Level: {value}
 Work-state: {value}
 Description: **{what was done}**
-Impact: {value-type}: {residual outcome}
+Impact: {what could be seen after the work} {optional}
 Context: {situation, constraint, or scope bound} {optional}
 ```
 
@@ -198,24 +198,17 @@ record exists; `Company:` is the fallback for a project with no role record.
 
 One block per objective. A project with a second objective gets a second block
 with the same `Project:`; blocks sharing a project agree on Role or Company,
-Orientation, Level and Work-state. A new objective is one that could stand on a
-CV alone; anything else is an element.
-
-`Objective:` states the goal or problem in one sentence: no methods, tools or
-status. The dates of the role carry whether the work is ongoing. An exploratory
-project says so ("An exploration of ...").
+Orientation, Level and Work-state.
 
 `Elements:` is a multi-line field: the label sits on its own line and each
 element follows, indented two spaces, as `- PR-{NNN}.{NN}: {element}`. An
 optional `Outcome: {observed result}` line sits under its element, indented four
 spaces.
 
-- An element states the technique and the problem it solves. No benefit claims.
-- Name a technique by the field's standard term; no coined or internal terms.
-- One line; a second only when the element is too complex for one.
-- Work not yet built starts with Designed, Proposed or Planned. Built work is
-  stated plainly. No progress wording.
-- An Outcome records an observed result only: a number or a concrete event.
+How the Objective, elements and Outcomes are written, and when work is a new
+objective rather than an element: `rules/profile/inventory-writing.md`, PR
+section.
+
 - Element numbers are two digits, assigned max+1 within the block, never reused.
   A removed element retires to `inventory-ret.md` with its text in Notes, so a
   CV that already cites it can still be traced.
@@ -291,7 +284,7 @@ Orientation: {value} {optional}
 Role: RL-{NNN} {optional}
 Link: {DOI or URL} {optional}
 Description: {what it covers}
-Impact: {value-type}: {residual outcome} {optional}
+Impact: {observable result} {optional}
 ```
 
 Eligibility floor: accepted or better. Nothing in preparation.
@@ -312,7 +305,7 @@ Presenters: {co-presenters} {optional}
 Role: RL-{NNN} {optional}
 Link: {URL} {optional}
 Description: {what it covered}
-Impact: {value-type}: {residual outcome} {optional}
+Impact: {observable result} {optional}
 ```
 
 Eligibility floor: delivered. Accepted-but-not-yet-delivered items wait.
@@ -358,21 +351,16 @@ work entry it recognizes so cv-targeted can pull it alongside a cited entry.
   content: they are addressable by ID and by section heading, and they are not
   scored.
 - **PR entries** carry Objective and Elements in place of Description, Impact
-  and Context; their rules sit with the PR schema above.
-- **Description** is one bolded sentence naming what was done. Activity and
-  methodology stay here; a realized outcome belongs in Impact.
-- **Impact** is a value-type prefix plus optional residual-outcome prose. The
-  prefix may be a comma-delimited list. When no residual outcome survives beyond
-  the Description, the bare prefix stands alone; the field is not dropped.
-- **Context** carries prior state, constraint envelope, or a load-bearing scope
-  decision. It is omitted when there is none.
+  and Context.
+- **How every field is written** lives in `rules/profile/inventory-writing.md`,
+  one section per entry type, read through `scripts/rules_slice.py`. This
+  template holds only the schema: fields, order, and placement.
 - **EX entry placement.** Entries sit under the `### RL-{NNN}` sub-heading
   matching their `Role:` field, sorted by primary Orientation, then primary
   Specialty, then ID ascending. The RL sub-headings themselves run in the same
   order as the Employment & Role History records.
-- **Technical Experience lists named tools, products, libraries, and platforms
-  only.** Capability descriptions, methods, and algorithms belong in EX entries.
-  One item per token, comma-separated, no versions.
+- **List lines** are comma-separated items under a label. What counts as an
+  item: the LIST section of `rules/profile/inventory-writing.md`.
 - **Per-user category sets.** The `### {Category}` headings under Industry
   Exposure Profile are derived per user from their field and its hiring
   conventions, never copied from another inventory. The current user's

@@ -22,7 +22,7 @@
 ### CR-002 - Vendor oversight and contract management across external data providers (must-have)
 - **Status:** closed
 - **Evidence:** EX-003
-- **Notes:** Candidate manages two external data vendors at Northwind including scope negotiation and quarterly performance review; does not own the contracts themselves. Closure ref: PU-001
+- **Notes:** Candidate manages two external data vendors at Northwind including scope negotiation and quarterly performance review; does not own the contracts themselves.
 
 ### CR-003 - Experience defining data standards and governance for a clinical portfolio (preferred)
 - **Status:** language-shift

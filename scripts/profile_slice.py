@@ -31,6 +31,12 @@ Two subcommands:
           numeric prefix, if a heading carries one, is stripped), so
           '## Education' matches '--section education'.
 
+  related Fetch the inventory entries a staged item might duplicate or extend,
+          for the profile-update routing decision: every entry in the item's
+          Work role, plus entries elsewhere sharing key words with what the
+          item says the candidate did. Prints only the prose fields. A pull
+          larger than config related_pull.max_chars splits into parts.
+
 Nothing repo-dependent is hardcoded; folder locations and filenames come
 from config.yaml. Sibling helper modules (_config, _util) provide the
 generic I/O and path operations.
@@ -41,6 +47,7 @@ Project   : career
 Usage     : python scripts/profile_slice.py id EX-149 EX-095 ST-003
             python scripts/profile_slice.py section inventory technical-experience
             python scripts/profile_slice.py section positioning signature-themes
+            python scripts/profile_slice.py related --item "<label>" [--part 2]
 Depends   : pyyaml (via _config)
 """
 
@@ -51,6 +58,7 @@ import sys
 
 import _config
 import _util
+import profile_update as pu   # owns the staging file layout read by 'related'
 from inventory_model import entry_block, pr
 
 
@@ -324,6 +332,111 @@ def cmd_section(args, repo_root, cfg):
 
 
 # ---------------------------------------------------------------------------
+# Subcommand: related
+# Before writing a staged item, the profile-update run has to know whether the
+# inventory already covers it. That search used to be done by the model by
+# hand, and it missed things. Here it is two fixed passes: every entry in the
+# item's Work role, then entries in other roles that share at least
+# related_pull.min_shared_words key words with the item's Did text. Only the
+# prose fields are printed, since the decision turns on what the work was.
+# A large role is split into parts so no single read exceeds max_chars.
+# ---------------------------------------------------------------------------
+
+# The fields printed for each entry, and the prefixes the pull searches.
+_RELATED_FIELDS = ('Project', 'Description', 'Impact', 'Context', 'Objective')
+_RELATED_PREFIXES = ('EX', 'PR', 'PB', 'PS')
+
+# Words too common to signal shared substance.
+_STOPWORDS = {
+    'with', 'from', 'into', 'that', 'this', 'their', 'there', 'were', 'which',
+    'across', 'about', 'over', 'under', 'through', 'using', 'used', 'have',
+    'also', 'each', 'other', 'than', 'then', 'when', 'where', 'while', 'study',
+    'studies', 'data', 'team', 'teams', 'work', 'process', 'support',
+}
+
+
+def _key_words(text):
+    """Return the distinct lowercase words of 4+ letters that are not stopwords."""
+    return {w for w in re.findall(r'[a-z][a-z0-9-]{3,}', text.lower())
+            if w not in _STOPWORDS}
+
+
+def _render_related(entry, lines):
+    """Return one entry as its ID plus prose fields (and PR element text)."""
+    out = [f"ID: {entry['id']}"]
+    out += [f'{label}: {entry["field_map"][label]}' for label in _RELATED_FIELDS
+            if entry['field_map'].get(label)]
+    if entry['prefix'] == 'PR':
+        body = lines[entry['start']:entry['end']]
+        out += [f"  - {el['id']}: {el['text']}" for el in pr.parse_elements(body)]
+    return '\n'.join(out)
+
+
+def related_entries(inventory_text, item_body, min_shared):
+    """Return (role, same_role, by_words) for one staged item.
+
+    same_role holds rendered entries whose Role is the item's Work role.
+    by_words holds (rendered entry, shared words) for other entries sharing at
+    least min_shared key words with the Did field, most shared first.
+    """
+    role = pu.bullet_value(item_body, 'Work role') or ''
+    words = _key_words(pu.bullet_value(item_body, 'Did') or '')
+    lines = inventory_text.split('\n')
+    same_role, by_words = [], []
+    for entry in entry_block.parse_blocks(inventory_text):
+        if entry['prefix'] not in _RELATED_PREFIXES:
+            continue
+        rendered = _render_related(entry, lines)
+        if role and entry['field_map'].get('Role', '').strip() == role:
+            same_role.append(rendered)
+            continue
+        shared = sorted(words & _key_words(rendered))
+        if len(shared) >= min_shared:
+            by_words.append((rendered, shared))
+    by_words.sort(key=lambda pair: -len(pair[1]))
+    return role, same_role, by_words
+
+
+def split_parts(blocks, max_chars):
+    """Greedily pack text blocks into parts of at most max_chars each."""
+    parts, current, size = [], [], 0
+    for block in blocks:
+        if current and size + len(block) > max_chars:
+            parts.append(current)
+            current, size = [], 0
+        current.append(block)
+        size += len(block) + 2
+    if current:
+        parts.append(current)
+    return parts or [[]]
+
+
+def cmd_related(args, repo_root, cfg):
+    """Print the inventory entries related to one staged item, one part at a time."""
+    item =pu.find_item(_util.read(pu._staging_path(repo_root, cfg)), args.item)
+    inventory_text = _util.read(_profile_file_path(repo_root, cfg, 'inventory'))
+    settings = cfg['related_pull']
+    role, same_role, by_words = related_entries(
+        inventory_text, item['body'], settings['min_shared_words'])
+
+    blocks = [f'## Same role ({role or "none"}): {len(same_role)} entries'] + same_role
+    if not role.startswith('RL-'):
+        blocks.append(f'Work role is "{role}", so no role group applies. For a '
+                      f'tool or list item, read the list section with: '
+                      f'python scripts/profile_slice.py section inventory '
+                      f'technical-experience')
+    blocks.append(f'## Shared key words, other roles: {len(by_words)} entries')
+    blocks += [f'{text}\n(shared: {", ".join(shared)})' for text, shared in by_words]
+
+    parts = split_parts(blocks, settings['max_chars'])
+    if not 1 <= args.part <= len(parts):
+        raise ValueError(f'--part {args.part} is out of range; the pull has {len(parts)} part(s)')
+    if len(parts) > 1:
+        print(f'Part {args.part} of {len(parts)}. Read every part before deciding.\n')
+    sys.stdout.write('\n\n'.join(parts[args.part - 1]) + '\n')
+
+
+# ---------------------------------------------------------------------------
 # Command-line entry point
 # Parses subcommand and arguments, loads config, runs the subcommand, and
 # reports failure to stderr with exit 1 so the calling skill halts per
@@ -364,6 +477,16 @@ def main():
              'signature-themes)',
     )
     p_sec.set_defaults(func=cmd_section)
+
+    # --- Subparser: related ---
+    p_rel = sub.add_parser(
+        'related',
+        help='fetch the inventory entries related to one staged item',
+    )
+    p_rel.add_argument('--item', required=True, help="the staged item's label")
+    p_rel.add_argument('--part', type=int, default=1,
+                       help='which part to print when the pull is split (default 1)')
+    p_rel.set_defaults(func=cmd_related)
 
     args = parser.parse_args()
 

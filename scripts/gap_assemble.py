@@ -14,7 +14,7 @@ Inputs (JSON files written by the dispatching skill):
                             requirements JSON need not duplicate that data.
   --requirements-file       per-requirement decisions: requirement_id, status,
                             evidence (flat ID list or {id,...} list), notes,
-                            closure_ref, language_shift. Text and type are
+                            language_shift. Text and type are
                             resolved from --research-file.
   --eligibility-file        Phase 2 flags + user decisions.
 
@@ -196,7 +196,7 @@ def _render_requirements(requirements, req_lookup):
 
     `requirements` is a list of per-run decision dicts: requirement_id, status,
     evidence (flat ID strings or {id,...} dicts - both normalized to IDs here),
-    notes, optional closure_ref and language_shift. Text and type are resolved
+    notes, optional language_shift. Text and type are resolved
     from req_lookup keyed by requirement_id; inline fields are a fallback only.
     """
     if not requirements:
@@ -218,11 +218,6 @@ def _render_requirements(requirements, req_lookup):
                 evidence_ids.append(e['id'])
         evidence_str = ', '.join(evidence_ids) if evidence_ids else 'none'
         notes = (req.get('notes') or '').strip() or '_(none)_'
-        closure_ref = req.get('closure_ref')
-        if closure_ref and status == 'closed':
-            notes_with_ref = notes if notes != '_(none)_' else ''
-            sep = ' ' if notes_with_ref else ''
-            notes = f'{notes_with_ref}{sep}Closure ref: {closure_ref}'.strip()
         parts.append(
             f'### {rid} - {rtext} ({rtype})\n'
             f'- **Status:** {status}\n'
@@ -425,7 +420,7 @@ def main():
     p_asm.add_argument('--research-file', required=True,
                        help='path to research.md; provides requirement text and type keyed by CR-NNN')
     p_asm.add_argument('--requirements-file', required=True,
-                       help='JSON: per-requirement decisions (status, evidence IDs, notes, language_shift, closure_ref)')
+                       help='JSON: per-requirement decisions (status, evidence IDs, notes, language_shift)')
     p_asm.add_argument('--eligibility-file', required=True,
                        help='JSON: Phase 2 flags + decisions')
     p_asm.set_defaults(func=cmd_assemble)

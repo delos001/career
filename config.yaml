@@ -12,6 +12,7 @@ paths:
   profile: personal/profile              # candidate's profile documents (inventory, narratives, positioning, user-info)
   templates: templates                   # artifact templates
   rules: rules                           # axis rule files (one folder per axis)
+  profile_rules: rules/profile           # writing rules for the profile documents and the staging file, read through scripts/rules_slice.py
   design: design                         # design state and build issue logs
   temp: temp                             # shared dev-scratch / reference material; per-application run-scratch now lives in <app-folder>/scratch/ (see filenames.scratch_subdir)
   self_assessment_rules: rules/self-assessment   # protocol + bootstrap prompt (generic, shareable)
@@ -75,6 +76,11 @@ axes:
     frontmatter_key: work-state
     required_sections: [Identity, Achievement framing, Adjacency]
     used_by: cv-targeted, axis-classifier
+
+# Profile-update related-entry pull (scripts/profile_slice.py related).
+related_pull:
+  max_chars: 50000          # a pull larger than this splits into parts, read one --part at a time
+  min_shared_words: 2       # an entry outside the item's role is pulled when it shares this many key words with the item
 
 # Naming patterns.
 naming:

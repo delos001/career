@@ -1757,6 +1757,8 @@ career_brief, cv_general, positioning skill designed at their build time.
 
 #### staging-queue-with-migrated-record-2026-08-26
 
+**Superseded by `staging-without-tracking-2026-10`.** Kept for the reasoning.
+
 `personal/profile/profile_updates_pending.md` carries two sections. `## Entries`
 is a queue of PU entries waiting to be promoted; `## Migrated` is a permanent,
 append-only record of every PU entry that has left it, one line each:
@@ -1806,6 +1808,8 @@ Refs: `templates/profile_updates_pending.md` (schema authority),
 
 #### close-reports-recorded-writes-2026-08-26
 
+**Superseded by `staging-without-tracking-2026-10`.** Kept for the reasoning.
+
 `insert`, `set`, and `list-add` each take `--pu PU-NNN` and append a
 `- **Written:** <target>` bullet to that PU entry as they run. `close` builds
 the migrated line from those bullets and takes no target list at all. A write
@@ -1838,6 +1842,53 @@ every one of these documents harder to read cold; "PU entry" needs no gloss.
 Refs: `scripts/profile_update.py`, `.claude/skills/profile-update/SKILL.md`
 (Step 3e/3f), `scripts/profile_update_qc.py`,
 `staging-queue-with-migrated-record-2026-08-26` (the section these lines feed).
+
+#### staging-without-tracking-2026-10
+
+The staging file is a queue and nothing else (#70). No `PU-NNN` numbers, no
+`## Migrated` record, no Written bullets, no `--pu` on the write commands, no
+`close`, `drop`, or `record`. An item is found by its label, which
+`staging_append.py` keeps unique, and `profile_update.py remove` deletes it.
+
+- **Removal waits for review.** The skill removes an item only after its entry
+  passes Phase 4. Removing first is what made every review fix fail with "not in
+  the staging queue" (2026-10-05 run).
+- **The profile is the source.** A history of how a fact reached it was read by
+  nothing a user needs; CV claims cite inventory IDs.
+- **A fact not yet in the inventory is cited as `GAP CR-NNN`.** `cv_qc.py` C9
+  requires the requirement to be `closed` or `partial-match` in that
+  application's gap analysis; `qc-cv-targeted` judges the claim against its
+  Notes. `gap_qc.py` G7 now checks that each waiting item an application staged
+  names a requirement its gap analysis carries; closure refs are gone.
+- **Captures have required fields.** Work role, Did, Others did, Outcome,
+  Limits, read from the template schema and refused when missing or blank
+  (the 2026-08-25 run needed every entry's attribution corrected).
+
+Refs: `templates/profile_updates_pending.md`, `rules/profile/staging-writing.md`,
+`scripts/staging_append.py`, `scripts/profile_update.py`, `scripts/gap_qc.py`,
+`scripts/cv_qc.py`, `profile-writing-rules-2026-10`.
+
+#### profile-writing-rules-2026-10
+
+Writing rules for the profile live in `rules/profile/`, one file per job:
+`routing.md` (where a staged fact goes), `staging-writing.md` (how a fact is
+captured), `inventory-writing.md` (how each entry type is written). Skills and
+agents read them only through `scripts/rules_slice.py`, which prints the shared
+rules plus the one entry type being written. The template keeps the schema;
+skills and the review agent keep no copies of the rules.
+
+Anything a script can settle is a script: required capture fields
+(`staging_append.py`), the related-entry pull (`profile_slice.py related`), and
+mechanical wording (`profile_update_qc.py` P15, sharing `_wording.py` with
+`cv_qc.py`). The model decides routing and wording only. The judgment reviewer
+gets a context file written by `profile_update_qc.py context`, not a
+hand-composed prompt.
+
+Narratives and positioning rules come after the next application: 1 of about 43
+staged facts ever targeted a narrative, so a narrative-bound item waits in the
+queue until then, as positioning already does.
+
+Refs: `design/profile_rules_plan.md`, `staging-without-tracking-2026-10`.
 
 #### test-corpus-and-invariant-checks-2026-08-26
 

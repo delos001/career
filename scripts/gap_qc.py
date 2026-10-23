@@ -3,8 +3,8 @@
 gap_qc.py - deterministic QC for the gap-analysis skill's artifacts
 
 Owns the mechanical checks that the qc-gap-analysis judgment subagent must
-not re-run: structure, field presence, taxonomy, ID existence, closure
-linkage, fit-score math, and cross-document mirroring. The judgment agent
+not re-run: structure, field presence, taxonomy, ID existence, staging
+anchors, fit-score math, and cross-document mirroring. The judgment agent
 keeps only what a script cannot verify (whether Notes content actually
 names valid reasoning).
 
@@ -20,16 +20,14 @@ Checks (IDs mirror the original qc-gap-analysis check numbering):
   G6  Non-covered Notes present: status outside {covered, language-shift}
       carries a non-empty Notes value. (Whether the Notes content is
       adequate stays with the judgment agent.)
-  G7  Closure linkage: every `Closure ref: PU-NNN` resolves - to a PU entry in
-      the staging queue carrying all required fields, or to its `## Migrated`
-      line once promoted; every --appended-pu ID is referenced from the
-      artifact. (Closed-without-ref is legitimate for eligibility
-      attestations, so ref presence anchors on --appended-pu.)
+  G7  Staging anchors: every item this application staged that is still
+      waiting names a CR-NNN that exists in the artifact. (Replaces the
+      closure-ref linkage retired with the PU numbering, #70; a CV now cites
+      such a fact as `GAP CR-NNN`, so the anchor is what has to hold.)
   G8  No fabricated IDs: every profile-prefixed ID (PR elements included) in the artifact exists
       in the profile documents (the prefix set is derived from the
       documents' own `ID:` lines, so new sections are covered without a
-      code change); every CR-NNN is within the requirements range; every
-      PU-NNN was issued by the staging file, queued or migrated.
+      code change); every CR-NNN is within the requirements range.
   G9  Session log mirroring: session log fit score matches the artifact
       header fit score.
   G10 Math: header fit score equals the type-weighted formula result and
@@ -43,7 +41,7 @@ the exit code per global rules.
 Author  : Jason Delosh
 Created : 2026-07-14
 Project : career
-Usage   : python scripts/gap_qc.py check --folder <app_folder> [--appended-pu PU-NNN[,PU-NNN]]
+Usage   : python scripts/gap_qc.py check --folder <app_folder>
 Depends : pyyaml (via _config)
 """
 
@@ -54,6 +52,7 @@ import sys
 
 import _config
 import _util
+import profile_update as pu
 from inventory_model import pr
 
 
@@ -87,9 +86,6 @@ UNMET_STATUSES = {'interview-deferred', 'unresolved'}
 
 # Approved recommendation labels.
 RECOMMENDATION_LABELS = {'Proceed', 'Proceed with caution', 'Do not pursue'}
-
-# Required fields of a staging PU entry.
-PU_FIELDS = ['Captured', 'From', 'Requirement', 'Role context', 'Content']
 
 # Regex: an `ID: <PREFIX>-NNN` line in the profile documents. The citable
 # prefix set is derived from these lines at check time (see check_ids), so a
@@ -187,36 +183,23 @@ def _parse_research_types(research_text):
     return types
 
 
-def _parse_staging_entries(staging_text):
-    """Return {PU-NNN: {field: value}} for the entries still in the queue."""
-    entries = {}
-    current = None
-    for line in staging_text.split('\n'):
-        m = re.match(r'^### (PU-\d+) - ', line)
-        if m:
-            current = {}
-            entries[m.group(1)] = current
-            continue
-        # A top-level heading ends the queue; '## Migrated' follows it and
-        # holds no PU entry fields.
-        if line.startswith('## '):
-            current = None
-        if current is None:
-            continue
-        m = _FIELD_LINE_RE.match(line)
-        if m:
-            current[m.group(1)] = m.group(2).strip()
-    return entries
+def _parse_staging_items(staging_text):
+    """Return [{label, field: value}] for the items waiting in the queue.
 
-
-def _parse_migrated(staging_text):
-    """Return {PU-NNN: outcome} for the PU entries that have left the queue.
-
-    The outcome is where the content landed, `dropped`, or `duplicate`. These
-    lines are the only surviving proof that a number was issued, which is what
-    lets G7 and G8 resolve a reference to an entry whose body is long gone.
+    profile_update.py owns the staging layout; its parser is reused so the
+    two scripts cannot disagree about where an item starts and ends.
     """
-    return dict(re.findall(r'(?m)^(PU-\d+):\s*(.+?)\s*$', staging_text))
+    if not staging_text:
+        return []
+    items = []
+    for item in pu.parse_staging(staging_text):
+        fields = {'label': item['label']}
+        for line in item['body'].split('\n'):
+            m = _FIELD_LINE_RE.match(line)
+            if m:
+                fields[m.group(1)] = m.group(2).strip()
+        items.append(fields)
+    return items
 
 
 def _header_fields(artifact_text):
@@ -338,48 +321,27 @@ def check_notes_presence(records, findings):
                      else 'all non-covered requirements carry Notes'))
 
 
-def check_closure_linkage(records, staging_entries, migrated, appended_pu,
-                          artifact_text, findings):
-    """G7: every Closure ref resolves; every appended PU is referenced.
+def check_staging_anchors(records, staging_items, app_id, findings):
+    """G7: every waiting item this application staged names a real CR-NNN.
 
-    A ref resolves to a complete PU entry in `## Entries` while it waits, or to
-    its `## Migrated` line once it has been promoted, dropped, or found to be a
-    duplicate. A `Closure ref` in a gap_analysis.md is permanent, so both
-    halves of the staging file have to be consulted before calling one broken.
-
-    A `closed` requirement without a Closure ref is legitimate (eligibility
-    attestations close via user confirmation with nothing to stage), so the
-    ref-presence direction is anchored on --appended-pu: closures that DID
-    stage an entry are caught by the appended-but-unreferenced check.
+    The anchor is how a CV citing `GAP CR-NNN` reaches the fact before it is in
+    the inventory, so an item from this application pointing at a requirement
+    the artifact does not carry is a broken link. Items from other
+    applications, and items anchored 'n/a (...)', are out of scope.
     """
     problems = []
-    for cr, rec in sorted(records.items()):
-        m = re.search(r'Closure ref:\s*(PU-\d+)', rec['notes'])
-        if not m:
+    for item in staging_items:
+        if not app_id or not item.get('From', '').startswith(app_id):
             continue
-        pu = m.group(1)
-        entry = staging_entries.get(pu)
-        if entry is None:
-            # Not in the queue means promoted, and a promoted PU entry leaves a
-            # line under '## Migrated' naming what became of it. That line is
-            # what the ref resolves to now; only a PU the file has no record of
-            # at all is a broken pointer.
-            if pu not in migrated:
-                problems.append(
-                    f'{pu} is neither waiting in the staging queue nor '
-                    f'recorded under "## Migrated"')
-            continue
-        missing = [f for f in PU_FIELDS if not entry.get(f)]
-        if missing:
-            problems.append(f"{pu} missing fields: {', '.join(missing)}")
-    for pu in appended_pu:
-        if pu not in artifact_text:
-            problems.append(f'{pu} appended this run but not referenced from the artifact')
-    findings.append(('G7', not problems, '; '.join(problems) or 'closure linkage intact'))
+        m = re.match(r'(CR-\d+)\b', item.get('Requirement', ''))
+        if m and m.group(1) not in records:
+            problems.append(f'"{item["label"]}" names {m.group(1)}, which is not '
+                            f'in this gap analysis')
+    findings.append(('G7', not problems,
+                     '; '.join(problems) or 'staged items anchor to real requirements'))
 
 
-def check_ids(artifact_text, profile_ids, req_count, staging_entries, migrated,
-              findings):
+def check_ids(artifact_text, profile_ids, req_count, findings):
     """G8: every cited ID exists in its source document."""
     problems = []
     if not profile_ids:
@@ -400,17 +362,6 @@ def check_ids(artifact_text, profile_ids, req_count, staging_entries, migrated,
                      if req_count is not None and int(t) > req_count})
     if bad_cr:
         problems.append(f"CR IDs beyond the requirements list: {', '.join('CR-' + t for t in bad_cr)}")
-    # PU IDs resolve against both halves of the staging file. An entry waiting
-    # in '## Entries' and one already recorded under '## Migrated' are equally
-    # real; only an ID neither section knows is fabricated. Before the migrated
-    # record existed a promoted entry simply disappeared, absence could not be
-    # told apart from fabrication, and this check had to be skipped entirely.
-    issued = set(staging_entries) | set(migrated)
-    bad_pu = sorted({t for t in re.findall(r'\bPU-\d+\b', artifact_text)
-                     if t not in issued})
-    if bad_pu:
-        problems.append(
-            f"PU IDs the staging file never issued: {', '.join(bad_pu)}")
     findings.append(('G8', not problems, '; '.join(problems) or 'all cited IDs exist'))
 
 
@@ -496,14 +447,11 @@ def cmd_check(args, repo_root, cfg):
     profile_ids = set(_ID_LINE_RE.findall(inventory_text))
     profile_ids.update(pr.element_ids(inventory_text))
     profile_ids.update(_ID_LINE_RE.findall(narratives_text))
-    staging_entries = _parse_staging_entries(staging_text)
-    migrated = _parse_migrated(staging_text)
+    staging_items = _parse_staging_items(staging_text)
     header = _header_fields(artifact_text)
     records, duplicates = _parse_requirements(artifact_text)
     req_types = _parse_research_types(research_text) if research_text is not None else None
     log_fields = _session_log_section(log_text) if log_text is not None else None
-    appended_pu = [p.strip() for chunk in (args.appended_pu or [])
-                   for p in chunk.split(',') if p.strip()]
 
     findings = []
     check_structure(artifact_text, findings)
@@ -512,11 +460,9 @@ def cmd_check(args, repo_root, cfg):
     check_coverage(records, duplicates, req_types, findings)
     check_taxonomy(records, findings)
     check_notes_presence(records, findings)
-    check_closure_linkage(records, staging_entries, migrated, appended_pu,
-                          artifact_text, findings)
+    check_staging_anchors(records, staging_items, header.get('APP-NNN', ''), findings)
     check_ids(artifact_text, profile_ids,
-              len(req_types) if req_types is not None else None,
-              staging_entries, migrated, findings)
+              len(req_types) if req_types is not None else None, findings)
     check_mirroring(header, log_fields, findings)
     check_math(header, records, req_types, findings)
     check_recommendation(header, findings)
@@ -547,9 +493,6 @@ def main():
     p_check = sub.add_parser('check', help='validate one application folder')
     p_check.add_argument('--folder', required=True,
                          help='absolute path to the application folder')
-    p_check.add_argument('--appended-pu', action='append', default=[],
-                         help='PU-NNN appended this run (repeatable or comma-separated); '
-                              'each must be referenced from the artifact')
     args = parser.parse_args()
 
     sys.stdout.reconfigure(encoding='utf-8')

@@ -5,12 +5,13 @@ profile_update_qc.py - mechanical quality checks for the profile-update skill
 Runs after the profile-update skill has written its changes. Owns every check a
 script can settle: document structure, per-entry field rosters, ID integrity,
 entry placement, cross-reference resolution, axis-value validity, table-of-
-contents accuracy, empty-section markers, and staging-file bookkeeping.
+contents accuracy, empty-section markers, staging-item completeness, and the
+mechanical wording rules.
 
 Judgment checks are NOT here. Whether an entry's text honestly represents what
-the user surfaced, whether a framing guard in the staged content was respected,
-and whether the writing matches the document's voice belong to the
-qc-profile-update sub-agent, which reads only the changed entries.
+the user surfaced, whether a framing limit in the staged item was respected,
+and whether each field holds the right content belong to the qc-profile-update
+sub-agent, which reads only the changed entries and the writing rules.
 
 Every rule is derived at run time, never hardcoded: the section roster and the
 field rosters come from templates/inventory.md, the axis vocabularies come from
@@ -26,21 +27,24 @@ Checks:
   P6  Axis values exist in their registry
   P7  Table of contents matches the document headings
   P8  Empty-section markers agree with actual content
-  P9  PU entries finished this run left the queue and are recorded as migrated
-  P10 PU entries still in the queue carry a Requirement anchor
+  P9  (retired with the PU numbering, #70)
+  P10 Every item waiting in the staging queue carries every schema field,
+      non-blank, under a unique label
   P11 List sections hold content and repeat no item within a category
-  P12 The migrated record is well-formed and its outcomes resolve (an ID
-      logged in inventory-ret.md counts as resolved history)
+  P12 (retired with the migrated record, #70)
   P13 PR elements are well-formed, sit in their own block, and are unique;
       every Outcome sits under an element
   P14 Blocks sharing a Project agree on Role/Company, Orientation, Level and
       Work-state
+  P15 Prose fields carry no first person, banned phrase, em dash, or
+      mechanical AI-tell, and end with a period
 
 Author    : Jason Delosh
 Created   : 2026-08-24
 Project   : career
 Usage     : python scripts/profile_update_qc.py check
-            python scripts/profile_update_qc.py check --processed-pu PU-004 --processed-pu PU-005
+            python scripts/profile_update_qc.py check --scope-id EX-240 --scope-id PR-016.04
+            python scripts/profile_update_qc.py context --item "<label>" --scope-id EX-240
 Depends   : pyyaml (via _config)
 """
 
@@ -51,7 +55,11 @@ import sys
 
 import _config
 import _util
+import _wording
+import profile_slice
 import profile_update as pu
+import rules_slice
+import staging_append
 from inventory_model import document, entry_block, ex, pr
 
 
@@ -328,39 +336,29 @@ def check_empty_markers(findings, inventory_text, schemas, spans):
 
 
 # ---------------------------------------------------------------------------
-# P9 / P10 - Staging bookkeeping
-# '## Entries' is a queue of PU entries waiting to be promoted, not a record of
-# ones that already were. A PU entry left in it after its content reached the
-# profile will be offered again on the next run and re-litigated from scratch.
+# P10 - Staging items
+# staging_append.py refuses an incomplete capture, so an item missing a field
+# was written by hand or by an older schema. Either way the profile-update run
+# would have to guess the missing fact, which is the failure the fields exist
+# to prevent. Labels are how items are found, so a repeated label makes one of
+# them unreachable.
 # ---------------------------------------------------------------------------
 
-def check_processed(findings, staging_entries, migrated, processed_pu):
-    """P9: PU entries finished this run left the queue and were recorded.
-
-    Both halves matter and neither substitutes for the other. A PU entry still
-    in the queue will be worked twice. A PU entry that left without a migrated
-    line takes its number out of circulation records entirely, which is what
-    lets the counter reissue it and what breaks the closure pointer in the
-    gap_analysis.md that staged it.
-    """
-    findings.mark('P9')
-    still_here = {entry['id'] for entry in staging_entries}
-    for pu_id in processed_pu:
-        if pu_id in still_here:
-            findings.add('P9', f'{pu_id} was reported as finished this run but '
-                               f'is still sitting in the staging queue', pu_id)
-        elif pu_id not in migrated:
-            findings.add('P9', f'{pu_id} was reported as finished this run but '
-                               f'is recorded nowhere under "## Migrated"', pu_id)
-
-
-def check_staging_integrity(findings, staging_entries):
-    """P10: every PU entry in the queue is anchored to where it surfaced."""
+def check_staging_items(findings, staging_items, schema_labels):
+    """P10: every queued item carries every schema field under a unique label."""
     findings.mark('P10')
-    for entry in staging_entries:
-        if not pu._bullet_value(entry['body'], 'Requirement'):
-            findings.add('P10', f"{entry['id']} carries no Requirement line "
-                                f'naming where the fact surfaced', entry['id'])
+    seen = set()
+    for item in staging_items:
+        label = item['label']
+        if label in seen:
+            findings.add('P10', f'two items in the staging queue share the label '
+                                f'"{label}"')
+        seen.add(label)
+        missing = [field for field in schema_labels
+                   if not pu.bullet_value(item['body'], field)]
+        if missing:
+            findings.add('P10', f'staging item "{label}" is missing '
+                                f"{', '.join(missing)}")
 
 
 # ---------------------------------------------------------------------------
@@ -401,59 +399,6 @@ def check_list_sections(findings, inventory_text, template_text, schemas):
 
 
 # ---------------------------------------------------------------------------
-# P12 - The migrated record
-# Everything that makes a PU-NNN reusable or a closure pointer resolvable lives
-# in this one section, and nothing else in the repo can rebuild it: once a
-# PU entry's body is gone, its line is the only surviving proof the number was
-# issued. So the section is checked for the three ways it can quietly stop
-# doing its job - a line that does not parse, a number recorded twice or
-# recorded while still queued, and an outcome naming a target that does not
-# exist.
-# ---------------------------------------------------------------------------
-
-def check_migrated(findings, staging_text, inventory_text, narratives_text,
-                   template_text, schemas, retired_text=''):
-    """P12: the migrated record is well-formed and its outcomes resolve."""
-    findings.mark('P12')
-    bounds = document.section_bounds(staging_text, pu.MIGRATED_HEADING)
-    if bounds is None:
-        findings.add('P12', 'the staging file has no "## Migrated" section; '
-                            'every PU entry that leaves the queue is recorded '
-                            'there, and the PU-NNN counter reads it')
-        return
-    start, end = bounds
-    lines = staging_text.split('\n')
-    queued = {entry['id'] for entry in pu.parse_staging(staging_text)}
-    seen = set()
-    for i in range(start + 1, end):
-        line = lines[i].strip()
-        if not line or line == pu._EMPTY_MARKER:
-            continue
-        m = pu._MIGRATED_LINE_RE.match(line)
-        if not m:
-            findings.add('P12', f'"{line}" under "## Migrated" is not a '
-                                f'"PU-NNN: <outcome>" line')
-            continue
-        pu_id, outcome = m.group(1), m.group(2)
-        if pu_id in seen:
-            findings.add('P12', f'{pu_id} is recorded twice under "## Migrated"',
-                         pu_id)
-        seen.add(pu_id)
-        if pu_id in queued:
-            findings.add('P12', f'{pu_id} is recorded under "## Migrated" but is '
-                                f'still waiting in the queue', pu_id)
-        if outcome in (pu.DROPPED_OUTCOME, pu.DUPLICATE_TARGET):
-            continue
-        targets = [t.strip() for t in outcome.split(pu.TARGET_SEP) if t.strip()]
-        # Past records may name an ID that has since retired; the retired log
-        # keeps it valid history (pr-objective-elements-schema-2026-10).
-        for problem in pu.verify_targets(targets, inventory_text,
-                                         narratives_text, template_text,
-                                         schemas, retired_text):
-            findings.add('P12', f'{pu_id} records {problem}', pu_id)
-
-
-# ---------------------------------------------------------------------------
 # P13 / P14 - PR elements and project agreement
 # An element ID is cited by CVs on its own, so it must be well-formed, belong
 # to the block it sits in, and be unique across the document; an Outcome is
@@ -489,6 +434,77 @@ def check_project_agreement(findings, entries):
 
 
 # ---------------------------------------------------------------------------
+# P15 - Mechanical wording
+# The writing rules a script can settle without judgment, so the review model
+# spends its attention on what it alone can judge (rules/profile/
+# inventory-writing.md names this check as the owner of these rules). Applied
+# to the prose fields only: a role title like 'Analyst I' is not first person.
+# Element lines are phrases, not sentences, so they skip the period rule.
+# ---------------------------------------------------------------------------
+
+# The single-line fields that hold written prose, all written as sentences.
+# PR element text and Outcome lines are read through pr.parse_elements.
+SENTENCE_FIELDS = ('Description', 'Impact', 'Context', 'Objective')
+
+# Regex: first person. 'us' is lowercase only so 'US' (the country) passes.
+# A capital I joined to a slash or hyphen ('PI/sub-I') is an abbreviation.
+_FIRST_PERSON_RE = re.compile(r'(?<![-/])\b(?:I|[Mm]y|[Mm]e|[Ww]e|[Oo]ur|us)\b(?![-/])')
+
+# Regex: a roman-numeral I after a word that takes one ('Phase I', 'Class I').
+# Matches inside these spans are not first person. Extend as real collisions
+# surface; do not add speculative entries.
+_ROMAN_I_RE = re.compile(r'\b(?:Phase|Class|Tier|Type|Grade|Level|Schedule)\s+I\b')
+
+# Phrases the inventory review struck: an emphasis word that adds nothing,
+# an alignment claim posing as an outcome, and a work-state restated in prose.
+BANNED_PHRASES = re.compile(r'\b(?:personally|positioned for|from greenfield)\b',
+                            re.IGNORECASE)
+
+
+def _prose_units(entry, inventory_lines):
+    """Yield (where, value, is_sentence) for every prose unit of one entry."""
+    for field in SENTENCE_FIELDS:
+        value = entry['field_map'].get(field, '').strip()
+        if value:
+            yield f"{entry['id']} {field}", value, True
+    if entry['prefix'] == 'PR':
+        body = inventory_lines[entry['start']:entry['end']]
+        for element in pr.parse_elements(body):
+            yield element['id'], element['text'], False
+            if element['outcome']:
+                yield f"{element['id']} Outcome", element['outcome'], True
+
+
+def wording_problems(value, is_sentence):
+    """Return the mechanical wording problems in one prose value."""
+    problems = []
+    roman = [m.span() for m in _ROMAN_I_RE.finditer(value)]
+    person = sorted({m.group(0) for m in _FIRST_PERSON_RE.finditer(value)
+                     if not any(s <= m.start() < e for s, e in roman)})
+    if person:
+        problems.append(f"first person ({', '.join(person)})")
+    banned = sorted({m.group(0).lower() for m in BANNED_PHRASES.finditer(value)})
+    if banned:
+        problems.append(f"banned phrase ({', '.join(banned)})")
+    if _wording.EM_DASH in value:
+        problems.append('em dash')
+    problems += _wording.ai_tell_hits(value)
+    if is_sentence and not value.rstrip('*').endswith('.'):
+        problems.append('does not end with a period')
+    return problems
+
+
+def check_wording(findings, entries, inventory_text):
+    """P15: prose fields pass the mechanical wording rules."""
+    findings.mark('P15')
+    lines = inventory_text.split('\n')
+    for entry in entries:
+        for where, value, is_sentence in _prose_units(entry, lines):
+            for problem in wording_problems(value, is_sentence):
+                findings.add('P15', f'{where}: {problem}', entry['id'])
+
+
+# ---------------------------------------------------------------------------
 # Subcommand: check
 # Loads the documents once, runs every check, prints the verdict, and exits
 # non-zero on any finding so the calling skill halts per global-rules.md.
@@ -501,7 +517,7 @@ def cmd_check(args, repo_root, cfg):
     schemas = document.parse_template(template_text)
     entries = entry_block.parse_blocks(inventory_text)
 
-    findings = Findings(args.scope_id + args.processed_pu)
+    findings = Findings(args.scope_id)
     check_sections(findings, inventory_text, template_text)
     check_entry_fields(findings, entries, schemas)
     check_ids(findings, entries)
@@ -514,27 +530,74 @@ def cmd_check(args, repo_root, cfg):
     check_list_sections(findings, inventory_text, template_text, schemas)
     check_elements(findings, inventory_text, entries)
     check_project_agreement(findings, entries)
+    check_wording(findings, entries, inventory_text)
 
-    retired_path = pu._retired_path(repo_root, cfg)
-    retired_text = (_util.read(retired_path)
-                    if os.path.exists(retired_path) else '')
     staging_path = pu._staging_path(repo_root, cfg)
     if os.path.exists(staging_path):
-        staging_text = _util.read(staging_path)
-        check_processed(findings, pu.parse_staging(staging_text),
-                        pu.parse_migrated(staging_text), args.processed_pu)
-        check_staging_integrity(findings, pu.parse_staging(staging_text))
-        check_migrated(findings, staging_text, inventory_text,
-                       _util.read(pu._narratives_path(repo_root, cfg)),
-                       template_text, schemas, retired_text)
-    elif args.processed_pu:
-        # Nothing to verify a reported closure against. Silence here would read
-        # as a pass on the one bookkeeping claim the run actually made.
-        findings.mark('P9')
-        findings.add('P9', 'PU entries were reported as finished this run but '
-                           'there is no staging file to check them against')
+        _, schema = staging_append.load_schema(repo_root, cfg)
+        check_staging_items(findings,
+                            pu.parse_staging(_util.read(staging_path)),
+                            staging_append.schema_labels(schema))
 
     sys.exit(findings.report())
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: context
+# The judgment reviewer needs three things and nothing else: the staged items,
+# the entries they became, and the writing rules for those entry types. This
+# writes them verbatim into one file and prints the dispatch prompt, so the
+# skill sends the prompt unchanged instead of composing one by hand (the
+# pattern the retrieval scorers and the gap-detector already follow).
+# ---------------------------------------------------------------------------
+
+# The rules key a list-section write is reviewed against.
+LIST_RULES_KEY = 'LIST'
+
+
+def build_context(repo_root, cfg, labels, scope_ids):
+    """Return the review context text for one run's items and writes."""
+    staging_text = _util.read(pu._staging_path(repo_root, cfg))
+    inventory_text = _util.read(pu._inventory_path(repo_root, cfg))
+    template_text = _util.read(pu._template_path(repo_root, cfg))
+    sections = pu.list_sections(template_text, document.parse_template(template_text))
+
+    out = ['# Profile-update review context', '', '## Staged items', '']
+    out += [pu.find_item(staging_text, label)['body'] + '\n' for label in labels]
+
+    out += ['## Written entries', '']
+    keys = []
+    for target in scope_ids:
+        if pu._ADDRESS_SEP in target:
+            found = pu.resolve_list_target(inventory_text, target, sections)
+            out.append(f"{found['address']}: {found['value']}\n")
+            key = LIST_RULES_KEY
+        else:
+            out.append(profile_slice._fetch_id(target, repo_root, cfg) + '\n')
+            key = target.split('-', 1)[0]
+        if key not in keys:
+            keys.append(key)
+
+    out += ['## Writing rules', '']
+    out.append(rules_slice.slice_types(
+        rules_slice.load(repo_root, cfg, 'inventory-writing'), keys))
+    return '\n'.join(out)
+
+
+def cmd_context(args, repo_root, cfg):
+    """Write the review context file and print the dispatch prompt."""
+    if not args.item or not args.scope_id:
+        raise ValueError('context needs at least one --item and one --scope-id')
+    path = args.out or os.path.join(repo_root, cfg['paths']['temp'],
+                                    'qc_profile_update_context.md')
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    _util.write(path, build_context(repo_root, cfg, args.item, args.scope_id))
+    print('=== PROMPT ===')
+    print(f'Context file: {path}')
+    print('Review the written entries in the context file against the staged '
+          'items and the writing rules it holds, per your checks. Return your '
+          'standard format.')
+    print('=== END ===')
 
 
 def main():
@@ -544,8 +607,6 @@ def main():
     sub = parser.add_subparsers(dest='command', required=True)
 
     p_check = sub.add_parser('check', help='run every check')
-    p_check.add_argument('--processed-pu', action='append', default=[],
-                         help='PU-NNN closed this run; repeatable')
     p_check.add_argument('--scope-id', action='append', default=[],
                          help='an inventory ID this run created or edited, or a '
                               'list address it appended to; repeatable. Findings '
@@ -553,6 +614,16 @@ def main():
                               'advisories rather than failures. Omit to audit '
                               'the whole document.')
     p_check.set_defaults(func=cmd_check)
+
+    p_ctx = sub.add_parser('context',
+                           help='write the judgment reviewer\'s context file '
+                                'and print its dispatch prompt')
+    p_ctx.add_argument('--item', action='append', default=[],
+                       help='label of a staged item processed this run; repeatable')
+    p_ctx.add_argument('--scope-id', action='append', default=[],
+                       help='an ID or list address written this run; repeatable')
+    p_ctx.add_argument('--out', help='context file path (default: temp/qc_profile_update_context.md)')
+    p_ctx.set_defaults(func=cmd_context)
 
     args = parser.parse_args()
 

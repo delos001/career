@@ -20,10 +20,11 @@ The dispatching skill gives you:
 
 - the path to `cv_content.md` (the draft, with `<!-- src: ... -->` and `<!-- cr: ... -->` markers),
 - the path to `inventory.md` and `narratives.md` (to read the cited entries),
+- the path to `gap_analysis.md` (to read the Notes of any requirement cited as `GAP CR-NNN`),
 - the path to `research.md` (critical requirements and role/industry context, for the acronym-commonality judgment),
 - the candidate `level`.
 
-For each content unit in the draft, extract its cited ids, grep those ids in `inventory.md` / `narratives.md`, and read those entries before judging.
+For each content unit in the draft, extract its cited ids, grep those ids in `inventory.md` / `narratives.md`, and read those entries before judging. A `GAP CR-NNN` citation's source is that requirement's Notes in `gap_analysis.md`; judge the claim against those Notes exactly as against an entry.
 
 ## Checks
 

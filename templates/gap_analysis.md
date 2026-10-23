@@ -75,8 +75,9 @@ rendered from structured inputs the skill passes to the script.
   - **Notes:** {{notes_or_em_dash}}
   ```
 
-  Closures via user input append `Closure ref: <staging_pointer>` to **Notes**.
-  Status values: `covered`, `closed`, `language-shift`, `partial-match`,
+  A fact the user surfaced to close a requirement is staged with that
+  requirement as its anchor; a CV that uses it before it reaches the inventory
+  cites `GAP CR-NNN`. Status values: `covered`, `closed`, `language-shift`, `partial-match`,
   `interview-deferred`, `unresolved`. Always rendered (every requirement appears,
   regardless of status).
 

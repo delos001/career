@@ -385,6 +385,11 @@ listed beneath it (flat layout; no sub-bullets). Citation is the union of the
 linked source ids (e.g. `<!-- src: EX-12, EX-15, EX-23 -->`), optionally also the
 ST-NNN.
 
+**Facts not yet in the inventory.** A fact the user surfaced in this
+application's gap analysis, still waiting in staging, is cited by its
+requirement: `<!-- src: GAP CR-005 -->`. Allowed only for a `closed` or
+`partial-match` requirement; the claim may not exceed that requirement's Notes.
+
 **No overstatement.** The synthesized claim must not assert scope, scale, or
 impact beyond the union of its cited entries. QC verifies the arc bullet against
 its cited slices.

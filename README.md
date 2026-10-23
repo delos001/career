@@ -107,7 +107,7 @@ Every quality gate is a pair.
 - Axis vocabulary aligns the verbiage, tone, level and state to the role.
 
 **4. Each document has exactly one writer.**
-The profile documents are read by nearly everything and written by exactly one skill, `profile-update`. Facts surfaced mid-run go to a staging queue as `PU-NNN` entries via `staging_append.py`, and are promoted later under user review. The queue holds what is waiting; the inventory is where information persists. This removes concurrent drift as a class of bug.
+The profile documents are read by nearly everything and written by exactly one skill, `profile-update`. Facts surfaced mid-run go to a staging queue via `staging_append.py`, which refuses a capture missing its role, attribution, outcome, or limits, and are promoted later under user review. The queue holds what is waiting; the inventory is where information persists. How each is written lives in `rules/profile/`. This removes concurrent drift as a class of bug.
 
 **5. A phase produces its declared output and nothing else.**
 No forward-looking commentary, no work belonging to a later skill. Role intake may report that a job description contradicts itself; it may not report how the candidate scores against it.
@@ -144,7 +144,7 @@ flowchart LR
 |---|---|---|---|---|
 | 1 | Role intake | `role-intake` | Job description, web research | `research.md`, `session_log.md` |
 | 2 | Retrieval | `retrieval` | `research.md`, profile slices | `retrieval.md` |
-| 3 | Gap analysis | `gap-analysis` | `retrieval.md`, `research.md` | `gap_analysis.md`, staged `PU-NNN` entries |
+| 3 | Gap analysis | `gap-analysis` | `retrieval.md`, `research.md` | `gap_analysis.md`, staged items |
 | 4 | CV content | `cv-targeted` | `gap_analysis.md`, `retrieval.md`, axis files | `cv_content.md` (cited), `drafting_plan.md` |
 | 5 | CV render | `cv-render` | `cv_content.md` | formatted `.docx` |
 | 6 | Screen prep | `preparation-screen` | `gap_analysis.md`, profile, live research | `interview_prep.md` |
@@ -301,6 +301,10 @@ career/
 │   ├── interview-types/                 # sets emphasis + research gaps per audience
 │   │   ├── hiring-manager.md, peer-team.md
 │   │   └── executive.md
+│   ├── profile/                         # profile writing rules, read through rules_slice.py
+│   │   ├── routing.md                   # where a staged fact goes
+│   │   ├── staging-writing.md           # how a new fact is captured
+│   │   └── inventory-writing.md         # how each inventory entry type is written
 │   ├── narratives/                      # narrative form specs
 │   │   ├── story_star.md, story_atola.md, story_personal.md
 │   │   ├── decision_adr.md
@@ -312,7 +316,8 @@ career/
 │       └── bootstrap-prompt.md          # portable starter; zero method content
 ├── scripts/                             # all deterministic logic
 │   ├── _config.py                       # resolves repo root from __file__, loads config.yaml
-│   ├── _util.py, _prep_checks.py, axis_utils.py    # shared helpers
+│   ├── _util.py, _prep_checks.py, _wording.py, axis_utils.py    # shared helpers
+│   ├── rules_slice.py                   # shared rules plus one entry type's section
 │   ├── app_id.py, company_slug.py       # ID and slug allocation
 │   ├── assemble.py, session_log.py      # artifact assembly from templates
 │   ├── profile_slice.py                 # addressed slice extraction (no whole-doc loads)
@@ -336,7 +341,7 @@ career/
 │   ├── gap_analysis.md
 │   ├── interview_prep.md                # shared by preparation-screen and -interview
 │   ├── interview_notes.md, followup.md
-│   ├── profile_updates_pending.md       # the PU-NNN staging queue
+│   ├── profile_updates_pending.md       # the staging queue
 │   └── recruiter_pitch_template.md
 ├── tests/
 │   ├── run_tests.py                     # sets CAREER_FIXTURE; refuses to run outside tests/

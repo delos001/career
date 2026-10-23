@@ -118,13 +118,30 @@ def docs():
             _util.read(pu._staging_path(root, cfg)))
 
 
-def queued_ids(staging_text):
-    """Return the PU-NNN set still waiting in the queue.
+def queued_labels(staging_text):
+    """Return the labels of the items still waiting in the queue."""
+    return [item['label'] for item in pu.parse_staging(staging_text)]
 
-    parse_staging returns records rather than a mapping, so the ids have to be
-    pulled out; parse_migrated already returns {id: outcome}.
-    """
-    return {entry['id'] for entry in pu.parse_staging(staging_text)}
+
+# The fixture's two queued items.
+VENDOR_ITEM = 'Vendor management scope at Northwind'
+TOOL_ITEM = 'Additional analytics tooling'
+
+# A complete capture file, as staging_append.py takes it.
+CAPTURE = """Work role: RL-002
+Did: Ran the monthly data-transfer reconciliation with the central lab.
+Others did: The lab's data manager produced the transfer files.
+Outcome: none stated
+Limits: none
+"""
+
+
+def stage(capture, label='Lab transfer reconciliation', requirement='CR-002'):
+    """Run staging_append.py against the fixture application; return (code, out)."""
+    path = write_block('capture.md', capture)
+    return run('staging_append.py', '--folder', FIXTURE_APP,
+               '--requirement', requirement, '--capture-file', path,
+               '--label', label)
 
 
 def write_block(name, text):
@@ -150,97 +167,146 @@ Impact: Vendor scope changes followed a documented review rather than ad hoc req
 # Each name is the defect it exists to catch. The docstring says what shipped.
 # ---------------------------------------------------------------------------
 
-def test_counter_never_reissues_a_number():
-    """Shipped 2026-08-26: promoting entries let the ID counter walk backwards.
+def test_review_fix_lands_while_the_item_waits():
+    """Shipped 2026-10-05 (#70): the item left the queue before review, so every
+    fix the review asked for failed with 'not in the staging queue'.
 
-    The counter read the queue only, so removing the highest-numbered entry
-    lowered the maximum and the next one issued reused a number a closed
-    application's gap_analysis.md already cited.
+    Writes no longer depend on the queue, and the item is removed only after
+    review, so a fix after the first write succeeds and the item is still there.
     """
-    _, staging = docs()
-    issued = queued_ids(staging) | set(pu.parse_migrated(staging))
-
-    # Drain the queue completely, which is the state that exposed the bug.
-    for entry in pu.parse_staging(staging):
-        ok('drop', '--pu', entry['id'])
-
-    _, staging = docs()
-    assert not pu.parse_staging(staging), 'queue should be empty'
-
-    # Every issued number must still be on record, and the next one must be new.
-    recorded = set(pu.parse_migrated(staging))
-    assert issued <= recorded, f'lost from the record: {sorted(issued - recorded)}'
-
-    import staging_append
-    nxt = staging_append._next_pu_id(staging)
-    assert nxt not in issued, f'{nxt} was already issued'
-    assert int(nxt.split('-')[1]) > max(int(i.split('-')[1]) for i in issued), \
-        f'{nxt} does not exceed every number ever issued'
-
-
-def test_entry_cannot_leave_the_queue_unrecorded():
-    """The invariant the whole design rests on.
-
-    Every PU-NNN ever issued appears exactly once across the two sections. If
-    an entry can leave without leaving its number, the counter breaks again and
-    a past application's closure pointer stops resolving.
-    """
-    _, staging = docs()
-    before = queued_ids(staging) | set(pu.parse_migrated(staging))
-
     write_block('b.md', EX_BLOCK)
-    ok('insert', '--prefix', 'EX', '--pu', 'PU-003',
-       '--block-file', os.path.join(RUN_DIR, 'b.md'))
-    ok('close', '--pu', 'PU-003')
-    ok('drop', '--pu', 'PU-004')
+    new_id = ok('insert', '--prefix', 'EX', '--block-file', os.path.join(RUN_DIR, 'b.md'))
+    write_block('v.md', 'Vendor scope changes went through a documented review.')
+    ok('set', '--id', new_id, '--field', 'Impact',
+       '--value-file', os.path.join(RUN_DIR, 'v.md'))
+    assert VENDOR_ITEM in queued_labels(docs()[1]), 'the item left before review'
 
-    _, staging = docs()
-    queued, migrated = queued_ids(staging), set(pu.parse_migrated(staging))
-    assert not (queued & migrated), f'in both sections: {sorted(queued & migrated)}'
-    assert queued | migrated == before, 'a PU number was lost or invented'
-
-
-def test_close_refuses_without_a_recorded_write():
-    """Shipped 2026-08-26: close verified that its targets existed, which for an
-    enrichment or a list item proved nothing, because both existed beforehand.
-
-    A failed or skipped write could therefore be closed against the entry it was
-    meant to change, writing a permanently false migrated line.
-    """
-    out = fails('close', '--pu', 'PU-003')
-    assert 'records no writes' in out, out
-
-    # And it still refuses after a write that went to a DIFFERENT entry.
-    ok('list-add', '--pu', 'PU-004',
-       '--target', 'Technical Experience / Programming, Data & Analytics / Platforms',
-       '--item', 'Tableau')
-    out = fails('close', '--pu', 'PU-003')
-    assert 'records no writes' in out, out
+    out = ok('remove', '--item', VENDOR_ITEM)
+    assert 'scope negotiation' in out, f'remove did not print what it held:\n{out}'
+    assert queued_labels(docs()[1]) == [TOOL_ITEM]
 
 
-def test_duplicate_and_writes_are_mutually_exclusive():
-    """'nothing needed writing' and 'these writes happened' cannot both hold."""
-    ok('list-add', '--pu', 'PU-004',
-       '--target', 'Technical Experience / Programming, Data & Analytics / Platforms',
-       '--item', 'Tableau')
-    out = fails('close', '--pu', 'PU-004', '--duplicate')
-    assert 'not a duplicate' in out, out
-    # An untouched entry closes as a duplicate cleanly.
-    ok('close', '--pu', 'PU-003', '--duplicate')
-    assert pu.parse_migrated(docs()[1])['PU-003'] == 'duplicate'
+def test_remove_leaves_no_residue():
+    """Removing the last item restores the empty marker and keeps no record, so
+    the next capture appends into a well-formed queue."""
+    ok('remove', '--item', VENDOR_ITEM)
+    ok('remove', '--item', TOOL_ITEM)
+    staging = docs()[1]
+    assert not pu.parse_staging(staging), 'queue should be empty'
+    assert '_(none)_' in staging, 'empty marker not restored'
+    assert 'Migrated' not in staging and 'PU-' not in staging, staging
+    fails('remove', '--item', VENDOR_ITEM)
+
+    code, out = stage(CAPTURE)
+    assert code == 0, out
+    assert queued_labels(docs()[1]) == ['Lab transfer reconciliation']
 
 
-def test_made_up_targets_are_rejected():
-    """Shipped 2026-08-26: any ID whose prefix the inventory template did not
-    define passed unverified, so ST-999 or a positioning target resolved clean.
-    """
-    for bad in ('EX-999', 'ST-999', 'ZZ-123'):
-        out = fails('record', '--pu', 'PU-003', '--target', bad)
-        assert 'exists in neither' in out, f'{bad}: {out}'
-    # A real narratives ID is accepted; that document has no template and the
-    # earlier fix must not have closed the door on it.
-    ok('record', '--pu', 'PU-003', '--target', 'ST-001')
-    ok('record', '--pu', 'PU-003', '--target', 'DC-001')
+def test_capture_refuses_a_missing_or_blank_field():
+    """Shipped 2026-08-25: one free-text field let the role, the split of work,
+    and the outcome go unrecorded, and every first-run entry needed its
+    attribution corrected. Each capture field is now required."""
+    before = docs()[1]
+    cases = [
+        ('a missing field', CAPTURE.replace('Others did: The lab\'s data manager '
+                                            'produced the transfer files.\n', ''),
+         'Others did'),
+        ('a blank field', CAPTURE.replace('Outcome: none stated', 'Outcome:'),
+         'Outcome'),
+        ('a made-up role', CAPTURE.replace('RL-002', 'RL-099'), 'RL-099'),
+        ('an unshaped role', CAPTURE.replace('RL-002', 'Northwind'), 'Work role'),
+        ('an unknown field', CAPTURE + 'Notes: extra\n', 'Notes'),
+    ]
+    for label, capture, expect in cases:
+        code, out = stage(capture)
+        assert code != 0, f'{label} was accepted:\n{out}'
+        assert 'capture refused' in out and expect in out, f'{label}: {out}'
+    assert docs()[1] == before, 'a refused capture still changed the file'
+
+    code, out = stage(CAPTURE.replace('RL-002', 'new: Halloway Labs, Analyst'))
+    assert code == 0, out
+    item = pu.find_item(docs()[1], 'Lab transfer reconciliation')
+    for field in ('Work role', 'Did', 'Others did', 'Outcome', 'Limits'):
+        assert pu.bullet_value(item['body'], field), f'{field} not rendered'
+    code, out = stage(CAPTURE)
+    assert code != 0 and 'already waiting' in out, f'a duplicate label was accepted:\n{out}'
+
+
+def test_related_pull_covers_the_role_and_shared_words():
+    """The routing decision (new entry, addition, or duplicate) used to rest on
+    a by-hand search that missed covering entries. The pull is now fixed: every
+    entry in the item's Work role, plus entries elsewhere sharing key words."""
+    inventory = docs()[0]
+    role_ids = re.findall(r'^ID: ((?:EX|PR|PB|PS)-\d+)\nRole: RL-002$', inventory, re.MULTILINE)
+    assert role_ids, 'fixture lost its RL-002 entries'
+
+    code, out = stage(CAPTURE.replace(
+        'Ran the monthly data-transfer reconciliation with the central lab.',
+        'Extended the shared clinical warehouse schema and its load jobs.'))
+    assert code == 0, out
+    code, out = run('profile_slice.py', 'related', '--item', 'Lab transfer reconciliation')
+    assert code == 0, out
+    same, other = out.split('## Shared key words', 1)
+    for entry_id in role_ids:
+        assert f'ID: {entry_id}' in same, f'{entry_id} missing from the same-role pull'
+    assert 'ID: EX-001' in other and 'warehouse' in other, f'shared-word entry not pulled:\n{other}'
+    assert 'Orientation:' not in out, 'axis fields leaked into the pull'
+
+    import profile_slice
+    blocks = [f'block {i} ' + 'x' * 40 for i in range(9)]
+    parts = profile_slice.split_parts(blocks, 120)
+    assert len(parts) > 1 and [b for p in parts for b in p] == blocks, 'parts lost or reordered blocks'
+    assert all(sum(len(b) for b in p) <= 120 for p in parts), 'a part exceeded the limit'
+
+
+def test_rules_slice_prints_shared_rules_and_one_type():
+    """Writing one entry type loads the shared rules and that type's section
+    only; a type with no section is an error, never the shared rules alone."""
+    import rules_slice
+    text = ('# Rules\n\nOpening.\n\n## Shared wording\n\nShared rule.\n\n'
+            '## EX: Experience entries\n\nEX rule.\n\n## ED: Education\n\nED rule.\n')
+    ex_slice = rules_slice.slice_text(text, 'EX')
+    assert 'Opening.' in ex_slice and 'Shared rule.' in ex_slice and 'EX rule.' in ex_slice, ex_slice
+    assert 'ED rule.' not in ex_slice, 'another type leaked into the slice'
+    assert rules_slice.slice_text(text) == text
+    try:
+        rules_slice.slice_text(text, 'PR')
+    except ValueError as e:
+        assert 'PR' in str(e) and 'EX, ED' in str(e), e
+    else:
+        raise AssertionError('a type with no section did not raise')
+    code, out = run('rules_slice.py', 'routing')
+    assert code == 0 and '# Routing rules' in out, out
+
+
+def test_every_entry_type_has_writing_rules():
+    """The writer and the reviewer load rules per entry type; a type with no
+    section stops the run rather than leaving the model to guess. Every type the
+    template defines, plus the list sections, must have one."""
+    import rules_slice
+    root, cfg = _config.load()
+    prefixes = set(document.parse_template(_util.read(pu._template_path(root, cfg))))
+    keys = set(rules_slice.type_keys(rules_slice.load(root, cfg, 'inventory-writing')))
+    missing = sorted((prefixes | {'LIST'}) - keys)
+    assert not missing, f'entry types with no writing rules: {missing}'
+
+
+def test_reviewer_context_carries_items_entries_and_rules():
+    """The reviewer gets its inputs from a script, never a hand-composed prompt:
+    the staged item, the entry written, and only that entry type's rules."""
+    write_block('b.md', EX_BLOCK)
+    new_id = ok('insert', '--prefix', 'EX', '--block-file', os.path.join(RUN_DIR, 'b.md'))
+    target = 'Technical Experience / Programming, Data & Analytics / Platforms'
+    ok('list-add', '--target', target, '--item', 'Tableau')
+    path = os.path.join(RUN_DIR, 'qc_context.md')
+    code, out = run('profile_update_qc.py', 'context', '--item', VENDOR_ITEM,
+                    '--scope-id', new_id, '--scope-id', target, '--out', path)
+    assert code == 0 and f'Context file: {path}' in out, out
+    context = _util.read(path)
+    assert pu.find_item(docs()[1], VENDOR_ITEM)['body'] in context, 'item not copied verbatim'
+    assert f'ID: {new_id}' in context and 'Tableau' in context, 'written entries missing'
+    assert '## EX: ' in context and '## LIST: ' in context and '## Shared wording' in context
+    assert '## PR: ' not in context and '## ED: ' not in context, 'unrelated rules leaked'
 
 
 def test_concurrent_inserts_do_not_collide():
@@ -250,9 +316,9 @@ def test_concurrent_inserts_do_not_collide():
     so a second insert cannot reuse the first's number.
     """
     write_block('b.md', EX_BLOCK)
-    first = ok('insert', '--prefix', 'EX', '--pu', 'PU-003',
+    first = ok('insert', '--prefix', 'EX',
                '--block-file', os.path.join(RUN_DIR, 'b.md'))
-    second = ok('insert', '--prefix', 'EX', '--pu', 'PU-003',
+    second = ok('insert', '--prefix', 'EX',
                 '--block-file', os.path.join(RUN_DIR, 'b.md'))
     assert first != second, f'both inserts claimed {first}'
     ids = [e['id'] for e in entry_block.parse_blocks(docs()[0])]
@@ -264,7 +330,7 @@ def test_new_entry_lands_in_its_role_group_in_order():
     group its Role names, or out of sort order within it.
     """
     write_block('b.md', EX_BLOCK)
-    new_id = ok('insert', '--prefix', 'EX', '--pu', 'PU-003',
+    new_id = ok('insert', '--prefix', 'EX',
                 '--block-file', os.path.join(RUN_DIR, 'b.md'))
     inventory, _ = docs()
 
@@ -292,7 +358,7 @@ Allocation: 100%
 Start Date: 2014-01
 End Date: 2016-01
 """)
-    role = ok('insert', '--prefix', 'RL', '--pu', 'PU-003',
+    role = ok('insert', '--prefix', 'RL',
               '--block-file', os.path.join(RUN_DIR, 'r.md'))
     inventory, _ = docs()
     assert document.section_bounds(inventory, role) is not None, \
@@ -300,7 +366,7 @@ End Date: 2016-01
 
     # And an entry for that role now has somewhere to go.
     write_block('b.md', EX_BLOCK.replace('Role: RL-002', f'Role: {role}'))
-    ok('insert', '--prefix', 'EX', '--pu', 'PU-003',
+    ok('insert', '--prefix', 'EX',
        '--block-file', os.path.join(RUN_DIR, 'b.md'))
 
 
@@ -315,12 +381,12 @@ def test_list_add_is_additive():
     sections = pu.list_sections(tpl, document.parse_template(tpl))
     before = pu.split_items(pu.resolve_list_target(docs()[0], target, sections)['value'])
 
-    ok('list-add', '--pu', 'PU-004', '--target', target, '--item', 'Tableau')
+    ok('list-add', '--target', target, '--item', 'Tableau')
     after = pu.split_items(pu.resolve_list_target(docs()[0], target, sections)['value'])
     assert after[:len(before)] == before, f'existing items changed: {before} -> {after}'
     assert after[-1] == 'Tableau'
 
-    out = fails('list-add', '--pu', 'PU-004', '--target', target, '--item', 'tableau')
+    out = fails('list-add', '--target', target, '--item', 'tableau')
     assert 'already listed' in out, out
 
 
@@ -330,7 +396,7 @@ def test_enrichment_preserves_the_rest_of_the_entry():
     """
     before = {e['id']: e['field_map'] for e in entry_block.parse_blocks(docs()[0])}
     write_block('v.md', 'Enrollment projections now run from one reviewed model.')
-    ok('set', '--id', 'EX-003', '--pu', 'PU-003', '--field', 'Impact',
+    ok('set', '--id', 'EX-003', '--field', 'Impact',
        '--value-file', os.path.join(RUN_DIR, 'v.md'))
 
     after = {e['id']: e['field_map'] for e in entry_block.parse_blocks(docs()[0])}
@@ -345,17 +411,17 @@ def test_enrichment_preserves_the_rest_of_the_entry():
 def test_document_stays_valid_after_writes():
     """Any sequence of writes must leave a document the checker still passes."""
     write_block('b.md', EX_BLOCK)
-    new_id = ok('insert', '--prefix', 'EX', '--pu', 'PU-003',
-                '--block-file', os.path.join(RUN_DIR, 'b.md'))
-    ok('list-add', '--pu', 'PU-004',
+    ok('insert', '--prefix', 'EX', '--block-file', os.path.join(RUN_DIR, 'b.md'))
+    ok('list-add',
        '--target', 'Technical Experience / Programming, Data & Analytics / Platforms',
        '--item', 'Tableau')
-    ok('close', '--pu', 'PU-003')
-    ok('close', '--pu', 'PU-004')
 
     code, out = run('profile_update_qc.py', 'check')
     assert code == 0, f'checker failed after a normal run:\n{out}'
-    assert new_id in pu.parse_migrated(docs()[1])['PU-003']
+    ok('remove', '--item', VENDOR_ITEM)
+    ok('remove', '--item', TOOL_ITEM)
+    code, out = run('profile_update_qc.py', 'check')
+    assert code == 0, f'checker failed on an emptied queue:\n{out}'
 
 
 # ---------------------------------------------------------------------------
@@ -382,9 +448,8 @@ Elements:
 
 BREAKAGES = [
     ('a missing required field',
-     lambda t: t.replace('Impact: Enrollment projections moved from per-study '
-                         'guesswork to a single reviewed model used at portfolio '
-                         'planning.\n', '')),
+     lambda t: t.replace('Specialty: data-science\nOrientation: data-analytics',
+                         'Orientation: data-analytics')),
     ('an off-registry axis value',
      lambda t: t.replace('Specialty: data-science', 'Specialty: astrology')),
     ('a dangling cross-reference',
@@ -414,6 +479,18 @@ BREAKAGES = [
      lambda t: t.replace('Elements:\n', 'Elements:\n    Outcome: Stray result.\n')),
     ('two blocks of one project that disagree',
      lambda t: t.replace(PR_LAST_LINE, PR_LAST_LINE + '\n' + PR_SECOND_BLOCK)),
+    # The mechanical wording rules (P15), one per rule.
+    ('first person in a Description',
+     lambda t: t.replace('Replaced per-study spreadsheets', 'I replaced per-study spreadsheets')),
+    ('a banned phrase in an Impact',
+     lambda t: t.replace('Impact: Enrollment projections', 'Impact: Positioned for enrollment projections')),
+    ('an em dash in a Context',
+     lambda t: t.replace('No central enrollment view existed;',
+                         'No central enrollment view existed —')),
+    ('an Impact that does not end in a period',
+     lambda t: t.replace('used at portfolio planning.\n', 'used at portfolio planning\n', 1)),
+    ('an AI-tell in an element Outcome',
+     lambda t: t.replace('    Outcome: Used by', '    Outcome: Successfully used by', 1)),
 ]
 
 
@@ -434,18 +511,44 @@ def test_checker_catches_each_breakage():
     assert not missed, 'the checker passed a broken document: ' + '; '.join(missed)
 
 
-def test_checker_catches_an_unrecorded_departure():
-    """A PU entry removed by hand, without its migrated line, must be caught."""
+def test_checker_catches_an_incomplete_staging_item():
+    """An item missing a capture field, written by hand or by the old schema,
+    would make the profile-update run guess the missing fact."""
     root, cfg = _config.load()
     path = pu._staging_path(root, cfg)
     text = _util.read(path)
-    entry = next(e for e in pu.parse_staging(text) if e['id'] == 'PU-003')
-    lines = text.split('\n')
-    _util.write(path, '\n'.join(lines[:entry['start']] + lines[entry['end']:]))
+    _util.write(path, text.replace('- **Others did:** Procurement owned the contracts.\n', ''))
+    code, out = run('profile_update_qc.py', 'check')
+    assert code != 0 and 'Others did' in out, f'an incomplete item passed:\n{out}'
 
-    code, out = run('profile_update_qc.py', 'check', '--processed-pu', 'PU-003')
-    assert code != 0, f'a PU entry vanished without a record and nothing complained:\n{out}'
-    assert 'Migrated' in out, out
+    _util.write(path, text.replace(f'### {TOOL_ITEM}', f'### {VENDOR_ITEM}'))
+    code, out = run('profile_update_qc.py', 'check')
+    assert code != 0 and 'share the label' in out, f'a repeated label passed:\n{out}'
+
+
+def test_wording_check_spares_domain_terms():
+    """Found 2026-10-22 on the live inventory: 'PI/sub-I' read as first person.
+    'Phase I' is everywhere in clinical work and must pass too."""
+    import profile_update_qc
+    for clean in ('Ran Phase I and Class I device studies.',
+                  'Kept PI/sub-I alignment across sites.',
+                  'Supported US and EU filings.'):
+        assert profile_update_qc.wording_problems(clean, True) == [], clean
+    for dirty in ('I ran the study.', 'Our team ran it.', 'Ran it for us.'):
+        assert profile_update_qc.wording_problems(dirty, True), dirty
+
+
+def test_wording_findings_outside_the_run_are_advisory():
+    """A pre-existing wording problem elsewhere must not block a run's own work,
+    or every scoped run fails on the backlog."""
+    root, cfg = _config.load()
+    path = pu._inventory_path(root, cfg)
+    _util.write(path, _util.read(path).replace('used at portfolio planning.\n',
+                                               'used at portfolio planning\n', 1))
+    code, out = run('profile_update_qc.py', 'check', '--scope-id', 'EX-001')
+    assert code == 0 and 'pre-existing' in out, f'an out-of-scope finding blocked the run:\n{out}'
+    code, out = run('profile_update_qc.py', 'check', '--scope-id', 'EX-003')
+    assert code != 0 and 'period' in out, f'an in-scope finding passed:\n{out}'
 
 
 # ---------------------------------------------------------------------------
@@ -476,15 +579,15 @@ def test_element_numbers_are_never_reissued():
     number it changes.
     """
     write_block('el.md', 'Schema-validated output, so a malformed record fails at conversion')
-    assert ok('element', '--id', 'PR-001', '--pu', 'PU-003',
+    assert ok('element', '--id', 'PR-001',
               '--text-file', os.path.join(RUN_DIR, 'el.md')) == 'PR-001.04'
     write_block('oc.md', 'Caught two malformed vendor files before load.')
-    assert ok('element', '--id', 'PR-001.04', '--pu', 'PU-003',
+    assert ok('element', '--id', 'PR-001.04',
               '--outcome-file', os.path.join(RUN_DIR, 'oc.md')) == 'PR-001.04'
     assert element_ids_in_inventory() == ['PR-001.01', 'PR-001.02', 'PR-001.03', 'PR-001.04']
 
     write_retired('PR-001.07')
-    assert ok('element', '--id', 'PR-001', '--pu', 'PU-003',
+    assert ok('element', '--id', 'PR-001',
               '--text-file', os.path.join(RUN_DIR, 'el.md')) == 'PR-001.08', \
         'a retired element number was reissued'
 
@@ -494,10 +597,10 @@ def test_elements_are_never_rewritten_as_a_field():
     changing the Objective must leave every element as it was."""
     before = element_ids_in_inventory()
     write_block('v.md', 'Let trial teams exchange study metadata without re-entry.')
-    ok('set', '--id', 'PR-001', '--pu', 'PU-003', '--field', 'Objective',
+    ok('set', '--id', 'PR-001', '--field', 'Objective',
        '--value-file', os.path.join(RUN_DIR, 'v.md'))
     assert element_ids_in_inventory() == before, 'Objective change touched the elements'
-    out = fails('set', '--id', 'PR-001', '--pu', 'PU-003', '--field', 'Elements',
+    out = fails('set', '--id', 'PR-001', '--field', 'Elements',
                 '--value-file', os.path.join(RUN_DIR, 'v.md'))
     assert 'one element at a time' in out, out
 
@@ -506,7 +609,7 @@ def test_new_project_cannot_bring_its_own_element_numbers():
     """A new project's elements are numbered by the element command, never by
     hand, so a pasted block cannot carry numbers that collide or skip."""
     write_block('p.md', PR_SECOND_BLOCK.split('\n', 1)[1] + '  - PR-002.01: Pasted element\n')
-    out = fails('insert', '--prefix', 'PR', '--pu', 'PU-003',
+    out = fails('insert', '--prefix', 'PR',
                 '--block-file', os.path.join(RUN_DIR, 'p.md'))
     assert 'element command' in out, out
 
@@ -525,20 +628,6 @@ def test_element_lookup_and_retired_fallback():
     assert code == 0 and 'RETIRED' in out, out
 
 
-def test_retired_ids_stay_valid_history():
-    """A past migrated line names where content went then; an element retired
-    since is still a real target, not a fabrication."""
-    root, cfg = _config.load()
-    path = pu._staging_path(root, cfg)
-    text = _util.read(path)
-    _util.write(path, text.replace('## Migrated\n', '## Migrated\n\nPU-090: PR-001.07\n', 1))
-    code, out = run('profile_update_qc.py', 'check')
-    assert code != 0 and 'PR-001.07' in out, f'an unknown element target passed:\n{out}'
-    write_retired('PR-001.07')
-    code, out = run('profile_update_qc.py', 'check')
-    assert code == 0, f'a retired element was rejected as history:\n{out}'
-
-
 def test_retrieval_scores_objective_and_each_element():
     """A project is scored as its objective plus one item per element, each led
     by the project name and carrying the project's role."""
@@ -554,16 +643,45 @@ def test_retrieval_scores_objective_and_each_element():
         assert items[item_id]['role'] == 'RL-002', items[item_id]
 
 
-def cv_qc_report(cv_text):
+def cv_qc_report(cv_text, with_gap=False):
     """Run cv_qc.py on a CV text; return {check id: (passed, detail)}."""
     path = write_block('cv_content.md', cv_text)
     root, cfg = _config.load()
     profile = os.path.join(root, cfg['paths']['profile'])
+    extra = ['--gap-analysis', os.path.join(FIXTURE_APP, 'gap_analysis.md')] if with_gap else []
     code, out = run('cv_qc.py', '--cv-file', path, '--level', 'ic',
                     '--inventory', os.path.join(profile, 'inventory.md'),
-                    '--narratives', os.path.join(profile, 'narratives.md'))
+                    '--narratives', os.path.join(profile, 'narratives.md'), *extra)
     assert code == 0, out
     return {c['id']: (c['passed'], c['detail']) for c in json.loads(out)['checks']}
+
+
+def test_cv_gap_citations_resolve_to_a_closed_requirement():
+    """#70: a fact surfaced in the gap analysis but not yet in the inventory is
+    cited as GAP CR-NNN. The citation must name a requirement the user closed
+    or partly matched, and cannot pass unverified."""
+    cv = ('## Professional Summary\nText. <!-- src: EX-001 -->\n\n'
+          '## Professional Experience\n- A. <!-- src: GAP CR-002 -->\n'
+          '- B. <!-- src: GAP CR-004 -->\n')
+    assert cv_qc_report(cv, with_gap=True)['C9'][0], 'closed and partial-match citations failed'
+    unverified = cv_qc_report(cv)['C9']
+    assert not unverified[0] and 'no --gap-analysis' in unverified[1], unverified
+    for cr in ('CR-005', 'CR-099'):
+        bad = cv_qc_report(cv.replace('GAP CR-004', f'GAP {cr}'), with_gap=True)['C9']
+        assert not bad[0] and cr in bad[1], bad
+
+
+def test_staged_items_anchor_to_a_real_requirement():
+    """With closure refs gone, the staged item's Requirement anchor is the link a
+    GAP CR-NNN citation depends on, so it must name a requirement that exists."""
+    def g7():
+        _, out = run('gap_qc.py', 'check', '--folder', FIXTURE_APP)
+        return next(line for line in out.split('\n') if line.startswith('G7'))
+    assert 'PASS' in g7(), g7()
+    root, cfg = _config.load()
+    path = pu._staging_path(root, cfg)
+    _util.write(path, _util.read(path).replace('CR-002 - Vendor', 'CR-099 - Vendor'))
+    assert 'FAIL' in g7() and 'CR-099' in g7(), g7()
 
 
 def test_cv_cites_real_elements_with_their_objective():

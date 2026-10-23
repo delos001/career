@@ -1,61 +1,43 @@
 #!/usr/bin/env python3
 """
-staging_append.py - append a Profile Updates Pending entry
+staging_append.py - append a Profile Updates Pending item
 
-Called by the gap-analysis skill (Phase 6, Step 6a) once per PU entry, and by
-the prep skills for facts surfaced during interview preparation. Appends a single
-PU-NNN entry to the cross-application staging file at
-personal/profile/profile_updates_pending.md. Creates the file from the
+Called by the gap-analysis skill (Phase 6, Step 6a) once per captured fact, and
+by the prep skills for facts surfaced during interview preparation. Appends one
+item to the cross-application staging file at
+personal/profile/profile_updates_pending.md, creating the file from the
 templates/profile_updates_pending.md skeleton if it does not yet exist.
 
-Each entry captures: when, from which application, the requirement anchor, the
-role's axis context, the user's surfaced content (kept concise - this is CONTEXT
-for the downstream profile-update skill, NOT copy-paste content for inventory /
-narratives / positioning per the respect-profile-doc-conventions feedback
-memory).
-
-The file's '## Entries' section is a queue. A PU entry sits in it only while it
-waits to be promoted; the profile-update skill takes it out once its content is
-in the profile and records one line under '## Migrated' naming what became of
-it. There is no status field, because presence in '## Entries' IS the waiting
-state.
-
-That migrated record is what makes the PU-NNN counter safe. The next ID is the
-highest number across BOTH sections: taking it from the queue alone would let
-the counter walk backwards as PU entries are promoted and reissue a number a
-closed application's gap_analysis.md already cites in a 'Closure ref:' line.
+An item has two halves. The context half (when, from which application, the
+requirement anchor, the target job's axis values) is derived here. The capture
+half (the role where the work happened, what the candidate did, what others
+did, the outcome they stated, and any limits on the claim) is passed in a
+capture file of 'Label: value' lines. The capture labels are read from the
+template's per-entry schema, never named here, and every one is required: a
+capture missing a field, or carrying a blank one, is refused. That refusal is
+the point. Every first-run capture needed its attribution corrected because a
+single free-text field let the role, the split of work, and the outcome go
+unrecorded (capture-is-not-an-interview).
 
 Context comes from the application folder, not from the caller. Given --folder,
-the script reads the date (today), the application ID, the company, the
-role, and the five axis values out of that application's session log. Nine of
-the thirteen fields an entry carries are therefore derived rather than passed,
-which is what keeps the calling instruction in each skill to a single line.
-Every derived field still has an explicit flag that overrides it, for the case
-where the session log is absent or the value needs correcting.
+the script reads the date (today), the application ID, the company, the role,
+and the five axis values out of that application's session log. Every derived
+field still has an explicit flag that overrides it, for the case where the
+session log is absent or the value needs correcting.
 
-Every entry carries one 'Requirement:' line anchoring where the fact surfaced:
-a CR-NNN from that gap-analysis run, or 'n/a' plus a short reason when nothing
-anchors it (a general fact raised during interview prep). The anchor is
-provenance only. Whether the fact happened to close a gap is a fact about that
-one application, recorded in its gap_analysis.md, and the profile does not carry
-it: an entry that closed nothing is promoted exactly the same way, because it
-may close a gap on a future application.
-
-The script assigns the next PU-NNN by scanning every ID the file records, queued
-and migrated alike, appends the new entry under '## Entries' (replacing that
-section's '_(none)_' placeholder when the queue is empty), and prints the
-assigned PU-NNN on stdout so the caller can record the reference inline in
-gap_analysis.md.
+The item's label is its handle: profile_update.py finds an item by it, so the
+label must be unique within the queue. There is no item number and no record of
+where an item went once promoted (#70); the profile is the source.
 
 Author    : Jason Delosh
 Created   : 2026-05-27
 Project   : career
 Usage     : python scripts/staging_append.py --folder <app_folder> \\
                 --requirement CR-NNN --requirement-text-short ... \\
-                --content-file ... --label ...
+                --capture-file <path> --label ...
             python scripts/staging_append.py --folder <app_folder> \\
                 --requirement "n/a (surfaced during prep)" \\
-                --content-file ... --label ...
+                --capture-file <path> --label ...
 Depends   : pyyaml (via _config)
 """
 
@@ -67,69 +49,115 @@ import sys
 import _config
 import _util
 import profile_update as pu
-from inventory_model import document
+from inventory_model import document, entry_block
 
 
 # ---------------------------------------------------------------------------
-# Skeleton and ID parsing helpers
-# The staging file is an accumulating doc: initialise from the template if
-# missing, then append. PU-NNN IDs are globally sequential within the file,
-# independent of APP-NNN. Scanning existing IDs is cheap because the file is
-# small (one entry per closure across all gap-analysis runs).
+# Template parsing
+# The template carries two fenced blocks: the skeleton of an empty file, then
+# the per-entry schema. The skeleton initialises a missing file. The schema's
+# bullet labels, minus the ones this script derives itself, are the capture
+# fields a caller must supply.
 #
 # profile_update.py owns the staging file's section layout, so its section
-# constants and bounds helper are reused here rather than re-derived. One
-# parser for one file format; profile_update_qc.py reaches into it the same way.
+# constant and empty marker are reused here rather than re-derived. One parser
+# for one file format; profile_update_qc.py reaches into it the same way.
 # ---------------------------------------------------------------------------
 
-# Regex: capture the fenced skeleton block from the template.
+# Regex: every fenced block in the template, in order.
 _FENCE_RE = re.compile(r'```\n(.*?)\n```', re.DOTALL)
 
-# Regex: a PU-NNN entry's heading in the queue. Captures the integer.
-_PU_HEADING_RE = re.compile(r'^### PU-(\d+)\b', re.MULTILINE)
+# Regex: a schema bullet label, e.g. '- **Work role:** ...'.
+_SCHEMA_LABEL_RE = re.compile(r'^- \*\*(.+?):\*\*', re.MULTILINE)
 
-# Regex: a PU-NNN line in the migrated record. Captures the integer. Anchored to
-# the line start so a PU-NNN mentioned inside a PU entry's Content field, which
-# sits on a '- **Content:**' bullet, is never mistaken for an issued ID.
-_PU_MIGRATED_RE = re.compile(r'^PU-(\d+):', re.MULTILINE)
+# The labels this script writes itself, from the application folder or flags.
+DERIVED_LABELS = ('Captured', 'From', 'Requirement', 'Role context')
 
-# How many digits to render: PU-001, PU-042, etc. Matches the APP-NNN style.
-_PU_DIGITS = 3
+# The capture label naming where the work happened, and the forms its value
+# may take besides an RL-NNN: a role the inventory does not carry yet, or an
+# explicit reason no role applies (a tool, a certification).
+WORK_ROLE_LABEL = 'Work role'
+_WORK_ROLE_RE = re.compile(r'^(RL-\d{3}|new: .+|n/a \(.+\))$')
 
 
-def _skeleton(templates_dir, template_name):
-    """Return the fenced skeleton block from a template file."""
+def _template_blocks(templates_dir, template_name):
+    """Return the template's fenced blocks: [skeleton, per-entry schema]."""
     text = _util.read(os.path.join(templates_dir, template_name))
-    m = _FENCE_RE.search(text)
-    if not m:
-        raise ValueError(f'no fenced skeleton found in template: {template_name}')
-    return m.group(1)
+    blocks = _FENCE_RE.findall(text)
+    if len(blocks) < 2:
+        raise ValueError(
+            f'{template_name} must carry a skeleton block and a per-entry '
+            f'schema block')
+    return blocks[0], blocks[1]
 
 
-def _next_pu_id(staging_text):
-    """Return the next PU-NNN ID by scanning every ID the file records.
+def schema_labels(schema_block):
+    """Return every field label an item carries, in schema order."""
+    return _SCHEMA_LABEL_RE.findall(schema_block)
 
-    Both sections count. A queued PU entry's heading and a migrated PU entry's
-    line are equally proof that the number was issued, and a number is issued
-    once: a promoted PU entry's number stays cited by its originating
-    application's gap_analysis.md forever, so reusing it would silently
-    re-point that reference at unrelated content.
 
-    Returns 'PU-001' when the file records none; otherwise max+1 zero-padded.
+def capture_labels(schema_block):
+    """Return the capture field labels, in schema order."""
+    return [label for label in schema_labels(schema_block)
+            if label not in DERIVED_LABELS]
+
+
+def load_schema(repo_root, cfg):
+    """Return (skeleton, per-entry schema) from the staging template."""
+    return _template_blocks(os.path.join(repo_root, cfg['paths']['templates']),
+                            cfg['filenames']['staging_file'])
+
+
+# ---------------------------------------------------------------------------
+# Capture file
+# One 'Label: value' line per capture field. A value runs to the end of its
+# line, so a capture field is always one line, which is also what keeps the
+# rendered item one bullet per field.
+# ---------------------------------------------------------------------------
+
+def parse_capture(text, labels, known_roles):
+    """Return {label: value} for a capture file, or raise naming every problem.
+
+    Refuses a missing label, a blank value, an unknown label, a label given
+    twice, and a Work role that is neither a real RL-NNN nor one of the two
+    explicit forms.
     """
-    existing = [int(m.group(1)) for m in _PU_HEADING_RE.finditer(staging_text)]
-    existing += [int(m.group(1)) for m in _PU_MIGRATED_RE.finditer(staging_text)]
-    next_n = (max(existing) + 1) if existing else 1
-    return f'PU-{next_n:0{_PU_DIGITS}d}'
+    values, problems = {}, []
+    for line in text.split('\n'):
+        if not line.strip():
+            continue
+        m = re.match(r'^([A-Za-z][A-Za-z ]*):\s*(.*?)\s*$', line)
+        if not m or m.group(1) not in labels:
+            problems.append(f'not a capture field line: "{line.strip()}"')
+            continue
+        label, value = m.group(1), m.group(2)
+        if label in values:
+            problems.append(f'"{label}" is given twice')
+        values[label] = value
+    for label in labels:
+        if label not in values:
+            problems.append(f'"{label}" is missing')
+        elif not values[label]:
+            problems.append(f'"{label}" is blank; write the explicit none form '
+                            f'from the staging rules instead')
+
+    role = values.get(WORK_ROLE_LABEL, '')
+    if role and not _WORK_ROLE_RE.match(role):
+        problems.append(f'"{WORK_ROLE_LABEL}: {role}" must be an RL-NNN, '
+                        f'"new: <employer>, <title>", or "n/a (<reason>)"')
+    elif role.startswith('RL-') and role not in known_roles:
+        problems.append(f'{role} is not a role record in the inventory')
+
+    if problems:
+        raise ValueError('capture refused: ' + '; '.join(problems))
+    return values
 
 
 # ---------------------------------------------------------------------------
 # Context derivation from the application folder
-# The session log already holds every contextual field a staging entry needs:
-# the metadata block names the application, company, and role, and the axis
-# classification names the five axis values. Reading them here rather than
-# making each caller look them up and pass them one at a time is what keeps
-# the call short enough to state in one line of a skill document.
+# The session log already holds every contextual field an item needs: the
+# metadata block names the application, company, and role, and the axis
+# classification names the five axis values.
 # ---------------------------------------------------------------------------
 
 # Regex: a '- Label: value' line in the session log's metadata block.
@@ -156,7 +184,7 @@ def _derive_from_folder(folder, cfg):
     """Return the contextual fields read from an application's session log.
 
     Raises when the folder or session log is missing, or when a field cannot be
-    found, so a silent partial derivation never produces a half-filled entry.
+    found, so a silent partial derivation never produces a half-filled item.
     """
     log_path = os.path.join(folder, cfg['filenames']['session_log_file'])
     if not os.path.exists(log_path):
@@ -183,9 +211,8 @@ def _derive_from_folder(folder, cfg):
 
 
 # ---------------------------------------------------------------------------
-# Entry rendering
-# Builds the markdown block for one PU-NNN entry. Field labels match the
-# per-entry schema in templates/profile_updates_pending.md.
+# Item rendering
+# Field labels match the per-entry schema in templates/profile_updates_pending.md.
 # ---------------------------------------------------------------------------
 
 def _requirement_line(args):
@@ -196,77 +223,71 @@ def _requirement_line(args):
     return f'- **Requirement:** {anchor}\n'
 
 
-def _render_entry(pu_id, args, content):
-    """Render one PU-NNN entry block per the staging-file per-entry schema."""
+def _render_item(args, capture, labels):
+    """Render one item block per the staging-file per-entry schema."""
     role_context = (
         f'Industry={args.industry}, Specialty={args.specialty}, '
         f'Orientation={args.orientation}, Level={args.level}, '
         f'Work-state={args.work_state}'
     )
     return (
-        f'### {pu_id} - {args.label}\n\n'
+        f'### {args.label}\n\n'
         f'- **Captured:** {args.captured}\n'
         f'- **From:** {args.from_app} ({args.company} | {args.role})\n'
         f'{_requirement_line(args)}'
         f'- **Role context:** {role_context}\n'
-        f'- **Content:** {content}\n'
+        + ''.join(f'- **{label}:** {capture[label]}\n' for label in labels)
     )
 
 
 # ---------------------------------------------------------------------------
 # Append logic
-# When the file is missing, initialise from the template skeleton (so it
-# carries the standard header, both sections, and a '_(none)_' placeholder in
-# each). Then insert the new entry inside '## Entries': replace that section's
-# placeholder on the first append, or follow the last queued PU entry on
-# subsequent ones.
-#
-# Every step is bounded to the section. The file now carries two placeholders
-# and ends with the migrated record, so a whole-file marker search would append
-# into the wrong section and a whole-file append would land past both.
+# When the file is missing, initialise it from the template skeleton. Then
+# insert the new item at the end of '## Entries': replace the section's
+# '_(none)_' placeholder on the first append, or follow the last queued item.
 # ---------------------------------------------------------------------------
 
-def _ensure_file(staging_path, templates_dir, template_name):
-    """Create the staging file from the template if missing; return its text."""
+def _ensure_file(staging_path, skeleton):
+    """Create the staging file from the skeleton if missing; return its text."""
     if os.path.exists(staging_path):
         return _util.read(staging_path)
-    body = _skeleton(templates_dir, template_name)
-    _util.write(staging_path, body)
-    return body
+    _util.write(staging_path, skeleton)
+    return skeleton
 
 
-def _append_entry(staging_text, entry_block):
-    """Insert entry_block at the end of '## Entries'.
+def _append_item(staging_text, item_block):
+    """Insert item_block at the end of '## Entries'.
 
     Raises if '## Entries' is missing - the file is malformed and the caller
-    should not silently rebuild it (could clobber unprocessed entries).
+    should not silently rebuild it (could clobber unprocessed items).
     """
     bounds = document.section_bounds(staging_text, pu.ENTRIES_HEADING)
     if bounds is None:
         raise ValueError("staging file missing '## Entries' section")
     start, end = bounds
     lines = staging_text.split('\n')
-    block = entry_block.rstrip().split('\n')
+    block = item_block.rstrip().split('\n')
     content = [i for i in range(start + 1, end) if lines[i].strip()]
 
-    # An empty queue holds only its placeholder; the first entry replaces it.
+    # An empty queue holds only its placeholder; the first item replaces it.
     if len(content) == 1 and lines[content[0]].strip() == pu._EMPTY_MARKER:
         return '\n'.join(lines[:content[0]] + block + lines[content[0] + 1:])
 
-    # Otherwise follow the last queued PU entry, separated by a blank line.
+    # Otherwise follow the last queued item, separated by a blank line.
     at = (content[-1] if content else start) + 1
     return '\n'.join(lines[:at] + [''] + block + lines[at:])
 
 
 # ---------------------------------------------------------------------------
 # Main entry
-# Resolves paths from config, builds the entry, appends it, prints the PU-NNN.
+# Resolves paths from config, validates the capture, appends the item, and
+# prints its label.
 # ---------------------------------------------------------------------------
 
 def main():
-    """Parse argv, load config, append the entry, print the assigned PU-NNN."""
+    """Parse argv, load config, append the item, print its label."""
     parser = argparse.ArgumentParser(
-        description='append a Profile Updates Pending entry'
+        description='append a Profile Updates Pending item'
     )
     parser.add_argument('--folder',
                         help='application folder; the date, application '
@@ -289,10 +310,11 @@ def main():
     parser.add_argument('--orientation')
     parser.add_argument('--level')
     parser.add_argument('--work-state', dest='work_state')
-    parser.add_argument('--content-file', required=True,
-                        help='path to a file holding the concise content (2-3 sentences max)')
+    parser.add_argument('--capture-file', required=True,
+                        help="file of 'Label: value' lines, one per capture "
+                             'field in the template schema')
     parser.add_argument('--label', required=True,
-                        help='3-5 word descriptor of the surfaced information')
+                        help='3-5 word descriptor; unique within the queue')
     args = parser.parse_args()
 
     try:
@@ -300,8 +322,7 @@ def main():
         repo_root, cfg = _config.load()
 
         # Fill the contextual fields from the application folder. An explicit
-        # flag always wins, so a caller can correct a derived value without
-        # having to pass all nine.
+        # flag always wins, so a caller can correct a derived value.
         if args.folder:
             for flag, value in _derive_from_folder(args.folder, cfg).items():
                 if not getattr(args, flag):
@@ -318,25 +339,27 @@ def main():
                 f'these from the application session log, or pass each flag '
                 f'explicitly.')
 
-        templates_dir = os.path.join(repo_root, cfg['paths']['templates'])
-        template_name = cfg['filenames']['staging_file']  # template lives at same name in templates/
-        profile_dir = os.path.join(repo_root, cfg['paths']['profile'])
-        staging_path = os.path.join(profile_dir, cfg['filenames']['staging_file'])
+        skeleton, schema = load_schema(repo_root, cfg)
+        labels = capture_labels(schema)
 
-        # Initialise file from template if missing; otherwise load current text.
-        staging_text = _ensure_file(staging_path, templates_dir, template_name)
+        # Validate the capture before touching the staging file.
+        known_roles = {e['id'] for e in entry_block.parse_blocks(
+            _util.read(pu._inventory_path(repo_root, cfg))) if e['prefix'] == 'RL'}
+        capture = parse_capture(_util.read(args.capture_file), labels, known_roles)
 
-        # Determine next PU-NNN and load the content from the supplied file.
-        pu_id = _next_pu_id(staging_text)
-        content = _util.read(args.content_file).strip()
+        label = args.label.strip()
+        if not label:
+            raise ValueError('--label is empty')
+        staging_path = pu._staging_path(repo_root, cfg)
+        staging_text = _ensure_file(staging_path, skeleton)
+        if any(item['label'] == label for item in pu.parse_staging(staging_text)):
+            raise ValueError(f'an item labelled "{label}" is already waiting; '
+                             f'labels are how items are found, so pick another')
+        args.label = label
 
-        # Render and append.
-        entry_block = _render_entry(pu_id, args, content)
-        staging_text = _append_entry(staging_text, entry_block)
+        staging_text = _append_item(staging_text, _render_item(args, capture, labels))
         _util.write(staging_path, staging_text)
-
-        # Echo the assigned ID so the caller can reference it in gap_analysis.md.
-        print(pu_id)
+        print(label)
 
     except Exception as e:
         print(f'Error: {e}', file=sys.stderr)

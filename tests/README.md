@@ -76,10 +76,9 @@ Shapes chosen to exercise the machinery, not to look like a plausible career:
 | A cross-reference that must resolve | `AW-001` `Recognizes: EX-001` |
 | List lines in both label styles | Technical Experience (bold) vs Industry Exposure Profile (plain) |
 | A category label containing a comma | `Programming, Data & Analytics` |
-| A staging queue with entries waiting | `PU-003`, `PU-004` |
-| Every migrated outcome | targets, multi-target, `dropped`, `duplicate` |
+| A staging queue with items waiting, one anchored to a requirement and one not | `Vendor management scope at Northwind` (`CR-002`), `Additional analytics tooling` (`n/a`) |
+| Every Work role form but `new:` | `RL-002`, `n/a (...)` |
 | Every requirement status in the taxonomy | `CR-001` through `CR-006` |
-| A closure ref pointing at an already-migrated entry | `CR-002` to `PU-001` |
 | A fit score and unmet-must-have count that must compute | 63.3%, 1 unmet |
 | A JD carrying its own `##` headings, so the scoring context must keep them from cutting the requirements | `aldridge_APP-001` `jd.md` |
 
