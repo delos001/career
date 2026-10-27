@@ -693,7 +693,7 @@ def test_retrieval_scores_objective_and_each_element():
         [sys.executable, os.path.join(SCRIPTS_DIR, 'retrieval_payload.py'), 'inventory'],
         capture_output=True, text=True, encoding='utf-8', cwd=SCRIPTS_DIR)
     assert result.returncode == 0, result.stderr
-    items = {e['id']: e for c in json.loads(result.stdout)['chunks'] for e in c['entries']}
+    items = {e['id']: e for e in json.loads(result.stdout)['entries']}
     expected = ['PR-001'] + element_ids_in_inventory()
     assert [i for i in items if i.startswith('PR-')] == expected, list(items)
     for item_id in expected:
@@ -708,7 +708,7 @@ def test_retrieval_scores_hands_on_tools():
         [sys.executable, os.path.join(SCRIPTS_DIR, 'retrieval_payload.py'), 'inventory'],
         capture_output=True, text=True, encoding='utf-8', cwd=SCRIPTS_DIR)
     assert result.returncode == 0, result.stderr
-    items = {e['id']: e for c in json.loads(result.stdout)['chunks'] for e in c['entries']}
+    items = {e['id']: e for e in json.loads(result.stdout)['entries']}
     payload = items['EX-001']['payload']
     assert payload.endswith('Hands-on Tools: SQL Server, Python.'), payload
     assert 'Hands-on Tools' not in items['EX-002']['payload'], items['EX-002']
@@ -874,6 +874,75 @@ def test_scorer_context_is_copied_verbatim():
         assert f'Context file: {context_path}' in prompt, f'prompt lacks the context file:\n{prompt}'
         input_path = prompt.split('Input file: ', 1)[1].split('\n', 1)[0]
         assert os.path.isfile(input_path), f'prompt names a missing input: {input_path}'
+
+
+def chunk_entries(scratch, kind):
+    """Return [(chunk file name, entries)] for the inv or narr chunk files, in order."""
+    out, i = [], 0
+    while os.path.exists(path := os.path.join(scratch, f'{FIXTURE_PREFIX}_{kind}_chunk{i}.json')):
+        with open(path, encoding='utf-8') as f:
+            out.append((os.path.basename(path), json.load(f)['entries']))
+        i += 1
+    return out
+
+
+def test_inventory_chunks_carry_only_what_the_scorer_reads():
+    """Found 2026-10-27: inventory chunk files carried every entry's axis tags,
+    role, and a second copy of Description and Impact beside the payload, about
+    60% of each scorer's read, all of which the scorer is told to ignore."""
+    code, out, scratch = split_fixture_payloads()
+    assert code == 0, f'split failed:\n{out}'
+    with open(os.path.join(scratch, f'{FIXTURE_PREFIX}_inventory_payload.json'),
+              encoding='utf-8') as f:
+        expected = [e['id'] for e in json.load(f)['entries']]
+    chunks = chunk_entries(scratch, 'inv')
+    assert chunks, 'split wrote no inventory chunk files'
+    for name, entries in chunks:
+        extra = {k for e in entries for k in e} - {'id', 'payload'}
+        assert not extra, f'{name} carries fields the scorer ignores: {sorted(extra)}'
+    written = [e['id'] for _, entries in chunks for e in entries]
+    assert written == expected, f'chunks lost, repeated, or reordered items: {written}'
+
+
+def write_fake_scores(scratch):
+    """Write a score file for every chunk split wrote, scoring each item 0.5."""
+    def score(entries):
+        return [{'id': e['id'], 'score': 0.5, 'reason': 'Test.'} for e in entries]
+    for kind, out_kind in (('inv', 'inventory_chunk'), ('narr', 'narr_chunk')):
+        for i, (_, entries) in enumerate(chunk_entries(scratch, kind)):
+            _util.write(os.path.join(scratch, f'{FIXTURE_PREFIX}_scores_{out_kind}{i}.json'),
+                        json.dumps({'corpus': kind, 'scores': score(entries)}))
+    with open(os.path.join(scratch, f'{FIXTURE_PREFIX}_themes_payload.json'),
+              encoding='utf-8') as f:
+        themes = json.load(f)['entries']
+    _util.write(os.path.join(scratch, f'{FIXTURE_PREFIX}_scores_themes.json'),
+                json.dumps({'corpus': 'themes', 'scores': score(themes)}))
+
+
+def merge(scratch):
+    """Run retrieval_score_merge.py on the fixture scratch dir."""
+    return run('retrieval_score_merge.py', '--slug', 'aldridge', '--app-id', 'APP-001',
+               '--temp-dir', scratch)
+
+
+def test_inventory_merge_refuses_a_duplicate_or_missing_score():
+    """Found 2026-10-27: two live entries shared EX-231 and the inventory merge
+    accepted both scores, where the narrative merge would have refused. Every
+    payload item must be scored exactly once."""
+    code, out, scratch = split_fixture_payloads()
+    assert code == 0, f'split failed:\n{out}'
+    write_fake_scores(scratch)
+    code, out = merge(scratch)
+    assert code == 0, f'a complete scoring failed to merge:\n{out}'
+
+    path = os.path.join(scratch, f'{FIXTURE_PREFIX}_scores_inventory_chunk0.json')
+    with open(path, encoding='utf-8') as f:
+        data = json.load(f)
+    complete = list(data['scores'])
+    for broken, expect in ((complete + complete[:1], 'duplicate'), (complete[1:], 'unscored')):
+        _util.write(path, json.dumps({**data, 'scores': broken}))
+        code, out = merge(scratch)
+        assert code != 0 and expect in out, f'the merge accepted a {expect} score:\n{out}'
 
 
 def test_split_refuses_without_requirements():

@@ -73,12 +73,12 @@ Ask if this session is for a new retrieval run or to resume a previous one?
 
 - Input: slug, APP-NNN.
 - Run three commands in sequence (or in parallel via shell):
-  - `python scripts/retrieval_payload.py inventory` - prints JSON to stdout with the chunked inventory payload.
+  - `python scripts/retrieval_payload.py inventory` - prints JSON to stdout with the inventory payload.
   - `python scripts/retrieval_payload.py narratives` - prints JSON to stdout with the narrative payload.
   - `python scripts/retrieval_payload.py themes` - prints JSON to stdout with the theme payload.
 - Capture each output to a scratch file: `<scratch>/<SLUG>_APP-NNN_inventory_payload.json`, `<scratch>/<SLUG>_APP-NNN_narratives_payload.json`, `<scratch>/<SLUG>_APP-NNN_themes_payload.json`.
 - Non-zero exit on any of these = halt per global rules.
-- Run `python scripts/retrieval_payload.py split --slug <slug> --app-id APP-NNN --folder <app_folder> --temp-dir <scratch>`. This writes one JSON file per inventory chunk (`<scratch>/<SLUG>_APP-NNN_inv_chunk0.json`, etc.), one JSON file per narrative chunk (`<scratch>/<SLUG>_APP-NNN_narr_chunk0.json`, etc.; narratives are batched by byte budget, not one file per narrative), and the scoring context file (`<scratch>/<SLUG>_APP-NNN_scoring_context.md`: the Critical Requirements section and the JD, copied verbatim). It prints a plain-English summary of chunk counts, then one complete scorer prompt per dispatch between `=== PROMPT N ===` markers. Non-zero exit = halt per global rules.
+- Run `python scripts/retrieval_payload.py split --slug <slug> --app-id APP-NNN --folder <app_folder> --temp-dir <scratch>`. This writes one JSON file per inventory chunk (`<scratch>/<SLUG>_APP-NNN_inv_chunk0.json`, etc.; byte-budgeted, each item carrying only its ID and payload), one JSON file per narrative chunk (`<scratch>/<SLUG>_APP-NNN_narr_chunk0.json`, etc.; narratives are batched by byte budget, not one file per narrative), and the scoring context file (`<scratch>/<SLUG>_APP-NNN_scoring_context.md`: the Critical Requirements section and the JD, copied verbatim). It prints a plain-English summary of chunk counts, then one complete scorer prompt per dispatch between `=== PROMPT N ===` markers. Non-zero exit = halt per global rules.
 - Output: the printed scorer prompts, and the entry count per chunk (from split output).
 
 ## Phase 3 - Score all three corpora

@@ -15,11 +15,10 @@ Conventions (derived from --slug and --app-id):
   Output narratives  : temp/<slug>_<app-id>_narrative_scores.json
   Output themes      : temp/<slug>_<app-id>_theme_scores.json
 
-The script reads the inventory payload file (written by retrieval_payload.py)
-to discover the expected inventory chunk count, discovers narrative chunk
-count from the payload-side chunk files written by the split subcommand, and
-validates that the merged narrative scores exactly cover the narrative IDs in
-the narratives payload before writing.
+For inventory and narratives alike, the script discovers the chunk count from
+the payload-side chunk files written by the split subcommand, and validates
+that the merged scores cover every item in that corpus's payload file exactly
+once before writing.
 
 Author  : Jason Delosh
 Created : 2026-06-01
@@ -59,63 +58,55 @@ def _write_json(path, data):
 # Merge logic
 # ---------------------------------------------------------------------------
 
+def _merge_chunked(temp_dir, prefix, corpus, kind, score_kind):
+    """Merge one corpus's chunk score files; return the validated score list.
+
+    Chunking is byte-budgeted in split, so the chunk count is not derivable
+    from the payload; it is discovered from the payload-side chunk files
+    (<prefix>_<kind>_chunk{N}.json). The merged scores must then cover the
+    corpus payload's IDs exactly once each. A duplicate ID in the inventory
+    itself (two entries sharing one) surfaces here too, as a duplicate score.
+    """
+    payload = _load_json(os.path.join(temp_dir, f"{prefix}_{corpus}_payload.json"))
+    expected = [e['id'] for e in payload['entries']]
+
+    scores = []
+    idx = 0
+    while os.path.exists(os.path.join(temp_dir, f"{prefix}_{kind}_chunk{idx}.json")):
+        data = _load_json(os.path.join(temp_dir, f"{prefix}_scores_{score_kind}{idx}.json"))
+        scores.extend(data['scores'])
+        idx += 1
+    if idx == 0:
+        raise FileNotFoundError(
+            f'no {corpus} chunk files found ({prefix}_{kind}_chunk0.json missing); '
+            'run retrieval_payload.py split first')
+
+    scored = [s['id'] for s in scores]
+    dupes = sorted({i for i in scored if scored.count(i) > 1}
+                   | {i for i in expected if expected.count(i) > 1})
+    if dupes:
+        raise ValueError(f"duplicate {corpus} IDs across score chunks: {', '.join(dupes)} "
+                         '(stale chunk file, or two entries sharing one ID?)')
+    missing = sorted(set(expected) - set(scored))
+    extra = sorted(set(scored) - set(expected))
+    if missing or extra:
+        problems = ([f"unscored: {', '.join(missing)}"] if missing else []) \
+                 + ([f"unexpected: {', '.join(extra)}"] if extra else [])
+        raise ValueError(f"{corpus} score coverage mismatch ({'; '.join(problems)})")
+    return scores
+
+
 def merge_scores(slug, app_id, temp_dir):
     """Discover, validate, merge, and write all three corpora score files."""
     prefix = f"{slug}_{app_id}"
     os.makedirs(temp_dir, exist_ok=True)  # scratch dir may not exist yet on a fresh run
 
-    # --- Discover expected inventory chunks from payload file ---
-    inv_payload_path = os.path.join(temp_dir, f"{prefix}_inventory_payload.json")
-    inv_payload = _load_json(inv_payload_path)
-    chunk_count = inv_payload['chunk_count']
-
-    # --- Discover expected narrative IDs from payload file ---
-    nar_payload_path = os.path.join(temp_dir, f"{prefix}_narratives_payload.json")
-    nar_payload = _load_json(nar_payload_path)
-    narrative_ids = [e['id'] for e in nar_payload['entries']]
-
-    # --- Merge inventory chunks ---
-    inv_scores = []
-    for i in range(chunk_count):
-        path = os.path.join(temp_dir, f"{prefix}_scores_inventory_chunk{i}.json")
-        data = _load_json(path)
-        inv_scores.extend(data['scores'])
+    # --- Merge and validate both chunked corpora before writing either ---
+    inv_scores = _merge_chunked(temp_dir, prefix, 'inventory', 'inv', 'inventory_chunk')
+    nar_scores = _merge_chunked(temp_dir, prefix, 'narratives', 'narr', 'narr_chunk')
 
     inv_out = os.path.join(temp_dir, f"{prefix}_inventory_scores.json")
     _write_json(inv_out, {'scores': inv_scores})
-
-    # --- Merge narrative chunks ---
-    # Narrative chunking is byte-budgeted, so the chunk count is not derivable
-    # from the payload alone; discover it from the payload-side chunk files
-    # written by retrieval_payload.py split.
-    nar_scores = []
-    chunk_index = 0
-    while os.path.exists(os.path.join(temp_dir, f"{prefix}_narr_chunk{chunk_index}.json")):
-        score_path = os.path.join(temp_dir, f"{prefix}_scores_narr_chunk{chunk_index}.json")
-        data = _load_json(score_path)
-        nar_scores.extend(data['scores'])
-        chunk_index += 1
-    if chunk_index == 0:
-        raise FileNotFoundError(
-            f'no narrative chunk files found ({prefix}_narr_chunk0.json missing); '
-            'run retrieval_payload.py split first'
-        )
-
-    # Validate: merged scores must exactly cover the payload's narrative IDs.
-    scored_ids = {s['id'] for s in nar_scores}
-    if len(nar_scores) != len(scored_ids):
-        raise ValueError('duplicate narrative IDs across score chunks (stale chunk file?)')
-    expected_ids = set(narrative_ids)
-    if scored_ids != expected_ids:
-        problems = []
-        missing = sorted(expected_ids - scored_ids)
-        extra = sorted(scored_ids - expected_ids)
-        if missing:
-            problems.append(f"unscored: {', '.join(missing)}")
-        if extra:
-            problems.append(f"unexpected: {', '.join(extra)}")
-        raise ValueError(f"narrative score coverage mismatch ({'; '.join(problems)})")
-
     nar_out = os.path.join(temp_dir, f"{prefix}_narrative_scores.json")
     _write_json(nar_out, {'scores': nar_scores})
 

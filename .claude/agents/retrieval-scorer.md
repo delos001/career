@@ -15,7 +15,7 @@ You score how well each item in a supplied file matches a set of critical requir
 The dispatching skill gives you four lines, written by `retrieval_payload.py split`:
 
 - **Corpus** - one of: `inventory`, `narratives`, `themes`. Apply the matching corpus-specific notes below.
-- **Input file** - a JSON file containing the items to score. Each item has at minimum an `id` and a `payload` string. Inventory items additionally carry axis tag values for context (do not score on those; the script computes axis signals separately). Narrative items carry a `linked_inventory` list for context. Theme items carry a `title`.
+- **Input file** - a JSON file containing the items to score. Each item has at minimum an `id` and a `payload` string. Inventory items carry only those two; the script computes axis signals separately. Narrative items carry a `linked_inventory` list for context. Theme items carry a `title`.
 - **Output file** - the path where you must write your scored results JSON.
 - **Context file** - a markdown file holding two sections, copied verbatim from the application folder:
   - `## Critical Requirements` - a `| # | Text | Type | Source |` table. These are the matching targets.
@@ -43,7 +43,7 @@ Use this 0-to-1 scale consistently across all items in your batch. Scores betwee
 
 ## Corpus-specific notes
 
-- **Inventory (EX-NNN, PR-NNN, PB-NNN, PS-NNN):** the payload is `Description + Impact` (Impact is optional on PB/PS entries and may be absent), followed on EX entries by any `Hands-on Tools:` the candidate used directly. A project is scored in pieces: its objective (`PR-NNN`) and each element (`PR-NNN.NN`), each led by the project name. Score against requirements directly. Ignore the axis tags in scoring (the script handles those).
+- **Inventory (EX-NNN, PR-NNN, PB-NNN, PS-NNN):** the payload is `Description + Impact` (Impact is optional on PB/PS entries and may be absent), followed on EX entries by any `Hands-on Tools:` the candidate used directly. A project is scored in pieces: its objective (`PR-NNN`) and each element (`PR-NNN.NN`), each led by the project name. Score against requirements directly.
 - **Narratives (ST-NNN, DC-NNN):** the payload is the full narrative body (Situation / Task / Action / Result, or the decision body). A narrative may address multiple requirements through its arc; score on the overall match to the requirements set, not just the headline match.
 - **Themes (TH-NNN):** the payload is `Core message + Proof point + Use when` concatenated. OR-semantics: a strong match in any one of the three fields can drive a high score.
 

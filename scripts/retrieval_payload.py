@@ -7,13 +7,11 @@ positioning.md) and emits the per-corpus payload that the retrieval-scorer
 subagent consumes alongside the critical requirements list. Three subcommands:
 
   inventory   Read every EX/PR/PB/PS entry in inventory.md and emit a JSON list
-              of chunks, each bounded by serialized size (default 60000 bytes,
-              configurable via --chunk-bytes). Each item carries its ID, tag
-              axes, and a payload text: 'Description + Impact' for EX/PB/PS;
-              for a PR, one item for its Objective (PR-NNN) and one per element
-              (PR-NNN.NN), each led by the project name.
-              Chunking mitigates attention degradation when the LLM ranks long
-              lists in a single prompt.
+              of every retrievable item. Each item carries its ID, tag axes,
+              and a payload text: 'Description + Impact' (+ Hands-on Tools) for
+              EX/PB/PS; for a PR, one item for its Objective (PR-NNN) and one
+              per element (PR-NNN.NN), each led by the project name. Chunking
+              happens in split, on what the scorer reads.
   narratives  Read narratives.md and emit a JSON list of every narrative
               (ST-NNN and DC-NNN) with its ID, Linked Inventory IDs, and a
               concatenated body payload. Scored in byte-budgeted chunks
@@ -23,7 +21,11 @@ subagent consumes alongside the critical requirements list. Three subcommands:
               triggers concatenated. One LLM call sees the whole list.
   split       Read the three payload files previously written to the temp
               directory, write one JSON file per inventory chunk and per
-              narrative chunk (byte-budgeted), write the scoring context file
+              narrative chunk (byte-budgeted on the scorer's view of each
+              item: its ID and payload only, since the scorer is told to
+              ignore everything else; chunking mitigates attention
+              degradation when the LLM ranks long lists), write the scoring
+              context file
               (the application's Critical Requirements section and jd.md,
               copied verbatim), and print a plain-English summary plus the
               complete prompt for every scorer dispatch. The skill sends those
@@ -37,10 +39,10 @@ inputs and writes structured JSON to stdout.
 Author    : Jason Delosh
 Created   : 2026-05-26
 Project   : career
-Usage     : python scripts/retrieval_payload.py inventory [--chunk-bytes 60000]
+Usage     : python scripts/retrieval_payload.py inventory
             python scripts/retrieval_payload.py narratives
             python scripts/retrieval_payload.py themes
-            python scripts/retrieval_payload.py split --slug <slug> --app-id <APP-NNN> --folder <app_folder> [--temp-dir temp] [--narr-chunk-bytes 45000] [--context-max-bytes 45000]
+            python scripts/retrieval_payload.py split --slug <slug> --app-id <APP-NNN> --folder <app_folder> [--temp-dir temp] [--inv-chunk-bytes 22000] [--narr-chunk-bytes 45000] [--context-max-bytes 45000]
 Depends   : pyyaml (via _config)
 """
 
@@ -243,7 +245,8 @@ def _finalise_entry(entry):
 # retrieval skill dispatches one scorer subagent per chunk in parallel, so
 # chunk count is scorer count. Inventory items vary in size (a PR element is a
 # fraction of an EX entry), and what a scorer can attend to and read in one
-# pass is a size limit, not an item count. Narratives use the same function.
+# pass is a size limit, not an item count. split chunks both corpora with this
+# function, measured on the records the scorer actually reads.
 # ---------------------------------------------------------------------------
 
 def _chunk_by_bytes(entries, max_bytes):
@@ -270,21 +273,13 @@ def _chunk_by_bytes(entries, max_bytes):
 
 
 def cmd_inventory(args, repo_root, cfg):
-    """Build inventory payload chunks and write JSON to stdout."""
+    """Build the inventory payload and write JSON to stdout."""
     inventory_text = _util.read(_inventory_path(repo_root, cfg))
     entries = _parse_inventory_entries(inventory_text)
-    chunks = []
-    for chunk_index, sublist in enumerate(_chunk_by_bytes(entries, args.chunk_bytes)):
-        chunks.append({
-            'index': chunk_index,
-            'entries': sublist,
-        })
     payload = {
         'corpus': 'inventory',
-        'chunk_bytes': args.chunk_bytes,
         'entry_count': len(entries),
-        'chunk_count': len(chunks),
-        'chunks': chunks,
+        'entries': entries,
     }
     sys.stdout.write(json.dumps(payload, ensure_ascii=False))
     sys.stdout.write('\n')
@@ -451,6 +446,26 @@ def cmd_themes(args, repo_root, cfg):
 # and guarantees each scorer reads a bounded file rather than a large payload.
 # ---------------------------------------------------------------------------
 
+def _write_chunks(temp_dir, prefix, kind, corpus, chunks):
+    """Write <prefix>_<kind>_chunk{N}.json per chunk; return [(path, count)].
+
+    Chunk files left by a prior run beyond the new count are removed: the merge
+    discovers chunks by existence-walk, so a leftover would merge stale scores.
+    """
+    paths = []
+    for idx, entries in enumerate(chunks):
+        out_path = os.path.join(temp_dir, f"{prefix}_{kind}_chunk{idx}.json")
+        with open(out_path, 'w', encoding='utf-8') as f:
+            json.dump({'corpus': corpus, 'chunk_index': idx, 'entries': entries},
+                      f, ensure_ascii=False)
+        paths.append((out_path, len(entries)))
+    idx = len(chunks)
+    while os.path.exists(stale := os.path.join(temp_dir, f"{prefix}_{kind}_chunk{idx}.json")):
+        os.remove(stale)
+        idx += 1
+    return paths
+
+
 def cmd_split(args, repo_root, cfg):
     """Split payload files into per-chunk files per corpus; print summary."""
     prefix = f"{args.slug}_{args.app_id}"
@@ -468,46 +483,18 @@ def cmd_split(args, repo_root, cfg):
     with open(th_path, encoding='utf-8') as f:
         th_data = json.load(f)
 
-    # Write one file per inventory chunk.
-    chunk_paths = []
-    for chunk in inv_data['chunks']:
-        idx = chunk['index']
-        out_path = os.path.join(temp_dir, f"{prefix}_inv_chunk{idx}.json")
-        with open(out_path, 'w', encoding='utf-8') as f:
-            json.dump(
-                {'corpus': 'inventory', 'chunk_index': idx, 'entries': chunk['entries']},
-                f,
-                ensure_ascii=False,
-            )
-        chunk_paths.append((out_path, len(chunk['entries'])))
-
-    # Write byte-budgeted narrative chunk files. One scorer invocation per
-    # chunk keeps every read bounded below the Read tool token cap while
-    # avoiding the cost of a full scorer dispatch per narrative. The 'body'
-    # field duplicates 'payload' verbatim for narratives, so it is stripped
-    # from the scorer-facing chunk file to halve what each scorer reads.
-    slim_entries = [
-        {k: v for k, v in entry.items() if k != 'body'}
-        for entry in nar_data['entries']
-    ]
-    narr_chunks = _chunk_by_bytes(slim_entries, args.narr_chunk_bytes)
-    narr_chunk_paths = []
-    for idx, entries in enumerate(narr_chunks):
-        out_path = os.path.join(temp_dir, f"{prefix}_narr_chunk{idx}.json")
-        with open(out_path, 'w', encoding='utf-8') as f:
-            json.dump(
-                {'corpus': 'narratives', 'chunk_index': idx, 'entries': entries},
-                f,
-                ensure_ascii=False,
-            )
-        narr_chunk_paths.append((out_path, len(entries)))
-
-    # Remove stale chunk files a prior run left behind; the merge script
-    # discovers chunks by existence-walk, so leftovers would merge stale scores.
-    idx = len(narr_chunks)
-    while os.path.exists(os.path.join(temp_dir, f"{prefix}_narr_chunk{idx}.json")):
-        os.remove(os.path.join(temp_dir, f"{prefix}_narr_chunk{idx}.json"))
-        idx += 1
+    # Write byte-budgeted chunk files, one scorer invocation per chunk. Each
+    # file carries only what the scorer reads. Inventory items keep their ID
+    # and payload: the scorer is told to ignore the axis tags (the script
+    # computes axis signals itself), and Description, Impact and Hands-on
+    # Tools are already inside the payload. Narratives drop 'body', a verbatim
+    # copy of 'payload', and keep their Linked Inventory as scoring context.
+    inv_slim = [{'id': e['id'], 'payload': e['payload']} for e in inv_data['entries']]
+    nar_slim = [{k: v for k, v in e.items() if k != 'body'} for e in nar_data['entries']]
+    chunk_paths = _write_chunks(temp_dir, prefix, 'inv', 'inventory',
+                                _chunk_by_bytes(inv_slim, args.inv_chunk_bytes))
+    narr_chunk_paths = _write_chunks(temp_dir, prefix, 'narr', 'narratives',
+                                     _chunk_by_bytes(nar_slim, args.narr_chunk_bytes))
 
     # Write the scoring context file every scorer reads its requirements and
     # JD from. Copying both here, in code, is the point: hand-composed scorer
@@ -519,7 +506,7 @@ def cmd_split(args, repo_root, cfg):
 
     # Print summary.
     sizes = '+'.join(str(n) for _, n in chunk_paths)
-    print(f"Inventory: {inv_data['chunk_count']} chunks written ({sizes} = {inv_data['entry_count']} entries)")
+    print(f"Inventory: {len(chunk_paths)} chunks written ({sizes} = {inv_data['entry_count']} entries)")
     for path, size in chunk_paths:
         print(f"  {path} ({size} entries)")
     narr_sizes = '+'.join(str(n) for _, n in narr_chunk_paths)
@@ -638,13 +625,7 @@ def main():
     sub = parser.add_subparsers(dest='command', required=True)
 
     # --- Subparser: inventory ---
-    p_inv = sub.add_parser('inventory', help='build chunked inventory payload')
-    # 60000 bytes matches the largest chunk the former 50-entry count produced
-    # (about 61 KB of EX entries), so no scorer reads more than it did before.
-    p_inv.add_argument(
-        '--chunk-bytes', type=int, default=60000,
-        help='maximum serialized bytes per chunk (default 60000)',
-    )
+    p_inv = sub.add_parser('inventory', help='build inventory payload')
     p_inv.set_defaults(func=cmd_inventory)
 
     # --- Subparser: narratives ---
@@ -667,6 +648,14 @@ def main():
     p_split.add_argument(
         '--context-max-bytes', type=int, default=45000,
         help='maximum bytes for the scoring context file (default 45000)',
+    )
+    # 22000 bytes of id + payload holds the per-scorer item count of the former
+    # 60000-byte budget on full records (about 66 items on the 2026-10-27
+    # inventory), so slimming the files cut tokens without changing how long a
+    # list each scorer ranks.
+    p_split.add_argument(
+        '--inv-chunk-bytes', type=int, default=22000,
+        help='maximum serialized bytes per inventory chunk file (default 22000)',
     )
     p_split.add_argument(
         '--narr-chunk-bytes', type=int, default=45000,
