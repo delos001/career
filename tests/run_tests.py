@@ -643,6 +643,19 @@ def test_retrieval_scores_objective_and_each_element():
         assert items[item_id]['role'] == 'RL-002', items[item_id]
 
 
+def test_retrieval_scores_hands_on_tools():
+    """An entry's Hands-on Tools reach the scored payload, so a job naming a
+    tool can match the entry that used it."""
+    result = subprocess.run(
+        [sys.executable, os.path.join(SCRIPTS_DIR, 'retrieval_payload.py'), 'inventory'],
+        capture_output=True, text=True, encoding='utf-8', cwd=SCRIPTS_DIR)
+    assert result.returncode == 0, result.stderr
+    items = {e['id']: e for c in json.loads(result.stdout)['chunks'] for e in c['entries']}
+    payload = items['EX-001']['payload']
+    assert payload.endswith('Hands-on Tools: SQL Server, Python.'), payload
+    assert 'Hands-on Tools' not in items['EX-002']['payload'], items['EX-002']
+
+
 def cv_qc_report(cv_text, with_gap=False):
     """Run cv_qc.py on a CV text; return {check id: (passed, detail)}."""
     path = write_block('cv_content.md', cv_text)

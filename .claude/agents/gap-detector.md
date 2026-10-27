@@ -19,7 +19,7 @@ The dispatching skill gives you four paths, written by `scripts/gap_context.py b
   - `# Role context` - the Role, Company, and Industry summaries from `research.md`. Use these to inform judgment on what "covered" means for this specific role (e.g., what scope of healthcare regulatory experience is enough).
   - `# Profile reference sections` - every inventory section retrieval does not score: role history (titles, dates), industry exposure, technical experience (named systems, platforms, tools), education, training, certifications, affiliations, awards, languages.
 - **`retrieval.md`** - the manifest. Carries per-entry semantic scores, axis exact-match counts, axis adjacency-weighted scores, plus per-entry one-line reasons. Use it to identify which inventory entries and narratives the retrieval skill judged most relevant.
-- **`inventory.md`** and **`narratives.md`** - the profile documents. Read them in full to access entry bodies (Description + Impact for EX; Objective and elements for PR; full narrative body for ST/DC) when the manifest alone is insufficient to judge a requirement.
+- **`inventory.md`** and **`narratives.md`** - the profile documents. Read them in full to access entry bodies (Description, Hands-on Tools and Impact for EX; Objective and elements for PR; full narrative body for ST/DC) when the manifest alone is insufficient to judge a requirement.
 
 Read the context file first. If it is missing, or any of its three parts is absent or empty, stop and return `Not assessed: context file <path> is missing <what>.` Then read `retrieval.md`, `inventory.md`, and `narratives.md` in full before judging.
 

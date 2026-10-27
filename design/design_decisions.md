@@ -1890,6 +1890,28 @@ queue until then, as positioning already does.
 
 Refs: `design/profile_rules_plan.md`, `staging-without-tracking-2026-10`.
 
+#### ex-hands-on-tools-2026-10
+
+EX entries carry an optional `Hands-on Tools:` field, after Description: the
+software and languages the candidate used hands-on, pipe-separated. A tool that
+was the object of the work (one being evaluated) stays in Description; tools a
+directed team used go in Context.
+
+- **Why a field, not Description.** Naming every tool in Description made it
+  long, and CVs carried tool lists too granular for high-level roles. Description
+  now uses an umbrella term, and the CV writer picks the granularity.
+- **Why not Context.** Retrieval does not score Context
+  (`cv-targeted-retrieval-architecture-2026-05`). Adding it would raise scoring
+  cost and score before-state text, so an entry could match on a process the
+  candidate replaced.
+- **Hands-on only.** Retrieval surfaces only tool matches the candidate can
+  defend; a leadership entry never reads as hands-on skill.
+- `retrieval_payload.py` appends the field to the payload. `profile_update_qc.py`
+  P2 reads it from the template roster.
+
+Refs: `templates/inventory.md`, `rules/profile/inventory-writing.md`,
+`scripts/retrieval_payload.py`, `scripts/profile_slice.py`.
+
 #### test-corpus-and-invariant-checks-2026-08-26
 
 `tests/fixture/` holds a complete invented candidate (profile documents plus one

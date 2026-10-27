@@ -107,6 +107,10 @@ _TAG_RE = re.compile(r'^(Industry|Specialty|Orientation|Level|Work-state):\s*(.*
 # `retrieval-architecture-2026-05`.
 _FIELD_RE = re.compile(r'^(Description|Impact):\s*(.*)$')
 
+# Regex: the EX Hands-on Tools field, pipe-delimited like the axis tags. Scored
+# so a job naming a tool matches the entry where it was used hands-on.
+_TOOLS_RE = re.compile(r'^Hands-on Tools:\s*(.*)$')
+
 # Regex: the Role tag linking an entry to its RL role record (its employer).
 _ROLE_RE = re.compile(r'^Role:\s+(RL-\d+)\s*$')
 
@@ -129,8 +133,9 @@ def _parse_inventory_entries(inventory_text):
     record), company (str; fallback employer for a PR entry with no RL record,
     per `pr-role-reference-2026-07`),
     industry (list), specialty (list), orientation (list), level (list),
-    work_state (list), description (str), impact (str), payload (str =
-    Description + ' ' + Impact, both trimmed). Axes a section's schema omits
+    work_state (list), description (str), impact (str), tools (list), payload
+    (str = Description + ' ' + Impact, both trimmed, then any Hands-on Tools).
+    Axes a section's schema omits
     (e.g. Level/Work-state on PB/PS per
     `inventory-pb-ps-aw-entry-schemas-2026-07`) stay empty lists and never
     tag-match.
@@ -154,6 +159,7 @@ def _parse_inventory_entries(inventory_text):
             'work_state': [],
             'description': '',
             'impact': '',
+            'tools': [],
         }
         for line in lines[block['start'] + 1:block['end']]:
             m = _ROLE_RE.match(line)
@@ -170,6 +176,10 @@ def _parse_inventory_entries(inventory_text):
             if m:
                 axis_key = m.group(1).lower().replace('-', '_')
                 current[axis_key] = _split_pipe_values(m.group(2))
+                continue
+            m = _TOOLS_RE.match(line)
+            if m:
+                current['tools'] = _split_pipe_values(m.group(1))
                 continue
             m = _FIELD_RE.match(line)
             if m:
@@ -221,6 +231,8 @@ def _finalise_entry(entry):
     parts = [description]
     if impact:
         parts.append(impact)
+    if entry['tools']:
+        parts.append(f"Hands-on Tools: {', '.join(entry['tools'])}.")
     entry['payload'] = ' '.join(parts).strip()
     return entry
 

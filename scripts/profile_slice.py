@@ -343,7 +343,8 @@ def cmd_section(args, repo_root, cfg):
 # ---------------------------------------------------------------------------
 
 # The fields printed for each entry, and the prefixes the pull searches.
-_RELATED_FIELDS = ('Project', 'Description', 'Impact', 'Context', 'Objective')
+_RELATED_FIELDS = ('Project', 'Description', 'Hands-on Tools', 'Impact', 'Context',
+                   'Objective')
 _RELATED_PREFIXES = ('EX', 'PR', 'PB', 'PS')
 
 # Words too common to signal shared substance.

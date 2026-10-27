@@ -173,6 +173,7 @@ Orientation: {value}
 Level: {value}
 Work-state: {value}
 Description: **{what was done}**
+Hands-on Tools: {tool} | {tool} {optional}
 Impact: {what could be seen after the work} {optional}
 Context: {situation, constraint, or scope bound} {optional}
 ```

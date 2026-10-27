@@ -39,13 +39,24 @@ These apply to every entry type.
 ## EX: Experience entries
 
 **Description: what was done.** Test: is this an action?
-- One bolded sentence naming the work, then one or two examples. Never the full
-  list of sub-steps.
-- Name tools and platforms here (Spotfire, SQL Server, Databricks), because
-  retrieval scores this field.
-- Who was involved goes in Context.
+- One bolded sentence: a verb carrying the role, the named object of the work,
+  then two or three defining descriptors. Never a full list of the people,
+  documents, or sub-steps involved.
+- Name a tool here only when it is the object of the work (evaluating
+  Pinnacle 21 Enterprise). Tools used hands-on go in Hands-on Tools. Otherwise
+  use the umbrella term (BI dashboards, clinical data platforms).
+- Group the people involved as teams or functions (cross-functional teams,
+  Clinical Operations). Name them in Context.
 - No purpose clause that restates Impact. No "from greenfield": Work-state
   already says it.
+
+**Hands-on Tools: software and languages used hands-on in this work.** Test:
+did you use it yourself?
+- Names separated by ` | `, written exactly as the vendor writes them, with no
+  version numbers.
+- A tool that was the object of the work, such as one being evaluated, stays
+  in Description. Tools a directed team used go in Context.
+- Leave the field out if no tool was used hands-on.
 
 **Impact: the observable result of the work.** Test: could someone see the
 result without being told what you did?
@@ -62,6 +73,10 @@ result without being told what you did?
 
 **Context: the situation before the work, constraints, or scope bounds.**
 Test: is this the state of things, not what was done or what came of it?
+- The previous state, when known.
+- Details behind anything Description groups or summarizes: the named teams,
+  documents, or sub-steps.
+- Tools a directed team used.
 - Activity moves to Description. Outcomes move to Impact.
 - No notes about how to frame the entry.
 - Design work that was never built says so here.

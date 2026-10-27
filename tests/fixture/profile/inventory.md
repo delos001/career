@@ -103,6 +103,7 @@ Orientation: platform-technology
 Level: ic
 Work-state: greenfield
 Description: **Stood up the first shared clinical data warehouse.** Modeled the schema, built the load jobs, and onboarded the first three studies onto it.
+Hands-on Tools: SQL Server | Python
 Impact: Three studies read from one warehouse rather than from per-study extracts.
 Context: Prior state was per-study extracts refreshed by hand.
 
