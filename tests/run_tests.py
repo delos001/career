@@ -964,13 +964,58 @@ def test_split_refuses_without_requirements():
 # expected text is again extracted independently of the script's parser.
 # ---------------------------------------------------------------------------
 
-def build_detector_context():
+MANIFEST_INVENTORY = ('EX-003', 'EX-001', 'PR-001', 'PR-001.01', 'PB-001')
+MANIFEST_NARRATIVES = ('ST-001', 'DC-001')
+
+
+def write_manifest(inventory_ids=MANIFEST_INVENTORY, narrative_ids=MANIFEST_NARRATIVES):
+    """Write a fixture retrieval.md whose two candidate tables list these IDs."""
+    def rows(ids):
+        return ''.join(f'| {i} | 0.50 | Test. |\n' for i in ids)
+    _util.write(os.path.join(FIXTURE_APP, 'retrieval.md'),
+                '# Retrieval Manifest\n\n## Inventory candidates\n\n'
+                f'| ID | Semantic | Reason |\n|----|----|----|\n{rows(inventory_ids)}\n'
+                '## Narratives\n\n'
+                f'| ID | Semantic | Reason |\n|----|----|----|\n{rows(narrative_ids)}\n'
+                '## Triggered themes\n\n| ID | Semantic |\n|----|----|\n| TH-001 | 0.50 |\n')
+
+
+def build_detector_context(*extra, manifest=True):
     """Run gap_context.py build on the fixture; return (returncode, output, scratch)."""
     scratch = os.path.join(FIXTURE_APP, 'scratch')
-    # The manifest's content is not read by the build; it only has to exist.
-    _util.write(os.path.join(FIXTURE_APP, 'retrieval.md'), '# Retrieval Manifest\n')
-    code, out = run('gap_context.py', 'build', '--folder', FIXTURE_APP, '--temp-dir', scratch)
+    if manifest:
+        write_manifest()
+    code, out = run('gap_context.py', 'build', '--folder', FIXTURE_APP,
+                    '--temp-dir', scratch, *extra)
     return code, out, scratch
+
+
+def detector_evidence(scratch):
+    """Return [(file name, text)] for the evidence files build wrote, in order."""
+    out, i = [], 0
+    while os.path.exists(path := os.path.join(scratch, f'gap_detector_evidence_{i}.md')):
+        out.append((os.path.basename(path), _util.read(path)))
+        i += 1
+    return out
+
+
+def expected_block(text, entry_id, narrative=False):
+    """Return one entry's text as the detector should see it, cut independently.
+
+    An inventory entry runs from its ID line to the next ID line, heading, or
+    topic-group marker; a narrative runs from its '## ' heading to the next.
+    """
+    lines = text.split('\n')
+    at = lines.index(f'ID: {entry_id}')
+    if narrative:
+        start = max(i for i in range(at) if lines[i].startswith('## '))
+        end = next((i for i in range(at, len(lines)) if lines[i].startswith(('## ', '# '))),
+                   len(lines))
+    else:
+        start = at
+        end = next((i for i in range(at + 1, len(lines))
+                    if lines[i].startswith(('ID: ', '#', '--- '))), len(lines))
+    return '\n'.join(lines[start:end]).strip('\n')
 
 
 def h2_bodies(text):
@@ -1018,6 +1063,50 @@ def test_detector_context_refuses_without_requirements():
     code, out, _ = build_detector_context()
     assert code != 0, f'build wrote a context with no requirements:\n{out}'
     assert 'Critical Requirements' in out, out
+
+
+def test_detector_evidence_carries_every_manifest_entry_once():
+    """Found 2026-10-27: the detector was told to read inventory.md (206 KB,
+    3,383 lines) in full, past what one read returns, so entries late in the
+    file could go unread. Every entry the manifest surfaces now reaches it
+    whole, in files sized to a single read."""
+    budget = 1500
+    code, out, scratch = build_detector_context('--max-bytes', '45000',
+                                                '--evidence-bytes', str(budget))
+    assert code == 0, f'build failed:\n{out}'
+    files = detector_evidence(scratch)
+    assert len(files) > 1, f'a {budget}-byte budget should split the evidence: {len(files)} file(s)'
+    for name, text in files:
+        size = len(text.encode('utf-8'))
+        assert size <= budget, f'{name} is {size} bytes, over the {budget}-byte budget'
+        assert f'{os.path.join(scratch, name)}' in out, f'prompt does not name {name}:\n{out}'
+    evidence = '\n'.join(text for _, text in files)
+
+    root, cfg = _config.load()
+    inventory = _util.read(pu._inventory_path(root, cfg))
+    narratives = _util.read(pu._narratives_path(root, cfg))
+    # PR-001.01 is an element; it reaches the detector inside PR-001.
+    for entry_id in ('EX-003', 'EX-001', 'PR-001', 'PB-001'):
+        block = expected_block(inventory, entry_id)
+        assert evidence.count(block) == 1, f'{entry_id} not copied whole exactly once'
+    for entry_id in MANIFEST_NARRATIVES:
+        block = expected_block(narratives, entry_id, narrative=True)
+        assert evidence.count(block) == 1, f'{entry_id} not copied whole exactly once'
+    assert 'ID: EX-002' not in evidence, 'an entry the manifest does not list was copied'
+    assert 'inventory.md:' not in out and 'narratives.md:' not in out, \
+        f'the prompt still sends the detector to the full profile files:\n{out}'
+
+
+def test_detector_evidence_refuses_an_unknown_or_empty_manifest():
+    """An ID with no entry would leave the detector judging without it, and an
+    empty manifest would leave it judging with nothing; both must stop."""
+    write_manifest(inventory_ids=('EX-001', 'EX-999'))
+    code, out, _ = build_detector_context(manifest=False)
+    assert code != 0 and 'EX-999' in out, f'build accepted an ID with no entry:\n{out}'
+
+    write_manifest(inventory_ids=(), narrative_ids=())
+    code, out, _ = build_detector_context(manifest=False)
+    assert code != 0 and 'no candidate' in out, f'build accepted an empty manifest:\n{out}'
 
 
 # ---------------------------------------------------------------------------

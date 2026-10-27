@@ -30,20 +30,31 @@ code change. The Table of Contents is skipped.
 Every part must be present and non-empty, and the file must fit a single read;
 any shortfall raises so the skill halts.
 
+Beside it the script writes the evidence files, gap_detector_evidence_N.md:
+every inventory entry and narrative the retrieval manifest lists, copied whole,
+split into files that each fit a single read. The detector judges from these
+instead of reading inventory.md and narratives.md, which outgrew one read
+(2026-10-27), so no entry it was handed can go unread. A manifest ID with no
+entry, or a manifest with no candidates, raises.
+
 Author    : Jason Delosh
 Created   : 2026-10-14
 Project   : career
-Usage     : python scripts/gap_context.py build --folder <app_folder> --temp-dir <scratch> [--max-bytes 45000]
+Usage     : python scripts/gap_context.py build --folder <app_folder> --temp-dir <scratch>
+                [--max-bytes 45000] [--evidence-bytes 45000]
 Depends   : pyyaml (via _config)
 """
 
 import argparse
+import glob
 import os
+import re
 import sys
 
 import _config
 import _util
 import retrieval_payload
+from inventory_model import entry_block
 
 
 # ---------------------------------------------------------------------------
@@ -148,12 +159,73 @@ def build_context(app_folder, repo_root, cfg, max_bytes):
     return context, [heading for heading, _ in refs]
 
 
-def detector_prompt(context_path, retrieval_path, inventory_path, narratives_path):
+# ---------------------------------------------------------------------------
+# Evidence build
+# The manifest's two candidate tables name every entry the detector may cite.
+# A project element (PR-NNN.NN) reaches it inside its project's block, so an
+# element ID resolves to the project. Entries keep manifest order and are
+# never split across files.
+# ---------------------------------------------------------------------------
+
+MANIFEST_TABLES = ('## Inventory candidates', '## Narratives')
+
+# Regex: a manifest table row whose first cell is an entry ID. Group: the ID
+# without any element suffix.
+_MANIFEST_ROW_RE = re.compile(r'^\|\s*((?:EX|PR|PB|PS|ST|DC)-\d+)(?:\.\d+)?\s*\|')
+
+EVIDENCE_PREFIX = 'gap_detector_evidence_'
+
+
+def manifest_ids(manifest_text):
+    """Return the entry IDs in the manifest's candidate tables, deduplicated."""
+    ids = []
+    for heading in MANIFEST_TABLES:
+        for line in (retrieval_payload.extract_section(manifest_text, heading) or '').split('\n'):
+            m = _MANIFEST_ROW_RE.match(line)
+            if m and m.group(1) not in ids:
+                ids.append(m.group(1))
+    return ids
+
+
+def build_evidence(manifest_text, inventory_text, narratives_text, max_bytes):
+    """Return the evidence file texts; raise on a missing entry or no candidates."""
+    ids = manifest_ids(manifest_text)
+    if not ids:
+        raise ValueError('retrieval manifest has no candidate entries to judge from')
+    narratives = {n['id']: n['body']
+                  for n in retrieval_payload._parse_narratives(narratives_text)}
+    blocks, missing = [], []
+    for entry_id in ids:
+        block = narratives.get(entry_id) or entry_block.find_block(inventory_text, entry_id)
+        if block is None:
+            missing.append(entry_id)
+        else:
+            blocks.append((entry_id, block.strip('\n')))
+    if missing:
+        # Retired since retrieval ran, or never real; either way the manifest
+        # no longer describes the profile.
+        raise ValueError(f'manifest lists IDs with no profile entry: {", ".join(missing)}. '
+                         f'Re-run retrieval so the manifest matches the profile.')
+
+    # Pack whole entries into files under the byte budget.
+    files, current = [], []
+    for entry_id, block in blocks:
+        if len(block.encode('utf-8')) > max_bytes:
+            raise ValueError(f'{entry_id} alone is over the {max_bytes}-byte read budget')
+        candidate = '\n\n'.join(current + [block]) + '\n'
+        if current and len(candidate.encode('utf-8')) > max_bytes:
+            files.append('\n\n'.join(current) + '\n')
+            current = []
+        current.append(block)
+    files.append('\n\n'.join(current) + '\n')
+    return files, len(blocks)
+
+
+def detector_prompt(context_path, retrieval_path, evidence_paths):
     """Return the complete prompt for the gap-detector dispatch."""
     return (f'Context file: {context_path}\n'
             f'retrieval.md: {retrieval_path}\n'
-            f'inventory.md: {inventory_path}\n'
-            f'narratives.md: {narratives_path}')
+            + ''.join(f'Evidence file: {path}\n' for path in evidence_paths)).rstrip('\n')
 
 
 # ---------------------------------------------------------------------------
@@ -161,25 +233,39 @@ def detector_prompt(context_path, retrieval_path, inventory_path, narratives_pat
 # ---------------------------------------------------------------------------
 
 def cmd_build(args, repo_root, cfg):
-    """Write the context file and print the dispatch prompt."""
+    """Write the context and evidence files and print the dispatch prompt."""
     context, ref_headings = build_context(args.folder, repo_root, cfg, args.max_bytes)
-    os.makedirs(args.temp_dir, exist_ok=True)
-    context_path = os.path.join(args.temp_dir, 'gap_detector_context.md')
-    _util.write(context_path, context)
 
     profile_dir = os.path.join(repo_root, cfg['paths']['profile'])
     retrieval_path = os.path.join(args.folder, cfg['filenames']['retrieval_manifest'])
-    if not os.path.isfile(retrieval_path):
-        raise FileNotFoundError(f'retrieval manifest missing: {retrieval_path}')
+    narratives_path = os.path.join(profile_dir, cfg['filenames']['narratives_file'])
+    for path in (retrieval_path, narratives_path):
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f'detector evidence source missing: {path}')
+    evidence, entry_count = build_evidence(
+        _util.read(retrieval_path),
+        _util.read(os.path.join(profile_dir, cfg['filenames']['inventory_file'])),
+        _util.read(narratives_path), args.evidence_bytes)
+
+    # Write only after every part has built, and clear evidence files left by
+    # an earlier run so a shorter run cannot leave a stale file behind.
+    os.makedirs(args.temp_dir, exist_ok=True)
+    context_path = os.path.join(args.temp_dir, 'gap_detector_context.md')
+    _util.write(context_path, context)
+    for stale in glob.glob(os.path.join(args.temp_dir, f'{EVIDENCE_PREFIX}*.md')):
+        os.remove(stale)
+    evidence_paths = []
+    for i, text in enumerate(evidence):
+        path = os.path.join(args.temp_dir, f'{EVIDENCE_PREFIX}{i}.md')
+        _util.write(path, text)
+        evidence_paths.append(path)
 
     print(f'Detector context: {context_path}')
     print(f'Profile reference sections included: {", ".join(ref_headings)}')
+    print(f'Evidence: {entry_count} entries in {len(evidence_paths)} file(s)')
     print('\nDetector prompt. Dispatch exactly as printed:')
     print('\n=== PROMPT ===')
-    print(detector_prompt(
-        context_path, retrieval_path,
-        os.path.join(profile_dir, cfg['filenames']['inventory_file']),
-        os.path.join(profile_dir, cfg['filenames']['narratives_file'])))
+    print(detector_prompt(context_path, retrieval_path, evidence_paths))
     print('=== END ===')
 
 
@@ -201,6 +287,8 @@ def main():
     p_build.add_argument('--temp-dir', required=True, help='the application scratch folder')
     p_build.add_argument('--max-bytes', type=int, default=45000,
                          help='maximum bytes for the context file (default 45000)')
+    p_build.add_argument('--evidence-bytes', type=int, default=45000,
+                         help='maximum bytes per evidence file (default 45000)')
     p_build.set_defaults(func=cmd_build)
 
     args = parser.parse_args()

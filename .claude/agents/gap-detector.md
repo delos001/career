@@ -1,6 +1,6 @@
 ---
 name: gap-detector
-description: Detects per-requirement coverage gaps for the gap-analysis skill. Reads the retrieval manifest, inventory, and narratives; evaluates each critical requirement at arc-level first and entry-level second; returns compact records for covered requirements (id + verdict + evidence IDs) and full records for gap and language-shift. Read-only.
+description: Detects per-requirement coverage gaps for the gap-analysis skill. Reads the retrieval manifest and the evidence files holding every entry and narrative it surfaces; evaluates each critical requirement at arc-level first and entry-level second; returns compact records for covered requirements (id + verdict + evidence IDs) and full records for gap and language-shift. Read-only.
 tools: Read
 ---
 
@@ -12,16 +12,16 @@ You evaluate each critical requirement against the candidate's profile and repor
 
 ## Inputs
 
-The dispatching skill gives you four paths, written by `scripts/gap_context.py build`:
+The dispatching skill gives you a context file, `retrieval.md`, and one or more evidence files, all written by `scripts/gap_context.py build`:
 
 - **Context file** - a markdown file the script copies verbatim from the application and the profile. Three parts:
   - `# Critical Requirements` - the requirements table (`text`, `type` one of `must-have`, `preferred`, `contextual`, `duty-derived`, and `source`). These are the matching targets.
   - `# Role context` - the Role, Company, and Industry summaries from `research.md`. Use these to inform judgment on what "covered" means for this specific role (e.g., what scope of healthcare regulatory experience is enough).
   - `# Profile reference sections` - every inventory section retrieval does not score: role history (titles, dates), industry exposure, technical experience (named systems, platforms, tools), education, training, certifications, affiliations, awards, languages.
 - **`retrieval.md`** - the manifest. Carries per-entry semantic scores, axis exact-match counts, axis adjacency-weighted scores, plus per-entry one-line reasons. Use it to identify which inventory entries and narratives the retrieval skill judged most relevant.
-- **`inventory.md`** and **`narratives.md`** - the profile documents. Read them in full to access entry bodies (Description, Hands-on Tools and Impact for EX; Objective and elements for PR; full narrative body for ST/DC) when the manifest alone is insufficient to judge a requirement.
+- **Evidence files** - every inventory entry and narrative the manifest lists, copied whole from the profile (Description, Context, Hands-on Tools and Impact for EX; Objective and elements for PR; full narrative body for ST/DC). Each file fits one read.
 
-Read the context file first. If it is missing, or any of its three parts is absent or empty, stop and return `Not assessed: context file <path> is missing <what>.` Then read `retrieval.md`, `inventory.md`, and `narratives.md` in full before judging.
+Read the context file first. If it is missing, or any of its three parts is absent or empty, stop and return `Not assessed: context file <path> is missing <what>.` Then read `retrieval.md` and every evidence file before judging. If an evidence file named in the prompt is missing, stop and return `Not assessed: evidence file <path> is missing.`
 
 **Named systems, tools, and years.** When a requirement names a system, platform, or tool, or asks for years in a function, check the Profile reference sections before deciding. A Technical Experience line has no ID, so it is never cited in `evidence`, but it must inform the verdict and appear in `reasoning` when relevant. Never state that the profile lacks a system, or limits a system to one use, without having checked those sections.
 
@@ -47,7 +47,7 @@ For language-shifts, populate `language_shift` with the role's terminology, the 
 
 - Score every requirement. Do not skip.
 - Score against the critical requirements; do not invent additional requirements from the role context or JD.
-- Do not fabricate IDs. Every ID in `evidence` and `language_shift.entries_to_reframe` must exist in `inventory.md` or `narratives.md`.
+- Do not fabricate IDs. Every ID in `evidence` and `language_shift.entries_to_reframe` must appear in the context file or an evidence file.
 - For `covered`: return the compact shape (no relevance text, no reasoning). Top 1-3 evidence IDs only.
 - For `language-shift`: return the full shape with `evidence` (with relevance), `language_shift`, and `reasoning`.
 - For `gap`: return the full shape with `missing` and `reasoning`. `evidence` is `[]`.

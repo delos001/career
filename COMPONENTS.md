@@ -398,9 +398,9 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### gap-detector
 
-- **Purpose**: Detect per-requirement coverage gaps for the gap-analysis skill. Reads the retrieval manifest, inventory, and narratives; evaluates each critical requirement at arc level first and entry level second; returns structured per-requirement assessment (covered / gap / language-shift) with evidence IDs, reasoning, and (for gaps) what evidence would close them.
+- **Purpose**: Detect per-requirement coverage gaps for the gap-analysis skill. Reads the retrieval manifest and the evidence files holding every entry and narrative it surfaces; evaluates each critical requirement at arc level first and entry level second; returns structured per-requirement assessment (covered / gap / language-shift) with evidence IDs, reasoning, and (for gaps) what evidence would close them.
 - **Status**: Designed
-- **Inputs**: A four-path prompt written by `gap_context.py build` and dispatched verbatim: the detector context file (critical requirements, role/company/industry summaries, and every inventory section retrieval does not score, copied verbatim by the script), `retrieval.md`, `inventory.md`, `narratives.md`. Halts unassessed if the context file lacks a part. Tools: Read.
+- **Inputs**: A prompt written by `gap_context.py build` and dispatched verbatim: the detector context file (critical requirements, role/company/industry summaries, and every inventory section retrieval does not score, copied verbatim by the script), `retrieval.md`, and one or more evidence files (every manifest-listed entry and narrative, copied whole). Halts unassessed if the context file lacks a part or an evidence file is missing. Tools: Read.
 - **Outputs**: JSON `{assessments: [{requirement_id, requirement_text, requirement_type, verdict, evidence, missing, language_shift, reasoning}, ...]}` returned to the caller.
 - **Triggers**: Invoked by `gap-analysis` Phase 3.
 - **Update Triggers**: When the critical-requirements schema, the gap status taxonomy, the per-requirement output contract, or the arc-first rule changes.
@@ -598,9 +598,9 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/gap_context.py
 
-- **Purpose**: Build the gap-detector's input file and dispatch prompt. Subcommand: `build`. Copies the application's Critical Requirements section, the Role / Company / Industry summaries, and every inventory section holding no retrievable-entry ID (role history, industry exposure, technical experience, credentials) verbatim into one context file, then prints the detector prompt. The reference-section set is derived from the inventory, using `retrieval_payload._ENTRY_RE` as the definition of what retrieval scores.
+- **Purpose**: Build the gap-detector's input file and dispatch prompt. Subcommand: `build`. Copies the application's Critical Requirements section, the Role / Company / Industry summaries, and every inventory section holding no retrievable-entry ID (role history, industry exposure, technical experience, credentials) verbatim into one context file, copies every inventory entry and narrative in the manifest's candidate tables whole into byte-budgeted evidence files (refusing a manifest ID with no entry, or a manifest with no candidates), then prints the detector prompt. The reference-section set is derived from the inventory, using `retrieval_payload._ENTRY_RE` as the definition of what retrieval scores.
 - **Status**: Designed
-- **Inputs**: Args (`--folder`, `--temp-dir`, `--max-bytes`). Config: `config.yaml` (profile path, research, inventory, narratives, retrieval_manifest filenames) via `scripts/_config.py`. Imports `retrieval_payload.extract_section`, `CR_HEADING`, `_ENTRY_RE`. Filesystem: research.md and retrieval.md in the application folder, inventory.md in the profile folder.
+- **Inputs**: Args (`--folder`, `--temp-dir`, `--max-bytes`, `--evidence-bytes`). Config: `config.yaml` (profile path, research, inventory, narratives, retrieval_manifest filenames) via `scripts/_config.py`. Imports `retrieval_payload.extract_section`, `CR_HEADING`, `_ENTRY_RE`. Filesystem: research.md and retrieval.md in the application folder, inventory.md in the profile folder.
 - **Outputs**: `<temp-dir>/gap_detector_context.md`; the included section list and the dispatch prompt to stdout. Errors to stderr with exit 1, including a missing or empty requirements, role, company, or industry section, no reference sections, a missing manifest, or a context over the byte budget.
 - **Triggers**: Invoked by `gap-analysis` Phase 3.
 - **Update Triggers**: When the detector's input contract changes; when the inventory section structure or the retrievable-entry prefix set changes.
