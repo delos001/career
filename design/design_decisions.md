@@ -517,7 +517,7 @@ Reference sections addressable at sub-section level via heading anchors. Per-ite
 #### inventory-section-8-rl-grouping-2026-05
 Section 8 renamed "All Tasks Performed" → "Experience Entries" (the `EX-` prefix denotes experience units, not to-do tasks). The ten hand-curated topical sub-headings are replaced with one `### RL-NNN` sub-heading per role; heading text is the RL ID only, preserving the rebrand resilience of `inventory-role-rl-reference-applied-2026-05`.
 
-Structure: RL sub-headings ordered to match Section 7 (reverse-chronological by Start Date). Within each RL, entries sort by primary Orientation value, then primary Specialty value, then EX-ID ascending. "Primary value" is the value before the pipe in a multi-value field per `inventory-entry-multi-value-orientation-2026-05`.
+Structure: RL sub-headings ordered to match Section 7 (reverse-chronological by Start Date). Within each RL, entries sort by primary Orientation value, then primary Specialty value, then EX-ID ascending (within-RL sort superseded by `ex-topic-groups-2026-10`). "Primary value" is the value before the pipe in a multi-value field per `inventory-entry-multi-value-orientation-2026-05`.
 
 Rationale: the topical sub-headings had no assignment rule and no naming rule, and did not map to any tag axis (one heading spanned 12 Specialty combinations across 3 Orientations). The Specialty/Orientation/Industry/Level/Work-state tags already carry the classification, and cv_targeted retrieval (`cv-targeted-retrieval-architecture-2026-05`) reads tags from entry fields, not document position — so the sub-heading scheme had no retrieval role. RL grouping is deterministic and self-maintaining: every entry's `Role:` field assigns it unambiguously.
 
@@ -1911,6 +1911,37 @@ directed team used go in Context.
 
 Refs: `templates/inventory.md`, `rules/profile/inventory-writing.md`,
 `scripts/retrieval_payload.py`, `scripts/profile_slice.py`.
+
+#### ex-topic-groups-2026-10
+
+Within each `### RL-NNN` role group, EX entries sit in topic groups the user
+defines, each opened by a `--- <label>` line (three dashes, a space, the label).
+Replaces the within-role sort (primary Orientation, then Specialty, then ID)
+from `inventory-section-8-rl-grouping-2026-05`; the role grouping itself stands.
+
+- **Why groups, not the sort.** The user reorganized the inventory by body of
+  work (105 groups by 2026-10-26). The axis sort put unrelated work side by side
+  and could not be kept by hand; the topical headings that decision removed
+  lacked a naming rule, which the writing rules now supply.
+- **Why markers, not ID'd parent entries** (the alternative left open in
+  `design/profile_rules_plan.md`). Parents would need IDs, retrieval items, and a
+  renumbering migration; markers were already in place across every role.
+- **Rules.** Every EX entry sits in a group; a group holds at least one entry;
+  labels are unique within a role. Order of groups and of entries is the user's.
+  `profile_update.py insert` takes `--group` (the entry closes that group) or
+  `--new-group` (opened at the end of the role). `profile_update_qc.py` P4 checks
+  membership, marker shape, empty groups, and repeated labels, not order or
+  wording. Label wording is a writing rule (`verb phrase: qualifier`; a label
+  with no qualifier stays valid).
+- **A marker ends an entry block.** Before this, an entry ran to the next `ID:`
+  line, so a group's last entry carried the next group's label into every slice,
+  and `set` on its last field deleted the label or wrote below it.
+- `profile_slice.py related` prints the role's entries under their labels, so
+  routing can name the group.
+
+Refs: `inventory-section-8-rl-grouping-2026-05`, `templates/inventory.md`,
+`rules/profile/inventory-writing.md`, `rules/profile/routing.md`,
+`scripts/inventory_model/ex.py`.
 
 #### test-corpus-and-invariant-checks-2026-08-26
 

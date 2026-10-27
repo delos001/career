@@ -73,16 +73,7 @@ Entries: None
 
 ### RL-002
 
-ID: EX-003
-Role: RL-002
-Industry: biotech
-Specialty: data-science
-Orientation: data-analytics
-Level: leadership
-Work-state: scaling
-Description: **Built the forecasting model that set enrollment targets for the trial portfolio.** Replaced per-study spreadsheets with one model fed from the trial management system.
-Impact: Enrollment projections moved from per-study guesswork to a single reviewed model used at portfolio planning.
-Context: No central enrollment view existed; each study lead maintained a private sheet.
+--- establish processes: study start-up data handling
 
 ID: EX-004
 Role: RL-002
@@ -94,7 +85,22 @@ Work-state: scaling
 Description: **Defined the data-handling standard adopted across the study start-up group.** Wrote the standard, ran the review cycle, and trained the leads who applied it.
 Impact: Start-up data handoffs followed one documented route instead of per-study convention.
 
+--- enrollment forecasting
+
+ID: EX-003
+Role: RL-002
+Industry: biotech
+Specialty: data-science
+Orientation: data-analytics
+Level: leadership
+Work-state: scaling
+Description: **Built the forecasting model that set enrollment targets for the trial portfolio.** Replaced per-study spreadsheets with one model fed from the trial management system.
+Impact: Enrollment projections moved from per-study guesswork to a single reviewed model used at portfolio planning.
+Context: No central enrollment view existed; each study lead maintained a private sheet.
+
 ### RL-001
+
+--- tool development: clinical data warehouse
 
 ID: EX-001
 Role: RL-001
@@ -106,6 +112,8 @@ Description: **Stood up the first shared clinical data warehouse.** Modeled the 
 Hands-on Tools: SQL Server | Python
 Impact: Three studies read from one warehouse rather than from per-study extracts.
 Context: Prior state was per-study extracts refreshed by hand.
+
+--- vendor evaluation: data capture platform
 
 ID: EX-002
 Role: RL-001

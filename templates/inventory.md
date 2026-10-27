@@ -57,7 +57,10 @@ Placeholders are `{...}`. `{NNN}` is a zero-padded three-digit counter.
 
 ### RL-{NNN}
 
-{EX entries for that role, one '### RL-{NNN}' sub-heading per role}
+--- {topic group label}
+
+{EX entries for that topic, one '### RL-{NNN}' sub-heading per role and one
+'--- {label}' marker per topic group within it}
 
 ---
 
@@ -335,7 +338,7 @@ work entry it recognizes so cv-targeted can pull it alongside a cited entry.
 - **Axis fields** (`Industry`, `Specialty`, `Orientation`, `Level`,
   `Work-state`) take values from the axis registries under `rules/`. A field may
   carry multiple values separated by ` | `; the value before the first pipe is
-  the primary and governs sort order.
+  the primary.
 - **Omit `Industry` when the work has no industry the registry recognizes.**
   The industry registry is a matching vocabulary listing the industries the
   candidate applies into, not a descriptive taxonomy of every industry they have
@@ -357,9 +360,14 @@ work entry it recognizes so cv-targeted can pull it alongside a cited entry.
   one section per entry type, read through `scripts/rules_slice.py`. This
   template holds only the schema: fields, order, and placement.
 - **EX entry placement.** Entries sit under the `### RL-{NNN}` sub-heading
-  matching their `Role:` field, sorted by primary Orientation, then primary
-  Specialty, then ID ascending. The RL sub-headings themselves run in the same
-  order as the Employment & Role History records.
+  matching their `Role:` field, inside a topic group opened by a
+  `--- {label}` line (three dashes, a space, the label). Every EX entry sits in
+  a group; a group holds at least one entry; labels are unique within a role.
+  The order of groups, and of entries within a group, is the user's: a new
+  entry closes the group it names, and a new group closes its role. How labels
+  are worded: `rules/profile/inventory-writing.md`, EX section. The RL
+  sub-headings themselves run in the same order as the Employment & Role
+  History records.
 - **List lines** are comma-separated items under a label. What counts as an
   item: the LIST section of `rules/profile/inventory-writing.md`.
 - **Per-user category sets.** The `### {Category}` headings under Industry

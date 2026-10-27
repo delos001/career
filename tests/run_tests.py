@@ -161,6 +161,9 @@ Description: **Ran the quarterly vendor performance review.** Set the scorecard 
 Impact: Vendor scope changes followed a documented review rather than ad hoc request.
 """
 
+# The fixture's first RL-002 topic group, where EX_BLOCK inserts land.
+EX_GROUP = 'establish processes: study start-up data handling'
+
 
 # ---------------------------------------------------------------------------
 # The checks
@@ -175,7 +178,8 @@ def test_review_fix_lands_while_the_item_waits():
     review, so a fix after the first write succeeds and the item is still there.
     """
     write_block('b.md', EX_BLOCK)
-    new_id = ok('insert', '--prefix', 'EX', '--block-file', os.path.join(RUN_DIR, 'b.md'))
+    new_id = ok('insert', '--prefix', 'EX', '--block-file', os.path.join(RUN_DIR, 'b.md'),
+                '--group', EX_GROUP)
     write_block('v.md', 'Vendor scope changes went through a documented review.')
     ok('set', '--id', new_id, '--field', 'Impact',
        '--value-file', os.path.join(RUN_DIR, 'v.md'))
@@ -251,6 +255,10 @@ def test_related_pull_covers_the_role_and_shared_words():
         assert f'ID: {entry_id}' in same, f'{entry_id} missing from the same-role pull'
     assert 'ID: EX-001' in other and 'warehouse' in other, f'shared-word entry not pulled:\n{other}'
     assert 'Orientation:' not in out, 'axis fields leaked into the pull'
+    # Routing a new EX entry names the topic group it joins, so each label
+    # heads its own entries in the same-role pull (ex-topic-groups-2026-10).
+    assert re.search(r'^--- enrollment forecasting\n+ID: EX-003$', same, re.MULTILINE), \
+        f'topic group labels missing from the same-role pull:\n{same}'
 
     import profile_slice
     blocks = [f'block {i} ' + 'x' * 40 for i in range(9)]
@@ -295,7 +303,8 @@ def test_reviewer_context_carries_items_entries_and_rules():
     """The reviewer gets its inputs from a script, never a hand-composed prompt:
     the staged item, the entry written, and only that entry type's rules."""
     write_block('b.md', EX_BLOCK)
-    new_id = ok('insert', '--prefix', 'EX', '--block-file', os.path.join(RUN_DIR, 'b.md'))
+    new_id = ok('insert', '--prefix', 'EX', '--block-file', os.path.join(RUN_DIR, 'b.md'),
+                '--group', EX_GROUP)
     target = 'Technical Experience / Programming, Data & Analytics / Platforms'
     ok('list-add', '--target', target, '--item', 'Tableau')
     path = os.path.join(RUN_DIR, 'qc_context.md')
@@ -317,31 +326,63 @@ def test_concurrent_inserts_do_not_collide():
     """
     write_block('b.md', EX_BLOCK)
     first = ok('insert', '--prefix', 'EX',
-               '--block-file', os.path.join(RUN_DIR, 'b.md'))
+               '--block-file', os.path.join(RUN_DIR, 'b.md'), '--group', EX_GROUP)
     second = ok('insert', '--prefix', 'EX',
-                '--block-file', os.path.join(RUN_DIR, 'b.md'))
+                '--block-file', os.path.join(RUN_DIR, 'b.md'), '--group', EX_GROUP)
     assert first != second, f'both inserts claimed {first}'
     ids = [e['id'] for e in entry_block.parse_blocks(docs()[0])]
     assert len(ids) == len(set(ids)), 'duplicate IDs in the inventory'
 
 
-def test_new_entry_lands_in_its_role_group_in_order():
+def test_new_entry_lands_at_the_end_of_its_named_group():
     """Shipped 2026-08-25 as a dead end: an entry could be placed outside the
-    group its Role names, or out of sort order within it.
+    group its Role names. Since ex-topic-groups-2026-10 it must also land in the
+    topic group it names, never by a sort rule the user's groups do not follow.
     """
+    path = os.path.join(RUN_DIR, 'b.md')
     write_block('b.md', EX_BLOCK)
-    new_id = ok('insert', '--prefix', 'EX',
-                '--block-file', os.path.join(RUN_DIR, 'b.md'))
+    new_id = ok('insert', '--prefix', 'EX', '--block-file', path, '--group', EX_GROUP)
     inventory, _ = docs()
+    groups = ex.role_groups(inventory, 'RL-002')
+    assert [g['entries'] for g in groups] == [['EX-004', new_id], ['EX-003']], \
+        f'{new_id} did not close the "{EX_GROUP}" group: {groups}'
 
-    start, end = document.section_bounds(inventory, 'RL-002')
-    group = '\n'.join(inventory.split('\n')[start:end])
-    assert new_id in [e['id'] for e in entry_block.parse_blocks(group)], \
-        f'{new_id} did not land in its RL-002 group'
+    out = fails('insert', '--prefix', 'EX', '--block-file', path)
+    assert '--group' in out, f'an EX insert with no group was accepted:\n{out}'
+    out = fails('insert', '--prefix', 'EX', '--block-file', path, '--group', 'no such topic')
+    assert EX_GROUP in out, f'an unknown group was not refused with the real labels:\n{out}'
+    out = fails('insert', '--prefix', 'EX', '--block-file', path, '--new-group', EX_GROUP)
+    assert 'already' in out, f'a duplicate group label was accepted:\n{out}'
 
-    keys = [ex.sort_key(e['field_map'], e['number'])
-            for e in entry_block.parse_blocks(group) if e['prefix'] == 'EX']
-    assert keys == sorted(keys), f'RL-002 group is out of sort order: {keys}'
+    newer = ok('insert', '--prefix', 'EX', '--block-file', path,
+               '--new-group', 'vendor oversight: quarterly reviews')
+    groups = ex.role_groups(docs()[0], 'RL-002')
+    assert groups[-1] == {'label': 'vendor oversight: quarterly reviews',
+                          'entries': [newer]}, f'new group did not close RL-002: {groups}'
+
+
+def test_group_label_stays_out_of_the_entry_above():
+    """Found 2026-10-27 on the live inventory: an entry ran on to the next ID
+    line, so the last entry of every topic group carried the following group's
+    label into every slice, and an edit to that entry could delete or move it.
+    """
+    code, out = run('profile_slice.py', 'id', 'EX-004')
+    assert code == 0 and '---' not in out, f'the next group label leaked into EX-004:\n{out}'
+
+    # Replacing the last field of a group's last entry keeps the next label.
+    write_block('v.md', 'Prior state was nightly extracts refreshed by hand.')
+    ok('set', '--id', 'EX-001', '--field', 'Context',
+       '--value-file', os.path.join(RUN_DIR, 'v.md'))
+    assert '--- vendor evaluation: data capture platform' in docs()[0], \
+        'set deleted the next group label'
+
+    # Adding an omitted last field lands above the next label, not below it.
+    write_block('v.md', 'Each study lead ran start-up by local convention.')
+    ok('set', '--id', 'EX-004', '--field', 'Context',
+       '--value-file', os.path.join(RUN_DIR, 'v.md'))
+    inventory = docs()[0]
+    assert inventory.index('Each study lead ran') < inventory.index('--- enrollment forecasting'), \
+        'set placed the new field inside the next group'
 
 
 def test_new_role_creates_its_entry_group():
@@ -366,8 +407,10 @@ End Date: 2016-01
 
     # And an entry for that role now has somewhere to go.
     write_block('b.md', EX_BLOCK.replace('Role: RL-002', f'Role: {role}'))
-    ok('insert', '--prefix', 'EX',
-       '--block-file', os.path.join(RUN_DIR, 'b.md'))
+    ok('insert', '--prefix', 'EX', '--block-file', os.path.join(RUN_DIR, 'b.md'),
+       '--new-group', 'lead execution: lab onboarding')
+    code, out = run('profile_update_qc.py', 'check')
+    assert code == 0, f'the first entry of a new role left the document invalid:\n{out}'
 
 
 def test_list_add_is_additive():
@@ -411,7 +454,8 @@ def test_enrichment_preserves_the_rest_of_the_entry():
 def test_document_stays_valid_after_writes():
     """Any sequence of writes must leave a document the checker still passes."""
     write_block('b.md', EX_BLOCK)
-    ok('insert', '--prefix', 'EX', '--block-file', os.path.join(RUN_DIR, 'b.md'))
+    ok('insert', '--prefix', 'EX', '--block-file', os.path.join(RUN_DIR, 'b.md'),
+       '--group', EX_GROUP)
     ok('list-add',
        '--target', 'Technical Experience / Programming, Data & Analytics / Platforms',
        '--item', 'Tableau')
@@ -458,6 +502,16 @@ BREAKAGES = [
      lambda t: t.replace('ID: EX-002', 'ID: EX-001')),
     ('an entry in the wrong role group',
      lambda t: t.replace('ID: EX-001\nRole: RL-001', 'ID: EX-001\nRole: RL-002')),
+    # Topic groups (ex-topic-groups-2026-10).
+    ('an entry outside any topic group',
+     lambda t: t.replace('--- tool development: clinical data warehouse\n\n', '')),
+    ('a malformed group marker',
+     lambda t: t.replace('--- vendor evaluation:', '---vendor evaluation:')),
+    ('an empty topic group',
+     lambda t: t.replace('--- vendor evaluation:', '--- empty topic\n\n--- vendor evaluation:')),
+    ('a group label repeated within a role',
+     lambda t: t.replace('--- vendor evaluation: data capture platform',
+                         '--- tool development: clinical data warehouse')),
     ('a hand-edited table of contents',
      lambda t: t.replace('- [Languages](#languages)\n', '')),
     ('a populated section still marked empty',
@@ -499,6 +553,10 @@ def test_checker_catches_each_breakage():
     root, cfg = _config.load()
     path = pu._inventory_path(root, cfg)
     pristine = _util.read(path)
+    # A pristine document that already fails would let every breakage "fail"
+    # for the wrong reason, so the baseline has to pass first.
+    code, out = run('profile_update_qc.py', 'check')
+    assert code == 0, f'the unbroken fixture already fails the checker:\n{out}'
     missed = []
     for label, break_it in BREAKAGES:
         broken = break_it(pristine)

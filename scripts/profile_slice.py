@@ -33,8 +33,8 @@ Two subcommands:
 
   related Fetch the inventory entries a staged item might duplicate or extend,
           for the profile-update routing decision: every entry in the item's
-          Work role, plus entries elsewhere sharing key words with what the
-          item says the candidate did. Prints only the prose fields. A pull
+          Work role, under its topic-group label, plus entries elsewhere
+          sharing key words with what the item says the candidate did. Prints only the prose fields. A pull
           larger than config related_pull.max_chars splits into parts.
 
 Nothing repo-dependent is hardcoded; folder locations and filenames come
@@ -59,7 +59,7 @@ import sys
 import _config
 import _util
 import profile_update as pu   # owns the staging file layout read by 'related'
-from inventory_model import entry_block, pr
+from inventory_model import document, entry_block, ex, pr
 
 
 # ---------------------------------------------------------------------------
@@ -398,6 +398,24 @@ def related_entries(inventory_text, item_body, min_shared):
     return role, same_role, by_words
 
 
+def by_topic_group(inventory_text, role, same_role):
+    """Return the same-role entries with each topic group's label above its own.
+
+    Routing a new EX entry means naming the topic group it joins
+    (ex-topic-groups-2026-10), so the labels travel with the pull. Same-role
+    entries outside the EX groups (PR, PB, PS) follow the last group.
+    """
+    if not role.startswith('RL-') or document.section_bounds(inventory_text, role) is None:
+        return same_role
+    # Each rendered entry opens with its 'ID: <id>' line.
+    by_id = {text.split('\n', 1)[0][len('ID: '):]: text for text in same_role}
+    out = []
+    for group in ex.role_groups(inventory_text, role):
+        out.append(f'--- {group["label"]}')
+        out += [by_id.pop(entry_id) for entry_id in group['entries'] if entry_id in by_id]
+    return out + list(by_id.values())
+
+
 def split_parts(blocks, max_chars):
     """Greedily pack text blocks into parts of at most max_chars each."""
     parts, current, size = [], [], 0
@@ -420,7 +438,8 @@ def cmd_related(args, repo_root, cfg):
     role, same_role, by_words = related_entries(
         inventory_text, item['body'], settings['min_shared_words'])
 
-    blocks = [f'## Same role ({role or "none"}): {len(same_role)} entries'] + same_role
+    blocks = ([f'## Same role ({role or "none"}): {len(same_role)} entries']
+              + by_topic_group(inventory_text, role, same_role))
     if not role.startswith('RL-'):
         blocks.append(f'Work role is "{role}", so no role group applies. For a '
                       f'tool or list item, read the list section with: '

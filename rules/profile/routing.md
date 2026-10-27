@@ -26,7 +26,9 @@ name to the user; never cite one by ID alone.
 Exactly one of these, with a one- or two-line reason:
 
 - **New entry.** Nothing pulled covers this piece of work. Name the entry type
-  and the role it belongs to.
+  and the role it belongs to. For an EX entry, also name the topic group it
+  joins: one of the `--- <label>` groups the pull shows for that role, or a new
+  group with a proposed label. A new group needs the user's approval.
 - **Addition to an existing entry.** An entry covers the work but under-states
   or mis-frames it, or a project needs a new or changed element. Name the entry.
 - **List item.** The item is a named tool, product, or platform, not a piece of

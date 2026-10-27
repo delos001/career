@@ -22,7 +22,8 @@ Checks:
   P1  Section roster and order match the template skeleton
   P2  Entry fields match the template roster for their prefix
   P3  IDs are unique and correctly formed
-  P4  EX entries sit in their role's group, in sort order
+  P4  EX entries sit in a topic group under their role's group; group
+      markers are well-formed, non-empty, and unique within a role
   P5  Role and Recognizes references resolve
   P6  Axis values exist in their registry
   P7  Table of contents matches the document headings
@@ -60,7 +61,7 @@ import profile_slice
 import profile_update as pu
 import rules_slice
 import staging_append
-from inventory_model import document, entry_block, ex, pr
+from inventory_model import document, entry_block, pr
 
 
 # ---------------------------------------------------------------------------
@@ -195,14 +196,22 @@ def check_ids(findings, entries):
 
 # ---------------------------------------------------------------------------
 # P4 - EX placement
-# An EX entry's Role field assigns it unambiguously to one group, and within
-# that group entries sort by primary Orientation, then primary Specialty, then
-# ID. Placement drift makes the document unreadable long before it breaks a
-# parser, and it is invisible in a diff of a single added entry.
+# An EX entry's Role field assigns it unambiguously to one role group, and
+# within it the entry sits in a topic group opened by a '--- <label>' marker
+# (ex-topic-groups-2026-10). Group and entry order are the user's, so nothing
+# here checks order. What is checked is what the scripts rely on: insert
+# addresses a group by its label, so labels must be unique within a role, and
+# block parsing ends an entry at a well-formed marker, so a near-miss such as
+# '---label' would silently fold into the entry above.
 # ---------------------------------------------------------------------------
 
+# Regex: a line that looks like a marker attempt: two or more leading dashes.
+# A bare '---' rule and a well-formed marker are the two valid shapes.
+_MARKER_LIKE_RE = re.compile(r'^-{2,}')
+
+
 def check_ex_placement(findings, inventory_text):
-    """P4: EX entries sit under their role's group, in sort order."""
+    """P4: EX entries sit in a topic group under their role's group."""
     findings.mark('P4')
     bounds = document.section_bounds(inventory_text, 'Experience Entries')
     if bounds is None:
@@ -210,29 +219,50 @@ def check_ex_placement(findings, inventory_text):
         return
     start, end = bounds
     lines = inventory_text.split('\n')
-    group = None
-    previous = None
+    role_group = None
+    labels = set()
+    topic = None   # [label, entry count] of the topic group being walked
+
+    def close_topic():
+        if topic is not None and topic[1] == 0:
+            findings.add('P4', f'{role_group} topic group "{topic[0]}" holds no entries')
+
     for i in range(start, end):
         m = re.match(r'^###\s+(RL-\d+)\s*$', lines[i])
         if m:
-            group, previous = m.group(1), None
+            close_topic()
+            role_group, labels, topic = m.group(1), set(), None
+            continue
+        m = document.GROUP_MARKER_RE.match(lines[i])
+        if m:
+            close_topic()
+            label = m.group(1)
+            if label in labels:
+                findings.add('P4', f'{role_group} repeats the topic group "{label}"')
+            labels.add(label)
+            topic = [label, 0]
+            continue
+        if _MARKER_LIKE_RE.match(lines[i]) and lines[i].rstrip() != '---':
+            findings.add('P4', f'malformed topic-group marker at line {i + 1}: '
+                               f'"{lines[i]}" (expected "--- <label>")')
             continue
         if not re.match(r'^ID:\s+EX-\d+\s*$', lines[i]):
             continue
         entry = entry_block.parse_blocks('\n'.join(lines[i:end]))[0]
         role = entry['field_map'].get('Role', '').strip()
-        if group is None:
+        if role_group is None:
             findings.add('P4', f"{entry['id']} sits outside any role group",
                          entry['id'])
             continue
-        if role != group:
+        if role != role_group:
             findings.add('P4', f"{entry['id']} carries Role: {role} but sits in "
-                               f'the {group} group', entry['id'])
-        key = ex.sort_key(entry['field_map'], entry['number'])
-        if previous is not None and key < previous:
-            findings.add('P4', f"{entry['id']} is out of sort order within "
-                               f'{group}', entry['id'])
-        previous = key
+                               f'the {role_group} group', entry['id'])
+        if topic is None:
+            findings.add('P4', f"{entry['id']} sits in {role_group} outside any "
+                               f'topic group', entry['id'])
+            continue
+        topic[1] += 1
+    close_topic()
 
 
 # ---------------------------------------------------------------------------

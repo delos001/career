@@ -121,6 +121,20 @@ def template_spans(template_text):
 
 
 # ---------------------------------------------------------------------------
+# Topic groups
+# Under each '### RL-NNN' role heading, EX entries sit in topic groups, each
+# opened by a '--- <label>' line (ex-topic-groups-2026-10; the skeleton in
+# templates/inventory.md shows it). The marker is not a heading, so it is
+# matched here rather than read from the skeleton: block parsing needs it on
+# every read, and no read of the inventory carries the template text.
+# ---------------------------------------------------------------------------
+
+# Regex: a topic-group marker line. Group 1 is the label. A bare '---' rule
+# has no label and does not match.
+GROUP_MARKER_RE = re.compile(r'^--- (\S.*?)\s*$')
+
+
+# ---------------------------------------------------------------------------
 # Section navigation
 # Sections are located by heading text with anchored line patterns rather
 # than substring search, per the ID-matching convention in

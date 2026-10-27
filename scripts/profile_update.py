@@ -55,7 +55,7 @@ Project   : career
 Usage     : python scripts/profile_update.py pending
             python scripts/profile_update.py show --item "<label>"
             python scripts/profile_update.py insert --prefix EX \\
-                --block-file <path>
+                --block-file <path> --group "<label>" | --new-group "<label>"
             python scripts/profile_update.py set --id EX-060 \\
                 --field Impact --value-file <path>
             python scripts/profile_update.py element --id PR-015 \\
@@ -415,11 +415,12 @@ def cmd_insert(args, repo_root, cfg):
     entry_block.validate_block(block, schemas[args.prefix], args.prefix)
 
     assigned = entry_block.next_id(text, args.prefix)
-    number = int(assigned.split('-')[1])
     block = f'ID: {assigned}\n{block}'
 
+    if args.prefix != 'EX' and (args.group or args.new_group):
+        raise ValueError('--group and --new-group apply to EX entries only')
     if args.prefix == 'EX':
-        text = ex.place(text, block, number)
+        text = ex.place(text, block, args.group, args.new_group)
     elif args.prefix == 'RL':
         text = rl.place(text, block)
     else:
@@ -645,6 +646,12 @@ def main():
     p_insert.add_argument('--subsection',
                           help='sub-section heading when the section has one '
                                '(e.g. Completed / In Progress for TR entries)')
+    p_insert.add_argument('--group',
+                          help='EX only: the existing topic group in the entry\'s '
+                               'role that the entry closes')
+    p_insert.add_argument('--new-group',
+                          help='EX only: the label of a new topic group, opened '
+                               'at the end of the role with this entry')
     p_insert.set_defaults(func=cmd_insert)
 
     p_set = sub.add_parser('set', help="replace one field's value on one entry")

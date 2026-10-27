@@ -50,7 +50,7 @@ Review method:
 - **Impact value-type tags.** The user is removing tags that are only there for tagging's sake. Whether to drop them entirely is undecided, and nothing reads them except the unbuilt inventory-builder (#27). The template rule "the bare prefix stands alone; the field is not dropped" conflicts with the review and changes with this decision. The off-list "Strategy Impact" waits on it too.
 - **Whether EX Impact becomes optional** in the template.
 - **Scope of the single skill:** updates only, or also building a profile from scratch for other users (inventory-builder #27).
-- **EX sort rule (P4):** change it to fit the user's groups, or formalize groups as parents using the PR objective/elements pattern. Comes after the cleanup.
+- **EX sort rule (P4):** closed 2026-10-27 by `ex-topic-groups-2026-10` (markers, not parents).
 
 ## Build sequence
 
@@ -65,7 +65,7 @@ First: settle the Impact tags decision.
 6. **Mechanical wording checks** in `profile_update_qc.py`: first person, "personally", banned phrases ("positioned for", "from greenfield"), semicolon sentence endings, em dashes, leftover tags. Reuse the `cv_qc.py` patterns.
 7. **Targeted rule loading.** A script prints the shared section plus the target type's section. The template, `profile-update`, gap-analysis, and `qc-profile-update` pull rules through it and keep no copies.
 
-After the application: narratives rules and a narratives write command, positioning rules, skill scope, EX sort rule.
+After the application: narratives rules and a narratives write command, positioning rules, skill scope.
 
 ## Verification
 

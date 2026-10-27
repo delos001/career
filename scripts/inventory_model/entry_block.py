@@ -3,7 +3,8 @@
 entry_block.py - one ID block of any entry type
 
 Every inventory entry is an ID block: it opens at an 'ID: <PREFIX>-<NNN>' line
-and runs until the next 'ID: ' line or the next heading. This module finds
+and runs until the next 'ID: ' line, the next heading, or the next topic-group
+marker. This module finds
 those blocks, reads their 'Field: value' lines, assigns the next free ID for a
 prefix, and checks a block's fields against the template roster. It is the
 behavior every type uses unless its own module (ex.py, pr.py, ...) replaces it.
@@ -27,6 +28,7 @@ _ID_LINE_RE = re.compile(r'^ID:\s+([A-Z]+)-(\d+)\s*$')
 _FIELD_RE = re.compile(r'^([A-Za-z][A-Za-z &-]*):\s?(.*)$')
 
 # Regex: any line that closes an open block - the next ID line or a heading.
+# A topic-group marker closes one too (document.GROUP_MARKER_RE).
 _ID_START_RE = re.compile(r'^ID:\s+')
 _HEADING_RE = re.compile(r'^#{1,6}\s+')
 
@@ -37,7 +39,10 @@ _HEADING_RE = re.compile(r'^#{1,6}\s+')
 # than by section position, so the parse stays correct across section
 # reordering (inventory-section-denumbering-and-reorder-2026-07). Ending a
 # block at any heading means a non-entry section can never bleed into the
-# last block's fields.
+# last block's fields. Ending it at a topic-group marker keeps the next
+# group's label out of the last entry of the group above: without that, every
+# slice of that entry carried the wrong label, and a set on its last field
+# deleted the label or wrote the field below it.
 # ---------------------------------------------------------------------------
 
 def parse_blocks(text):
@@ -55,7 +60,8 @@ def parse_blocks(text):
             continue
         end = len(lines)
         for j in range(i + 1, len(lines)):
-            if _ID_START_RE.match(lines[j]) or _HEADING_RE.match(lines[j]):
+            if (_ID_START_RE.match(lines[j]) or _HEADING_RE.match(lines[j])
+                    or document.GROUP_MARKER_RE.match(lines[j])):
                 end = j
                 break
         fields = block_fields(lines[i:end])

@@ -108,7 +108,9 @@ Repeat every step below for one item before naming the next.
   - New inventory entry: write the block WITHOUT its `ID:` line to
     `temp/pu_block.md`, then run
     `python scripts/profile_update.py insert --prefix <PREFIX> --block-file temp/pu_block.md`
-    (add `--subsection "<heading>"` for a section that has sub-sections).
+    (add `--subsection "<heading>"` for a section that has sub-sections). An EX
+    entry also takes `--group "<label>"`, the approved topic group it closes,
+    or `--new-group "<label>"` for a new group the user approved.
   - Addition to an inventory entry: write the approved value to
     `temp/pu_value.md`, then run
     `python scripts/profile_update.py set --id <ID> --field <Field> --value-file temp/pu_value.md`,
@@ -182,7 +184,8 @@ Consumed by Phase 4. Route back, fix, re-run forward.
 | Finding type | Route back to |
 |---|---|
 | Entry missing a required field, or fields out of order | Phase 3, Step 3e |
-| Entry placed in the wrong role group or out of sort order | Phase 3, Step 3e |
+| Entry placed in the wrong role group or outside a topic group | Phase 3, Step 3e |
+| Malformed, empty, or repeated topic-group marker | Phase 5 (insert cannot write one; report it for the user to fix by hand) |
 | Axis value not in its registry | Phase 3, Step 3d |
 | Dangling Role or Recognizes reference | Phase 3, Step 3e |
 | Table of contents out of date | Phase 3, Step 3e (re-run insert; never hand-edit the ToC) |

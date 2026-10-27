@@ -74,12 +74,27 @@ result without being told what you did?
 **Context: the situation before the work, constraints, or scope bounds.**
 Test: is this the state of things, not what was done or what came of it?
 - The previous state, when known.
+- The organizational change the work prepared for (planned growth, a strategy
+  shift), when it drove the work.
 - Details behind anything Description groups or summarizes: the named teams,
   documents, or sub-steps.
 - Tools a directed team used.
 - Activity moves to Description. Outcomes move to Impact.
 - No notes about how to frame the entry.
 - Design work that was never built says so here.
+
+**Topic group label: the body of work the group's entries share.** Test: would
+every entry in the group fit under it?
+- Form: `verb phrase: qualifier`, naming the kind of work and then the project
+  or body of work (`lead execution: risk-based monitoring`,
+  `tool development: data management operational oversight`).
+- Recurring kinds of work reuse the terms already in the inventory (establish
+  processes, evolve processes, lead execution, operational team leadership,
+  resourcing and hiring). Check the role's existing labels before coining one.
+- A label with no qualifier is valid when the kind of work is the whole topic
+  (`site regulatory compliance and oversight`).
+- Prefer an existing group. Propose a new one only when no existing label fits,
+  and get the user's approval for its label.
 
 ## PR: Independent & Volunteer Projects
 
