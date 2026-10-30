@@ -50,6 +50,8 @@ Exactly one of these, with a one- or two-line reason:
   new to that entry instead.
 - **A thin parent is fine.** A group parent can hold only a headline and the
   group's result; its children hold the activities.
+- **One home per result.** A child whose only result is its parent's leaves
+  Impact out.
 - **Drop what the candidate cannot explain** if pressed. Log the removed ID in
   `inventory-ret.md`.
 
