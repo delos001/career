@@ -102,7 +102,9 @@ Repeat every step below for one item before naming the next.
 - **Step 3d - Show the actual text.** Present the full proposed entry, or a
   before/after for an addition, inline in the response. Never describe an edit
   the user has to look up to evaluate. Wait for approval. Apply any correction
-  and re-show before writing.
+  and re-show before writing. A correction that adds a fact the item does not
+  hold is re-staged first (remove, then `staging_append.py`), so Phase 4
+  reviews against what the user attested.
 - **Step 3e - Write it.** Each command prints what it wrote; keep those IDs and
   addresses for Phase 4. Never hand-edit `inventory.md`.
   - New inventory entry: write the block WITHOUT its `ID:` line to
