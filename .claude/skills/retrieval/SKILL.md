@@ -78,17 +78,20 @@ Ask if this session is for a new retrieval run or to resume a previous one?
   - `python scripts/retrieval_payload.py themes` - prints JSON to stdout with the theme payload.
 - Capture each output to a scratch file: `<scratch>/<SLUG>_APP-NNN_inventory_payload.json`, `<scratch>/<SLUG>_APP-NNN_narratives_payload.json`, `<scratch>/<SLUG>_APP-NNN_themes_payload.json`.
 - Non-zero exit on any of these = halt per global rules.
-- Run `python scripts/retrieval_payload.py split --slug <slug> --app-id APP-NNN --folder <app_folder> --temp-dir <scratch>`. This writes one JSON file per inventory chunk (`<scratch>/<SLUG>_APP-NNN_inv_chunk0.json`, etc.; byte-budgeted, each item carrying only its ID and payload), one JSON file per narrative chunk (`<scratch>/<SLUG>_APP-NNN_narr_chunk0.json`, etc.; narratives are batched by byte budget, not one file per narrative), and the scoring context file (`<scratch>/<SLUG>_APP-NNN_scoring_context.md`: the Critical Requirements section and the JD, copied verbatim). It prints a plain-English summary of chunk counts, then one complete scorer prompt per dispatch between `=== PROMPT N ===` markers. Non-zero exit = halt per global rules.
-- Output: the printed scorer prompts, and the entry count per chunk (from split output).
+- Run `python scripts/retrieval_payload.py split --slug <slug> --app-id APP-NNN --folder <app_folder> --temp-dir <scratch>`. When a corpus needs more than one chunk, its chunk 0 is a seed: an evenly spaced sample of the whole corpus, scored first so calibration anchors can be picked from real scores (Phase 3). This writes one JSON file per inventory chunk (`<scratch>/<SLUG>_APP-NNN_inv_chunk0.json`, etc.; byte-budgeted, each item carrying only its ID and payload), one JSON file per narrative chunk (`<scratch>/<SLUG>_APP-NNN_narr_chunk0.json`, etc.; narratives are batched by byte budget, not one file per narrative), and the scoring context file (`<scratch>/<SLUG>_APP-NNN_scoring_context.md`: the Critical Requirements section and the JD, copied verbatim). It prints a plain-English summary of chunk counts, then the first wave of scorer prompts (each corpus's chunk 0, plus themes) between `=== PROMPT N ===` markers. Non-zero exit = halt per global rules.
+- Output: the printed first-wave scorer prompts, and the entry count per chunk (from split output).
 
 ## Phase 3 - Score all three corpora
 
 **Scoring inventory chunks, narratives, and themes against critical requirements.**
 
-- Input: the scorer prompts printed by Phase 2's `split`.
-- Dispatch one `retrieval-scorer` per printed prompt, all in parallel. **The prompt is the text between its `=== PROMPT N ===` marker and the next marker, sent exactly as printed: nothing added, removed, reworded, or summarized.** Every input the scorer needs is in the files those lines name; if something looks missing, halt per global rules instead of supplying it by hand. The scorer writes results to the output file and returns only a brief confirmation; do not read or echo the scores in the main context.
+- Input: the first-wave scorer prompts printed by Phase 2's `split`.
+- Scoring runs in two waves. Each chunk has its own scorer and their scales drift, so every chunk of a multi-chunk corpus also scores the same calibration anchors, which the merge uses to put all chunks on one scale. Anchors are picked from the seed chunk's real scores, so the seed is scored first.
+  - **First wave:** dispatch the prompts `split` printed.
+  - **Second wave:** only if `split` printed a `split-anchored` command. After every first-wave scorer confirms, run `python scripts/retrieval_payload.py split-anchored --slug <slug> --app-id APP-NNN --temp-dir <scratch>`. It picks the anchors from the seed's scores, adds them to every other chunk (the scorers are not told which items are anchors), records them in `<scratch>/<SLUG>_APP-NNN_calibration.json`, and prints the second-wave prompts. Non-zero exit = halt per global rules. Dispatch those prompts.
+- Within a wave, dispatch one `retrieval-scorer` per printed prompt, all in parallel. **The prompt is the text between its `=== PROMPT N ===` marker and the next marker, sent exactly as printed: nothing added, removed, reworded, or summarized.** Every input the scorer needs is in the files those lines name; if something looks missing, halt per global rules instead of supplying it by hand. The scorer writes results to the output file and returns only a brief confirmation; do not read or echo the scores in the main context.
 - A confirmation's entry count is the scorer's own tally and has miscounted before; the merge and QC below are the count authority.
-- After all scorers confirm completion, run `python scripts/retrieval_score_merge.py --slug <slug> --app-id APP-NNN --temp-dir <scratch>`. This reads all per-agent output files, merges by corpus, and writes `<scratch>/<SLUG>_APP-NNN_inventory_scores.json`, `<scratch>/<SLUG>_APP-NNN_narrative_scores.json`, and `<scratch>/<SLUG>_APP-NNN_theme_scores.json`. Non-zero exit = halt per global rules.
+- After every scorer in both waves confirms completion, run `python scripts/retrieval_score_merge.py --slug <slug> --app-id APP-NNN --temp-dir <scratch>`. This reads all per-agent output files, maps each chunk's scores onto one shared scale using the anchors (each chunk has its own scorer, and their scales drift), merges by corpus, and writes `<scratch>/<SLUG>_APP-NNN_inventory_scores.json`, `<scratch>/<SLUG>_APP-NNN_narrative_scores.json`, and `<scratch>/<SLUG>_APP-NNN_theme_scores.json`. Non-zero exit = halt per global rules; a calibration stop names the chunk to re-score. Relay the printed calibration lines to the user in plain English (how far the chunks disagreed before and after correction).
 - Output: three merged score file paths.
 
 ## Phase 4 - Assemble and write manifest
@@ -106,7 +109,7 @@ Ask if this session is for a new retrieval run or to resume a previous one?
 **Running QC on the manifest.**
 
 - Input: application folder path, run date, inventory scored-entry count (from the `retrieval_score_merge.py` output in Phase 3).
-- Run `python scripts/retrieval_qc.py check --folder <app_folder> --scored-inventory <N> --date YYYY-MM-DD`. Every check is deterministic (structure, axis consistency, coverage counts, column population, link and ID existence, date); there is no judgment subagent for this artifact.
+- Run `python scripts/retrieval_qc.py check --folder <app_folder> --scored-inventory <N> --date YYYY-MM-DD`. Every check is deterministic (structure, axis consistency, coverage counts, column population, link and ID existence, date, cross-chunk calibration); there is no judgment subagent for this artifact.
 - **Loops on FAIL:** translate the failed checks to plain English for the user, then apply each per *Phase routing on failure*, re-run forward, and return to Phase 5.
 - Cap the loop at **3 iterations**. Exit earlier on **PASS**. If failures remain after the third iteration, stop looping and carry them to Phase 6 Step 6a, where the user decides each one on its own.
 - Output: PASS verdict, or unresolved failures after 3 iterations.
@@ -148,3 +151,5 @@ Consumed by Phase 5 (QC failures). Route back, fix, re-run forward (Phase 5 alwa
 | Theme ID fabricated | Phase 3 (theme scoring) |
 | Other fabricated IDs | Phase 3 (corresponding corpus scoring) |
 | Generated date missing or malformed | Phase 4 |
+| Calibration missing or not recorded | Phase 3 (run `split-anchored` and the second wave if skipped, then the merge), then 4 |
+| Chunks still disagree after calibration | Phase 3 (re-score the chunk with the largest after-correction gap, as printed by the merge), then 4 |

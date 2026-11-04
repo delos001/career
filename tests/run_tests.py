@@ -827,7 +827,7 @@ FIXTURE_APP = os.path.join(RUN_DIR, 'applications', 'aldridge_APP-001_2026-01')
 FIXTURE_PREFIX = 'aldridge_APP-001'
 
 
-def split_fixture_payloads():
+def split_fixture_payloads(*extra):
     """Build the three payloads, run split; return (returncode, output, scratch)."""
     scratch = os.path.join(FIXTURE_APP, 'scratch')
     os.makedirs(scratch, exist_ok=True)
@@ -839,7 +839,7 @@ def split_fixture_payloads():
         _util.write(os.path.join(scratch, f'{FIXTURE_PREFIX}_{corpus}_payload.json'),
                     result.stdout)
     code, out = run('retrieval_payload.py', 'split', '--slug', 'aldridge',
-                    '--app-id', 'APP-001', '--folder', FIXTURE_APP, '--temp-dir', scratch)
+                    '--app-id', 'APP-001', '--folder', FIXTURE_APP, '--temp-dir', scratch, *extra)
     return code, out, scratch
 
 
@@ -955,6 +955,177 @@ def test_split_refuses_without_requirements():
     code, out, _ = split_fixture_payloads()
     assert code != 0, f'split wrote a context with no requirements:\n{out}'
     assert 'Critical Requirements' in out, out
+
+
+# ---------------------------------------------------------------------------
+# Cross-chunk score calibration
+# Found 2026-11-04 (APP-027): each inventory chunk has its own scorer, and one
+# chunk ran 0.15-0.40 below another on near-identical entries, moving entries
+# between rank ~95 and the top 15 by chunk alone. Every chunk now also scores
+# the same anchors, picked from a seed chunk's scores, and the merge maps each
+# chunk onto one scale. The fixture is forced into several chunks with a small
+# byte budget. True scores spread evenly from 0.15 to 0.85 across the payload.
+# ---------------------------------------------------------------------------
+
+def true_scores(scratch):
+    """Return {id: true score} spread evenly across the inventory payload."""
+    with open(os.path.join(scratch, f'{FIXTURE_PREFIX}_inventory_payload.json'),
+              encoding='utf-8') as f:
+        ids = [e['id'] for e in json.load(f)['entries']]
+    return {i: round(0.15 + 0.7 * k / (len(ids) - 1), 3) for k, i in enumerate(ids)}
+
+
+def write_chunk_scores(scratch, chunk, true, slope=1.0, offset=0.0):
+    """Score one inventory chunk as slope x true + offset."""
+    entries = chunk_entries(scratch, 'inv')[chunk][1]
+    _util.write(os.path.join(scratch, f'{FIXTURE_PREFIX}_scores_inventory_chunk{chunk}.json'),
+                json.dumps({'corpus': 'inventory', 'scores': [
+                    {'id': e['id'], 'score': round(slope * true[e['id']] + offset, 2),
+                     'reason': 'Test.'} for e in entries]}))
+
+
+def split_synthetic(n_items=30, chunk_bytes='800'):
+    """Run split on a synthetic n-item inventory payload; return the scratch dir.
+
+    The fixture inventory (9 items) is too small to give both a seed of
+    several items and three or more chunks, so the inventory payload split
+    reads is replaced with n uniform items. Narratives and themes stay real.
+    """
+    code, out, scratch = split_fixture_payloads()
+    assert code == 0, f'split failed:\n{out}'
+    entries = [{'id': f'EX-{100 + k}', 'payload': f'Synthetic entry {k} ' + 'x' * 60}
+               for k in range(n_items)]
+    _util.write(os.path.join(scratch, f'{FIXTURE_PREFIX}_inventory_payload.json'),
+                json.dumps({'corpus': 'inventory', 'entry_count': n_items, 'entries': entries}))
+    code, out = run('retrieval_payload.py', 'split', '--slug', 'aldridge', '--app-id', 'APP-001',
+                    '--folder', FIXTURE_APP, '--temp-dir', scratch, '--inv-chunk-bytes', chunk_bytes)
+    assert code == 0, f'split failed on the synthetic payload:\n{out}'
+    return scratch
+
+
+def split_multichunk(distort=((1.0, 0.0),)):
+    """Run both split stages with every chunk scored per distort[chunk].
+
+    Returns (scratch, true scores, split-anchored output). The seed is scored
+    before split-anchored, as in a live run; the rest after.
+    """
+    scratch = split_synthetic()
+    write_fake_scores(scratch)  # narratives and themes; inventory is overwritten below
+    true = true_scores(scratch)
+    write_chunk_scores(scratch, 0, true, *distort[0])
+    code, anchored = run('retrieval_payload.py', 'split-anchored', '--slug', 'aldridge',
+                         '--app-id', 'APP-001', '--temp-dir', scratch, '--inv-anchors', '4')
+    assert code == 0, f'split-anchored failed:\n{anchored}'
+    for c in range(1, len(chunk_entries(scratch, 'inv'))):
+        write_chunk_scores(scratch, c, true, *distort[c % len(distort)])
+    return scratch, true, anchored
+
+
+def inventory_anchors(scratch):
+    """Return the inventory anchor IDs split-anchored recorded."""
+    return _util.load_json(os.path.join(
+        scratch, f'{FIXTURE_PREFIX}_calibration.json'))['inventory']['anchors']
+
+
+def test_seed_spans_the_corpus_and_anchors_reach_every_chunk():
+    """The seed must sample the whole corpus, the anchors must span the seed's
+    scores top to bottom, and every chunk must score every anchor exactly once
+    while every other item is scored once, the non-seed chunks in order."""
+    scratch, true, _ = split_multichunk()
+    with open(os.path.join(scratch, f'{FIXTURE_PREFIX}_inventory_payload.json'),
+              encoding='utf-8') as f:
+        order = [e['id'] for e in json.load(f)['entries']]
+    chunks = chunk_entries(scratch, 'inv')
+    assert len(chunks) >= 3, f'fixture split into only {len(chunks)} chunks'
+    seed_ids = [e['id'] for e in chunks[0][1]]
+    positions = sorted(order.index(i) for i in seed_ids)
+    assert positions[0] < len(order) / 3 and positions[-1] >= 2 * len(order) / 3, \
+        f'seed is not a spread sample of the corpus: positions {positions} of {len(order)}'
+
+    anchors = inventory_anchors(scratch)
+    assert len(anchors) == 4 and set(anchors) <= set(seed_ids), f'anchors not from the seed: {anchors}'
+    seed_true = {i: true[i] for i in seed_ids}
+    for extreme in (max(seed_true, key=seed_true.get), min(seed_true, key=seed_true.get)):
+        assert extreme in anchors, f"anchors miss the seed's extreme {extreme}: {anchors}"
+    for name, entries in chunks:
+        ids = [e['id'] for e in entries]
+        bad = [a for a in anchors if ids.count(a) != 1]
+        assert not bad, f'{name} does not score each anchor once: {bad}'
+
+    rest = [e['id'] for _, entries in chunks[1:] for e in entries if e['id'] not in seed_ids]
+    assert sorted(seed_ids + rest) == sorted(order), 'items lost or repeated across chunks'
+    assert rest == [i for i in order if i not in seed_ids], f'non-seed chunks reordered: {rest}'
+
+
+def test_merge_maps_drifted_chunks_onto_one_scale():
+    """Chunks scored with different slopes and offsets must merge to one scale:
+    the same true score lands on the same corrected score whatever its chunk."""
+    distort = [(1.0, 0.0), (0.8, -0.05), (1.15, 0.0), (0.9, 0.06)]
+    scratch, true, _ = split_multichunk(distort)
+    code, out = merge(scratch)
+    assert code == 0, f'merge failed:\n{out}'
+
+    n = len(chunk_entries(scratch, 'inv'))
+    used = [distort[c % len(distort)] for c in range(n)]
+    common_slope = sum(s for s, _ in used) / n
+    common_offset = sum(o for _, o in used) / n
+    merged = _util.load_json(os.path.join(scratch, f'{FIXTURE_PREFIX}_inventory_scores.json'))
+    off = [(s['id'], s['score'], round(common_slope * true[s['id']] + common_offset, 2))
+           for s in merged['scores']
+           if abs(s['score'] - (common_slope * true[s['id']] + common_offset)) > 0.02]
+    assert not off, f'scores not on one scale (id, merged, expected): {off}'
+    record = merged['calibration']
+    assert record['status'] == 'applied' and record['after'] < record['before'], record
+
+
+def test_merge_refuses_uncalibratable_scores():
+    """Three ways a merge would otherwise publish unaligned scores: an anchor
+    absent from a chunk, a chunk that ranks the anchors backwards, and a run
+    whose second split stage never happened. Each must stop the merge."""
+    scratch, true, _ = split_multichunk()
+    anchors = inventory_anchors(scratch)
+    path = os.path.join(scratch, f'{FIXTURE_PREFIX}_scores_inventory_chunk1.json')
+    pristine = _util.read(path)
+
+    data = json.loads(pristine)
+    _util.write(path, json.dumps({**data, 'scores': [s for s in data['scores']
+                                                    if s['id'] != anchors[0]]}))
+    code, out = merge(scratch)
+    assert code != 0 and 'anchor' in out, f'the merge accepted a chunk missing an anchor:\n{out}'
+
+    _util.write(path, json.dumps({**data, 'scores': [
+        {**s, 'score': round(1 - s['score'], 2)} for s in data['scores']]}))
+    code, out = merge(scratch)
+    assert code != 0 and 'slope' in out, f'the merge accepted a backwards chunk:\n{out}'
+
+    _util.write(path, pristine)
+    code, out = merge(scratch)
+    assert code == 0, f'the restored scores failed to merge:\n{out}'
+    scratch = split_synthetic()
+    write_fake_scores(scratch)
+    code, out = merge(scratch)
+    assert code != 0 and 'pending' in out, f'the merge ran without split-anchored:\n{out}'
+
+
+def test_retrieval_qc_checks_the_calibration_record():
+    """A manifest merged without calibration, or still disagreeing after it,
+    must fail R9; a calibrated one within tolerance must pass."""
+    def r9(calibration_line):
+        _util.write(os.path.join(FIXTURE_APP, 'retrieval.md'),
+                    f'# Retrieval Manifest\n\n**Generated:** 2026-01-01\n\n{calibration_line}\n')
+        _, out = run('retrieval_qc.py', 'check', '--folder', FIXTURE_APP)
+        return next(line for line in out.split('\n') if line.startswith('R9'))
+
+    good = ('**Calibration:** inventory applied (5 chunks, 10 anchors; anchor disagreement '
+            '0.100 before / 0.020 after; leave-one-out 0.010); narratives not needed (1 chunk)')
+    assert 'PASS' in r9(good), r9(good)
+    for broken, expect in (
+            ('', 'missing'),
+            (good.replace('narratives not needed (1 chunk)', 'narratives not recorded'),
+             'without calibration'),
+            (good.replace('0.020 after', '0.200 after'), 'still disagree')):
+        line = r9(broken)
+        assert 'FAIL' in line and expect in line, f'R9 passed a bad record ({expect}): {line}'
 
 
 # ---------------------------------------------------------------------------
@@ -1095,6 +1266,63 @@ def test_detector_evidence_carries_every_manifest_entry_once():
     assert 'ID: EX-002' not in evidence, 'an entry the manifest does not list was copied'
     assert 'inventory.md:' not in out and 'narratives.md:' not in out, \
         f'the prompt still sends the detector to the full profile files:\n{out}'
+
+
+def labels_by_entry(text):
+    """Return {entry ID: (section, role, group)} as read top-down through text.
+
+    A '## ' line resets role and group; a '### ' line resets group. The same
+    rule applied to an inventory file and to one evidence file must agree.
+    """
+    section = role = group = ''
+    out = {}
+    for line in text.split('\n'):
+        if line.startswith(('## ', '# ')):
+            section, role, group = line.rstrip(), '', ''
+        elif line.startswith('### '):
+            role, group = line.rstrip(), ''
+        elif line.startswith('--- '):
+            group = line.rstrip()
+        elif m := re.match(r'^ID: ((?:EX|PR|PB|PS)-\d+)\s*$', line):
+            out[m.group(1)] = (section, role, group)
+    return out
+
+
+def test_detector_evidence_keeps_roles_and_topic_groups():
+    """Found 2026-11-04 (APP-027): evidence went to the detector in retrieval
+    score order with no role or topic-group lines, so the atomic entries of one
+    experience arrived scattered, and a requirement whose pieces sat in one
+    group was called a gap. Entries must follow inventory order under their
+    own role and group labels, restated at the top of any file that starts
+    mid-group, with narratives after them in file order."""
+    # Score order deliberately differs from inventory order.
+    write_manifest(inventory_ids=('PB-001', 'EX-001', 'PR-001', 'PR-001.01', 'EX-003'),
+                   narrative_ids=tuple(reversed(MANIFEST_NARRATIVES)))
+    code, out, scratch = build_detector_context('--max-bytes', '45000', '--evidence-bytes', '1500',
+                                                manifest=False)
+    assert code == 0, f'build failed:\n{out}'
+    files = detector_evidence(scratch)
+    assert len(files) > 1, 'a 1500-byte budget should split the evidence'
+
+    root, cfg = _config.load()
+    inventory = _util.read(pu._inventory_path(root, cfg))
+    narratives = _util.read(pu._narratives_path(root, cfg))
+    expected = labels_by_entry(inventory)
+    seen = {}
+    for name, text in files:
+        for entry_id, labels in labels_by_entry(text).items():
+            seen[entry_id] = labels
+            assert labels == expected[entry_id], \
+                f'{entry_id} in {name} reads under {labels}, inventory has {expected[entry_id]}'
+
+    evidence = '\n'.join(text for _, text in files)
+    order = re.findall(r'^ID: ((?:EX|PR|PB|PS|ST|DC)-\d+)\s*$', evidence, re.M)
+    inv_order = [i for i in re.findall(r'^ID: ((?:EX|PR|PB|PS)-\d+)\s*$', inventory, re.M)
+                 if i in seen]
+    nar_order = [i for i in re.findall(r'^ID: ((?:ST|DC)-\d+)\s*$', narratives, re.M)
+                 if i in MANIFEST_NARRATIVES]
+    assert order == inv_order + nar_order, f'evidence not in profile order: {order}'
+    assert set(seen) == {'EX-003', 'EX-001', 'PR-001', 'PB-001'}, f'wrong entries: {sorted(seen)}'
 
 
 def test_detector_evidence_refuses_an_unknown_or_empty_manifest():

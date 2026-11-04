@@ -30,7 +30,14 @@ subagent consumes alongside the critical requirements list. Three subcommands:
               copied verbatim), and print a plain-English summary plus the
               complete prompt for every scorer dispatch. The skill sends those
               prompts exactly as printed, so no scorer input is ever composed
-              by hand.
+              by hand. A corpus needing several chunks gets a seed chunk 0
+              (a spread sample of the corpus); split prints only the first
+              wave of prompts (each chunk 0, plus themes).
+  split-anchored
+              After the first wave is scored, pick calibration anchors from
+              each seed's scores, insert them into every other chunk of that
+              corpus, record them in <prefix>_calibration.json for
+              retrieval_score_merge.py, and print the second wave of prompts.
 
 Nothing repo-dependent is hardcoded; folder locations and filenames come from
 config.yaml. The script does not invoke any LLM itself: it only prepares
@@ -43,6 +50,7 @@ Usage     : python scripts/retrieval_payload.py inventory
             python scripts/retrieval_payload.py narratives
             python scripts/retrieval_payload.py themes
             python scripts/retrieval_payload.py split --slug <slug> --app-id <APP-NNN> --folder <app_folder> [--temp-dir temp] [--inv-chunk-bytes 22000] [--narr-chunk-bytes 45000] [--context-max-bytes 45000]
+            python scripts/retrieval_payload.py split-anchored --slug <slug> --app-id <APP-NNN> [--temp-dir temp] [--inv-anchors N] [--narr-anchors N]
 Depends   : pyyaml (via _config)
 """
 
@@ -289,9 +297,8 @@ def cmd_inventory(args, repo_root, cfg):
 # Narratives parsing
 # Walk narratives.md and emit one record per ST-NNN / DC-NNN. Each record
 # carries ID, Linked Inventory IDs (parsed from the 'Linked Inventory:' line),
-# and a payload text built from the narrative body (title + sections up to
-# but not including 'Value Translation' / 'Outcome' which can over-emphasise
-# specific phrasing). The split subcommand batches the list into byte-budgeted
+# and a payload text built from the full narrative body (title through the
+# last section). The split subcommand batches the list into byte-budgeted
 # chunk files; the retrieval skill sends one scorer subagent per chunk.
 # ---------------------------------------------------------------------------
 
@@ -466,6 +473,66 @@ def _write_chunks(temp_dir, prefix, kind, corpus, chunks):
     return paths
 
 
+# ---------------------------------------------------------------------------
+# Calibration: seed chunk and anchors
+# Each chunk is scored by its own scorer, and the rubric only binds a scorer to
+# be consistent within its batch. On APP-027 that let one chunk run 0.15-0.40
+# below another on near-identical entries. The fix: every chunk of a corpus
+# also scores the same small anchor set, and retrieval_score_merge.py maps each
+# chunk onto one shared scale from the anchors' scores. Design and evidence:
+# design/retrieval_calibration_plan.md.
+#
+# Anchors must span the scores that actually occur, the top included, or the
+# merge extrapolates where ranking matters most. Proxies chosen before scoring
+# failed that on APP-027 (axis tags: anchors reached only 0.55) or would fail
+# it on atypical roles (word overlap depends on shared vocabulary). So the
+# scorer picks them: split makes chunk 0 a seed, an evenly spaced sample of
+# the whole corpus, scored first; split-anchored then takes anchors at evenly
+# spaced score values from the seed's highest to its lowest and inserts them
+# into every other chunk. Anchors are ordinary items to the scorer: placed at
+# even positions, never labeled. The remaining chunks keep inventory order, so
+# topic groups stay together everywhere but the seed.
+# ---------------------------------------------------------------------------
+
+def _seeded_chunks(items, max_bytes):
+    """Return the corpus's chunks: chunk 0 a spread sample when more than one is needed."""
+    plain = _chunk_by_bytes(items, max_bytes)
+    if len(plain) < 2:
+        return plain
+    stride = len(plain)
+    seed = items[stride // 2::stride]
+    seed_ids = {item['id'] for item in seed}
+    return [seed] + _chunk_by_bytes([i for i in items if i['id'] not in seed_ids], max_bytes)
+
+
+def pick_anchors(seed_scores, count):
+    """Return anchor IDs at evenly spaced score values across the seed's range.
+
+    Targets run from the seed's highest score to its lowest; each takes the
+    nearest unpicked item (ties by ID), so the top and bottom are always in.
+    """
+    scores = {s['id']: s['score'] for s in seed_scores}
+    count = min(count, len(scores))
+    if count <= 0:
+        return []
+    hi, lo = max(scores.values()), min(scores.values())
+    picks = []
+    for j in range(count):
+        target = hi - (hi - lo) * j / max(1, count - 1)
+        picks.append(min((i for i in scores if i not in picks),
+                         key=lambda i: (abs(scores[i] - target), i)))
+    return sorted(picks)
+
+
+def _interleave(chunk, anchors):
+    """Return the chunk with the anchor items inserted at evenly spaced positions."""
+    items = list(chunk)
+    total = len(items) + len(anchors)
+    for j, anchor in enumerate(anchors):
+        items.insert(min(int((j + 0.5) * total / len(anchors)), len(items)), anchor)
+    return items
+
+
 def cmd_split(args, repo_root, cfg):
     """Split payload files into per-chunk files per corpus; print summary."""
     prefix = f"{args.slug}_{args.app_id}"
@@ -489,12 +556,30 @@ def cmd_split(args, repo_root, cfg):
     # computes axis signals itself), and Description, Impact and Hands-on
     # Tools are already inside the payload. Narratives drop 'body', a verbatim
     # copy of 'payload', and keep their Linked Inventory as scoring context.
+    # A corpus needing more than one chunk gets a seed chunk 0; its other
+    # chunks receive anchors from split-anchored once the seed is scored.
     inv_slim = [{'id': e['id'], 'payload': e['payload']} for e in inv_data['entries']]
     nar_slim = [{k: v for k, v in e.items() if k != 'body'} for e in nar_data['entries']]
-    chunk_paths = _write_chunks(temp_dir, prefix, 'inv', 'inventory',
-                                _chunk_by_bytes(inv_slim, args.inv_chunk_bytes))
-    narr_chunk_paths = _write_chunks(temp_dir, prefix, 'narr', 'narratives',
-                                     _chunk_by_bytes(nar_slim, args.narr_chunk_bytes))
+    inv_chunks = _seeded_chunks(inv_slim, args.inv_chunk_bytes)
+    nar_chunks = _seeded_chunks(nar_slim, args.narr_chunk_bytes)
+    chunk_paths = _write_chunks(temp_dir, prefix, 'inv', 'inventory', inv_chunks)
+    narr_chunk_paths = _write_chunks(temp_dir, prefix, 'narr', 'narratives', nar_chunks)
+
+    # Scores from an earlier split no longer match these chunks; a leftover
+    # could be merged as if current, so all of this prefix's are removed.
+    for name in os.listdir(temp_dir):
+        if name.startswith(f"{prefix}_scores_") and name.endswith('.json'):
+            os.remove(os.path.join(temp_dir, name))
+
+    # Anchors are pending (None) for a multi-chunk corpus until split-anchored
+    # runs; the merge refuses a pending corpus. A single chunk needs none.
+    calibration_path = os.path.join(temp_dir, f"{prefix}_calibration.json")
+    with open(calibration_path, 'w', encoding='utf-8') as f:
+        json.dump({'inventory': {'anchors': None if len(inv_chunks) > 1 else [],
+                                 'chunks': len(inv_chunks)},
+                   'narratives': {'anchors': None if len(nar_chunks) > 1 else [],
+                                  'chunks': len(nar_chunks)}},
+                  f, ensure_ascii=False)
 
     # Write the scoring context file every scorer reads its requirements and
     # JD from. Copying both here, in code, is the point: hand-composed scorer
@@ -505,31 +590,97 @@ def cmd_split(args, repo_root, cfg):
         args.folder, cfg, prefix, args.context_max_bytes))
 
     # Print summary.
-    sizes = '+'.join(str(n) for _, n in chunk_paths)
-    print(f"Inventory: {len(chunk_paths)} chunks written ({sizes} = {inv_data['entry_count']} entries)")
-    for path, size in chunk_paths:
-        print(f"  {path} ({size} entries)")
-    narr_sizes = '+'.join(str(n) for _, n in narr_chunk_paths)
-    print(f"Narratives: {len(narr_chunk_paths)} chunks written ({narr_sizes} = {nar_data['entry_count']} entries)")
-    for path, size in narr_chunk_paths:
-        print(f"  {path} ({size} entries)")
+    for label, paths, data in (('Inventory', chunk_paths, inv_data),
+                               ('Narratives', narr_chunk_paths, nar_data)):
+        sizes = '+'.join(str(n) for _, n in paths)
+        print(f"{label}: {data['entry_count']} entries in {len(paths)} chunks ({sizes})")
+        if len(paths) > 1:
+            rest = 'chunk 1 gets' if len(paths) == 2 else f'chunks 1-{len(paths) - 1} get'
+            print(f"  Chunk 0 is the seed, a spread sample scored first; {rest} "
+                  'calibration anchors from split-anchored')
+        for path, size in paths:
+            print(f"  {path} ({size} items)")
     print(f"Themes: {th_data['entry_count']} entries (use {prefix}_themes_payload.json)")
     print(f"Scoring context: {context_path}")
 
-    # Print one complete prompt per scorer dispatch. Output names match what
-    # retrieval_score_merge.py walks for.
-    dispatches = (
-        [('inventory', path, f"{prefix}_scores_inventory_chunk{i}.json")
-         for i, (path, _) in enumerate(chunk_paths)]
-        + [('narratives', path, f"{prefix}_scores_narr_chunk{i}.json")
-           for i, (path, _) in enumerate(narr_chunk_paths)]
-        + [('themes', th_path, f"{prefix}_scores_themes.json")]
-    )
-    print(f"\nScorer prompts ({len(dispatches)}). Dispatch each exactly as printed:")
+    # Print the first wave: each corpus's chunk 0 (the seed, or the only
+    # chunk) and themes. Output names match what retrieval_score_merge.py
+    # walks for.
+    dispatches = [('inventory', chunk_paths[0][0], f"{prefix}_scores_inventory_chunk0.json"),
+                  ('narratives', narr_chunk_paths[0][0], f"{prefix}_scores_narr_chunk0.json"),
+                  ('themes', th_path, f"{prefix}_scores_themes.json")]
+    _print_prompts(dispatches, temp_dir, context_path, 'first wave')
+    if len(chunk_paths) > 1 or len(narr_chunk_paths) > 1:
+        print(f"\nWhen every first-wave scorer has confirmed, run: retrieval_payload.py "
+              f"split-anchored --slug {args.slug} --app-id {args.app_id} --temp-dir {temp_dir}")
+    else:
+        print('\nEvery corpus fits one chunk: no second wave; merge after these complete.')
+
+
+def _print_prompts(dispatches, temp_dir, context_path, wave):
+    """Print one complete scorer prompt per dispatch between PROMPT markers."""
+    print(f"\nScorer prompts, {wave} ({len(dispatches)}). Dispatch each exactly as printed:")
     for n, (corpus, in_path, out_name) in enumerate(dispatches, start=1):
         print(f"\n=== PROMPT {n} ===")
         print(scorer_prompt(corpus, in_path, os.path.join(temp_dir, out_name), context_path))
     print("=== END ===")
+
+
+def cmd_split_anchored(args, repo_root, cfg):
+    """Pick anchors from the scored seed chunks; add them to every other chunk."""
+    prefix = f"{args.slug}_{args.app_id}"
+    temp_dir = args.temp_dir
+    calibration_path = os.path.join(temp_dir, f"{prefix}_calibration.json")
+    context_path = os.path.join(temp_dir, f"{prefix}_scoring_context.md")
+    if not os.path.isfile(calibration_path) or not os.path.isfile(context_path):
+        raise FileNotFoundError(f'{calibration_path} or the scoring context is missing; run split first')
+    calibration = _util.load_json(calibration_path)
+    cal_cfg = cfg['retrieval_calibration']
+    counts = {'inventory': cal_cfg['inventory_anchors'] if args.inv_anchors is None else args.inv_anchors,
+              'narratives': cal_cfg['narrative_anchors'] if args.narr_anchors is None else args.narr_anchors}
+
+    dispatches = []
+    for corpus, kind, score_kind in (('inventory', 'inv', 'inventory_chunk'),
+                                     ('narratives', 'narr', 'narr_chunk')):
+        n_chunks = calibration[corpus]['chunks']
+        if n_chunks < 2:
+            print(f"{corpus.capitalize()}: one chunk, no anchors needed")
+            continue
+
+        # The seed's scores must cover the seed exactly, or the picks would
+        # rest on a partial scoring.
+        chunk_path = lambda i: os.path.join(temp_dir, f"{prefix}_{kind}_chunk{i}.json")
+        seed = _util.load_json(chunk_path(0))['entries']
+        seed_scores = _util.load_json(
+            os.path.join(temp_dir, f"{prefix}_scores_{score_kind}0.json"))['scores']
+        if sorted(s['id'] for s in seed_scores) != sorted(e['id'] for e in seed):
+            raise ValueError(f'{corpus} seed chunk 0 scores do not cover the seed exactly; '
+                             're-score chunk 0 before split-anchored')
+        anchor_ids = pick_anchors(seed_scores, counts[corpus])
+        by_id = {e['id']: e for e in seed}
+        anchors = [by_id[a] for a in anchor_ids]
+
+        # Seed items live only in chunk 0, so any seed ID in another chunk is
+        # an anchor from an earlier split-anchored run; strip it before adding.
+        seed_ids = set(by_id)
+        for i in range(1, n_chunks):
+            data = _util.load_json(chunk_path(i))
+            data['entries'] = _interleave(
+                [e for e in data['entries'] if e['id'] not in seed_ids], anchors)
+            with open(chunk_path(i), 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False)
+            dispatches.append((corpus, chunk_path(i), f"{prefix}_scores_{score_kind}{i}.json"))
+
+        calibration[corpus]['anchors'] = anchor_ids
+        picked = {s['id']: s['score'] for s in seed_scores}
+        print(f"{corpus.capitalize()}: {len(anchor_ids)} anchors from the seed's scores "
+              f"({', '.join(f'{a} {picked[a]:.2f}' for a in sorted(anchor_ids, key=lambda a: -picked[a]))}), "
+              f"added to {'chunk 1' if n_chunks == 2 else f'chunks 1-{n_chunks - 1}'}")
+
+    with open(calibration_path, 'w', encoding='utf-8') as f:
+        json.dump(calibration, f, ensure_ascii=False)
+    if dispatches:
+        _print_prompts(dispatches, temp_dir, context_path, 'second wave')
 
 
 # ---------------------------------------------------------------------------
@@ -662,6 +813,20 @@ def main():
         help='maximum serialized bytes per narrative chunk file (default 45000)',
     )
     p_split.set_defaults(func=cmd_split)
+
+    # --- Subparser: split-anchored ---
+    p_anch = sub.add_parser(
+        'split-anchored',
+        help='after the seed chunks are scored, add calibration anchors to every other chunk'
+    )
+    p_anch.add_argument('--slug', required=True, help='role slug (e.g. takeda)')
+    p_anch.add_argument('--app-id', required=True, help='application ID (e.g. APP-006)')
+    p_anch.add_argument('--temp-dir', default='temp', help='temp directory (default: temp)')
+    p_anch.add_argument('--inv-anchors', type=int, default=None,
+                        help='inventory anchors (default: config retrieval_calibration.inventory_anchors)')
+    p_anch.add_argument('--narr-anchors', type=int, default=None,
+                        help='narrative anchors (default: config retrieval_calibration.narrative_anchors)')
+    p_anch.set_defaults(func=cmd_split_anchored)
 
     args = parser.parse_args()
 

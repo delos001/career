@@ -163,8 +163,17 @@ def build_context(app_folder, repo_root, cfg, max_bytes):
 # Evidence build
 # The manifest's two candidate tables name every entry the detector may cite.
 # A project element (PR-NNN.NN) reaches it inside its project's block, so an
-# element ID resolves to the project. Entries keep manifest order and are
-# never split across files.
+# element ID resolves to the project. Entries are never split across files.
+#
+# Layout follows the profile, not the manifest's score order: inventory
+# entries in file order under their '## ' section, '### RL-NNN' role and
+# '--- <label>' topic-group lines, then narratives in file order. The
+# inventory is atomic, so one experience is often several neighbouring
+# entries in one topic group; score order scattered them, and on APP-027 the
+# detector called a requirement a gap whose pieces sat in one group. A file
+# that starts mid-role or mid-group repeats the role and group lines, so every
+# entry is read under its own labels. Decision and evidence:
+# `gap-evidence-profile-order-2026-11` in design/design_decisions.md.
 # ---------------------------------------------------------------------------
 
 MANIFEST_TABLES = ('## Inventory candidates', '## Narratives')
@@ -187,38 +196,70 @@ def manifest_ids(manifest_text):
     return ids
 
 
+# Regex: a retrievable entry's ID line in inventory.md.
+_ENTRY_ID_RE = re.compile(r'^ID:\s+((?:EX|PR|PB|PS)-\d+)\s*$')
+
+
+def _inventory_units(inventory_text, wanted):
+    """Return [((section, role, group), id, block)] for wanted entries, in file order.
+
+    The labels are the lines in force where the entry sits: its '## ' section,
+    '### RL-NNN' role heading and '--- ' topic-group line ('' where none).
+    """
+    section = role = group = ''
+    units = []
+    for line in inventory_text.split('\n'):
+        if line.startswith('## '):
+            section, role, group = line.rstrip(), '', ''
+        elif line.startswith('### '):
+            role, group = line.rstrip(), ''
+        elif line.startswith('--- '):
+            group = line.rstrip()
+        elif (m := _ENTRY_ID_RE.match(line)) and m.group(1) in wanted:
+            block = entry_block.find_block(inventory_text, m.group(1))
+            units.append(((section, role, group), m.group(1), block.strip('\n')))
+    return units
+
+
 def build_evidence(manifest_text, inventory_text, narratives_text, max_bytes):
     """Return the evidence file texts; raise on a missing entry or no candidates."""
     ids = manifest_ids(manifest_text)
     if not ids:
         raise ValueError('retrieval manifest has no candidate entries to judge from')
-    narratives = {n['id']: n['body']
-                  for n in retrieval_payload._parse_narratives(narratives_text)}
-    blocks, missing = [], []
-    for entry_id in ids:
-        block = narratives.get(entry_id) or entry_block.find_block(inventory_text, entry_id)
-        if block is None:
-            missing.append(entry_id)
-        else:
-            blocks.append((entry_id, block.strip('\n')))
+    wanted = set(ids)
+    units = _inventory_units(inventory_text, wanted)
+    narr_units = [(('# Narratives', '', ''), n['id'], n['body'].strip('\n'))
+                  for n in retrieval_payload._parse_narratives(narratives_text)
+                  if n['id'] in wanted]
+    missing = sorted(wanted - {u[1] for u in units + narr_units})
     if missing:
         # Retired since retrieval ran, or never real; either way the manifest
         # no longer describes the profile.
         raise ValueError(f'manifest lists IDs with no profile entry: {", ".join(missing)}. '
                          f'Re-run retrieval so the manifest matches the profile.')
 
-    # Pack whole entries into files under the byte budget.
-    files, current = [], []
-    for entry_id, block in blocks:
-        if len(block.encode('utf-8')) > max_bytes:
+    # Pack whole entries into files under the byte budget. Label lines are
+    # written whenever they change, and again at the top of every new file.
+    def headers(labels, prev):
+        """Label lines to write: all of them, or those from the first that changed."""
+        first = 0 if prev is None else next(
+            (i for i, (lab, old) in enumerate(zip(labels, prev)) if lab != old), len(labels))
+        return [lab for lab in labels[first:] if lab]
+
+    files, current, in_force = [], [], ('', '', '')
+    for labels, entry_id, block in units + narr_units:
+        if len('\n\n'.join(headers(labels, None) + [block]).encode('utf-8')) > max_bytes:
             raise ValueError(f'{entry_id} alone is over the {max_bytes}-byte read budget')
-        candidate = '\n\n'.join(current + [block]) + '\n'
+        piece = '\n\n'.join(headers(labels, in_force if current else None) + [block])
+        candidate = '\n\n'.join(current + [piece]) + '\n'
         if current and len(candidate.encode('utf-8')) > max_bytes:
             files.append('\n\n'.join(current) + '\n')
             current = []
-        current.append(block)
+            piece = '\n\n'.join(headers(labels, None) + [block])
+        current.append(piece)
+        in_force = labels
     files.append('\n\n'.join(current) + '\n')
-    return files, len(blocks)
+    return files, len(units) + len(narr_units)
 
 
 def detector_prompt(context_path, retrieval_path, evidence_paths):

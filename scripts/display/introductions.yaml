@@ -41,8 +41,9 @@ retrieval: |
     2. Read the role-intake outputs - research.md (axis classification +
        critical requirements) and jd.md.
     3. Build per-corpus payloads from inventory, narratives, and positioning.
-    4. Score each corpus against the critical requirements list (three
-       parallel scoring passes; inventory is chunked).
+    4. Score each corpus against the critical requirements list (inventory
+       and narratives are chunked; a seed chunk is scored first so shared
+       calibration entries can keep every chunk on one scale).
     5. Compute deterministic axis signals against the JD axis classification;
        walk Linked-Inventory for narratives; assemble the manifest.
     6. QC the manifest and hand off.
@@ -177,9 +178,9 @@ profile-update: |
        already says about it, and one proposed disposition - a new entry, an
        edit to an existing entry, or no change. You see the actual text before
        anything is written.
-    4. Write it, then close the staged entry with a line recording which profile
-       IDs now carry it.
-    5. QC the profile documents and the staging bookkeeping.
+    4. Write it. The staged entry stays in the queue until the write passes
+       review.
+    5. Review what was written, then delete each passing entry from the queue.
     6. Report what changed and what is still waiting.
 
   Framing guards in a captured note (for example "frame as review, not

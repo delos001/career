@@ -294,6 +294,16 @@ Refs: `cv-targeted-retrieval-architecture-2026-05` (superseded), `role-intake-cr
 
 Refs: `retrieval-architecture-2026-05`, `axes-composition-precedence`.
 
+#### retrieval-cross-chunk-calibration-2026-11
+Each scoring chunk has its own scorer, and the rubric binds consistency only within a batch. On APP-027 near-identical entries in different chunks differed by 0.15-0.40, enough to move an entry between rank ~95 and the top 15; a single-batch probe confirmed both sides had drifted. Every chunk of a multi-chunk corpus now also scores the same calibration anchors, and `retrieval_score_merge.py` maps each chunk onto the anchors' consensus with a Theil-Sen line fit, recording before/after disagreement and leave-one-out stability in the manifest's Calibration line (QC R9).
+
+- **Anchors are picked by the scorer, from a seed chunk.** Chunk 0 is an evenly spaced sample of the corpus, scored first; `split-anchored` takes anchors at evenly spaced score values from the seed's highest to lowest and adds them to every other chunk, unlabeled. Proxies picked before scoring were measured on APP-027 and rejected: axis tags spanned only 0.04-0.55; requirement word overlap depends on shared vocabulary and would bunch low on atypical roles; embeddings add a heavy dependency or send the profile out. Cost: one chunk's scoring time as wall-clock, no extra scoring beyond the anchors.
+- **Counts:** 10 inventory anchors, 3 narrative. On APP-027, 8- and 6-anchor subsets (keeping the seed's top and bottom) moved corrected scores by a median worst case of 0.025 and 0.050 against 10 (worst subsets 0.08 and 0.14), so 10 stays. Revisit with more runs.
+- **APP-027 result:** chunks disagreed 0.043 before correction, 0.027 after. Matched-pair mean gap -0.071 against the single-batch probe's -0.070. This run's raw drift was small, so the effect it shows is modest; three of four cross-chunk pairs moved toward the probe's gaps. The mechanism is proven on synthetic drift in `tests/run_tests.py`.
+- `max_post_residual` 0.08 and `min_anchor_span` 0.2 are provisional, from one run.
+
+Refs: `retrieval-architecture-2026-05`, `design/retrieval_calibration_plan.md`.
+
 #### de-emphasize-step-removed-2026-10
 Gap analysis no longer builds a de-emphasize list; the pre-filter script, the `de-emphasize-identifier` agent, their config cutoffs and the artifact's `## De-emphasize` section are gone. The CV writer already ranks every entry by the retrieval scores, so the list mostly repeated what low scores say; it was not reliably followed (5 of 18 CVs cited listed entries); and after PR elements (`pr-objective-elements-schema-2026-10`) its candidates file passed the agent's read limit (#60). Its one unique value, catching an entry that scores as relevant but sends an employer a bad signal (a job-search tool signals active job hunting), moved to where the CV is written and reviewed: `cv-architect` holds such entries back while choosing content and records each in `drafting_plan.md`; the `hiring-manager` persona checks each draft for them from the employer's seat. Bad-signal judgment sits with the hiring-manager rather than the candidate-advocate because the harm happens in the employer's reading and the advocate's role is to push for inclusion; the advocate may still argue a held-back entry is undersold. Old application artifacts keep their De-emphasize sections and are not re-QC'd. Plan: `design/de_emphasize_removal_plan.md`.
 Refs: `de-emphasize-prefilter-2026-07`, `de-emphasize-cited-evidence-filter-2026-06` (both superseded), `gap-analysis-architecture-2026-05`, `cv-targeted-candidate-advocate-2026-05`.
@@ -1558,6 +1568,15 @@ Derivation process: read the JD; identify distinct competency domains; group rel
 **Status (2026-05-27):** Not used in `gap-analysis-architecture-2026-05` v1. The built skill renders requirements in CR-NNN order rather than cluster-grouped; clusters remain a deferred presentation enhancement that the Requirements section's rendering could adopt later without changing the underlying unit (per-requirement record).
 
 Refs: `role-evaluation-and-cv-targeted-separate`, `arc-composition-for-high-impact-roles`, `gap-analysis-architecture-2026-05`.
+
+#### gap-evidence-profile-order-2026-11
+The gap-detector's evidence files lay entries out in profile order: inventory entries under their `## ` section, `### RL-NNN` role and `--- <label>` topic-group lines (restated at the top of any file that starts mid-group), then narratives. Replaces retrieval-score order with no labels (in place since the 2026-10-27 switch to evidence files).
+
+- **Why.** Gap analysis needs one experience that meets a requirement, seen whole. The atomic inventory (`ex-topic-groups-2026-10`) splits one experience across neighbouring entries in a topic group; score order scattered them. On APP-027 the detector called CR-023 a gap while an independent audit found its pieces (EX-233, EX-217, EX-245, EX-276) unread as a set.
+- **Not requirement-grouped.** Pulling evidence per requirement across roles is breadth, which the CV needs and gap analysis does not; that is issue #81, which should reuse this grouping inside each requirement.
+- **Caveat.** Detector verdicts already vary between runs on identical inputs (#72), so a before/after comparison on one run cannot attribute every verdict change to the layout.
+
+Refs: `ex-topic-groups-2026-10`, `gap-analysis-architecture-2026-05`, issues #72, #81.
 
 ### cv-content
 

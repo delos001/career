@@ -461,7 +461,24 @@ def _escape_pipe(text):
 # does not accumulate history. Path comes from config.yaml retrieval_manifest.
 # ---------------------------------------------------------------------------
 
-def _render_manifest(slug, app_id, date, jd_axes, inventory_rows, narrative_rows, theme_rows):
+def _calibration_text(corpus, record):
+    """Return one corpus's part of the manifest Calibration line.
+
+    The wording is parsed back by retrieval_qc.py R9: 'applied (... before /
+    <after> after ...)', 'not needed (...)', or 'not recorded' when the score
+    file predates calibration or lost its record.
+    """
+    if not record:
+        return f'{corpus} not recorded'
+    if record.get('status') != 'applied':
+        return f"{corpus} not needed ({record.get('chunks', 1)} chunk)"
+    return (f"{corpus} applied ({record['chunks']} chunks, {len(record['anchors'])} anchors; "
+            f"anchor disagreement {record['before']:.3f} before / {record['after']:.3f} after; "
+            f"leave-one-out {record['leave_one_out']:.3f})")
+
+
+def _render_manifest(slug, app_id, date, jd_axes, inventory_rows, narrative_rows, theme_rows,
+                     calibration):
     """Render the complete manifest markdown."""
     axis_lines = []
     for display_name, _, _ in _AXIS_CONFIG:
@@ -479,6 +496,8 @@ def _render_manifest(slug, app_id, date, jd_axes, inventory_rows, narrative_rows
         '',
         f'**Generated:** {date}',
         '',
+        f"**Calibration:** {'; '.join(_calibration_text(c, r) for c, r in calibration)}",
+        '',
         '**JD axis classification (from research.md):**',
         axis_block,
         '',
@@ -489,7 +508,8 @@ def _render_manifest(slug, app_id, date, jd_axes, inventory_rows, narrative_rows
         'each entry can be placed under the right employer without '
         're-deriving it. `Semantic` is the LLM-judgment score against the '
         'critical requirements list (0.00 to 1.00; `-` means the entry was not '
-        'in the semantic-scored set). `Axis exact` counts axes with an exact '
+        'in the semantic-scored set), mapped onto one scale across scoring '
+        'chunks per the Calibration line. `Axis exact` counts axes with an exact '
         'value match against the JD (0..5). `Axis adj` is the adjacency-weighted '
         'axis score (exact = 1.0; adjacent per axis file = 0.5; sum across the '
         'five axes). `Source` records which retrieval pass surfaced the entry. '
@@ -555,9 +575,13 @@ def cmd_assemble(args, repo_root, cfg):
     )
     theme_rows = _build_theme_rows(themes, th_scores)
 
+    calibration = [
+        (corpus, doc.get('calibration') if isinstance(doc, dict) else None)
+        for corpus, doc in (('inventory', inv_scores_doc), ('narratives', nar_scores_doc))
+    ]
     manifest = _render_manifest(
         args.slug, args.app_id, args.date, jd_axes,
-        inventory_rows, narrative_rows, theme_rows,
+        inventory_rows, narrative_rows, theme_rows, calibration,
     )
 
     manifest_path = os.path.join(args.folder, cfg['filenames']['retrieval_manifest'])

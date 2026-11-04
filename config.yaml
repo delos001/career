@@ -77,6 +77,16 @@ axes:
     required_sections: [Identity, Achievement framing, Adjacency]
     used_by: cv-targeted, axis-classifier
 
+# Retrieval cross-chunk score calibration (design/retrieval_calibration_plan.md).
+# Every chunk of a multi-chunk corpus scores the same anchors; the merge maps
+# each chunk onto one scale from them.
+retrieval_calibration:
+  inventory_anchors: 10     # anchors repeated in every inventory chunk; APP-027: 6 or 8 shifted scores up to 0.14 / 0.08 vs 10, so 10 stays
+  narrative_anchors: 3      # narratives are few (17 on 2026-11-04), so more would crowd the corpus
+  min_anchor_span: 0.2      # a chunk's anchors spanning less than this get an offset-only correction (a slope fit would be unstable)
+  slope_bounds: [0.5, 2.0]  # a fitted slope outside this range means the chunk's scoring is unusable; the merge stops
+  max_post_residual: 0.08   # QC fails when anchors still disagree by more than this on average after correction; provisional
+
 # Profile-update related-entry pull (scripts/profile_slice.py related).
 related_pull:
   max_chars: 50000          # a pull larger than this splits into parts, read one --part at a time

@@ -27,6 +27,11 @@ Checks (IDs mirror the original qc-retrieval check numbering):
       element), ST/DC, TH ID in the manifest exists in its source profile
       document.
   R8  Generated date well-formed (and equal to --date when given).
+  R9  Calibration: the manifest's Calibration line names inventory and
+      narratives, each either 'not needed' (single chunk) or 'applied' with
+      an after-correction anchor disagreement no larger than config
+      retrieval_calibration.max_post_residual. A missing line or 'not
+      recorded' fails: the scores were merged without calibration.
 
 Output: one `<ID>  PASS|FAIL  <detail>` line per check, then a RESULT
 line. Exit 0 when all pass, 1 otherwise.
@@ -318,6 +323,33 @@ def check_generated_date(manifest_text, run_date, findings):
     findings.append(('R8', True, f'Generated date well-formed ({value})'))
 
 
+def check_calibration(manifest_text, max_after, findings):
+    """R9: both chunked corpora calibrated (or single-chunk), within tolerance."""
+    m = re.search(r'^\*\*Calibration:\*\*\s*(.+)$', manifest_text, re.MULTILINE)
+    if not m:
+        findings.append(('R9', False, 'missing `**Calibration:**` line'))
+        return
+    line = m.group(1)
+    problems = []
+    for corpus in ('inventory', 'narratives'):
+        # A corpus part runs from its name to the end of its own parenthesis
+        # (the parenthesis itself contains semicolons, so ';' is no boundary).
+        part = re.search(rf'\b{corpus} (applied|not needed|not recorded)(\s*\([^)]*\))?', line)
+        if not part:
+            problems.append(f'{corpus} missing from the Calibration line')
+        elif part.group(1) == 'not recorded':
+            problems.append(f'{corpus} scores were merged without calibration')
+        elif part.group(1) == 'applied':
+            after = re.search(r'/\s*(\d+\.\d+)\s+after', part.group(2) or '')
+            if not after:
+                problems.append(f'{corpus} calibration record has no after-correction figure')
+            elif float(after.group(1)) > max_after:
+                problems.append(
+                    f'{corpus} chunks still disagree by {after.group(1)} after calibration '
+                    f'(limit {max_after}); a chunk scored inconsistently')
+    findings.append(('R9', not problems, '; '.join(problems) or 'calibration recorded and within tolerance'))
+
+
 # ---------------------------------------------------------------------------
 # Command: check
 # ---------------------------------------------------------------------------
@@ -359,6 +391,7 @@ def cmd_check(args, repo_root, cfg):
     check_theme_ids(theme_rows, theme_ids, findings)
     check_all_ids(manifest_text, inv_ids, narr_ids, theme_ids, findings)
     check_generated_date(manifest_text, args.date, findings)
+    check_calibration(manifest_text, cfg['retrieval_calibration']['max_post_residual'], findings)
 
     failed = [f for f in findings if not f[1]]
     for check, ok, detail in findings:
