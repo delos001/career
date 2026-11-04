@@ -166,7 +166,11 @@ Ask if this session is for a new CV or to resume a previous one.
   `cv_content.md` and re-assess. A continued advisor already holds its sources
   from the first round and must not re-read them. If an advisor cannot be
   continued (the run was resumed in a new session, or the agent is gone),
-  re-spawn it fresh with its full first-round input set.
+  re-spawn it fresh with its full first-round input set. The cv-architect also
+  persists for the life of the run. Every revise pass, in Phase 3 and in the
+  Phase 4 fix loop, continues the drafting architect (SendMessage to its agent
+  id) instead of spawning a new one. Re-spawn it fresh only when the run resumes
+  in a new session or the agent is gone.
   - `career-strategist` gets: `cv_content.md`, `rules/cv/cv-structure.md`,
     `rules/cv/cv-best-practices.md`, the level and orientation axis files,
     `research.md`, and `level`.
