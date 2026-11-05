@@ -51,7 +51,7 @@ Renders `personal/applications/<SLUG>_APP-NNN_YYYY-MM/cv_content.md` (the cv-tar
 **Confirming the render and handing off.**
 
 - Report the output path.
-- State the pagination caveat plainly: markdown has no geometry, so the true page count is only knowable once rendered. The cv-targeted length guard was a conservative estimate; the user should open the `.docx` in Word to confirm the final page count, and if it exceeds the level's page ceiling, re-run `/cv-targeted` to trim (content edits belong to that skill, not this one).
+- Report the page count cv-targeted measured in Word (from the session log's `Targeted CV (cv-targeted)` section). If that section says the length was unmeasured, say so and ask the user to check the page count in Word; if it is over the level's page ceiling, re-run `/cv-targeted` to trim (content edits belong to that skill, not this one).
 - Prompt the user to close the application when it concludes: when this role reaches a final outcome (offer accepted or declined, rejected, withdrawn, no response, or a decision not to pursue), run `/close-application APP-NNN` to record the outcome and its date in the session log and clear the run-scratch. Name the skill explicitly so the user knows it exists. The run-scratch in `<app_folder>/scratch/` is gitignored and harmless until then, so do not gate the handoff on it.
 - End the run. This skill produces the formatted document only.
 
@@ -62,4 +62,4 @@ Renders `personal/applications/<SLUG>_APP-NNN_YYYY-MM/cv_content.md` (the cv-tar
 | Application folder missing | Halt; ask for APP-NNN again |
 | `cv_content.md` missing | Halt; direct the user to run `/cv-targeted` |
 | `cv_to_docx.py` non-zero exit (script error) | Halt per `global-rules.md`; surface the error; do not loop |
-| Rendered page count over the level ceiling (seen on opening in Word) | Out of scope here; re-run `/cv-targeted` to trim content |
+| Page count over the level ceiling (measured by cv-targeted, or seen in Word when unmeasured) | Out of scope here; re-run `/cv-targeted` to trim content |

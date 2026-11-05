@@ -274,8 +274,11 @@ def add_contact(doc, text):
 
 
 def add_section_header(doc, text):
+    # Section headers ('## ' lines) render in ALL CAPS, bold (user decision
+    # 2026-06-03, GitHub #19). Render-only: cv_content.md stays mixed case, and
+    # the name, '###' subheadings, and company / title lines are unaffected.
     p = _para(doc, before_pt=SPACE_SECTION)
-    _run(p, text, bold=True)
+    _run(p, text.upper(), bold=True)
 
 
 def add_subheading(doc, text):

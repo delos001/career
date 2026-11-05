@@ -230,18 +230,18 @@ Leadership: target 2-3 pages, hard ceiling 3. 4+ pages is a flagged exception on
 
 **Line economy.** The binding constraint in every section is vertical space (rendered lines), not item or sentence counts; counts are proxies that fail when a unit runs long. Section real-estate budgets enforce the page ceiling. This is why the summary carries a line cap and bullets carry a line limit.
 
-**Length verification is a guard, confirmed at render (Option A).** This skill cannot authoritatively measure rendered length (markdown has no geometry, and python-docx does not compute wrapping or pagination). It enforces a conservative geometry-informed estimate as a guard; the render stage measures actual lines/pages and routes any violation back to the Drafter to trim (single-writer preserved), capped, before re-rendering.
+**Length is measured in Word, not estimated.** Markdown has no geometry and python-docx cannot paginate, so at QC the skill renders a throwaway .docx and asks Word for the page count (`scripts/cv_measure.py`). Only a measured overage routes back to the writer, who trims to the measured line count: compress by elevation first, drop content only as a last resort (single-writer preserved, capped). If Word is unavailable the length is reported as unmeasured and nothing is cut. The character-count estimate below (L1) is an early warning only and never triggers a cut; it ran 4 to 9 lines short of the rendered length.
 
 **Calibration guard constants** (US Letter, 0.75-inch margins, 0.5-inch header/footer, Calibri 11pt body; the cv-render layout fixed 2026-06-02. These mirror the `cv_qc.py` constants and must move with them):
 - Usable lines per page: ~47 (page 1, with the name and contact block) / ~50 (later pages).
 - Characters per line at wrap: ~100 full-width; bullets ~95 (bullets sit at a 0.25-inch indent).
-- Estimate each unit as ceil(characters / line capacity) and sum against the section's page budget. Guard only; the render stage is authoritative.
+- Estimate each unit as ceil(characters / line capacity) and sum against the section's page budget. Early warning only; the Word measurement is authoritative.
 
 **Compressing for length is a traceability risk, not a style pass.** Trimming a bullet to fit deletes words, and qualifier words carry claims. Removing "a version of", "contributed to", "supported", or the citation that licensed a strong verb turns an accurate claim into an overstatement without changing a single fact. Two consequences:
 - Re-run the judgment traceability check after any compression pass, not only the mechanical one. Compression can pass every mechanical check while introducing new overstatements.
 - When a compression removes a qualifier, fund the qualifier's return from somewhere else in the same unit rather than dropping it. The qualifier is usually the part the source actually supports.
 
-**docx boundary.** Visual styling, authoritative pagination and page count, and the Earlier Professional Roles rendering belong to the render stage (cv-render), not this skill. cv_content.md is the only handoff.
+**docx boundary.** Visual styling and the Earlier Professional Roles rendering belong to the render stage (cv-render), not this skill; the page count is measured here, on a throwaway render built with the same code. cv_content.md is the only handoff.
 
 ## Scope boundary
 

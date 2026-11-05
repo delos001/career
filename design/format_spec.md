@@ -49,7 +49,7 @@
 | Within-role thematic subheading | Calibri (minorHAnsi theme) | 22 | 11 | No | Yes | Black |
 | Earlier Professional Roles entries | Calibri (minorHAnsi theme) | 22 | 11 | No | No | Black |
 
-> **Note:** Section headers must be mixed case bold, never ALL CAPS.
+> **Note:** Section headers render in ALL CAPS, bold (user decision 2026-06-03, reversing the example CVs' mixed case; GitHub #19). Render-only: `cv_content.md` keeps them mixed case. The name, within-role subheadings, and company / title lines stay mixed case.
 >
 > **Within-role thematic subheadings are non-bold italic** (changed 2026-06-08). Bold made them hard to distinguish from the bold job-title lines above them given the lack of indentation. Italic separates the two without indenting, which was held off deliberately to preserve bullet line-width on a page-tight CV.
 >
@@ -174,7 +174,7 @@ These rules are the single source of truth for CV output. All rules below are de
 
 | Rule | Specification |
 |---|---|
-| Section header case | Mixed case bold; **never ALL CAPS** |
+| Section header case | ALL CAPS bold (render-only; source stays mixed case) |
 | Company name | Bold; the location and dates after the first `\|` render regular (same as a job title) |
 | Font size | 11pt throughout the entire document, **except** the name header (18pt) and contact line (10pt) |
 | Space between job title and first bullet | **None** — zero space before first bullet under any job title |

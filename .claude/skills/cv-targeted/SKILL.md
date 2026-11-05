@@ -93,10 +93,10 @@ Ask if this session is for a new CV or to resume a previous one.
 **Verifying the CV: mechanical checks plus traceability judgment.**
 
 - Input: `cv_content.md`, `inventory.md`, `narratives.md`, `gap_analysis.md`, `research.md`, level, `cv_collaboration_log.md` path.
-- **Step 4a - Mechanical QC.** Run `python scripts/cv_qc.py --cv-file <cv_content.md> --inventory <inventory.md> --narratives <narratives.md> --level <level> --gap-analysis <gap_analysis.md>`. Parse the per-check JSON (this includes the L1 page-length guard). A non-zero exit is a script error: halt per global rules.
+- **Step 4a - Mechanical QC.** Run `python scripts/cv_qc.py --cv-file <cv_content.md> --inventory <inventory.md> --narratives <narratives.md> --level <level> --gap-analysis <gap_analysis.md>`. Parse the per-check JSON. The L1 page estimate is advisory: an L1 failure is never a finding and never triggers a cut; note it for handoff only. Then measure the real length: `python scripts/cv_measure.py --cv-file <cv_content.md> --level <level> --scratch-dir <scratch>`. It renders a throwaway .docx and asks Word for the page count. `fits: false` is a length finding carrying `lines_over`; `measured: false` (Word unavailable) is not a finding, and handoff reports the length as unmeasured. A non-zero exit from either script is a script error: halt per global rules.
 - **Step 4b - Judgment QC.** Dispatch `qc-cv-targeted` with `cv_content.md`, `inventory.md`, `narratives.md`, `gap_analysis.md`, `research.md`, and `level`. It returns a verdict and any semantic-traceability / acronym / summary-support / judgment-AI-tell findings.
 - **Step 4c - Aggregate and log.** Combine the mechanical check failures and the judgment findings into one findings list. Append the QC verdict and findings to `cv_collaboration_log.md`.
-- **Step 4d - Fix loop.** If there are findings, dispatch `cv-architect` in `mode = revise` with them; the architect fixes `cv_content.md` and the fixes are appended to the log. Re-run 4a-4c. Cap at **3 iterations**; exit early when both QC layers pass. On a length finding, pass the architect the measured page count and the longest offending lines so it trims from real data, not a self-estimate. Also pass the Phase-3 integrated/partial contributions from the log; the architect returns `qc_regressions` for any fix that reverses or weakens one. Append any `qc_regressions` to the log and carry them to handoff.
+- **Step 4d - Fix loop.** If there are findings, dispatch `cv-architect` in `mode = revise` with them; the architect fixes `cv_content.md` and the fixes are appended to the log. Re-run 4a-4c. Cap at **3 iterations**; exit early when both QC layers pass. On a length finding, pass the architect the measured `lines_over` and the levers in order: compress by elevation first (merge granular bullets into one higher-altitude statement, tighten wording), drop content only as a last resort; it trims to the measured overage, not a self-estimate. Also pass the Phase-3 integrated/partial contributions from the log; the architect returns `qc_regressions` for any fix that reverses or weakens one. Append any `qc_regressions` to the log and carry them to handoff.
 - **Step 4e - Bounded-loop failure.** If findings remain after the third iteration, ship **provisional**: keep `cv_content.md`, append a provisional record to `design/build_issues.md` (per `artifact-skill-qc-internal`), write the final status to the collaboration log, and carry the remaining findings to handoff so the user sees them.
 - Narrate QC outcomes in plain English (what failed and that it is being fixed), not raw check ids.
 - Output: PASS, or provisional with surfaced findings; final `cv_content.md`; collaboration log updated.
@@ -105,8 +105,8 @@ Ask if this session is for a new CV or to resume a previous one.
 
 **Writing the session log section for this CV run.**
 
-- Input: APP-NNN, slug, ym; `cv_content.md`, `drafting_plan.md`, and `cv_collaboration_log.md` paths; estimated pages; QC verdict; role and company.
-- Build the `## Targeted CV (cv-targeted)` section body in a scratch file (`<scratch>/...`) with: Run date, Role and company, CV content file path, Drafting plan path, Collaboration log path, Estimated page count, QC verdict.
+- Input: APP-NNN, slug, ym; `cv_content.md`, `drafting_plan.md`, and `cv_collaboration_log.md` paths; page count (measured, or unmeasured); QC verdict; role and company.
+- Build the `## Targeted CV (cv-targeted)` section body in a scratch file (`<scratch>/...`) with: Run date, Role and company, CV content file path, Drafting plan path, Collaboration log path, Page count (measured in Word, or "unmeasured"), QC verdict.
 - Run `python scripts/session_log.py append-section --folder <app_folder> --heading "Targeted CV (cv-targeted)" --body-file <path>`. The script replaces the section on re-runs and appends it on first runs.
 - Detail lives in `cv_content.md`, `drafting_plan.md`, and `cv_collaboration_log.md`; the session log section is a pointer plus headline, consistent with the other skills.
 - Output: session log section written.
@@ -115,7 +115,7 @@ Ask if this session is for a new CV or to resume a previous one.
 
 **Presenting the CV and handing off to the render stage.**
 
-- Input: `cv_content.md` path, estimated pages, QC verdict, any unresolved items (open stakeholder contributions from a Phase 3 cap, or provisional QC findings from Phase 4), and the Phase 1 notes (best-practices staleness warning, deferred-axis note).
+- Input: `cv_content.md` path, page count (measured or unmeasured), QC verdict, any unresolved items (open stakeholder contributions from a Phase 3 cap, or provisional QC findings from Phase 4), and the Phase 1 notes (best-practices staleness warning, deferred-axis note).
 - **Compose Open items from `cv_collaboration_log.md`:** for each material contribution still open at the Phase 3 cap, list its advisor, the ask, and the architect's reason for not fully integrating it (pulled from the logged dispositions); add any provisional QC findings from Phase 4. This gives the user a precise, reviewable account of what was left unresolved and why, since the workflow proceeds without requiring full agreement. Render "none" if empty.
 - **Compose Possible missed requirements from `cv_collaboration_log.md`:** for each suspected extraction miss the hiring-manager flagged (deduped by JD element), state it as a plain advisory: the JD appears to emphasize this, it is absent from the tracked requirements and gap analysis, so the pipeline never evaluated it, and the user should address it upstream if it is a real requirement. This is advisory only (a reading of the raw JD that may be a false positive), kept separate from Open items, and does not block the run. Render "none" if empty.
 - **Compose QC reversals from `cv_collaboration_log.md`:** for each `qc_regression` the architect flagged, name the advisor, the contribution, and the QC constraint that forced the reversal, so the user sees any stakeholder win QC undid and why. Render "none" if empty.
@@ -124,7 +124,7 @@ Ask if this session is for a new CV or to resume a previous one.
   ```
   Targeted CV: <role> at <company>
   CV content: <path>
-  Estimated length: <N> pages (guard estimate; confirmed at the render stage)
+  Length: <N> pages, measured in Word | unmeasured (Word unavailable; estimate <N>)
   QC: <PASS | provisional - see open items>
   Open items (or "none"):
     - <advisor>: <ask> | not fully integrated because: <architect's reason>
@@ -149,7 +149,8 @@ Consumed by Phase 3 (stakeholder loop) and Phase 4 (QC). Route back, fix, re-run
 | Mechanical QC failure: missing citation, multi-sentence bullet, bullet over line limit, section order / banding invalid, competency count out of range, a figure in the summary other than the career span (S4), em dash present, AI-tell phrasing flagged | Phase 4 fix loop (cv-architect revise) |
 | Cited id not found in inventory / narratives (fabricated id) | Phase 4 fix loop (cv-architect revise) |
 | Role misattribution: a bullet cites an entry from a role other than the title it sits under, or a title matches no role record (C5) | Phase 4 fix loop (cv-architect revise) |
-| Length guard: estimated pages over the level ceiling | Phase 4 fix loop (cv-architect trim) |
+| Measured length over the page ceiling (`cv_measure.py` `fits: false`) | Phase 4 fix loop (cv-architect: compress by elevation first, drop last) |
+| L1 estimate over the ceiling | Advisory only: note at handoff, never routed |
 | Invalid CR-NNN on a within-role subheading | Phase 4 fix loop (cv-architect revise) |
 | Semantic-traceability finding: cited entry does not support its claim, overstatement beyond source, arc bullet exceeds its cited union, adjacency translation fabricates the domain | Phase 4 fix loop (cv-architect revise) |
 | Acronym-expansion, summary-support, or judgment-AI-tell finding | Phase 4 fix loop (cv-architect revise) |

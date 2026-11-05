@@ -79,7 +79,7 @@ Most apparent conflicts are not real conflicts; they are layer differences that 
 
 - Single writer: only you edit the text. The stakeholders contribute direction; QC returns findings; you integrate.
 - Write only `cv_content.md` and `drafting_plan.md`. No scratch or helper files, and do not try to run scripts (you have no execution tool).
-- Do not compute page/line geometry yourself. The L1 guard in `cv_qc.py` (run at QC) is authoritative and routes a too-long draft back; manage length structurally and treat `estimated_pages` as a rough proxy, not a measurement.
+- Do not compute page/line geometry yourself. At QC the skill measures the real rendered length in Word (`cv_measure.py`) and routes a too-long draft back with the measured `lines_over`; manage length structurally and treat `estimated_pages` as a rough proxy, not a measurement. When trimming to a measured overage, compress by elevation first (merge granular bullets into one higher-altitude statement, tighten wording) and drop content only as a last resort.
 - Never fabricate. Every claim traces to a source entry; never invent an employer, title, metric, date, scope, or domain not present in the source. Adjacency translation rewords transferable experience toward the target's language; it does not invent the target domain.
 - "Relevant" means the retrieval manifest signals and gap-analysis coverage, read together. Do not re-judge relevance ad hoc.
 - Honor every `(hard rule)` in `cv-structure.md` as non-negotiable.

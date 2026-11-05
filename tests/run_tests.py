@@ -813,6 +813,30 @@ def test_cv_summary_carries_no_figures():
         assert not result[0] and digits in result[1], f'{figure} passed: {result}'
 
 
+def test_cv_length_is_measured_not_estimated():
+    """Fixed 2026-11-05 (GitHub #17): the L1 estimate passed CVs that rendered
+    4-9 lines over, and once cut a vetted bullet for an estimated 2-line
+    overage. cv_measure.py asks Word; the trim decision rests on that.
+    """
+    import cv_measure
+    assert cv_measure.assess(3, 0, 3)['fits']
+    over = cv_measure.assess(4, 7, 3)
+    assert over['fits'] is False and over['lines_over'] == 7, over
+    gone = cv_measure.unmeasured(3, 'no Word')
+    assert gone['measured'] is False and gone['fits'] is None, 'an unmeasured CV must not read as over'
+    # Real measurement where Word is available; skipped elsewhere.
+    try:
+        import win32com.client  # noqa: F401
+    except ImportError:
+        return
+    cv = write_block('measure_cv.md', '# Name\nCity, ST | a@b.c\n\n## Professional Summary\nShort. <!-- src: EX-001 -->\n')
+    code, out = run('cv_measure.py', '--cv-file', cv, '--level', 'ic', '--scratch-dir', RUN_DIR)
+    assert code == 0, out
+    # run() appends stderr (the builder's 'Saved:' line); the JSON is the line that opens with '{'.
+    result = json.loads(next(line for line in out.splitlines() if line.startswith('{')))
+    assert result['measured'] is False or (result['pages'] == 1 and result['fits']), result
+
+
 def test_gap_and_retrieval_qc_catch_a_made_up_element():
     """Before, PR-001.99 read as PR-001 and passed as a real ID."""
     path = os.path.join(FIXTURE_APP, 'gap_analysis.md')
