@@ -11,8 +11,6 @@ last_researched: 2026-05
 
 Trial-lifecycle terms: study, trial, protocol, site, investigator (PI, sub-I), participant, patient, Phase I/II/III/IV, FIH, pivotal, registrational, arm, cohort, randomization, blinding (single-blind, double-blind, open-label), placebo-controlled, endpoint, screening, enrollment, indication, therapeutic area.
 
-Participant terminology: "participant" is the current preference in protocols and consent forms (TransCelerate Common Protocol Template, NIH/FDA templates, ClinicalTrials.gov, NEJM editorial standard); "patient" remains acceptable when the trial population is patients; "subject" is dated.
-
 Submission terms: regulatory submission, pre-IND, IND, NDA, BLA, ANDA, sNDA, sBLA, MAA, 505(b)(2), CTD, eCTD (v3.2.2 current; v4.0 supported), DMF.
 
 Regulatory frameworks: GxP family (GCP, GMP, GLP, GDP, GVP), ICH (E6(R3) is current GCP standard, finalized Jan 2025; E2 family for PV; E8(R1), E9, M4, M11), 21 CFR Part 11, EU Annex 11, EU CTR (536/2014). E6(R3) Section 3.9 establishes sponsor oversight of transferred trial-related duties and functions to service providers (broader term replacing "CRO" in R3); sponsor accountability is explicit and non-delegable. Key R3 phrasing: "service provider," "fit-for-purpose," "risk-proportionate." (Replaces R2 Section 5.2 vocabulary; entries phrased to R2 read dated.)
@@ -27,7 +25,7 @@ Operating concepts: risk-based monitoring (RBM), quality by design (QbD), decent
 
 Pharmacovigilance terms: AE, SAE, SUSAR, ICSR, DSUR, PSUR/PBRER, RMP, REMS, MedDRA, signal detection.
 
-Non-preferred terms: "customer" for trial participants, "user" for clinicians, generic tech-industry verbs ("ship", "iterate") in operational descriptions.
+Non-preferred terms: "subject" (use "participant"; "patient" is fine when the trial population is patients), "customer" for trial participants, "user" for clinicians, generic tech-industry verbs ("ship", "iterate") in operational descriptions.
 
 ## Dialect
 
