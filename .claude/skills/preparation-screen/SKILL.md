@@ -17,7 +17,7 @@ Prepare the candidate for a recruiter or phone-screen interview for one applicat
 
 ## Inputs
 
-From the application folder: `research.md`, `gap_analysis.md`, `session_log.md`, `jd.md`, `cv_content.md` (the CV the interviewer holds), and the Signature Theme score table in `retrieval.md` (targeted read of that table only, never the whole manifest). From `personal/profile/`: `positioning.md` (all sections; the routing rules in Phase 3 say where each lands), `user-info.md` (static facts and dated defaults), `inventory.md` Employment & Role History section (authoritative role records; verify any date/scope/count claim here before writing it).
+From the application folder: `research.md`, `gap_analysis.md`, `session_log.md`, `jd.md`, `cv_content.md` (the CV the interviewer holds), and the Signature Theme score table in `retrieval.md` (targeted read of that table only, never the whole manifest). From the profile folder (`python scripts/paths.py profile`): `positioning.md` (all sections; the routing rules in Phase 3 say where each lands), `user-info.md` (static facts and dated defaults), `inventory.md` Employment & Role History section (authoritative role records; verify any date/scope/count claim here before writing it).
 
 ## Phase 0: mode
 

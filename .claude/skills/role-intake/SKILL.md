@@ -21,7 +21,7 @@ Builds the foundational understanding of a job opportunity. It produces two arti
 Ask if this session is for a new role or to resume a previous one?
 
 - **New:** proceed to Phase 0.
-- **Resume:** ask the APP-NNN; locate the matching folder under `personal/applications/`. Probe and land per the ladder (first match wins):
+- **Resume:** ask the APP-NNN; locate its folder with `python scripts/paths.py app <APP-NNN>`. Probe and land per the ladder (first match wins):
   1. Folder missing - halt; APP-NNN likely wrong.  Ask for APP-NNN again.
   2. Session log missing - ingest already ran but init did not; re-confirm metadata with user and resume at **Phase 3b** (session log write only).
   3. `research.md` missing - resume at start of **Phase 4**.

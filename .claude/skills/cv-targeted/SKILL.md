@@ -5,7 +5,7 @@ description: Draft a role-tailored CV. Reads role-intake's research file, the re
 
 # cv-targeted - draft a role-tailored CV
 
-Produces a **CV content artifact** at `personal/applications/<SLUG>_APP-NNN_YYYY-MM/cv_content.md` (text only, every content unit carrying a source-citation comment), an internal `drafting_plan.md` in the same folder, and a brief session log section pointing to the artifact. `cv_content.md` is the sole handoff to the separate render skill (cv-render); this skill stops at the cited text and does not produce a .docx.
+Produces a **CV content artifact**, `cv_content.md` in the application folder (text only, every content unit carrying a source-citation comment), an internal `drafting_plan.md` in the same folder, and a brief session log section pointing to the artifact. `cv_content.md` is the sole handoff to the separate render skill (cv-render); this skill stops at the cited text and does not produce a .docx.
 
 ## Operating rules
 
@@ -22,7 +22,7 @@ Produces a **CV content artifact** at `personal/applications/<SLUG>_APP-NNN_YYYY
 
 Ask if this session is for a new CV or to resume a previous one.
 
-- **New:** ask the APP-NNN; locate the matching folder under `personal/applications/`. Confirm `research.md`, `retrieval.md`, AND `gap_analysis.md` all exist in the folder (cv-targeted depends on all three). If any is missing, halt and direct the user to run the missing upstream skill.
+- **New:** ask the APP-NNN; locate its folder with `python scripts/paths.py app <APP-NNN>`. Confirm `research.md`, `retrieval.md`, AND `gap_analysis.md` all exist in the folder (cv-targeted depends on all three). If any is missing, halt and direct the user to run the missing upstream skill.
 - **Resume:** ask the APP-NNN; locate the matching folder. Probe and land per the ladder (first match wins):
   1. Folder missing - halt; APP-NNN likely wrong. Ask for APP-NNN again.
   2. `research.md` missing - halt; direct the user to run `/role-intake`.
@@ -56,10 +56,10 @@ Ask if this session is for a new CV or to resume a previous one.
 - Read `gap_analysis.md`. Extract:
   - The per-requirement coverage statuses keyed by `CR-NNN`. The `CR-NNN` ids are gap-analysis's id space and are the authoritative requirement ids for the CV; each maps positionally (same order) to a `research.md` requirement, and to the bare "requirement N" references in `retrieval.md`.
   - The `## CV Notes` section. This is general framing guidance from the gap-closure session that applies across the CV rather than to a single requirement. Surface it as a named input alongside the requirement statuses; the cv-architect must review and apply it before drafting begins.
-- Read `user-info.md` from the profile folder (`personal/profile/`). Extract the contact block (name, location, contact line, profile links) for the CV header.
+- Read `user-info.md` from the profile folder (`python scripts/paths.py profile`). Extract the contact block (name, location, contact line, profile links) for the CV header.
 - **Resolve the axis value files.** For each classified axis value, resolve its rule file path `rules/<axis>/<value>.md`. Pass the files that exist to the sub-agents; for any axis marked "File deferred" in the classification, note it (the architect proceeds without that axis's voice file and the gap is surfaced at handoff).
 - **CV best-practices staleness check.** Narrate this in plain English before running it, e.g. "Let me check that the CV best-practices guidance this skill relies on is still current." Do not name the field or call it a "staleness check" to the user. Read the `last_researched` field from `rules/cv/cv-best-practices.md`. If it is more than ~12 months older than today, surface a plain-English warning that the CV best-practices research may be due for a refresh (per the `cv-best-practices-refresh` process). Non-blocking; the run continues.
-- Note the corpus paths the sub-agents will read in their own context, NOT loaded into the main skill. From the profile folder (`personal/profile/`): `inventory.md`, `narratives.md`. From the application folder: `retrieval.md`, `gap_analysis.md`, `jd.md`, and `comms.md` (if present). From `rules/`: `rules/cv/cv-structure.md`, `rules/cv/cv-best-practices.md`, and the resolved axis files.
+- Note the corpus paths the sub-agents will read in their own context, NOT loaded into the main skill. From the profile folder: `inventory.md`, `narratives.md`. From the application folder: `retrieval.md`, `gap_analysis.md`, `jd.md`, and `comms.md` (if present). From `rules/`: `rules/cv/cv-structure.md`, `rules/cv/cv-best-practices.md`, and the resolved axis files.
 - Output: critical requirements; axis classification with resolved axis-file paths (and any deferred-axis note); level; per-requirement coverage; CV Notes (general framing guidance, or empty); contact block; staleness warning (if any); corpus paths.
 
 ## Phase 2 - Initial draft

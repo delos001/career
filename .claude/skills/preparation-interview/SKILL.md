@@ -28,7 +28,7 @@ ONE cumulative `interview_prep.md` per application:
 
 ## Inputs
 
-From the application folder: `research.md`, `gap_analysis.md`, `session_log.md`, `jd.md`, `cv_content.md`, the Signature Theme table in `retrieval.md` (that table only), and the existing `interview_prep.md` / `interview_notes.md` if present. From `personal/profile/`: `positioning.md`, `user-info.md`, `inventory.md` Employment & Role History section (authoritative role records; verify any date/scope/count before writing it).
+From the application folder: `research.md`, `gap_analysis.md`, `session_log.md`, `jd.md`, `cv_content.md`, the Signature Theme table in `retrieval.md` (that table only), and the existing `interview_prep.md` / `interview_notes.md` if present. From the profile folder (`python scripts/paths.py profile`): `positioning.md`, `user-info.md`, `inventory.md` Employment & Role History section (authoritative role records; verify any date/scope/count before writing it).
 Rule file: `rules/interview-types/<audience>.md` for the prompted audience; it sets this interview's emphasis and any audience-specific research gaps.
 
 ## Phase 0: mode

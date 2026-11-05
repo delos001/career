@@ -5,7 +5,7 @@ description: Surface the relevant profile content for a role. Reads role-intake'
 
 # retrieval - surface the relevant profile content
 
-Produces one artifact for the role: a **retrieval manifest** at `personal/applications/<SLUG>_APP-NNN_YYYY-MM/retrieval.md`. The manifest exposes raw per-entry signals (semantic score, axis exact-match count, axis adjacency-weighted score) for inventory, narratives, and themes. Downstream skills derive their own tier cutoffs from the raw signals - retrieval does NOT pre-classify entries.
+Produces one artifact for the role: a **retrieval manifest**, `retrieval.md` in the application folder. The manifest exposes raw per-entry signals (semantic score, axis exact-match count, axis adjacency-weighted score) for inventory, narratives, and themes. Downstream skills derive their own tier cutoffs from the raw signals - retrieval does NOT pre-classify entries.
 
 ## Operating rules
 
@@ -20,7 +20,7 @@ Produces one artifact for the role: a **retrieval manifest** at `personal/applic
 
 Ask if this session is for a new retrieval run or to resume a previous one?
 
-- **New:** ask the APP-NNN; locate the matching folder under `personal/applications/`. Confirm that `research.md` exists in the folder (retrieval depends on role-intake's output). If missing, halt and direct the user to run `/role-intake` first.
+- **New:** ask the APP-NNN; locate its folder with `python scripts/paths.py app <APP-NNN>`. Confirm that `research.md` exists in the folder (retrieval depends on role-intake's output). If missing, halt and direct the user to run `/role-intake` first.
 - **Resume:** ask the APP-NNN; locate the matching folder. Probe and land per the ladder (first match wins):
   1. Folder missing - halt; APP-NNN likely wrong. Ask for APP-NNN again.
   2. `research.md` missing - halt; direct the user to run `/role-intake`.
@@ -80,7 +80,7 @@ Ask if this session is for a new retrieval run or to resume a previous one?
 
 - Input: application folder path, slug, APP-NNN, today's date, axis-classification JSON path, three scoring scratch-file paths.
 - Run `python scripts/retrieval_apply.py assemble --folder <app_folder> --slug <slug> --app-id APP-NNN --date YYYY-MM-DD --jd-axes-file <path> --inventory-scores-file <path> --narrative-scores-file <path> --theme-scores-file <path>`.
-- The script reads all inputs, computes per-entry axis exact-match count and adjacency-weighted score (using `rules/<axis>/<value>.md` Adjacency sections), unions the semantic-pass set with the tag-pull set on inventory, unions the semantic-scored narratives with the Linked-Inventory walk for narratives, and writes the manifest to `personal/applications/<SLUG>_APP-NNN_YYYY-MM/retrieval.md`.
+- The script reads all inputs, computes per-entry axis exact-match count and adjacency-weighted score (using `rules/<axis>/<value>.md` Adjacency sections), unions the semantic-pass set with the tag-pull set on inventory, unions the semantic-scored narratives with the Linked-Inventory walk for narratives, and writes the manifest to `retrieval.md` in the application folder.
 - Capture the printed manifest path. Non-zero exit = halt per global rules.
 - Output: `retrieval.md` written.
 

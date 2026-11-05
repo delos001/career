@@ -14,7 +14,7 @@ You quality-check the substance of the Notes fields in a gap analysis artifact. 
 
 The dispatching skill gives you:
 
-- the path to `gap_analysis.md` (`personal/applications/<SLUG>_APP-NNN_YYYY-MM/gap_analysis.md`).
+- the path to `gap_analysis.md` in the application folder.
 
 Read the artifact in full before checking. You do not need the profile documents, the session log, or the staging file; the script owns every cross-document check.
 

@@ -5,7 +5,7 @@ description: Render a targeted CV to a formatted .docx. Reads the cv_content.md 
 
 # cv-render - render the targeted CV to a .docx
 
-Renders `personal/applications/<SLUG>_APP-NNN_YYYY-MM/cv_content.md` (the cv-targeted handoff) to a formatted `.docx` in the same folder. The render is mechanical: `scripts/cv_to_docx.py` parses the markdown, strips the `<!-- src: ... -->` / `<!-- cr: ... -->` citation comments, and applies the formatting in `design/format_spec.md`. This skill adds no content judgment - it does not rewrite, re-order, re-cite, or trim. `cv_content.md` is the sole input.
+Renders `cv_content.md` in the application folder (the cv-targeted handoff) to a formatted `.docx` in the same folder. The render is mechanical: `scripts/cv_to_docx.py` parses the markdown, strips the `<!-- src: ... -->` / `<!-- cr: ... -->` citation comments, and applies the formatting in `design/format_spec.md`. This skill adds no content judgment - it does not rewrite, re-order, re-cite, or trim. `cv_content.md` is the sole input.
 
 ## Operating rules
 
@@ -23,7 +23,7 @@ Renders `personal/applications/<SLUG>_APP-NNN_YYYY-MM/cv_content.md` (the cv-tar
 
 **Finding the CV content artifact for this application.**
 
-- Ask for the APP-NNN. Locate the matching folder under `personal/applications/` (the folder name is `<SLUG>_APP-NNN_YYYY-MM`).
+- Ask for the APP-NNN. Locate its folder with `python scripts/paths.py app <APP-NNN>`.
 - Probe and land (first match wins):
   1. Folder missing - halt; APP-NNN likely wrong. Ask for APP-NNN again.
   2. `cv_content.md` missing - halt; direct the user to run `/cv-targeted` (the render has nothing to render without it).
@@ -34,7 +34,7 @@ Renders `personal/applications/<SLUG>_APP-NNN_YYYY-MM/cv_content.md` (the cv-tar
 **Naming the output document.**
 
 - Build the default output filename per `design/format_spec.md`: `<LastName>_CV_<Company>_<AbbreviatedRole>_<YYYY-MM>.docx`, where:
-  - `LastName` is the candidate's surname from the contact block in `personal/profile/user-info.md` (e.g. `Delosh`). Surname only, not the full name and not initials.
+  - `LastName` is the candidate's surname from the contact block in `user-info.md` in the profile folder (`python scripts/paths.py profile`) (e.g. `Delosh`). Surname only, not the full name and not initials.
   - `Company` and the role come from `## Company` / `## Role` in the application's `research.md`; abbreviate the role to a short token (e.g. "Associate Director, Operational Excellence" -> `AssocOpExDir`).
   - `YYYY-MM` is the application folder's `ym`.
 - Present the proposed filename and ask the user to confirm or override it. The output path is `<application folder>/<confirmed filename>`.

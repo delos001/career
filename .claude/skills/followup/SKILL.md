@@ -18,7 +18,7 @@ Post-interview follow-up for one application round. Reads the round's debrief fr
 
 - `interview_notes.md`: the round section is primary (questions asked + answers captured, General Notes, Round Debrief). The debrief's "rough patches to address in follow-up" field is the prompt for the message's substantive beat.
 - `interview_prep.md` and `session_log.md`: context and stage facts.
-- `personal/profile/positioning.md`: the conviction line.
+- `positioning.md` in the profile folder (`python scripts/paths.py profile`): the conviction line.
 
 ## Phase 1: intake
 

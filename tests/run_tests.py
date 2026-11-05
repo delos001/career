@@ -1506,6 +1506,34 @@ def test_acronym_list_is_not_an_index_of_the_text():
     assert rec['passed'], f'H2 failed a list that only holds extra acronyms: {rec["detail"]}'
     assert rec.get('suggestions') == ['NIH'], f'expected NIH as the one suggestion, got {rec}'
 
+
+# ---------------------------------------------------------------------------
+# Repo paths
+# Skills and agents look locations up through paths.py, never spell them out.
+# ---------------------------------------------------------------------------
+
+def test_skills_look_up_paths_instead_of_spelling_them():
+    """Fixed 2026-11-05 (GitHub #22): skills and agents spelled out
+    personal/... paths and found application folders by hand. paths.py does
+    the lookup; no skill or agent file may name a personal/ path again.
+    """
+    code, out = run('paths.py', 'app', 'APP-001')
+    assert code == 0 and out.endswith('aldridge_APP-001_2026-01'), out
+    code, out = run('paths.py', 'app', 'APP-099')
+    assert code != 0 and 'no application folder' in out, out
+    code, out = run('paths.py', 'profile')
+    assert code == 0 and os.path.isdir(out), out
+    offenders = []
+    for folder in ('skills', 'agents'):
+        for dirpath, _, files in os.walk(os.path.join(REPO_ROOT, '.claude', folder)):
+            for name in files:
+                if name.endswith('.md') and 'personal/' in _util.read(os.path.join(dirpath, name)):
+                    offenders.append(os.path.relpath(os.path.join(dirpath, name), REPO_ROOT))
+    assert not offenders, 'skill or agent files naming a personal/ path: ' + ', '.join(offenders)
+
+
+# ---------------------------------------------------------------------------
+# Agent definitions
 # Sub-agents run in their own context, so the global rules reach them only if
 # the definition points there. Web-only agents cannot read files and are
 # exempt; their per-fact source URLs carry the no-fabrication rule instead.

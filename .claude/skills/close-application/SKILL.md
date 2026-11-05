@@ -17,7 +17,7 @@ Closes a single application: records the final outcome and its date in the sessi
 **Identifying the application to close.**
 
 - Input: an APP-NNN (from the invocation, or ask for it).
-- Locate the application folder under `personal/applications/`; the session log is `session_log.md` inside that folder.
+- Locate the application folder with `python scripts/paths.py app <APP-NNN>`; the session log is `session_log.md` inside that folder.
 - If the folder or the session log is missing, halt and report (the APP-NNN is likely wrong); ask for it again.
 - Output: application folder path, session log path.
 

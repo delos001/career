@@ -1,11 +1,11 @@
 ---
 name: profile-update
-description: Promote staged profile updates into the profile documents. Reads the items in personal/profile/profile_updates_pending.md, walks them with the user one at a time, and writes each into inventory.md as a new entry, as an addition to an existing one, or as an item on a list section. An item is deleted from the queue only after its written entry passes review. Runs standalone at any time, or inline at the end of a gap-analysis run. This is the only skill that writes to the profile documents.
+description: Promote staged profile updates into the profile documents. Reads the items in the profile folder's profile_updates_pending.md, walks them with the user one at a time, and writes each into inventory.md as a new entry, as an addition to an existing one, or as an item on a list section. An item is deleted from the queue only after its written entry passes review. Runs standalone at any time, or inline at the end of a gap-analysis run. This is the only skill that writes to the profile documents.
 ---
 
 # profile-update - promote staged updates into the profile
 
-Writes the items in `personal/profile/profile_updates_pending.md` into the inventory, one item at a time. Until an item is written, the fact is invisible to retrieval, gap analysis, and CV creation.
+Writes the items in `profile_updates_pending.md` (profile folder: `python scripts/paths.py profile`) into the inventory, one item at a time. Until an item is written, the fact is invisible to retrieval, gap analysis, and CV creation.
 
 The file's `## Entries` section is a queue. An item waits there and is deleted once its entry passes review. Nothing records where it went: the profile is the source.
 

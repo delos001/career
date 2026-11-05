@@ -5,11 +5,11 @@ description: Produce a role-tailored career brief or recruiter pitch by selectin
 
 # career_brief - draft
 
-Status: **Draft**. Skill not yet designed. This file currently holds content migrated out of `personal/profile/positioning.md` during the positioning schema migration so the content lives in its eventual home rather than a parking file. The orchestration logic, phase structure, inputs/outputs, and QC will be defined when the skill is built.
+Status: **Draft**. Skill not yet designed. This file currently holds content migrated out of `positioning.md` (profile folder: `python scripts/paths.py profile`) during the positioning schema migration so the content lives in its eventual home rather than a parking file. The orchestration logic, phase structure, inputs/outputs, and QC will be defined when the skill is built.
 
 ## Reserved content: Recruiter Pitch Template Customization Instructions
 
-The instructions below are templating guidance for tailoring the Recruiter Pitch Template's variable middle to a specific role. The template body itself lives at `templates/recruiter_pitch_template.md`. Note: Step 3 references a Story-to-Theme matching table that no longer exists in positioning; the equivalent information is now the `Linked Stories:` field on each TH-NNN theme in `personal/profile/positioning.md`.
+The instructions below are templating guidance for tailoring the Recruiter Pitch Template's variable middle to a specific role. The template body itself lives at `templates/recruiter_pitch_template.md`. Note: Step 3 references a Story-to-Theme matching table that no longer exists in positioning; the equivalent information is now the `Linked Stories:` field on each TH-NNN theme in `positioning.md`.
 
 **How to Build a Variable Middle for a New Role:**
 

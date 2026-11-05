@@ -5,7 +5,7 @@ description: Evaluate candidate-to-role fit. Reads role-intake's research file a
 
 # gap-analysis - evaluate candidate-to-role fit
 
-Produces a **gap analysis artifact** at `personal/applications/<SLUG>_APP-NNN_YYYY-MM/gap_analysis.md` plus a brief session log section pointing to the artifact (run date, path, fit score, QC verdict). New information the user raises during gap closure is appended to a profile-level staging file at `personal/profile/profile_updates_pending.md` for a separate profile-update skill to process later.
+Produces a **gap analysis artifact**, `gap_analysis.md` in the application folder, plus a brief session log section pointing to the artifact (run date, path, fit score, QC verdict). New information the user raises during gap closure is appended to the profile-level staging file (`profile_updates_pending.md` in the profile folder) for a separate profile-update skill to process later.
 
 The gap analysis is a **stopping point**: the user reads it to decide whether to pursue the role. If they pursue, downstream skills (CV creation, interview prep, career brief) consume this artifact.
 
@@ -23,7 +23,7 @@ The gap analysis is a **stopping point**: the user reads it to decide whether to
 
 Ask if this session is for a new gap analysis or to resume a previous one?
 
-- **New:** ask the APP-NNN; locate the matching folder under `personal/applications/`. Confirm that `research.md` AND `retrieval.md` exist in the folder (gap analysis depends on both). If either is missing, halt and direct the user to run the missing upstream skill.
+- **New:** ask the APP-NNN; locate its folder with `python scripts/paths.py app <APP-NNN>`. Confirm that `research.md` AND `retrieval.md` exist in the folder (gap analysis depends on both). If either is missing, halt and direct the user to run the missing upstream skill.
 - **Resume:** ask the APP-NNN; locate the matching folder. Probe and land per the ladder (first match wins):
   1. Folder missing - halt; APP-NNN likely wrong. Ask for APP-NNN again.
   2. `research.md` missing - halt; direct the user to run `/role-intake`.
