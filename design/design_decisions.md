@@ -65,7 +65,9 @@ Refs: `dual-orientation-asymmetric-authority`, `cv-targeted-retrieval-architectu
 
 #### level-axis-two-buckets
 IC and leadership only today. Expansion via `level_builder`. Level files are deliverable-agnostic; deliverable-specific concerns belong in the deliverable's format spec.
-Refs: `level-axis-finer-grained-files`, `level-builder-design` (deferrals).
+
+**Level is judged by where the work lands, not by verb strength (2026-11-05, user decision).** Organizational scope includes work spanning a major organizational unit or several functions, even when decisions sit above the role; "support", "advance", "contribute" and "partner" appear in IC and VP roles alike and imply no level on their own. Recruiter and portal messages (comms) now reach the axis-classifier, since they can carry level signals the JD lacks. Why: APP-027 (BeOne, AD R&D Strategy; JD scope "across its global Research & Development organization", partnering with Research, Development, Finance and BD) was classified IC on its "support" verbs and "might mentor", and the portal said it could be considered at director level, which the classifier never saw. The user: being misleveled means building a CV that is likely screened out. Earlier fixes in the same direction (2026-10-16): a JD's silence on direct reports does not decide level; leadership takes precedence when both tests are met; owning function-wide platforms or standards is organizational scope. Applied in `rules/levels/registry.md`, `leadership.md`, `ic.md`, `axis-classifier.md`, role-intake Phase 6.
+Refs: `level-axis-finer-grained-files`, `level-builder-design` (deferrals), GitHub #51.
 
 #### axes-composition-precedence
 Each axis owns a primary surface for cv_targeted composition:
