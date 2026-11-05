@@ -1,6 +1,6 @@
 # Positioning
 
-**Used by:** cv_targeted | cv_general | interview_prep | career_brief
+**Used by:** cv_targeted | cv_general | interview_prep | career-brief
 
 Fixture positioning document. Deliberately thin: the profile-update skill never
 writes this file (`positioning-content-is-hand-driven-2026-08-26`), so the

@@ -1,6 +1,6 @@
 # Recruiter Pitch Template
 
-**Used by:** career_brief
+**Used by:** career-brief
 
 ## Fixed Opening --- Always the Same
 

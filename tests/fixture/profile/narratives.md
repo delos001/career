@@ -1,6 +1,6 @@
 # Career Narratives
 
-**Used by:** cv_targeted | cv_general | interview_prep | role_evaluation | positioning | career_brief
+**Used by:** cv_targeted | cv_general | interview_prep | role_evaluation | positioning | career-brief
 
 ## Table of Contents
 

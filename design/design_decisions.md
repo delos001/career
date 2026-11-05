@@ -427,7 +427,7 @@ narratives is interview-prep primary; cv_targeted / role_evaluation consume it s
 - Framework: stories use `story_personal`; decisions use `decision_adr`. **Decisions relabeled `decision_personal` by `narratives-framework-files-restored-2026-07`** (the migrated body was the personal roster all along; the `decision_adr` label was a mismatch).
 - Migration body operations: rename "Who Pushed Back" → "Resistance" (keep as standalone section; scope expanded to non-person resistance including time, skill, and technology constraints); drop "What I'd Own Differently" subsections (purely reflective content; no replacement); empty subsections retained with `Not applicable` placeholder.
 - APPENDIX removed; framework defs live in `rules/narratives/`. Tag Taxonomy section removed.
-- Header: `**Used by:** cv_targeted, cv_general, interview_prep, role_evaluation, positioning, career_brief`. (The `**Stamps:**` line was removed with the stamps themselves per `provenance-stamps-dropped-2026-07`.)
+- Header: `**Used by:** cv_targeted, cv_general, interview_prep, role_evaluation, positioning, career-brief`. (The `**Stamps:**` line was removed with the stamps themselves per `provenance-stamps-dropped-2026-07`.)
 
 Stale-link mitigation: validator script (deferred to skill build) grep-checks Linked Inventory IDs against actual EX/PR IDs in inventory.
 
@@ -439,12 +439,12 @@ Refs: `maintained-by-metadata-field` (deferral); `competency-field-and-registry-
 - Reorder: Signature Themes follows Core Philosophy.
 - IDs: `TH-NNN` on themes.
 - APPENDIX removed entirely; `Linked Stories:` field added to themes.
-- Customization Instructions move to `career_brief`.
+- Customization Instructions move to `career-brief`.
 - Recruiter Pitch Template moves to `templates/recruiter_pitch_template.md`.
 - "Avoid:" line removed from WHY I LEFT (moves to `interview_prep`).
 - "Last Revised" line kept as plain text at top.
 - Typo fix: "INDUSTRY TRAGECTORY" → "INDUSTRY TRAJECTORY".
-- Header: `**Used by:** cv_targeted, cv_general, role_evaluation, interview_prep, career_brief`.
+- Header: `**Used by:** cv_targeted, cv_general, role_evaluation, interview_prep, career-brief`.
 
 **Amended 2026-06-11:** the Avoid-line relocation is reversed by user direction. The WHY I LEFT section now carries "The layer beneath (when probed for specifics)" plus the Avoid guard directly in positioning.md (see `preparation-screen-architecture-2026-06` and the resolved `why-i-left-specifics-for-interview-prep` deferral); the `interview_prep` stub that briefly held the Avoid line is deleted. The planned "interview_prep" skill named throughout this document is realized as the `preparation-screen` / `preparation-interview` skill family; the Used-by headers in positioning.md and user-info.md now name `preparation-screen`.
 
@@ -1455,7 +1455,7 @@ Refs: `retrieval-architecture-2026-05`, `role-intake-architecture`, `role-intake
 #### gap-analysis-architecture-2026-05
 Built artifact-producing skill running after retrieval; stopping point for the user's pursue / don't-pursue decision; handoff for downstream CV creation, interview prep, and career brief.
 
-**Pipeline position.** role-intake -> retrieval -> **gap-analysis** -> [cv_targeted | interview_prep | career_brief]. Gap analysis reads `research.md` (critical requirements + role/company/industry context), `retrieval.md` (per-entry scored signals), the session log's axis classification, and the user-info eligibility sections. It writes `gap_analysis.md` to the application folder, appends a `## Gap Analysis` section to the session log, and appends per-closure entries to a cross-application staging file at `personal/profile/profile_updates_pending.md`.
+**Pipeline position.** role-intake -> retrieval -> **gap-analysis** -> [cv_targeted | interview_prep | career-brief]. Gap analysis reads `research.md` (critical requirements + role/company/industry context), `retrieval.md` (per-entry scored signals), the session log's axis classification, and the user-info eligibility sections. It writes `gap_analysis.md` to the application folder, appends a `## Gap Analysis` section to the session log, and appends per-closure entries to a cross-application staging file at `personal/profile/profile_updates_pending.md`.
 
 **Unit.** One record per critical requirement (CR-NNN assigned in the order requirements appear in role-intake's list). Each carries a status from the locked taxonomy: `covered`, `closed`, `language-shift`, `partial-match`, `interview-deferred`, `unresolved`. Status `closed` applies when the user provided clarifying information during the Phase 4 loop that resolved an initial gap; the new information is queued for the staging file. Status `partial-match` applies when genuine transferable experience exists but a real gap remains underneath; the CV cites the transferable experience without overclaiming.
 
@@ -1715,7 +1715,7 @@ Refs: `config.yaml`, `scripts/assemble.py`, `scripts/session_log.py`, `templates
 
 ## Career Workflow Stage
 
-career_brief, cv_general, positioning skill designed at their build time.
+career-brief, cv_general, positioning skill designed at their build time.
 
 #### staging-queue-with-migrated-record-2026-08-26
 

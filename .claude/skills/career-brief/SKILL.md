@@ -1,9 +1,9 @@
 ---
-name: career_brief
+name: career-brief
 description: Produce a role-tailored career brief or recruiter pitch by selecting a Signature Theme, picking a proof point, and assembling the variable middle. Draft scope; full skill design pending.
 ---
 
-# career_brief - draft
+# career-brief - draft
 
 Status: **Draft**. Skill not yet designed. This file currently holds content migrated out of `positioning.md` (profile folder: `python scripts/paths.py profile`) during the positioning schema migration so the content lives in its eventual home rather than a parking file. The orchestration logic, phase structure, inputs/outputs, and QC will be defined when the skill is built.
 

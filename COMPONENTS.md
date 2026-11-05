@@ -76,7 +76,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - close-application (lean terminal close-out: records the final outcome + date in the session log, then wipes the application scratch folder; user-invoked; see `.claude/skills/close-application/SKILL.md`)
 
 **Drafted** (skeleton SKILL.md exists at `.claude/skills/<name>/`; full design pending; no detailed entry yet):
-- career_brief — placeholder holding the Recruiter Pitch Template Customization Instructions migrated from `personal/profile/positioning.md` per `positioning-schema`.
+- career-brief — placeholder holding the Recruiter Pitch Template Customization Instructions migrated from `personal/profile/positioning.md` per `positioning-schema`.
 
 **Retired:**
 - interview_prep — stub deleted 2026-06-11, superseded by preparation-screen; its "Why did you leave?" Avoid guidance lives in positioning.md's "layer beneath" block.

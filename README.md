@@ -157,7 +157,7 @@ Every artifact for one job lands in a single folder, `personal/applications/<SLU
 | Profile updates | `profile-update` | The only writer to the profile documents |
 | Axis authoring | five `*-builder` skills | Research, draft, reconcile against siblings, QC, register a new axis value |
 | Self-assessment | `self-assessment` | Thin orchestrator over a versioned protocol in `rules/self-assessment/` |
-| Career brief | `career_brief` | Draft skeleton; full design pending |
+| Career brief | `career-brief` | Draft skeleton; full design pending |
 | Presentation prep | *planned* | Tracked in `design/deferrals.md` |
 | Offer negotiation | *planned* | Compensation is calibrated and a position prepared during screen prep, and `close-application` records an accepted or declined offer, but the negotiation itself has no stage yet |
 
@@ -238,7 +238,7 @@ career/
 │   │   ├── close-application/           # pipeline: terminal outcome + scratch wipe
 │   │   ├── profile-update/              # profile: sole writer to the profile documents
 │   │   ├── self-assessment/             # profile: behavioral assessment, annual rerun
-│   │   ├── career_brief/                # profile: recruiter pitch (draft skeleton)
+│   │   ├── career-brief/                # profile: recruiter pitch (draft skeleton)
 │   │   ├── industry-builder/            # axis authoring: one builder per axis,
 │   │   ├── level-builder/               #   each with create and refresh modes
 │   │   ├── orientation-builder/
