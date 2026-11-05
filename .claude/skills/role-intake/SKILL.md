@@ -100,7 +100,9 @@ Ask if this session is for a new role or to resume a previous one?
 
 - Input: title, company; JD text + source; comms text + source (if any).
   (Level and industry are not known yet - they are decided at Phase 6/7.)
-- Run `python scripts/app_id.py` for the next APP-NNN. Determine the current `YYYY-MM`.
+- Run `python scripts/app_id.py` once; it claims the next APP-NNN and prints it. Use
+  that ID for the whole run and never re-run the script for it (each run claims a new
+  number). Determine the current `YYYY-MM`.
 - **Resolve the company slug from the registry first.** Run
   `python scripts/company_slug.py lookup --company "<confirmed company>"`.
   - If it prints a slug, reuse it (do NOT ask). Tell the user which slug is being

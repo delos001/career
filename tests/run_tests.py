@@ -1360,6 +1360,25 @@ def test_section_replace_keeps_backslashes_literal():
 
 
 # ---------------------------------------------------------------------------
+# Application IDs
+# role-intake draws its APP-NNN several steps before ingest creates the folder,
+# so the ID has to be held from the moment it is printed.
+# ---------------------------------------------------------------------------
+
+def test_back_to_back_app_ids_differ():
+    """Shipped 2026-07-14: two role-intake sessions started back to back both
+    drew APP-015 (novartis and biogen), because app_id.py returned max+1 over
+    the folders and reserved nothing until ingest ran.
+    """
+    first_code, first = run('app_id.py')
+    second_code, second = run('app_id.py')
+    assert first_code == 0 and second_code == 0, f'app_id.py failed:\n{first}\n{second}'
+    assert first != second, f'both calls drew {first}'
+    # The fixture already holds APP-001, so neither call may hand it out again.
+    assert 'APP-001' not in (first, second), f'reissued an ID in use: {first}, {second}'
+
+
+# ---------------------------------------------------------------------------
 # Agent definitions
 # Sub-agents run in their own context, so the global rules reach them only if
 # the definition points there. Web-only agents cannot read files and are

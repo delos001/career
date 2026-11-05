@@ -526,10 +526,10 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/app_id.py
 
-- **Purpose**: Return the next global application ID (APP-NNN) by scanning existing `personal/applications/` folders.
+- **Purpose**: Claim and return the next global application ID (APP-NNN). The highest ID in use comes from the `personal/applications/` folder names plus the claim markers in its `.app_ids/` subfolder; the ID is held by creating its marker atomically before it is printed, so back-to-back sessions cannot draw the same ID.
 - **Status**: Designed
 - **Inputs**: Config: `config.yaml` (applications path, APP-NNN scheme) via `scripts/_config.py`. Filesystem: the configured applications folder.
-- **Outputs**: Next APP-NNN to stdout.
+- **Outputs**: Next APP-NNN to stdout; an empty marker file `.app_ids/APP-NNN` in the applications folder.
 - **Triggers**: Invoked by `role-intake` Phase 3.
 - **Update Triggers**: When the application folder naming convention changes.
 

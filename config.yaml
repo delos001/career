@@ -100,6 +100,10 @@ naming:
   # Application ID: a global counter, e.g. APP-004.
   app_id_prefix: "APP-"
   app_id_digits: 3
+  # Subfolder of the applications directory holding one empty marker file per
+  # claimed ID (scripts/app_id.py). The marker holds the ID from the moment it
+  # is printed, before ingest creates the application folder.
+  app_id_claims_dir: ".app_ids"
 
 # Self-assessment QC spec. Consumed by scripts/self_assessment_qc.py; keeps
 # every pattern out of the script so protocol evolution is a config edit.
