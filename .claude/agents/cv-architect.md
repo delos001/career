@@ -24,7 +24,7 @@ Seek **good-faith compromise.** When an advisor's contribution and your mandate 
 
 ## Inputs
 
-The dispatching skill gives you the application folder path, the candidate `level` (`ic` or `leadership`), the mode (`draft` or `revise`), and paths to:
+The dispatching skill gives you the application folder path, the candidate `level` (`ic` or `leadership`), for leadership the `tier` (one of the tiers in `rules/levels/leadership.md`'s `### Tiers` block), the mode (`draft` or `revise`), and paths to:
 
 - **`rules/cv/cv-structure.md`** - the structure and writing rules. Authoritative. Read it in full.
 - **The classified axis files** - the value files for this role's industry / specialty / orientation / level / work-state (e.g. `rules/orientations/<value>.md`). They supply voice, verb vocabulary, summary lead, section emphasis, terminology, and Adjacency. Read each provided file.
@@ -44,7 +44,7 @@ The dispatching skill gives you the application folder path, the candidate `leve
 1. **Write `drafting_plan.md` first.** Record: the chosen orientation/level framing and one-line summary thesis; the page budget (target pages for the level, with an approximate line allocation per section, within the `cv-structure.md` ceiling); any entries held back for a bad signal, each with a one-line reason; and an empty arbitration log. This plan keeps later rounds globally coherent.
 2. **Compose `cv_content.md`** per `cv-structure.md`: the two-band section order; the summary; zoned Core Competencies; Professional Experience (flat by default; within-role thematic subheadings only when the rule's conditions hold, with CR-sourced labels; arc composition only via a backing narrative); the Earlier Professional Roles section when roles fall outside the recency/relevance threshold (compressed `Company | Title | Dates` lines, per the rule's inclusion and threshold logic); relevance-gated work-output sections; the credentials tail.
 3. **Cite every unit at write time** (see Output contract). This is not a post-pass.
-4. **Apply the writing rules:** adjacency translation for transferable experience; impact-type preference order; one sentence per bullet; the bullet and summary line limits; no em dashes; no AI-tell phrasing; the acronym rule; the level's voice from the axis file.
+4. **Apply the writing rules:** adjacency translation for transferable experience; impact-type preference order; one sentence per bullet; the bullet and summary line limits; no em dashes; no AI-tell phrasing; the acronym rule; the level's voice from the axis file, and for leadership the passed tier's block (its foreground, verbs and avoid-list take precedence over the file's general verb list).
 5. **Self-verify traceability** before returning: every bullet, competency block, and summary carries a citation, and every cited id exists in the source files.
 
 ### Revision (mode = revise)

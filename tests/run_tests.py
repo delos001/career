@@ -1534,6 +1534,31 @@ def test_skills_look_up_paths_instead_of_spelling_them():
     assert not offenders, 'files naming a personal/ path: ' + ', '.join(offenders)
 
 
+def test_leadership_classification_carries_a_valid_tier():
+    """Built 2026-11-05 (GitHub #51): research calibrated seniority (e.g. VP vs
+    Associate Director) and classification threw it away, so every leadership
+    CV got one voice. A leadership role now records a tier named in
+    leadership.md's Tiers block; an IC role records none.
+    """
+    import role_intake_qc as riq
+    root, cfg = _config.load()
+    tiers = riq.leadership_tiers(root, cfg)
+    assert tiers == ['delivery-lead', 'function-lead', 'multi-function-head', 'executive'], tiers
+
+    def result(level, tier_line):
+        log = (f'## Axis Classification\n\n- Orientation: x (primary) - r\n- Industry: x - r\n'
+               f'- Specialty: x - r\n- Level: {level} - r\n{tier_line}- Work-state: x - r\n\n## Axis Gaps\n\nNone\n')
+        findings = []
+        riq.check_tier(log, tiers, findings)
+        return findings[0]
+
+    assert result('leadership', '- Tier: function-lead - scope spans R&D\n')[1]
+    assert not result('leadership', '')[1], 'leadership without a tier passed'
+    assert not result('leadership', '- Tier: senior-vp - r\n')[1], 'unknown tier passed'
+    assert result('ic', '')[1]
+    assert not result('ic', '- Tier: function-lead - r\n')[1], 'ic with a tier passed'
+
+
 def test_stale_rule_files_are_flagged():
     """Fixed 2026-11-05 (GitHub #47): the 9-month staleness rule lived only in
     prose, the one check that ran used ~12 months, and 23 of 24 stamped rule

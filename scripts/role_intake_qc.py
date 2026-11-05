@@ -25,6 +25,8 @@ split into its mechanical half, check 5 stays with the agent):
       log's Axis Gaps matches the set flagged in the research file's.
   I5  Axis lines match the axis-classifier's declared return format
       (`- <Axis>: <values> - <rationale>`, no bold, no bare label).
+  I6  A leadership Level carries exactly one `- Tier:` line naming a tier
+      from rules/levels/leadership.md's Tiers block; other levels carry none.
 
 Output: one `<ID>  PASS|FAIL  <detail>` line per check, then a RESULT
 line. Exit 0 when all pass, 1 otherwise.
@@ -284,6 +286,44 @@ def check_consistency(research_text, log_text, meta, findings):
     findings.append(('I3', not problems, '; '.join(problems) or 'cross-file fields consistent'))
 
 
+def leadership_tiers(repo_root, cfg):
+    """Return the tier names from leadership.md's '### Tiers' block, in order.
+
+    The block is the single source of tier names (GitHub #51); each tier is a
+    bullet opening with its bold name, e.g. '- **function-lead** (...)'.
+    """
+    path = os.path.join(repo_root, cfg['paths']['rules'], 'levels', 'leadership.md')
+    body = _section_body(_util.read(path), 'Tiers', depth=3) or ''
+    return re.findall(r'(?m)^- \*\*([a-z][a-z-]*)\*\*', body)
+
+
+def check_tier(log_text, tiers, findings):
+    """I6: a leadership role records exactly one known tier; an IC role none.
+
+    Research calibrates seniority within leadership (Associate Director vs
+    VP); the tier line carries that calibration to the CV writer instead of
+    flattening every leadership role into one voice.
+    """
+    body = _section_body(log_text, 'Axis Classification')
+    if body is None:
+        findings.append(('I6', False, 'no `## Axis Classification` section to check'))
+        return
+    level = (_axis_values(log_text) or {}).get('Level', '')
+    tier_lines = re.findall(r'(?m)^- Tier:[ \t]*(.+)$', body)
+    values = [re.split(r'[ \t]+-[ \t]+', t.strip(), maxsplit=1)[0] for t in tier_lines]
+    if level == 'leadership':
+        if len(values) != 1:
+            ok, detail = False, f'leadership needs one `- Tier:` line, found {len(values)}'
+        elif values[0] not in tiers:
+            ok, detail = False, f"tier {values[0]!r} is not one of {', '.join(tiers)}"
+        else:
+            ok, detail = True, f'tier {values[0]}'
+    else:
+        ok = not values
+        detail = 'no tier for a non-leadership level' if ok else f'level {level!r} must carry no tier'
+    findings.append(('I6', ok, detail))
+
+
 def check_gap_mirroring(research_text, log_text, findings):
     """I4: the axes flagged as gaps match between the two files."""
     log_gaps, research_gaps = _gap_axes(log_text), _gap_axes(research_text)
@@ -320,6 +360,7 @@ def cmd_check(args, repo_root, cfg):
     check_consistency(research_text, log_text, meta, findings)
     check_gap_mirroring(research_text, log_text, findings)
     check_axis_line_form(log_text, findings)
+    check_tier(log_text, leadership_tiers(repo_root, cfg), findings)
 
     failed = [f for f in findings if not f[1]]
     for check, ok, detail in findings:

@@ -15,7 +15,16 @@ Select this level when the target role carries people-management authority, orga
 
 ## Voice
 
-Strategic and outcome-focused. The work being described is organizational: decisions made, capabilities built, teams scaled, functions led, cross-functional influence exerted. The unit of work is organizational, not individual. Director voice differs from Associate Director voice in scope and authority; both differ from VP and C-suite voice in horizon and breadth.
+Strategic and outcome-focused. The work being described is organizational: decisions made, capabilities built, teams scaled, functions led, cross-functional influence exerted. The unit of work is organizational, not individual. The register rises with tier: apply the block for the tier recorded with the classification (`- Tier:` in the session log). A tier's verbs and avoid-list take precedence over the general Verb vocabulary below.
+
+### Tiers
+
+Assign the tier from the job's scope (how far the work reaches, who makes the final call), with the title as a weak hint only: Associate Director is the least reliable title (posted with Senior Manager at some companies, with Director at others), "Head of" names a function and carries no tier by itself, and small-company titles run higher than large-pharma ones. No public pharma-specific leveling standard defines these boundaries (Radford and Mercer definitions are paywalled); this four-tier cut is a synthesis from Carta's framework, practitioner sources, and Radford's executive band starting at VP, researched 2026-11.
+
+- **delivery-lead** (typically Manager to Senior Manager): runs a study, trial or workstream to someone else's plan. Foreground delivery against plan: timelines, quality, the metrics owned. Verbs: managed, delivered, coordinated, implemented. Avoid: "set strategy", "drove the portfolio" (reads inflated).
+- **function-lead** (typically Associate Director to Director): owns the outcome for a program, multi-study area or function with little supervision, and makes the trade-offs inside it; includes work advancing initiatives across a major unit. Foreground outcomes owned, the decisions behind them, their consequences. Verbs: led, owned, built, established, directed. Avoid: task-level detail (reads junior); enterprise or board language (reads senior).
+- **multi-function-head** (typically Senior Director to Executive Director): leads several functional areas through managers, owns the function's budget and plan, shapes the plan leadership approves. Foreground the operating model, building the organization, the function's strategy. Verbs: built, scaled, restructured, defined, aligned. Avoid: single-study detail. This boundary has the weakest evidence of the four.
+- **executive** (VP, SVP, C-suite, head of R&D): sets the plan and answers for it, through several layers of management. Foreground the plan set and enterprise results: pipeline value, filings, financing, transformation, P&L. Verbs: set, shaped, positioned, secured, transformed. Avoid: project-execution bullets (reads Director). At C-suite the difference is mainly audience (board, investors), not verbs.
 
 ## Verb vocabulary
 
