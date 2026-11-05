@@ -63,9 +63,7 @@ The dispatching skill gives you the application folder path, the candidate `leve
 - Core Competencies are a single-level bulleted list or a pipe-delimited run; each zone (or the section, if unzoned) carries at least one `<!-- src: ... -->`.
 - The Professional Summary is prose carrying at least one `<!-- src: ... -->`.
 - Company / role header lines are plain text, not list items.
-- Earlier Professional Roles entries are plain-text `Company | Title | Dates`
-  lines (no bullets, no descriptions); they carry no claims, so no citation
-  marker is required, though the facts derive from the RL role records.
+- Earlier Professional Roles entries are plain-text `Company | Title | Dates` lines (no bullets, no descriptions); they carry no claims, so no citation marker is required, though the facts derive from the RL role records.
 
 ## Arbitration precedence (when stakeholder contributions genuinely conflict)
 

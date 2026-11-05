@@ -109,32 +109,17 @@ Single-column bulleted list only. Two-column tables are never used anywhere in t
 | Hanging indent | 360 DXA (0.25 inch) |
 | Bullet text font / size | Calibri 11pt |
 
-**Implementation: a native Word list, not a literal bullet character.** Bullets
-render as a real bulleted list (`numPr` referencing a numbering definition), not
-by prepending a bullet-character text run to the paragraph. The list definition
-(`abstractNum`) carries the glyph (round bullet, Symbol font code U+F0B7, 10pt),
-the `bullet` numbering format, and the 360/360 indent; each bullet paragraph
-references it via `numPr`. The hanging indent puts a 0.25-inch gap between the
-glyph and the text, which starts at a tab stop at the left indent.
+**Implementation: a native Word list, not a literal bullet character.** Bullets render as a real bulleted list (`numPr` referencing a numbering definition), not by prepending a bullet-character text run to the paragraph. The list definition (`abstractNum`) carries the glyph (round bullet, Symbol font code U+F0B7, 10pt), the `bullet` numbering format, and the 360/360 indent; each bullet paragraph references it via `numPr`. The hanging indent puts a 0.25-inch gap between the glyph and the text, which starts at a tab stop at the left indent.
 
-`scripts/cv_to_docx.py` (`_ensure_bullet_numbering` + `_set_numbering`) injects
-one such definition into the document's numbering part and references it from
-every bullet paragraph. One indent (360/360) is used for all bulleted lists.
+`scripts/cv_to_docx.py` (`_ensure_bullet_numbering` + `_set_numbering`) injects one such definition into the document's numbering part and references it from every bullet paragraph. One indent (360/360) is used for all bulleted lists.
 
-**Bulleted sections.** These sections render every content line as a bullet:
-Professional Experience (role bullets), Core Competencies (one bullet per zone),
-Earlier Professional Roles, Education, Certifications & Training, Professional
-Affiliations, Technical Proficiencies, and the description lines of Selected
-Projects. The Professional Summary is prose (never bulleted); company / role
-header lines and the Selected Projects project-name line are headers, not
-bullets.
+**Bulleted sections.** These sections render every content line as a bullet: Professional Experience (role bullets), Core Competencies (one bullet per zone), Earlier Professional Roles, Education, Certifications & Training, Professional Affiliations, Technical Proficiencies, and the description lines of Selected Projects. The Professional Summary is prose (never bulleted); company / role header lines and the Selected Projects project-name line are headers, not bullets.
 
 ---
 
 ## Footer
 
-A centered page-number footer appears on every page (present in the example
-CVs). Live Word fields, so the count updates as content changes.
+A centered page-number footer appears on every page (present in the example CVs). Live Word fields, so the count updates as content changes.
 
 | Property | Value |
 |---|---|
@@ -145,11 +130,7 @@ CVs). Live Word fields, so the count updates as content changes.
 
 ## Earlier Professional Roles rendering
 
-Plain 11pt black `Company | Title | Dates` lines, identical typography to body
-text. No bullets, no descriptions, no special color or case. The blue
-Calibri-Light `SectionHeading` and 9pt all-caps `Subsection` styles documented
-in an earlier version of this spec are **not used** (they appear in no example
-CV; confirmed 2026-06-02, `cv-render-build-2026-06`).
+Plain 11pt black `Company | Title | Dates` lines, identical typography to body text. No bullets, no descriptions, no special color or case. The blue Calibri-Light `SectionHeading` and 9pt all-caps `Subsection` styles documented in an earlier version of this spec are **not used** (they appear in no example CV; confirmed 2026-06-02, `cv-render-build-2026-06`).
 
 ---
 
@@ -183,9 +164,7 @@ Section order is governed by `rules/cv/cv-structure.md`. This spec does not defi
 
 Example: `Delosh_CV_Pfizer_VPDataOps_2026-03.docx`
 
-`LastName` is the candidate's surname from the contact block in
-`personal/profile/user-info.md`. Use the surname only, not the full name and not
-initials.
+`LastName` is the candidate's surname from the contact block in `personal/profile/user-info.md`. Use the surname only, not the full name and not initials.
 
 ---
 

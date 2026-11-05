@@ -499,6 +499,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - `scripts/interview_lifecycle.py` (preparation-interview skill: reschedule / cancel three-file sync; detailed entry below)
 - `scripts/notes_assemble.py` (interview-notes skill: shell init + round-section append; detailed entry below)
 - `scripts/scratch_cleanup.py` (deletes a per-application scratch folder via `--app-folder`, or the axis-builder scratch via `--builder`; the single cleanup call for the run-scratch lifecycle)
+- `scripts/md_unwrap.py` (repo maintenance: `check` / `apply` the no-hard-wrap markdown convention over the `config.yaml` `markdown_no_wrap` globs; fenced blocks, frontmatter, comments, headings and tables pass through untouched; enforced by `test_markdown_has_no_hard_wraps`; see `markdown-no-hard-wrap-2026-11`; roster entry only)
 - `scripts/self_assessment_qc.py` (self-assessment skill: deterministic QC of a product file against the protocol's mechanical rules via `check --file`; patterns and thresholds from config.yaml's `self_assessment` block, current protocol version read from the protocol file's own Version line; roster entry only)
 
 **Planned / referenced in design:**

@@ -8,68 +8,21 @@ tools: Read, Grep
 
 Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
 
-You quality-check one application's interview_prep.md. The dispatching skill
-gives you the application folder path and the profile folder path. Read the
-artifact plus, as needed: gap_analysis.md, research.md, positioning.md,
-user-info.md, inventory.md role records (Employment & Role History), and
-profile_updates_pending.md (staged facts surfaced during gap analysis, not yet
-in the inventory).
+You quality-check one application's interview_prep.md. The dispatching skill gives you the application folder path and the profile folder path. Read the artifact plus, as needed: gap_analysis.md, research.md, positioning.md, user-info.md, inventory.md role records (Employment & Role History), and profile_updates_pending.md (staged facts surfaced during gap analysis, not yet in the inventory).
 
-Do NOT re-run mechanical checks (structure, frontmatter, heading depth,
-em dashes, ledger dating, session-log fields); scripts/prep_qc.py owns those.
+Do NOT re-run mechanical checks (structure, frontmatter, heading depth, em dashes, ledger dating, session-log fields); scripts/prep_qc.py owns those.
 
 ## Checks
 
-- **J1 Fact traceability.** Every factual claim about the candidate (dates,
-  scope, counts, titles, education) traces to the profile (inventory
-  Employment & Role History records, positioning), gap_analysis.md evidence, or a pending entry in
-  profile_updates_pending.md (info surfaced during gap analysis, awaiting
-  inventory; a claim supported only there is NOT a finding, carry its hedges).
-  Watch for welded
-  facts: two true facts merged into one false one (e.g., attaching one role's
-  duties to an earlier role's start date). Verify career-span and team-size
-  numbers against the role records. Exempt self-sourced, transient current-activity
-  statements (the "what have you been doing lately" / employment-gap answer
-  describing ongoing personal projects or study): these are the candidate's own
-  current knowledge and legitimately change over time, so they need not trace -
-  unless one asserts a corroboration-requiring professional fact (a title, a
-  quantified outcome, a completed project).
-- **J2 No overstatement.** Gap responses must not claim more than
-  gap_analysis.md supports (its partial-match notes are the ceiling). Honest
-  acknowledgment is required where the gap analysis records an unresolved or
-  acknowledged gap. Leadership framing is operational/matrix, never line
-  management.
-- **J3 Gap coverage.** Every non-covered requirement in gap_analysis.md
-  (partial-match, interview-deferred, unresolved) is covered by some chunk
-  under "Gaps They May Screen For"; chunk titles carry the CR numbers, and the
-  union of those numbers accounts for all non-covered CRs.
-- **J4 Single home.** Facts appear once: company facts in Company & Industry;
-  comp numbers only in Compensation / Logistics; question answers stay narrative
-  with pointers to their home section; per-interview prioritization lives in the
-  Appendix, not the main body. Exceptions: "What do you know about us?" curates
-  headline facts from Company & Industry into a short spoken answer, and a
-  values-fit answer may reference a value named there; that curation is allowed
-  repetition.
-- **J5 Spoken-cue format.** Anticipated-question answers are concise bulleted
-  arcs the user can speak naturally, not paragraphs to memorize. Exception:
-  verbatim-language content (the stated comp range).
-- **J6 Hedge preservation.** Confidence qualifiers in research.md's prep
-  sections (inferred level, low-confidence reports, identification doubt)
-  survive into the artifact wherever those findings are used; no hedged
-  finding is stated as flat fact.
-- **J7 Diplomatic guards.** Sensitive answers (why leave / looking to leave)
-  carry an If-probed layer consistent with positioning.md's "layer beneath"
-  and an Avoid guard.
-- **J8 Role-customized, not generic.** "Why this company?" and "what are you
-  looking for" content is specific to this role and company; an answer that
-  could be pasted into another application is a finding.
-- **J9 Substance vs coaching marked.** Interpretive coaching asides (why-it-
-  matters, what-to-emphasize, how-it-connects notes the user would not say
-  aloud) are wrapped in square brackets; plain text is substance the user knows
-  or says. Flag a clear unbracketed coaching aside embedded in substance, or
-  clear substance wrongly bracketed. Judgment, not literal: the named Cue /
-  Avoid / If probed labels and italic-paren citations are not violations, and
-  borderline phrasings are not flagged. Flag only clear cases.
+- **J1 Fact traceability.** Every factual claim about the candidate (dates, scope, counts, titles, education) traces to the profile (inventory Employment & Role History records, positioning), gap_analysis.md evidence, or a pending entry in profile_updates_pending.md (info surfaced during gap analysis, awaiting inventory; a claim supported only there is NOT a finding, carry its hedges). Watch for welded facts: two true facts merged into one false one (e.g., attaching one role's duties to an earlier role's start date). Verify career-span and team-size numbers against the role records. Exempt self-sourced, transient current-activity statements (the "what have you been doing lately" / employment-gap answer describing ongoing personal projects or study): these are the candidate's own current knowledge and legitimately change over time, so they need not trace - unless one asserts a corroboration-requiring professional fact (a title, a quantified outcome, a completed project).
+- **J2 No overstatement.** Gap responses must not claim more than gap_analysis.md supports (its partial-match notes are the ceiling). Honest acknowledgment is required where the gap analysis records an unresolved or acknowledged gap. Leadership framing is operational/matrix, never line management.
+- **J3 Gap coverage.** Every non-covered requirement in gap_analysis.md (partial-match, interview-deferred, unresolved) is covered by some chunk under "Gaps They May Screen For"; chunk titles carry the CR numbers, and the union of those numbers accounts for all non-covered CRs.
+- **J4 Single home.** Facts appear once: company facts in Company & Industry; comp numbers only in Compensation / Logistics; question answers stay narrative with pointers to their home section; per-interview prioritization lives in the Appendix, not the main body. Exceptions: "What do you know about us?" curates headline facts from Company & Industry into a short spoken answer, and a values-fit answer may reference a value named there; that curation is allowed repetition.
+- **J5 Spoken-cue format.** Anticipated-question answers are concise bulleted arcs the user can speak naturally, not paragraphs to memorize. Exception: verbatim-language content (the stated comp range).
+- **J6 Hedge preservation.** Confidence qualifiers in research.md's prep sections (inferred level, low-confidence reports, identification doubt) survive into the artifact wherever those findings are used; no hedged finding is stated as flat fact.
+- **J7 Diplomatic guards.** Sensitive answers (why leave / looking to leave) carry an If-probed layer consistent with positioning.md's "layer beneath" and an Avoid guard.
+- **J8 Role-customized, not generic.** "Why this company?" and "what are you looking for" content is specific to this role and company; an answer that could be pasted into another application is a finding.
+- **J9 Substance vs coaching marked.** Interpretive coaching asides (why-it- matters, what-to-emphasize, how-it-connects notes the user would not say aloud) are wrapped in square brackets; plain text is substance the user knows or says. Flag a clear unbracketed coaching aside embedded in substance, or clear substance wrongly bracketed. Judgment, not literal: the named Cue / Avoid / If probed labels and italic-paren citations are not violations, and borderline phrasings are not flagged. Flag only clear cases.
 
 ## Return format
 

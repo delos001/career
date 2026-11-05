@@ -75,8 +75,7 @@ Human-gated AI workflow built on Claude Code, with explicit user checkpoints rat
 
 Seven principles do the structural work.
 
-**1. Deterministic checks and judgment checks are separated, and neither repeats the other.**
-Every quality gate is a pair.
+**1. Deterministic checks and judgment checks are separated, and neither repeats the other.** Every quality gate is a pair.
 - A Python script owns everything mechanically verifiable:
   - section structure,
   - field presence,
@@ -93,8 +92,7 @@ Every quality gate is a pair.
 - `qc-gap-analysis` judges Notes substance and explicitly does not re-run the eleven.
 - This keeps the expensive layer small and the cheap layer exhaustive.
 
-**2. Retrieval is slice-based.**
-`profile_slice.py`, `retrieval_payload.py`, and `retrieval_apply.py` chunk, score, and merge addressed fragments. A scoring sub-agent sees one chunk at a time. The main session sees a manifest.
+**2. Retrieval is slice-based.** `profile_slice.py`, `retrieval_payload.py`, and `retrieval_apply.py` chunk, score, and merge addressed fragments. A scoring sub-agent sees one chunk at a time. The main session sees a manifest.
 
 **3. Classification runs on five orthogonal axes.**
 - Each axis gets a folder of value/vocabulary files under `rules/` plus a registry:
@@ -106,17 +104,13 @@ Every quality gate is a pair.
 - Every value file carries an `Adjacency` section, so a partial match scores through an adjacency map rather than collapsing to a binary hit.
 - Axis vocabulary aligns the verbiage, tone, level and state to the role.
 
-**4. Each document has exactly one writer.**
-The profile documents are read by nearly everything and written by exactly one skill, `profile-update`. Facts surfaced mid-run go to a staging queue via `staging_append.py`, which refuses a capture missing its role, attribution, outcome, or limits, and are promoted later under user review. The queue holds what is waiting; the inventory is where information persists. How each is written lives in `rules/profile/`. This removes concurrent drift as a class of bug.
+**4. Each document has exactly one writer.** The profile documents are read by nearly everything and written by exactly one skill, `profile-update`. Facts surfaced mid-run go to a staging queue via `staging_append.py`, which refuses a capture missing its role, attribution, outcome, or limits, and are promoted later under user review. The queue holds what is waiting; the inventory is where information persists. How each is written lives in `rules/profile/`. This removes concurrent drift as a class of bug.
 
-**5. A phase produces its declared output and nothing else.**
-No forward-looking commentary, no work belonging to a later skill. Role intake may report that a job description contradicts itself; it may not report how the candidate scores against it.
+**5. A phase produces its declared output and nothing else.** No forward-looking commentary, no work belonging to a later skill. Role intake may report that a job description contradicts itself; it may not report how the candidate scores against it.
 
-**6. Approval gates open in plain language.**
-The first two lines of any gate are what breaks in plain words, then what the system proposes to do. No filenames, IDs, or jargon above those two lines. Detail sits underneath for whoever wants it.
+**6. Approval gates open in plain language.** The first two lines of any gate are what breaks in plain words, then what the system proposes to do. No filenames, IDs, or jargon above those two lines. Detail sits underneath for whoever wants it.
 
-**7. Nothing is hardcoded.**
-`config.yaml` holds every folder name, filename, ID pattern, axis schema, and tuning cutoff. Scripts resolve the repo root from `__file__`. A repo reorganization is a config edit rather than a code change.
+**7. Nothing is hardcoded.** `config.yaml` holds every folder name, filename, ID pattern, axis schema, and tuning cutoff. Scripts resolve the repo root from `__file__`. A repo reorganization is a config edit rather than a code change.
 
 Failure handling is uniform: on any quality-check failure, load failure, or ambiguous input, a component halts, states the specific failure, presents explicit options, and waits. Silence is not approval.
 

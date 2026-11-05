@@ -1,17 +1,10 @@
 # Test corpus
 
-A complete, invented candidate that the scripts can run against instead of the
-real profile. Nothing in `tests/fixture/` describes a real person, company,
-journal, or job. The candidate is "Morgan Ellery"; every employer, school,
-publication, and award is made up.
+A complete, invented candidate that the scripts can run against instead of the real profile. Nothing in `tests/fixture/` describes a real person, company, journal, or job. The candidate is "Morgan Ellery"; every employer, school, publication, and award is made up.
 
 ## Why it exists
 
-Before this, the only way to test a change to the profile machinery was to run
-it against the real profile in `personal/`, or to copy that profile out, run,
-and copy it back. That put the candidate's own documents in the blast radius of
-every test, and it meant situations the real profile does not contain went
-untested until they hit him for real.
+Before this, the only way to test a change to the profile machinery was to run it against the real profile in `personal/`, or to copy that profile out, run, and copy it back. That put the candidate's own documents in the blast radius of every test, and it meant situations the real profile does not contain went untested until they hit him for real.
 
 ## Running the checks
 
@@ -22,30 +15,17 @@ python tests\run_tests.py --only counter
 
 Exit code is 0 when everything passes, 1 otherwise, so it can gate a change.
 
-`run_tests.py` sets `CAREER_FIXTURE` itself, points it at a throwaway copy in
-`tests/.run/`, and refuses to start unless the resolved profile path is inside
-`tests/`. A check therefore cannot reach the real profile even by mistake, and
-the committed corpus is identical before and after a run.
+`run_tests.py` sets `CAREER_FIXTURE` itself, points it at a throwaway copy in `tests/.run/`, and refuses to start unless the resolved profile path is inside `tests/`. A check therefore cannot reach the real profile even by mistake, and the committed corpus is identical before and after a run.
 
-Every check corresponds to a defect that actually shipped, so the set is a
-record of what has broken rather than a guess at what might. The docstring on
-each one says what it caught.
+Every check corresponds to a defect that actually shipped, so the set is a record of what has broken rather than a guess at what might. The docstring on each one says what it caught.
 
-Two of them are about the checkers themselves: they break the fixture
-deliberately, nine different ways, and require a complaint each time. That
-exists because the worst failure this repo has had was not a missing check but
-a check written to tolerate two shapes, which stopped catching anything for four
-months.
+Two of them are about the checkers themselves: they break the fixture deliberately, nine different ways, and require a complaint each time. That exists because the worst failure this repo has had was not a missing check but a check written to tolerate two shapes, which stopped catching anything for four months.
 
-**A new check is only finished once you have seen it fail.** Reintroduce the bug,
-watch the check go red, then restore. A check that has only ever passed proves
-nothing.
+**A new check is only finished once you have seen it fail.** Reintroduce the bug, watch the check go red, then restore. A check that has only ever passed proves nothing.
 
 ## How to use the corpus directly
 
-Set `CAREER_FIXTURE` to a repo-root-relative folder. Every path that lives under
-the `personal` root is rebased onto it, so while the variable is set no script
-can read or write the real profile.
+Set `CAREER_FIXTURE` to a repo-root-relative folder. Every path that lives under the `personal` root is rebased onto it, so while the variable is set no script can read or write the real profile.
 
 ```powershell
 $env:CAREER_FIXTURE = 'tests/fixture'
@@ -54,12 +34,9 @@ python scripts\gap_qc.py check --folder <repo>\tests\fixture\applications\aldrid
 Remove-Item Env:\CAREER_FIXTURE     # back to the real profile
 ```
 
-A value naming a folder that does not exist raises rather than silently falling
-back to the real profile.
+A value naming a folder that does not exist raises rather than silently falling back to the real profile.
 
-Tests that write are expected to dirty the fixture. Reset it with
-`git checkout tests/fixture`; the committed state is the canonical starting
-point.
+Tests that write are expected to dirty the fixture. Reset it with `git checkout tests/fixture`; the committed state is the canonical starting point.
 
 ## What the corpus deliberately contains
 
@@ -84,13 +61,8 @@ Shapes chosen to exercise the machinery, not to look like a plausible career:
 
 ## What it does not cover yet
 
-No `retrieval.md`, `cv_content.md`, `interview_prep.md`, or `interview_notes.md`,
-so retrieval beyond its payload split, and the CV and interview-prep scripts,
-have no fixture to run against.
-Add them when those become the thing under change.
+No `retrieval.md`, `cv_content.md`, `interview_prep.md`, or `interview_notes.md`, so retrieval beyond its payload split, and the CV and interview-prep scripts, have no fixture to run against. Add them when those become the thing under change.
 
 ## Keeping it valid
 
-The corpus has to stay consistent with `templates/inventory.md`, which is the
-structure authority. When the template changes, run the checks against the
-fixture; they will name what drifted.
+The corpus has to stay consistent with `templates/inventory.md`, which is the structure authority. When the template changes, run the checks against the fixture; they will name what drifted.

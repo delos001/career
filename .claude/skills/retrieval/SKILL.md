@@ -5,49 +5,29 @@ description: Surface the relevant profile content for a role. Reads role-intake'
 
 # retrieval - surface the relevant profile content
 
-Produces one artifact for the role: a **retrieval manifest** at
-`personal/applications/<SLUG>_APP-NNN_YYYY-MM/retrieval.md`. The manifest
-exposes raw per-entry signals (semantic score, axis exact-match count, axis
-adjacency-weighted score) for inventory, narratives, and themes. Downstream
-skills derive their own tier cutoffs from the raw signals - retrieval does
-NOT pre-classify entries.
+Produces one artifact for the role: a **retrieval manifest** at `personal/applications/<SLUG>_APP-NNN_YYYY-MM/retrieval.md`. The manifest exposes raw per-entry signals (semantic score, axis exact-match count, axis adjacency-weighted score) for inventory, narratives, and themes. Downstream skills derive their own tier cutoffs from the raw signals - retrieval does NOT pre-classify entries.
 
 ## Operating rules
 
 - Read `rules/global-rules.md` first; operate under it throughout.
 - Phases below run in order; each has a declared input and output.
-- Each phase opens with the **bold lead line** under its heading - speak it
-  verbatim before running the phase.
-- User-facing status and prompts use plain English. No raw QC check tags or
-  route-back labels, no implementation jargon (subagent, JSON). Translate
-  every finding, loop status, and error message to what the user needs to
-  know to decide or act.
+- Each phase opens with the **bold lead line** under its heading - speak it verbatim before running the phase.
+- User-facing status and prompts use plain English. No raw QC check tags or route-back labels, no implementation jargon (subagent, JSON). Translate every finding, loop status, and error message to what the user needs to know to decide or act.
 - Phase 5 (QC) loops back per *Phase routing on failure*.
-- **Run-scratch goes in the application's scratch folder.** `<scratch>` denotes
-  `<app_folder>/scratch/`; create it if absent. Write every working file this
-  skill produces - and tell every sub-agent it spawns to write its output files -
-  under `<scratch>`, never the shared `temp/`. Scratch persists for the life of
-  the application (a resumed run reuses it); it is wiped in one shot by
-  `scratch_cleanup.py` when the application is declined (gap-analysis) or closed
-  (the `close-application` skill).
+- **Run-scratch goes in the application's scratch folder.** `<scratch>` denotes `<app_folder>/scratch/`; create it if absent. Write every working file this skill produces - and tell every sub-agent it spawns to write its output files - under `<scratch>`, never the shared `temp/`. Scratch persists for the life of the application (a resumed run reuses it); it is wiped in one shot by `scratch_cleanup.py` when the application is declined (gap-analysis) or closed (the `close-application` skill).
 
 ## Resume check - run before Phase 0
 
 Ask if this session is for a new retrieval run or to resume a previous one?
 
-- **New:** ask the APP-NNN; locate the matching folder under
-  `personal/applications/`. Confirm that `research.md` exists in the folder
-  (retrieval depends on role-intake's output). If missing, halt and direct
-  the user to run `/role-intake` first.
-- **Resume:** ask the APP-NNN; locate the matching folder. Probe and land
-  per the ladder (first match wins):
+- **New:** ask the APP-NNN; locate the matching folder under `personal/applications/`. Confirm that `research.md` exists in the folder (retrieval depends on role-intake's output). If missing, halt and direct the user to run `/role-intake` first.
+- **Resume:** ask the APP-NNN; locate the matching folder. Probe and land per the ladder (first match wins):
   1. Folder missing - halt; APP-NNN likely wrong. Ask for APP-NNN again.
   2. `research.md` missing - halt; direct the user to run `/role-intake`.
   3. `retrieval.md` missing - resume at start of **Phase 1**.
   4. `retrieval.md` exists - announce ("Manifest already exists for APP-NNN. Re-run? Y/N.") and either resume at Phase 1 (re-run) or jump to Phase 6 (review existing).
 
-  Announce ("Resuming APP-NNN at Phase N.") and proceed without prompting
-  further.
+  Announce ("Resuming APP-NNN at Phase N.") and proceed without prompting further.
 
 ## Phase 0 - Intro
 

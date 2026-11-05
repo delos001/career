@@ -53,8 +53,7 @@ Industry/Specialty split replaces prior Domain axis. Axes are independent files.
 #### dual-orientation-asymmetric-authority
 A role may map to two orientations. Primary governs most surfaces; secondary gets bounded explicitly-scoped slots. They do not compete over the same surface.
 - CV: secondary in 2-3 achievements and 1-2 Core Competencies items. Summary primary-only.
-- Other deliverables: per-deliverable composition rule as needed.
-Existing CV dual-orientation rule transfers to `rules/orientations/cv_dual_orientation_composition.md`.
+- Other deliverables: per-deliverable composition rule as needed. Existing CV dual-orientation rule transfers to `rules/orientations/cv_dual_orientation_composition.md`.
 
 #### inventory-entry-multi-value-orientation-2026-05
 Orientation on EX/PR inventory entries supports multi-value primary/secondary via pipe-delimited convention (`Orientation: <primary> | <secondary>`), extending `dual-orientation-asymmetric-authority` from CV-level to inventory-level.
@@ -208,8 +207,7 @@ One per-application note-capture file (`interview_notes.md`) replaces the prior 
 - Debrief fields carried from the old Completion file, all six kept pending usage evidence: Impression, Interest level, Rough patches to address in follow-up, Personal connection threads, Next steps communicated, Aware I am pursuing other roles.
 - **Numbered headings + status suffix (2026-07-07).** Round headings carry an append-order ordinal (`## <N>. ...`) so rounds are distinct anchors in editor outline view. The number is derived by `notes_assemble.py` (count of existing round headings + 1), never a payload field, and never renumbered (a cancelled round keeps its number). A heading may carry a trailing bracketed status (`[CANCELLED <date>]`, `[NO-SHOW]`, ...) so a dead or unusual round is visible in outline; `interview_lifecycle.py cancel` writes `[CANCELLED <date>]` automatically, alongside the existing bold in-body annotation. Duplicate-detection and lifecycle matching key off stage + date, ignoring the number and status.
 - **Reschedule history (2026-07-07).** A rescheduled round is captured by an optional hand-filled `Schedule changes:` logistics line in the notes round block, not by a structured session-log edit. Rationale: a round moving is round-scoped detail that belongs in the round's own record; there is no reliable trigger (the user does not run a skill at reschedule time); hand-filling the notes avoids risky structured session-log edits. Propagating that line into the session-log ledger via the follow-up skill was considered and declined, to keep follow-up lean. A `Duration:` line (planned vs actual length / overrun) follows the same optional-hand-filled pattern.
-- **Impressions-forecast scoring fields (2026-07-09).** Two debrief lines added: `Gate: opened? when / what opened it:` (the operator assessment's gate-latency instrument) and `Format dynamic: scripted | conversational | shifted (when):` (scores the format variable the impressions forecast turns on, and tests the early-questions lever). The Duration field note now requires the over/underrun's cause (their engagement extending it vs the candidate's question backlog cramming the end); a raw overrun is ambiguous and scores nothing on its own. Consumers unaffected: `notes_assemble.py` renders the round block from the template at run time; the follow-up skill reads the debrief generically. Forecast + scoring design: `personal/operator/2026-07/impressions_2026-07.md`.
-Session-log coverage for unprepped rounds is deferred to the follow-up skill.
+- **Impressions-forecast scoring fields (2026-07-09).** Two debrief lines added: `Gate: opened? when / what opened it:` (the operator assessment's gate-latency instrument) and `Format dynamic: scripted | conversational | shifted (when):` (scores the format variable the impressions forecast turns on, and tests the early-questions lever). The Duration field note now requires the over/underrun's cause (their engagement extending it vs the candidate's question backlog cramming the end); a raw overrun is ambiguous and scores nothing on its own. Consumers unaffected: `notes_assemble.py` renders the round block from the template at run time; the follow-up skill reads the debrief generically. Forecast + scoring design: `personal/operator/2026-07/impressions_2026-07.md`. Session-log coverage for unprepped rounds is deferred to the follow-up skill.
 Refs: `preparation-screen-architecture-2026-06` (session-log stage convention), deferral `followup-session-log-round-coverage`.
 
 #### preparation-screen-architecture-2026-06
@@ -220,8 +218,7 @@ Interview preparation splits into two discrete skills writing into ONE shared pe
 - **Confirm-not-trust.** Every value pulled from profile defaults or upstream artifacts is shown to the user for currency confirmation before entering the artifact; profile docs hold dated defaults, not standing truth.
 - **Eligibility constraints move upstream.** gap-analysis Phase 2 confirms modality/travel/availability/posted-comp constraints (user-info.md dated defaults) and records confirmed non-flags in gap_analysis.md's Eligibility Flags (`decision: confirmed` renders "Confirmed, no conflict"); preparation-screen reads instead of re-asking.
 - **QC split.** `scripts/prep_qc.py` owns mechanical checks (P1-P8, X1-X4, R1, S1-S2), scoped to prep-owned sections of shared files; the universal `interview_prep.md` template rules (P6-P8, X1-X4) live in the shared `scripts/_prep_checks.py` module so screen and post-screen QC enforce the template identically; `qc-preparation-screen` owns judgment checks (J1-J8). Bounded 3-iteration internal fix loop; provisional ship logs to `design/build_issues.md`.
-- **Session log convention.** Stage-scoped sections (`## Interview: Recruiter Screen`, future `## Interview: Hiring Manager`), created when the stage begins, holding prep date, artifact pointer, interview events, outcome. The stage label matches the `interview_notes.md` round label exactly (every stage, including the recruiter screen); the session log carries no terse alias.
-Conventions live in their operational homes: section skeleton and body rules in `templates/interview_prep.md`; procedure and interaction contract in `.claude/skills/preparation-screen/SKILL.md`. Supersedes the `interview_prep` stub skill. (Migrated to the shared cumulative architecture 2026-07-02; see `preparation-interview-architecture-2026-07`.)
+- **Session log convention.** Stage-scoped sections (`## Interview: Recruiter Screen`, future `## Interview: Hiring Manager`), created when the stage begins, holding prep date, artifact pointer, interview events, outcome. The stage label matches the `interview_notes.md` round label exactly (every stage, including the recruiter screen); the session log carries no terse alias. Conventions live in their operational homes: section skeleton and body rules in `templates/interview_prep.md`; procedure and interaction contract in `.claude/skills/preparation-screen/SKILL.md`. Supersedes the `interview_prep` stub skill. (Migrated to the shared cumulative architecture 2026-07-02; see `preparation-interview-architecture-2026-07`.)
 Refs: `preparation-interview-architecture-2026-07` (successor; the interview_prep_skill_notes.md inputs are consumed, file removed 2026-07-02), `why-i-left-specifics-for-interview-prep` (resolved), `cv-qc-section-structure-single-source` (deferral), `gap-analysis-architecture-2026-05` (Phase 2 amended 2026-06-11).
 
 #### followup-architecture-2026-06
@@ -229,8 +226,7 @@ The post-interview follow-up is a standalone skill (`followup`), built 2026-06-2
 - **Lean by design.** No QC script and no judgment subagent; the artifact is a short letter and does not warrant prep-family QC machinery. `templates/followup.md` is the structure and drafting authority; the SKILL holds procedure and the interaction contract. Add QC only if the artifact grows structure (user steer 2026-06-26: keep it light, tweak across follow-ups).
 - **Drafts only; user sends.** `sent: pending` in the artifact frontmatter until the user confirms the send, then the send date. The skill never writes into `interview_notes.md` (the user's hand-written note surface).
 - **Session-log self-heal.** The skill keeps the round's stage section current: adds a `Follow-up:` line and updates `Outcome:` if the user reports the result; if no prep run created the stage section, it creates one from the notes logistics in the shared `## Interview: <stage>` field shape. Resolves deferral `followup-session-log-round-coverage`.
-- **No introduce.py entry.** Opens conversationally with intake, like the prep family (resolves the followup slice of `introduction-roster-ambiguous-skills`).
-Drafting rules (length; the single debrief-sourced beat, optionally a clarifying question; an optional conviction line; traceability; and the standard no-model-memory / no-overstatement / no-AI-tell / no-em-dash guards) live solely in `templates/followup.md`; the SKILL points to them and does not restate them.
+- **No introduce.py entry.** Opens conversationally with intake, like the prep family (resolves the followup slice of `introduction-roster-ambiguous-skills`). Drafting rules (length; the single debrief-sourced beat, optionally a clarifying question; an optional conviction line; traceability; and the standard no-model-memory / no-overstatement / no-AI-tell / no-em-dash guards) live solely in `templates/followup.md`; the SKILL points to them and does not restate them.
 Refs: `interview-notes-architecture-2026-06`, `preparation-screen-architecture-2026-06` (shared session-log stage convention). (Spec `design/followup_skill_notes.md` removed 2026-06-26 once realized.)
 
 #### preparation-interview-architecture-2026-07
@@ -243,8 +239,7 @@ The `preparation-interview` skill (post-screen rounds: hiring-manager, peer/team
 - **QC split (mirrors preparation-screen).** `scripts/prep_interview_qc.py` owns mechanical checks (P1-P5, X1 Appendix-present, X2 Q-label cross-ref integrity, R1, S1-S2 for post-screen `## Interview: <audience>` sections); `qc-preparation-interview` owns judgment (J1-J12). Two hardenings applied to BOTH prep judgment agents: (a) `profile_updates_pending.md` is a valid J1 traceability source (a claim supported only by a staging entry is not a finding; carry its hedges); (b) self-sourced transient current-activity statements (the "what have you been doing lately" gap answer) are exempt from J1 unless they assert a corroboration-requiring professional fact.
 - **Lifecycle op.** `scripts/interview_lifecycle.py` (`reschedule` / `cancel`) syncs the three homes of an interview (session_log section, prep Appendix block, notes section); cancellations are recorded with the date and blocks tagged CANCELLED, not deleted. Interviewer-structural changes (single->panel, add/remove) stay with the skill + interview-notes AMEND.
 - **Artifact conventions (QC-enforced), added to the template and both prep SKILLs to prevent avoidable QC loops:** no em dashes; headings verbatim from the template with content and coaching in bodies, never in a heading; frontmatter is the first line (strip all template comments); scannable bullets / spoken-cue arcs; citations in italic-parens.
-- **Convention + QC hardening (2026-07-07), from a review of the APP-006 artifact.** Formatting: one weight-bearing element per bullet (discrete-element series expand; reference lists stay inline); no bold connector tokens (**plus**/**and**) welding list items; no build/process narration in the body (short section-purpose orientation only as a bracketed cue); no redundant restatement (single-home, cross-refs link by label); Company & Industry is a self-sufficient distilled summary (high-level + role bridges, brief research.md pointer), not a doc-bounce. Heading model: headings are short labels from an allowed set (fixed template headings + three dynamic families: Appendix blocks, per-Anticipated-Question ###, per-STAR-story ####); sub-topics (decision rights, gap clusters) are bullets; no coaching/citations in a heading; STAR heading = "Story X - <short title>", competency mapping in the first bullet. The Role's decision-rights map stays a flagged hypothesis whose confirmation question references it, not re-lists it; the walk-out crux lives in Concerns (single-home). Appendix blocks are prep-forward only (Purpose/Interviewer/Emphasis; no Outcome/Asked/debrief, which live in session_log + interview_notes). Question Bank ordered in topical clusters with sub-label insertion (Q1b) for new questions; the interview_notes projection preserves that order and prefixes priority items "(P)". Enforcement: prep_interview_qc.py adds P6 (connector tokens), P7 (heading allow-set), P8 (coaching/citations in headings), X3 (Appendix schema), advisory W1/W2, and a non-blocking WARN severity; qc-preparation-interview adds J13 (self-sufficiency), J14 (no build narration), J15 (single-home).
-Validated end-to-end on APP-006 (Takeda): the first fully QC-clean cumulative artifact (prep_qc 8/8, prep_interview_qc 10/10, both judgment QCs clean).
+- **Convention + QC hardening (2026-07-07), from a review of the APP-006 artifact.** Formatting: one weight-bearing element per bullet (discrete-element series expand; reference lists stay inline); no bold connector tokens (**plus**/**and**) welding list items; no build/process narration in the body (short section-purpose orientation only as a bracketed cue); no redundant restatement (single-home, cross-refs link by label); Company & Industry is a self-sufficient distilled summary (high-level + role bridges, brief research.md pointer), not a doc-bounce. Heading model: headings are short labels from an allowed set (fixed template headings + three dynamic families: Appendix blocks, per-Anticipated-Question ###, per-STAR-story ####); sub-topics (decision rights, gap clusters) are bullets; no coaching/citations in a heading; STAR heading = "Story X - <short title>", competency mapping in the first bullet. The Role's decision-rights map stays a flagged hypothesis whose confirmation question references it, not re-lists it; the walk-out crux lives in Concerns (single-home). Appendix blocks are prep-forward only (Purpose/Interviewer/Emphasis; no Outcome/Asked/debrief, which live in session_log + interview_notes). Question Bank ordered in topical clusters with sub-label insertion (Q1b) for new questions; the interview_notes projection preserves that order and prefixes priority items "(P)". Enforcement: prep_interview_qc.py adds P6 (connector tokens), P7 (heading allow-set), P8 (coaching/citations in headings), X3 (Appendix schema), advisory W1/W2, and a non-blocking WARN severity; qc-preparation-interview adds J13 (self-sufficiency), J14 (no build narration), J15 (single-home). Validated end-to-end on APP-006 (Takeda): the first fully QC-clean cumulative artifact (prep_qc 8/8, prep_interview_qc 10/10, both judgment QCs clean).
 - **Scheduling metadata has one home: the session log (2026-07-08).** Resolves a three-way conflict among the *Lifecycle op* (2026-07-02), *Convention + QC hardening* (2026-07-07), and *Reschedule history* (2026-07-07) decisions, plus a prose-field problem those decisions did not address. The lifecycle op originally wrote a bold `**RESCHEDULED/CANCELLED**` annotation into the prep Appendix and notes body; the Appendix-schema hardening (X3) then made that a guaranteed QC failure, and the reschedule-history decision created a notes `Schedule changes:` line no script ever wrote. The deeper issue: the session log's `Interview date:` field packed date + time + duration + medium + interviewers into one prose line, which no program could safely update, so the reschedule op could not maintain the very record it was syncing. **Decision: an interview's scheduling metadata (date, time, duration, medium, interviewers, schedule history, status) lives ONLY in the session-log `## Interview: <stage>` section, as discrete one-fact-per-line fields.** The prep doc carries none of it: Appendix headings are `## <Audience> - <Interviewer(s)>`, no date, no status (a date in the doc read right before the interview goes stale the moment it moves, and nothing consumed the status). The notes round is a capture surface: the `Schedule changes:` line and a `[CANCELLED]` heading tag, its heading date frozen as section identity. The interview-section field set is defined once, in `templates/session_log.md`'s `## Interview section` fenced block, and read from there by both prep QC scripts via `_util.interview_section_fields` (no hardcoded field lists). The lifecycle op is now a two-file operation (session log + notes; never the prep doc): reschedule rewrites the date/time/schedule-history fields and revives a cancelled round; cancel sets Status/Outcome and tags the notes heading; a real recorded Outcome is never overwritten by a scheduling op. Reschedule is optional (the follow-up skill reconciles the date from the notes `Schedule changes:` line every run); cancel is the accurate capture path (no downstream skill sees a cancellation) and `close-application` gained a Phase 2b that surfaces provably-unresolved rounds (pending outcome, future date, cancelled-in-notes-but-not-log) as a backstop. Enforcement: `prep_interview_qc.py` X4 flips to reject any date or event-status token in an Appendix heading; S1/S2 read the field set from the template and require `Interview date:` to be a bare YYYY-MM-DD; `prep_qc.py` gains the same. Sections hold current state, not an accumulating audit trail (the earlier `- Lifecycle (<date>):` bullet idea is dropped; `Schedule history:` is one rewritten line). A cross-file date-equality check was rejected: after a legitimate reschedule the frozen notes identity date must diverge from the live session-log date. Validated on APP-006 copies: reschedule, cancel-after-reschedule, cancel-then-revive, idempotent re-runs, no-match and bad-datetime error paths, `prep_interview_qc.py` 17/17 on the mutated copy; the two real session logs (APP-006, APP-008) migrated to the field shape.
 Refs: `preparation-screen-architecture-2026-06` (superseded structure; migrated 2026-07-02), `interview-notes-architecture-2026-06` (cue-card target + stage convention), `presentation-build-skill` (deferral), `interview-prep-skill-build-notes` (resolved deferral), memory `feedback_bullets_over_paragraphs`.
 
@@ -266,8 +261,7 @@ Retrieval is a standalone skill that runs after role-intake and serves multiple 
 
 **Narrative retrieval — two-signal:**
 - Deterministic Linked-Inventory walk: every narrative (`ST-NNN`, `DC-NNN`) whose `Linked Inventory:` references any inventory entry already in the manifest is included.
-- Independent semantic pass: every narrative is also scored by LLM-judgment against the critical requirements list, providing an arc-level relevance signal independent of inventory linkage. Scored in byte-budgeted chunks (default ~45KB per chunk file, one LLM call per chunk), mirroring the inventory chunking rationale; a one-scorer-per-narrative dispatch introduced at implementation time proved a per-application token-cost regression (~17 agents each re-reading the full requirements + JD context) and was replaced with chunked dispatch 2026-07-14.
-A narrative may carry either signal alone or both. Both are reported in the manifest.
+- Independent semantic pass: every narrative is also scored by LLM-judgment against the critical requirements list, providing an arc-level relevance signal independent of inventory linkage. Scored in byte-budgeted chunks (default ~45KB per chunk file, one LLM call per chunk), mirroring the inventory chunking rationale; a one-scorer-per-narrative dispatch introduced at implementation time proved a per-application token-cost regression (~17 agents each re-reading the full requirements + JD context) and was replaced with chunked dispatch 2026-07-14. A narrative may carry either signal alone or both. Both are reported in the manifest.
 
 **Manifest exposes raw signals; downstream consumers derive tiers locally.** No pre-computed `strong/moderate/weak` tier at retrieval time. Per-entry signals exposed:
 - semantic score (float 0-1) from the LLM-judgment pass.
@@ -309,8 +303,7 @@ Gap analysis no longer builds a de-emphasize list; the pre-filter script, the `d
 Refs: `de-emphasize-prefilter-2026-07`, `de-emphasize-cited-evidence-filter-2026-06` (both superseded), `gap-analysis-architecture-2026-05`, `cv-targeted-candidate-advocate-2026-05`.
 
 #### de-emphasize-prefilter-2026-07
-**Superseded by `de-emphasize-step-removed-2026-10`.**
-The de-emphasize decision's three conditions split by nature: (1) not-cited-as-CV-evidence and (2) axis distance are data lookups; only (3) substantive dilution needs judgment. Previously the `de-emphasize-identifier` agent applied all three by reading the full manifest plus the full inventory (~60k tokens/app). Now `scripts/gap_de_emphasize.py filter` applies 1 and 2 deterministically — exclusion via `gap_assemble.cited_evidence_ids` (the same function the downstream safety net uses, so the two cannot drift), distance via config cutoffs `gap_analysis.de_emphasize` (max_axis_exact=1, max_axis_adj=2.5; an entry absent from the manifest counts as maximally distant) — and writes a bounded candidates file; the agent judges dilution only, reading nothing else. Cutoffs are deliberately loose (adj=2.5 admits all-adjacent entries) so borderline entries reach judgment rather than being silently excluded; tightening is a config edit. APP-017 calibration: 220 entries → 22 evidence-excluded, 62 signal-excluded, 136 candidates (~76KB vs ~242KB read before).
+**Superseded by `de-emphasize-step-removed-2026-10`.** The de-emphasize decision's three conditions split by nature: (1) not-cited-as-CV-evidence and (2) axis distance are data lookups; only (3) substantive dilution needs judgment. Previously the `de-emphasize-identifier` agent applied all three by reading the full manifest plus the full inventory (~60k tokens/app). Now `scripts/gap_de_emphasize.py filter` applies 1 and 2 deterministically — exclusion via `gap_assemble.cited_evidence_ids` (the same function the downstream safety net uses, so the two cannot drift), distance via config cutoffs `gap_analysis.de_emphasize` (max_axis_exact=1, max_axis_adj=2.5; an entry absent from the manifest counts as maximally distant) — and writes a bounded candidates file; the agent judges dilution only, reading nothing else. Cutoffs are deliberately loose (adj=2.5 admits all-adjacent entries) so borderline entries reach judgment rather than being silently excluded; tightening is a config edit. APP-017 calibration: 220 entries → 22 evidence-excluded, 62 signal-excluded, 136 candidates (~76KB vs ~242KB read before).
 
 Refs: `gap-analysis-architecture-2026-05`, `de-emphasize-cited-evidence-filter-2026-06`, `qc-mechanical-script-retrofit-2026-07` (same script-vs-judgment split rationale).
 
@@ -318,8 +311,7 @@ Refs: `gap-analysis-architecture-2026-05`, `de-emphasize-cited-evidence-filter-2
 The three application-pipeline QC agents built 2026-05 (qc-role-intake, qc-retrieval, qc-gap-analysis) predated the mechanical-script + judgment-agent split and ran every check via LLM, re-reading their full input sets each QC iteration (qc-gap-analysis read the entire profile corpus per iteration). Retrofit 2026-07-14 to the standard split:
 - `scripts/retrieval_qc.py` (R1-R8) replaces qc-retrieval outright — its check set was fully mechanical with no judgment residue, so retrieval QC is script-only and the agent is retired.
 - `scripts/gap_qc.py` (G1-G11) owns gap-analysis mechanical checks; `qc-gap-analysis` slims to Notes-substance judgment reading only the artifact (see the QC bullet of `gap-analysis-architecture-2026-05`).
-- `scripts/role_intake_qc.py` (I1-I4) owns role-intake mechanical checks; `qc-role-intake` slims to judgment (classification supported by research, claims trace to sources, no partial-content sections).
-Both axis-line parsers accept plain and bold labels (both formats live in real session logs; same seam as the finalize metadata fill fix). Verified against real applications: current-template artifacts pass clean; historical artifacts fail exactly where they predate later schema changes.
+- `scripts/role_intake_qc.py` (I1-I4) owns role-intake mechanical checks; `qc-role-intake` slims to judgment (classification supported by research, claims trace to sources, no partial-content sections). Both axis-line parsers accept plain and bold labels (both formats live in real session logs; same seam as the finalize metadata fill fix). Verified against real applications: current-template artifacts pass clean; historical artifacts fail exactly where they predate later schema changes.
 
 Refs: `qc-h2-mechanical-script-check-2026-05` (pattern precedent), `retrieval-architecture-2026-05`, `gap-analysis-architecture-2026-05`, `role-intake-architecture`.
 
@@ -337,8 +329,7 @@ Rationale: without this rule, cv_targeted composes atomic bullets that individua
 Refs: `cv-targeted-retrieval-architecture-2026-05`, `career-narratives-schema`, `role-evaluation-and-cv-targeted-separate`.
 
 #### level-on-entries-effective-level
-Level lives only on EX/PR entries (effective level). Captures the pattern of doing higher-than-title-level work within a titled role.
-Prior version had Level on both RL-NNN role records (titled level) and EX/PR entries (effective level), with EX/PR defaulting from RL when missing. Removed RL Level after per-entry Level became fully populated on every EX/PR entry: cv_targeted matches JD Level against entry effective level directly; RL Level was never read in retrieval and added no signal. If a future builder skill needs role-level defaulting for new EX entries, the field can be reintroduced.
+Level lives only on EX/PR entries (effective level). Captures the pattern of doing higher-than-title-level work within a titled role. Prior version had Level on both RL-NNN role records (titled level) and EX/PR entries (effective level), with EX/PR defaulting from RL when missing. Removed RL Level after per-entry Level became fully populated on every EX/PR entry: cv_targeted matches JD Level against entry effective level directly; RL Level was never read in retrieval and added no signal. If a future builder skill needs role-level defaulting for new EX entries, the field can be reintroduced.
 
 #### cv-section-structure-professional-vs-earlier-roles
 CV experience uses two sections, **Professional Experience** and **Earlier Professional Roles**, split by a recency/relevance threshold: roles within ~10 years, plus older roles that close an otherwise-unaddressed critical-requirement gap, go in Professional Experience; the rest compress to `Company | Title | Dates` lines in Earlier Professional Roles. The operational spec (inclusion rules 1-4, the 10-year threshold, timeline-continuity treatment, the transformation/process-operations note, the Earlier format, and the gap-prevention principle) is the runtime rule the cv-architect applies, so it lives in `rules/cv/cv-structure.md` under **Earlier Professional Roles** and is not duplicated here, to avoid drift (moved there 2026-06 during the cv-targeted audit; cv-structure.md previously deferred back to this slug, which the skill does not load at runtime).
@@ -467,8 +458,7 @@ Per-entry fields for Orientation and Work-state pending `retrieval-method-for-di
 
 #### experience-inventory-section-6-rename
 Renamed "Therapeutic Area and Domain Exposure" → "Industry Exposure Profile". `**Bold:**` lines → `### Sub-section` headings.
-Sub-sections: Therapeutic Areas, Trial Phases, Study Types, Geographic Scope, Data Sources (renamed from Data Modalities), Standards (new), Regulatory Frameworks, Functional Experience (renamed from Functional Domains).
-Data Modalities sub-section dropped — content folded; "Data Sources" carries the operative meaning (EDC, central lab, ePRO, IXRS, etc.).
+Sub-sections: Therapeutic Areas, Trial Phases, Study Types, Geographic Scope, Data Sources (renamed from Data Modalities), Standards (new), Regulatory Frameworks, Functional Experience (renamed from Functional Domains). Data Modalities sub-section dropped — content folded; "Data Sources" carries the operative meaning (EDC, central lab, ePRO, IXRS, etc.).
 
 **Sub-section roster reclassified as per-user content by `industry-exposure-categories-user-defined-2026-07`** (the rename and the heading mechanism stand; the named set is this user's instance, not schema).
 
@@ -494,16 +484,14 @@ Section 3 (Professional Affiliations) entries carry structured fields, no IDs: A
 Refs: `experience-inventory-tagging-granularity`, `feedback_design_for_generalization`.
 
 #### experience-inventory-section-4-restructure
-Professional Training: Completed and In Progress sub-sections. Year dropped from In Progress sub-header.
-Structured fields per entry, no IDs: Training, Provider, Format, Start Date, End Date. Date granularity YYYY-MM. Format optional (Online | In-Person | Hybrid). Sub-section split provides Status indicator (no separate Status field). No retrieval tagging — reference content. Schema designed for generalization.
+Professional Training: Completed and In Progress sub-sections. Year dropped from In Progress sub-header. Structured fields per entry, no IDs: Training, Provider, Format, Start Date, End Date. Date granularity YYYY-MM. Format optional (Online | In-Person | Hybrid). Sub-section split provides Status indicator (no separate Status field). No retrieval tagging — reference content. Schema designed for generalization.
 Refs: `experience-inventory-tagging-granularity`, `feedback_design_for_generalization`.
 
 #### experience-inventory-section-5-restructure
 Technical Experience: three sub-sections.
 - Programming, Data & Analytics (Languages & Data Engineering, ML & Analytics, Cloud & Platforms, Visualization & Reporting, Development Tools, Project Management Tools)
 - Office & Collaboration (SharePoint, MS Teams, OneNote, Visio, Adobe Acrobat Pro, Adobe LiveCycle Designer)
-- Clinical Application Systems (9 categories carried forward)
-Methodologies sub-section dropped; items relocated. Recategorizations: Minitab → ML & Analytics; MS Access → Languages & Data Engineering; JIRA, MS Project → Project Management Tools. Oracle Apex dropped.
+- Clinical Application Systems (9 categories carried forward) Methodologies sub-section dropped; items relocated. Recategorizations: Minitab → ML & Analytics; MS Access → Languages & Data Engineering; JIRA, MS Project → Project Management Tools. Oracle Apex dropped.
 
 Tools-only discipline: Section 5 lists named tools, products, libraries, and platforms only. Capability descriptions, methods, algorithms, and work-scope descriptors do not belong here — that content lives in Section 8 (EX entries) or other sections. Cleanup pass stripped: ETL/ELT workflows, file parsing, ML methods (ARIMA, regression, clustering, PCA, NLP, EDA, etc.), simulation/optimization, decision analytics, Python/R viz libraries (generic), custom user-built apps, "(generic)" placeholders.
 
@@ -511,8 +499,7 @@ Flat-list convention: one tool/product per token, comma-separated. Sub-products 
 Refs: `feedback_design_for_generalization`.
 
 #### experience-inventory-section-7-flat-records
-Flat records, each role self-contained, company as a field. Stable ID `RL-NNN`.
-EX entries reference Section 7 via `Role: RL-NNN` field per `inventory-role-rl-reference-applied-2026-05`. RL Title and Company are canonical; EX entries do not carry duplicate Title/Company fields. Resolves the rebrand-resilience problem that motivated the original "Title | Company" coexistence design.
+Flat records, each role self-contained, company as a field. Stable ID `RL-NNN`. EX entries reference Section 7 via `Role: RL-NNN` field per `inventory-role-rl-reference-applied-2026-05`. RL Title and Company are canonical; EX entries do not carry duplicate Title/Company fields. Resolves the rebrand-resilience problem that motivated the original "Title | Company" coexistence design.
 
 `Type:` enum: `Direct | Contract | Freelance | Military | Independent`. `Independent` added 2026-05-12 to support self-directed work periods with no external employer (distinct from `Freelance`, which is paid work for an external client). Independent RLs use `Company: Independent` uniformly; Title carries the discrimination between different independent focuses (parallels how a single company holds multiple RL records with different titles for different focuses).
 
@@ -654,9 +641,7 @@ Gap origin: `career-narratives-schema` removed the in-document APPENDIX on the p
 Refs: `career-narratives-schema` (Framework bullet amended), `narratives-placement` (implemented), `design/narratives_builder_quality_checks.md` (references now resolve).
 
 #### tag-taxonomy
-`rules/tags.yaml` holds only global tag vocabularies that apply to every entry: Role Level, Purpose. YAML. Org Context absorbed into the Work-state axis.
-Specialty-specific tags do not live here. Specialty-pack capability vocabulary (fine-grained, specialty-specific) in `rules/specialties/<specialty>.md` Capability vocabulary section. Industry packs hold industry content but not Capability lists.
-Orientation values in `rules/orientations/`. Industry/Specialty registries: `rules/industries/registry.md`, `rules/specialties/registry.md`. (Competency registry previously lived at `rules/competencies/registry.md`; removed per `competency-field-and-registry-removed-2026-05`.)
+`rules/tags.yaml` holds only global tag vocabularies that apply to every entry: Role Level, Purpose. YAML. Org Context absorbed into the Work-state axis. Specialty-specific tags do not live here. Specialty-pack capability vocabulary (fine-grained, specialty-specific) in `rules/specialties/<specialty>.md` Capability vocabulary section. Industry packs hold industry content but not Capability lists. Orientation values in `rules/orientations/`. Industry/Specialty registries: `rules/industries/registry.md`, `rules/specialties/registry.md`. (Competency registry previously lived at `rules/competencies/registry.md`; removed per `competency-field-and-registry-removed-2026-05`.)
 
 #### initial-industry-pack-content-design
 Pharma industry pack (`rules/industries/pharma.md`) content-validated through manual research against current practitioner sources (FDA, ICH, ACRP, regulatory publications, hiring keyword surveys). Vocabulary, dialect, emphasis, adjacency captured. Future industry packs trigger `industry_builder` build at that time; pharma serves as the worked example.
@@ -688,14 +673,12 @@ Refs: `axes-file-schema`, `initial-specialty-pack-content-design` (extended here
 
 #### outcome-folded-into-impact
 `Outcome:` field removed from inventory entries. Closed-enum value (Capability Building, Risk Reduction, Quality Improvement, Efficiency Gain, Cost Savings, Scalability/Growth Enablement) folded into `Impact:` field as a colon-delimited prefix: `Impact: <value-type>: <prose>` when prose exists, `Impact: <value-type>` when prose was absent.
-Rationale: Outcome was not called out as a retrieval signal in `cv-targeted-content-rules-from-axes`; coverage was 64% (126/197) so it added a sparse field with no committed downstream consumer. Folding into Impact preserves the value-type signal (grep-extractable via the leading colon-delimited token) while collapsing schema. Reads as natural narrative — the value-type clause is not "wrong" as the leading word of impact prose.
-Supersedes the prior `field-rename-outcome-purpose` decision (Outcome was to be renamed to Purpose; now removed entirely). **Superseded for PR by `pr-objective-elements-schema-2026-10`**, which restores an observed-result `Outcome:` line under PR elements; EX unchanged.
+Rationale: Outcome was not called out as a retrieval signal in `cv-targeted-content-rules-from-axes`; coverage was 64% (126/197) so it added a sparse field with no committed downstream consumer. Folding into Impact preserves the value-type signal (grep-extractable via the leading colon-delimited token) while collapsing schema. Reads as natural narrative — the value-type clause is not "wrong" as the leading word of impact prose. Supersedes the prior `field-rename-outcome-purpose` decision (Outcome was to be renamed to Purpose; now removed entirely). **Superseded for PR by `pr-objective-elements-schema-2026-10`**, which restores an observed-result `Outcome:` line under PR elements; EX unchanged.
 Refs: `inventory-entry-structure-applied`, `inventory-field-drift-cleanup` (deferral), `cv-targeted-content-rules-from-axes` (deferral).
 
 #### competency-field-and-registry
 Inventory entry field `Capability:` renamed to `Competency:`. Controlled vocabulary at `rules/competencies/registry.md`. Validator (deferred to script build) parses inventory Competency lines, splits on `|`, rejects unknown tokens; aliases auto-canonicalize near-misses.
-Rationale: name-collision avoided with specialty-pack `Capability vocabulary` sections; "Competency" links semantically to CV format spec's "Core Competencies" section.
-Initial 16-term registry derived from existing inventory tags. **Superseded by `competency-registry-bottom-up-redesign-2026-05`** which replaced the registry contents with 31 lowercase-kebab values via bottom-up phrase extraction across all 197 entries. The Capability→Competency rename and registry-as-controlled-vocabulary concept established here remain valid; only the value list was replaced. **Further superseded by `competency-field-and-registry-removed-2026-05`** which removed the field and registry entirely.
+Rationale: name-collision avoided with specialty-pack `Capability vocabulary` sections; "Competency" links semantically to CV format spec's "Core Competencies" section. Initial 16-term registry derived from existing inventory tags. **Superseded by `competency-registry-bottom-up-redesign-2026-05`** which replaced the registry contents with 31 lowercase-kebab values via bottom-up phrase extraction across all 197 entries. The Capability→Competency rename and registry-as-controlled-vocabulary concept established here remain valid; only the value list was replaced. **Further superseded by `competency-field-and-registry-removed-2026-05`** which removed the field and registry entirely.
 Refs: `tag-taxonomy`, `inventory-entry-structure-applied`, `competency-registry-bottom-up-redesign-2026-05`, `competency-field-and-registry-removed-2026-05`.
 
 #### competency-registry-bottom-up-redesign-2026-05
@@ -703,9 +686,7 @@ Replaced prior 16-term coarse Competency registry with a 31-term granular regist
 Refs: `competency-field-and-registry`, `competency-registry-activity-level-redesign-2026-05`.
 
 #### competency-retagging-applied-2026-05
-Re-tagged all 197 EX/PR inventory entries (`Competency:` field) against the 36-term activity-level Competency registry. JD-blind authoring; consistency-validated against a tagging-pattern reference (site-monitoring lifecycle → `operations-management` + `regulatory-compliance`; safety surveillance / SAE handling → `risk-management`; specifications → `standards-and-specification-development`; SOP / form authoring → `procedure-authoring`; etc.). Prior 16-term and 31-term Competency values fully replaced. All 36 slugs used at least once. Apply executed via `apply_competency_retagging.py` against per-EX-ID Competency mapping. Both deleted later in same session per `working-files-deleted-after-apply`.
-Resolves the work component of the prior `competency-retagging-step-5` deferral. Whether the registry remains in cv_targeted's runtime retrieval path is still pending prototype outcome (`competency-registry-runtime-value` open question); if semantic-only retrieval wins, the new Competency tags become informational rather than active retrieval signal but the labor is not wasted.
-Registry-gap candidates surfaced and resolved during user QC: `regulatory-document-authoring` (dropped — re-framed as `risk-management` + `cross-functional-collaboration`), `clinical-operations-execution` (dropped — entries won't surface in any CV), `vendor-management` ↔ `technology-evaluation` (split confirmed: service vendors → vendor-management; tool/platform vendors → technology-evaluation), audit-conducting (no separate slug — sponsor-SME audit support belongs under `audit-and-inspection-response`).
+Re-tagged all 197 EX/PR inventory entries (`Competency:` field) against the 36-term activity-level Competency registry. JD-blind authoring; consistency-validated against a tagging-pattern reference (site-monitoring lifecycle → `operations-management` + `regulatory-compliance`; safety surveillance / SAE handling → `risk-management`; specifications → `standards-and-specification-development`; SOP / form authoring → `procedure-authoring`; etc.). Prior 16-term and 31-term Competency values fully replaced. All 36 slugs used at least once. Apply executed via `apply_competency_retagging.py` against per-EX-ID Competency mapping. Both deleted later in same session per `working-files-deleted-after-apply`. Resolves the work component of the prior `competency-retagging-step-5` deferral. Whether the registry remains in cv_targeted's runtime retrieval path is still pending prototype outcome (`competency-registry-runtime-value` open question); if semantic-only retrieval wins, the new Competency tags become informational rather than active retrieval signal but the labor is not wasted. Registry-gap candidates surfaced and resolved during user QC: `regulatory-document-authoring` (dropped — re-framed as `risk-management` + `cross-functional-collaboration`), `clinical-operations-execution` (dropped — entries won't surface in any CV), `vendor-management` ↔ `technology-evaluation` (split confirmed: service vendors → vendor-management; tool/platform vendors → technology-evaluation), audit-conducting (no separate slug — sponsor-SME audit support belongs under `audit-and-inspection-response`).
 **Superseded by `competency-field-and-registry-removed-2026-05`.** Prototype outcome was semantic-only wins; the retagging labor is not lost — it stress-tested the registry design and confirmed the orthogonality problem with Specialty. Field stripped from inventory.
 Refs: `competency-registry-activity-level-redesign-2026-05`, `competency-registry-runtime-value` (resolved by `cv-targeted-retrieval-architecture-2026-05`), `inventory-section-8-subsection-reassignment` (deferral — Step 6 trigger fires here but action deferred pending prototype outcome), `competency-field-and-registry-removed-2026-05`.
 
@@ -764,11 +745,7 @@ Refs: `questions-library-deletion` (deferral).
 Existing profile documents (user-info, inventory, narratives, positioning) updated by hand-edit. Builder skills become refresh tools later, only if refresh demand recurs. Mechanical sub-tasks may use one-off scripts (deleted after apply per `working-files-deleted-after-apply`). Resolves the open question `knowledge-doc-update-mechanism`.
 
 #### inventory-entry-structure-applied
-EX-NNN entries carry, in order: ID, Role, Industry, Specialty, Orientation, Level, Work-state, Description (`Description:` label, bold preserved on value), Impact, Context.
-PR-NNN entries carry, in order: ID, Project, Role, Industry, Specialty, Orientation, Level, Work-state, Description, Impact, Context. **PR shape superseded by `pr-objective-elements-schema-2026-10`**; the EX shape stands.
-Schemas diverge on the descriptor field: EX has none (the RL record names the role); PR carries `Project:` for the project name. Both reference their role record via `Role: RL-NNN` (per `inventory-role-rl-reference-applied-2026-05`, extended to PR by `pr-role-reference-2026-07`). Title field on EX entries dropped; RL is canonical for role title and company. PR's `Company:` field is retired in favor of the RL reference, retained in the schema only as the fallback for a project with no role record (see `pr-role-reference-2026-07`).
-Prose section order at end of block: Description (Action), then Impact (Result), then Context (Situation). Impact is sparse-permitted, may carry a colon-delimited value-type prefix per `outcome-folded-into-impact` (e.g., `Impact: Risk Reduction: <prose>` or `Impact: Risk Reduction`). Context is sparse-permitted, free prose.
-Competency field removed per `competency-field-and-registry-removed-2026-05` (originally listed between Work-state and the since-dropped Added stamp). `Added` / `Last Used` dropped per `provenance-stamps-dropped-2026-07`. `Company:` replaced by `Role:` on PR entries per `pr-role-reference-2026-07`.
+EX-NNN entries carry, in order: ID, Role, Industry, Specialty, Orientation, Level, Work-state, Description (`Description:` label, bold preserved on value), Impact, Context. PR-NNN entries carry, in order: ID, Project, Role, Industry, Specialty, Orientation, Level, Work-state, Description, Impact, Context. **PR shape superseded by `pr-objective-elements-schema-2026-10`**; the EX shape stands. Schemas diverge on the descriptor field: EX has none (the RL record names the role); PR carries `Project:` for the project name. Both reference their role record via `Role: RL-NNN` (per `inventory-role-rl-reference-applied-2026-05`, extended to PR by `pr-role-reference-2026-07`). Title field on EX entries dropped; RL is canonical for role title and company. PR's `Company:` field is retired in favor of the RL reference, retained in the schema only as the fallback for a project with no role record (see `pr-role-reference-2026-07`). Prose section order at end of block: Description (Action), then Impact (Result), then Context (Situation). Impact is sparse-permitted, may carry a colon-delimited value-type prefix per `outcome-folded-into-impact` (e.g., `Impact: Risk Reduction: <prose>` or `Impact: Risk Reduction`). Context is sparse-permitted, free prose. Competency field removed per `competency-field-and-registry-removed-2026-05` (originally listed between Work-state and the since-dropped Added stamp). `Added` / `Last Used` dropped per `provenance-stamps-dropped-2026-07`. `Company:` replaced by `Role:` on PR entries per `pr-role-reference-2026-07`.
 Refs: `experience-inventory-domain-scoping`, `experience-inventory-entry-types`, `outcome-folded-into-impact`, `impact-field-semantics-2026-05`, `competency-field-and-registry`, `inventory-role-rl-reference-applied-2026-05`, `pr-role-reference-2026-07`, `inventory-field-drift-cleanup` (deferral).
 
 #### pr-role-reference-2026-07
@@ -881,8 +858,7 @@ One builder per axis. Each wired to its corresponding research sub-agent.
 
 #### builder-mode-parameter
 - `create`: drafts new rule file from research output. Greenfield.
-- `refresh`: targets existing rule file, re-runs research, diffs against current, proposes updates.
-Both invoke research sub-agent.
+- `refresh`: targets existing rule file, re-runs research, diffs against current, proposes updates. Both invoke research sub-agent.
 Refs: `builder-refresh-mechanics` (deferral).
 
 #### research-sub-agents-roster
@@ -893,8 +869,7 @@ Seven sub-agents in `.claude/agents/`:
 - `specialty_research` (used by specialty_builder)
 - `orientation_research` (used by orientation_builder)
 - `level_research` (used by level_builder)
-- `work_state_research` (used by work_state_builder)
-All seven built (end-to-end testing requires all pieces).
+- `work_state_research` (used by work_state_builder) All seven built (end-to-end testing requires all pieces).
 Refs: `research-output-location-and-format` (deferral).
 
 #### qc-organization
@@ -930,8 +905,7 @@ When a builder creates a new value file, it also drafts back-edge bullets for th
 Refs: `builders-axis-parity`.
 
 #### builder-refresh-diff-presentation
-**Superseded by `builder-refresh-qc-with-auto-fix-2026-05`.** The per-change interactive user-approval flow described here was replaced by the QC-with-auto-fix loop (no per-change approval; loop ships clean or provisional with unresolved findings logged). Subsequent audit (2026-05-18) further removed the change list from the apply mechanism entirely.
-Original body retained for history: Refresh mode presents changes one at a time in a fixed structure: change number, file, section, type (add/remove/modify), Current (exact text or `(none - new entry)`), Proposed (exact text), Reasoning (one sentence from research). User reply required: `approve`, `reject`, `modify: <edit>`, or `defer: <reason>`. No batching, no "approve all", non-answers do not advance.
+**Superseded by `builder-refresh-qc-with-auto-fix-2026-05`.** The per-change interactive user-approval flow described here was replaced by the QC-with-auto-fix loop (no per-change approval; loop ships clean or provisional with unresolved findings logged). Subsequent audit (2026-05-18) further removed the change list from the apply mechanism entirely. Original body retained for history: Refresh mode presents changes one at a time in a fixed structure: change number, file, section, type (add/remove/modify), Current (exact text or `(none - new entry)`), Proposed (exact text), Reasoning (one sentence from research). User reply required: `approve`, `reject`, `modify: <edit>`, or `defer: <reason>`. No batching, no "approve all", non-answers do not advance.
 Refs: `builder-mode-parameter`, `builder-refresh-mechanics` (deferral), `builder-refresh-qc-with-auto-fix-2026-05`.
 
 #### builder-research-value-agnostic
@@ -943,8 +917,7 @@ Refs: `builder-research-agent-naming`.
 Refs: `builders-axis-parity`.
 
 #### builder-refresh-qc-with-auto-fix-2026-05
-Refresh runs through QC with auto-fix: Phase 5 mechanical checks correct script-fixable issues in place on a temp drafted file; the QC subagent runs judgment checks; the skill loops up to 3 iterations; ship clean or provisional with unresolved findings logged to `design/build_issues.md`. No user-approval-per-change gate. Phase 6 `apply-refresh` overwrites the existing value file wholesale from the post-QC drafted text (`--value-file`); the reconciler's change list survives only as informational input to QC's I3 no-op-detection check, not as the apply mechanism. This ensures Phase 5 auto-fixes always reach disk.
-Supersedes `builder-refresh-diff-presentation`.
+Refresh runs through QC with auto-fix: Phase 5 mechanical checks correct script-fixable issues in place on a temp drafted file; the QC subagent runs judgment checks; the skill loops up to 3 iterations; ship clean or provisional with unresolved findings logged to `design/build_issues.md`. No user-approval-per-change gate. Phase 6 `apply-refresh` overwrites the existing value file wholesale from the post-QC drafted text (`--value-file`); the reconciler's change list survives only as informational input to QC's I3 no-op-detection check, not as the apply mechanism. This ensures Phase 5 auto-fixes always reach disk. Supersedes `builder-refresh-diff-presentation`.
 Refs: `builder-mode-parameter`, `builders-axis-parity`.
 
 #### builder-em-dash-judgment-not-regex-2026-05
@@ -1097,8 +1070,7 @@ Refs: `tracker-integration` (deferral).
 ### Documentation Discipline
 
 #### component-documentation-discipline
-Every skill, sub-agent, standalone script has a `COMPONENTS.md` entry: inputs, outputs, triggers, update triggers. Authored alongside the component. Component evolution requires entry update in same change.
-Repo `CLAUDE.md` references `COMPONENTS.md`.
+Every skill, sub-agent, standalone script has a `COMPONENTS.md` entry: inputs, outputs, triggers, update triggers. Authored alongside the component. Component evolution requires entry update in same change. Repo `CLAUDE.md` references `COMPONENTS.md`.
 
 Roster conventions (added 2026-05-23):
 - **Drafted** tier sits between Built and Planned. Use when a skeleton SKILL.md exists (frontmatter + a `Status: Draft` note + reserved content) but orchestration is not yet designed. No detailed entry until the design lands.
@@ -1108,12 +1080,10 @@ Roster conventions (added 2026-05-23):
 Every doc programmatically consumed by skills/sub-agents/scripts carries a metadata header below the title.
 Scope in: profile documents, rule files, templates.
 Scope out: skills/sub-agents (have YAML frontmatter and COMPONENTS.md entries), meta docs, outputs, scripts.
-Format: plain markdown lines, `**Field:** value`, multi-value comma-separated. Selected over YAML frontmatter (renders invisibly in VS Code preview).
-Fields v1, applied minimally:
+Format: plain markdown lines, `**Field:** value`, multi-value comma-separated. Selected over YAML frontmatter (renders invisibly in VS Code preview). Fields v1, applied minimally:
 1. **Used by**: required when consumed.
 2. **Stamps**: optional, only where stamping happens.
-3. **Generated by**: optional, only for script-generated docs.
-Inline prose references to component names discouraged; named refs belong in metadata header.
+3. **Generated by**: optional, only for script-generated docs. Inline prose references to component names discouraged; named refs belong in metadata header.
 Refs: `metadata-header-reconciliation-script`, `maintained-by-metadata-field` (deferrals).
 
 #### data-only-discipline
@@ -1142,6 +1112,12 @@ Operating rule for where information lives:
 Established 2026-05-06 after audit found 5 project-specific feedback memories misplaced in memory (cv_role_completeness, atomic_inventory, impact rules, context_trim_narrative). Content was either already in `inventory_builder_quality_checks.md` or folded in during the audit; memory entries deleted.
 
 When in doubt: if the rule applies only when working in the career repo, it goes to `design/`. If the rule applies whenever Claude is working with the user regardless of project, it goes to memory.
+
+#### markdown-no-hard-wrap-2026-11
+Markdown prose is never hard-wrapped: one paragraph or bullet per line. Chosen over 80-column wrapping (GitHub #5, 2026-11-05) because a wrap forces a reflow on every edit, spreads a one-word change across several diff lines, makes multi-line text matches fragile, and split code spans across lines. Mixed conventions also meant every tool touching the files had to handle both.
+- Machine-read layers are exempt and untouched: fenced blocks (template skeletons and schemas), frontmatter, HTML comments, headings, tables. Field lines (`- Label:`, `Route-back:`, `**Label:**`) stay one per line.
+- `scripts/md_unwrap.py check` / `apply` enforce it over the globs in `config.yaml` `markdown_no_wrap`; `tests/run_tests.py` `test_markdown_has_no_hard_wraps` fails on any new wrap. The fixture corpus is test data and out of scope.
+- Applied 2026-11-05 across templates, skills, agents, rules, design and root docs (71 files). Verified per cluster: template parser output and `rules_slice.py` sectioning identical before and after, and every file's word sequence unchanged.
 
 ### Rule Refresh & Staleness
 
@@ -1176,8 +1152,7 @@ Since the two intended occupants have different privacy classes and split across
 ### Templates & Format Specs
 
 #### format-spec-cv-boundary
-Format spec = rendering config (fonts, margins, spacing, bullet chars, file-naming). Deliverable-specific, axis-agnostic.
-`design/format_spec.md` transfers with two cleanups: (1) move embedded python-docx code (lines 95-123) to a script under `scripts/`; (2) parameterize hardcoded name in output filename (line 182), pull from `user-info.md`.
+Format spec = rendering config (fonts, margins, spacing, bullet chars, file-naming). Deliverable-specific, axis-agnostic. `design/format_spec.md` transfers with two cleanups: (1) move embedded python-docx code (lines 95-123) to a script under `scripts/`; (2) parameterize hardcoded name in output filename (line 182), pull from `user-info.md`.
 
 #### interview-template-artifacts
 `interview_completion` and `interview_scratch` exist as blank skeletons (in `templates/`, copied per round) and as populated instances (in application folder).
@@ -1186,89 +1161,31 @@ Format spec = rendering config (fonts, margins, spacing, bullet chars, file-nami
 Old registry's ASCII diagram does not carry over.
 
 #### template-optional-heading-tag-2026-08
-A template heading tagged `{optional}` is standard vocabulary that is not required in every artifact.
-P7 whitelists it (so a heading cannot be deleted or replaced with an invented name); P2 excludes it from
-the required set (so a section the run left empty is dropped rather than carried as a bare heading). The
-tag is template-only and never reaches the artifact. Implemented in `_prep_checks.py` (`_is_optional` /
-`_strip_optional`, and the P7 allowed-set strip) and consumed by both `prep_interview_qc.py` and
-`prep_qc.py`, which share `templates/interview_prep.md`.
-Chosen over two alternatives: making the sub-headings required (forces empty sections on every
-application) and widening P7 by depth (loses the guarantee that heading names are controlled).
+A template heading tagged `{optional}` is standard vocabulary that is not required in every artifact. P7 whitelists it (so a heading cannot be deleted or replaced with an invented name); P2 excludes it from the required set (so a section the run left empty is dropped rather than carried as a bare heading). The tag is template-only and never reaches the artifact. Implemented in `_prep_checks.py` (`_is_optional` / `_strip_optional`, and the P7 allowed-set strip) and consumed by both `prep_interview_qc.py` and `prep_qc.py`, which share `templates/interview_prep.md`.
+Chosen over two alternatives: making the sub-headings required (forces empty sections on every application) and widening P7 by depth (loses the guarantee that heading names are controlled).
 
 #### subheadings-and-bold-labels-are-different-tools-2026-08
-A `###` sub-heading is the navigation layer, so a topic can be reached without scanning its whole
-section. A bold label breaks discrete content up **within** a sub-heading. Neither outranks the other,
-and a section needing more internal shape gets a bold label rather than a new sub-heading; the fixed set
-is meant to be sufficient.
-Replaces the prior rule ("Do not promote any other sub-topic to a heading; those are bullets"), which
-caused a real regression: a run flattened the user's hand-added sub-headings back into bold labels,
-recreating sections with no navigation. Recorded because the failure was the rule working as written.
+A `###` sub-heading is the navigation layer, so a topic can be reached without scanning its whole section. A bold label breaks discrete content up **within** a sub-heading. Neither outranks the other, and a section needing more internal shape gets a bold label rather than a new sub-heading; the fixed set is meant to be sufficient. Replaces the prior rule ("Do not promote any other sub-topic to a heading; those are bullets"), which caused a real regression: a run flattened the user's hand-added sub-headings back into bold labels, recreating sections with no navigation. Recorded because the failure was the rule working as written.
 
 #### new-subheading-is-a-template-change-2026-08
-A genuinely new sub-heading is a template change, never artifact-local. Three tests, all required:
-(1) the material is decision-relevant for the round; (2) it does not fit under an existing sub-heading
-even as a bold label; (3) the heading name is role-agnostic, carrying no company, product, or person
-name. Fail (3) and it is role content, so it becomes a bold label under the closest existing heading.
-Pass all three and the proposal goes to the user with the material that forced it; on approval it enters
-the template tagged `{optional}` and only then gets used. An unapproved heading never enters an artifact.
-Rationale: a local heading is invisible and free, so it proliferates. A template change is visible,
-approved, and permanent, so it gets weighed. Test (3) does most of the filtering.
+A genuinely new sub-heading is a template change, never artifact-local. Three tests, all required: (1) the material is decision-relevant for the round; (2) it does not fit under an existing sub-heading even as a bold label; (3) the heading name is role-agnostic, carrying no company, product, or person name. Fail (3) and it is role content, so it becomes a bold label under the closest existing heading. Pass all three and the proposal goes to the user with the material that forced it; on approval it enters the template tagged `{optional}` and only then gets used. An unapproved heading never enters an artifact.
+Rationale: a local heading is invisible and free, so it proliferates. A template change is visible, approved, and permanent, so it gets weighed. Test (3) does most of the filtering.
 Refs: `template-optional-heading-tag-2026-08`.
 
 #### the-role-precedes-positioning-2026-08
-`## The Role` sits before `## Positioning & Approach` in `templates/interview_prep.md`, reversing the
-prior order. The role read is the input to the positioning built on top of it, and `### Confirmed scope`
-(the first-hand, dated account of the job) is the highest-confidence content in the doc, so it belongs
-above the framing rather than below it.
-Accepted cost: P2 judges the required headings as an ordered subsequence, so an artifact written under
-the prior order fails P2 on order alone. APP-006 is the only such artifact, it is closed, and it is left
-as is.
+`## The Role` sits before `## Positioning & Approach` in `templates/interview_prep.md`, reversing the prior order. The role read is the input to the positioning built on top of it, and `### Confirmed scope` (the first-hand, dated account of the job) is the highest-confidence content in the doc, so it belongs above the framing rather than below it.
+Accepted cost: P2 judges the required headings as an ordered subsequence, so an artifact written under the prior order fails P2 on order alone. APP-006 is the only such artifact, it is closed, and it is left as is.
 
 #### appendix-priority-list-is-asking-order-2026-08
-The Appendix block's `Prioritize from Question Bank` list is written in the order the questions should
-be ASKED, and `interview-notes` projects it verbatim: priority items lead the round's checklist in that
-order, non-priority items follow below in Question Bank topical order. The Appendix block is the only
-place a round's asking order is recorded, so re-sorting the projection destroys it.
-Supersedes the projection clause of the 2026-07-07 convention hardening entry above ("the interview_notes
-projection preserves that order"), which held the checklist to Question Bank order for every item.
-Topical order still governs the Question Bank itself and the non-priority tail.
-Written into the three documents that execute it: `preparation-interview/SKILL.md` Phase 4 (author),
-`templates/interview_prep.md` Appendix block comment, `interview-notes/SKILL.md` Phase 2 (the sole writer
-of `interview_notes.md`). Still model-followed, not enforced; the cross-artifact check and its ownership
-question stay open in GitHub #67.
+The Appendix block's `Prioritize from Question Bank` list is written in the order the questions should be ASKED, and `interview-notes` projects it verbatim: priority items lead the round's checklist in that order, non-priority items follow below in Question Bank topical order. The Appendix block is the only place a round's asking order is recorded, so re-sorting the projection destroys it. Supersedes the projection clause of the 2026-07-07 convention hardening entry above ("the interview_notes projection preserves that order"), which held the checklist to Question Bank order for every item. Topical order still governs the Question Bank itself and the non-priority tail. Written into the three documents that execute it: `preparation-interview/SKILL.md` Phase 4 (author), `templates/interview_prep.md` Appendix block comment, `interview-notes/SKILL.md` Phase 2 (the sole writer of `interview_notes.md`). Still model-followed, not enforced; the cross-artifact check and its ownership question stay open in GitHub #67.
 
 #### p7-checks-heading-placement-not-just-name-2026-08
-P7 judges a heading as a `(depth, text)` pair under its template section, and rejects a duplicate, rather
-than matching the bare name against a flat set.
-Forced by `template-optional-heading-tag-2026-08`: the fixed vocabulary went from 14 headings to 30, and
-the 16 new ones are short generic labels (Scale, Traction, Financials, Posture, Stakeholders,
-Miscellaneous) that read as plausible under more than one section. Name-only matching accepted a
-sub-heading under the wrong section, at the wrong depth, or twice, so the widened vocabulary bought
-control over heading NAMES while silently dropping control over heading PLACEMENT.
-Implemented in `_prep_checks.py` (`_template_heading_map`, rewritten `check_headings`); the three
-dynamic families keep their positional exemption.
+P7 judges a heading as a `(depth, text)` pair under its template section, and rejects a duplicate, rather than matching the bare name against a flat set. Forced by `template-optional-heading-tag-2026-08`: the fixed vocabulary went from 14 headings to 30, and the 16 new ones are short generic labels (Scale, Traction, Financials, Posture, Stakeholders, Miscellaneous) that read as plausible under more than one section. Name-only matching accepted a sub-heading under the wrong section, at the wrong depth, or twice, so the widened vocabulary bought control over heading NAMES while silently dropping control over heading PLACEMENT. Implemented in `_prep_checks.py` (`_template_heading_map`, rewritten `check_headings`); the three dynamic families keep their positional exemption.
 
 #### technical-briefing-section-2026-08
-`templates/interview_prep.md` carries a `## Technical Briefing {optional}` main-body section between
-`## Company & Industry` and `## The Role`. It holds the SPEAKABLE layer of domain substance for a
-technical round: working vocabulary, the position the candidate can defend under questioning, and any
-accuracy trap or hedge that must survive into the room. `research.md` keeps the depth, the full hedges,
-and the sources.
-Forced on 2026-08-07 by the APP-020 technical panel: three research runs produced material with no home,
-which the fixed vocabulary would otherwise have dispersed across `Fit and Gaps`, `Anticipated Questions`,
-and the Question Bank, leaving the candidate to reassemble it live. Passed all three heading tests in the
-template's Conventions block.
-Internal shape is bold labels, one per topic, never new sub-headings: the topic set varies by role and a
-fixed sub-heading list would be wrong for the next application.
-Questions stay single-homed in the Question Bank; each briefing topic ends with a label pointer
-(`Ask Q10.`), so `interview-notes` still projects the asking order per
-`appendix-priority-list-is-asking-order-2026-08`.
-Jargon rule, from user feedback the same day: domain terms are defined INLINE in parentheses at first
-use, and square brackets stay reserved for coaching so the two never blur. Term lists become one term
-per line with a short plain gloss.
+`templates/interview_prep.md` carries a `## Technical Briefing {optional}` main-body section between `## Company & Industry` and `## The Role`. It holds the SPEAKABLE layer of domain substance for a technical round: working vocabulary, the position the candidate can defend under questioning, and any accuracy trap or hedge that must survive into the room. `research.md` keeps the depth, the full hedges, and the sources. Forced on 2026-08-07 by the APP-020 technical panel: three research runs produced material with no home, which the fixed vocabulary would otherwise have dispersed across `Fit and Gaps`, `Anticipated Questions`, and the Question Bank, leaving the candidate to reassemble it live. Passed all three heading tests in the template's Conventions block. Internal shape is bold labels, one per topic, never new sub-headings: the topic set varies by role and a fixed sub-heading list would be wrong for the next application. Questions stay single-homed in the Question Bank; each briefing topic ends with a label pointer (`Ask Q10.`), so `interview-notes` still projects the asking order per `appendix-priority-list-is-asking-order-2026-08`. Jargon rule, from user feedback the same day: domain terms are defined INLINE in parentheses at first use, and square brackets stay reserved for coaching so the two never blur. Term lists become one term per line with a short plain gloss.
 
-Refs: `templates/interview_prep.md`, `.claude/skills/preparation-interview/SKILL.md`, memory
-`feedback_jargon_pervasive_in_written_outputs`.
+Refs: `templates/interview_prep.md`, `.claude/skills/preparation-interview/SKILL.md`, memory `feedback_jargon_pervasive_in_written_outputs`.
 
 ### Stack & Infrastructure
 
@@ -1307,8 +1224,7 @@ The `temp:` path in `config.yaml` is retained for dev-reference material only. D
 Refs: `temp-cleanup-script-2026-06` (superseded), `configuration-file`, `retrieval-architecture-2026-05`, `cv-render-build-2026-06`.
 
 #### de-emphasize-cited-evidence-filter-2026-06
-**Superseded by `de-emphasize-step-removed-2026-10`.**
-The gap-analysis de-emphasize list must never include an entry the CV cites as evidence (de-emphasizing a cited entry is contradictory). This is a deterministic set-membership constraint, so it is enforced by `gap_assemble.py`, not left to the `de-emphasize-identifier` sub-agent: at assemble time the script computes the set of evidence IDs across all CV-citing requirements (status `covered` / `closed` / `language-shift` / `partial-match`) and drops any de-emphasize entry in that set, printing what it dropped. Surfaced on APP-008: the sub-agent was handed a prose outcome summary instead of the per-requirement records with evidence IDs (its Inputs spec requires the records), so it could not cross-check and returned 4 cited entries; the dispatcher had to hand-reconcile. Three-part fix: (1) the deterministic script filter (the guarantee); (2) Phase 5b now passes `<scratch>/gap_requirements.json` (the records with `status` + `evidence`), not a summary; (3) the agent's criterion #1 was missing `partial-match` (whose evidence the CV also cites) - added. Per `stack-execution` (never use an LLM where a script can verify deterministically). Verified 2026-06-05: `_cited_evidence_ids` handles both evidence shapes (flat IDs, `{id}` dicts) and excludes non-CV-cited statuses.
+**Superseded by `de-emphasize-step-removed-2026-10`.** The gap-analysis de-emphasize list must never include an entry the CV cites as evidence (de-emphasizing a cited entry is contradictory). This is a deterministic set-membership constraint, so it is enforced by `gap_assemble.py`, not left to the `de-emphasize-identifier` sub-agent: at assemble time the script computes the set of evidence IDs across all CV-citing requirements (status `covered` / `closed` / `language-shift` / `partial-match`) and drops any de-emphasize entry in that set, printing what it dropped. Surfaced on APP-008: the sub-agent was handed a prose outcome summary instead of the per-requirement records with evidence IDs (its Inputs spec requires the records), so it could not cross-check and returned 4 cited entries; the dispatcher had to hand-reconcile. Three-part fix: (1) the deterministic script filter (the guarantee); (2) Phase 5b now passes `<scratch>/gap_requirements.json` (the records with `status` + `evidence`), not a summary; (3) the agent's criterion #1 was missing `partial-match` (whose evidence the CV also cites) - added. Per `stack-execution` (never use an LLM where a script can verify deterministically). Verified 2026-06-05: `_cited_evidence_ids` handles both evidence shapes (flat IDs, `{id}` dicts) and excludes non-CV-cited statuses.
 Refs: `stack-execution`, `feedback_follow_skill_spec_exactly` (memory).
 
 #### education-citable-ids-2026-06
@@ -1327,8 +1243,7 @@ Foundation-up order:
 2. Knowledge documents.
 3. Session-log and application-ID.
 4. Each workflow skill in sequence.
-5. Remaining items.
-Qualified by `feedback_build_incrementally.md`: per-skill detail at skill build time, not in advance.
+5. Remaining items. Qualified by `feedback_build_incrementally.md`: per-skill detail at skill build time, not in advance.
 
 #### foundation-execution-order
 Hand-edit axis rule files first → finalize profile documents next → build axis_builder skills later, only if refresh demand recurs. Builder skills become refresh tools, not validation gates that block progress. Decision driven by avoiding the planning-paralysis pattern that killed the prior build (deferring real work because a hypothetical future skill might do it differently).
@@ -1363,8 +1278,7 @@ User-level CLAUDE.md holds general response-shape pacing. Skill approval-gating 
 **Amended 2026-09-01:** no skill authoring template file exists in the repo, so that home was notional and the convention lived only in a memory, where no skill reads it. Approval-gating moved to `rules/global-rules.md` ("Approval Gates Open With Two Lines"), which every skill reads first. Refs: `approval-gates-two-lines`.
 
 #### approval-gates-two-lines
-Every skill approval, choice, or decision point opens with exactly two lines: what breaks in plain words, then what the model would do about it. No file names, IDs, or code above the fold; detail underneath and only on request. The user replies "plain" and it is redone if the format is missed.
-Agreed with the user 2026-08-26, enforced by him since, moved into `rules/global-rules.md` on 2026-09-01.
+Every skill approval, choice, or decision point opens with exactly two lines: what breaks in plain words, then what the model would do about it. No file names, IDs, or code above the fold; detail underneath and only on request. The user replies "plain" and it is redone if the format is missed. Agreed with the user 2026-08-26, enforced by him since, moved into `rules/global-rules.md` on 2026-09-01.
 **Why:** rework traces to approvals granted without understanding, not to bad proposals. An approval gate the user cannot parse is not a gate. Refs: `pacing-consolidation`.
 
 #### qc-checks-tolerating-two-formats
@@ -1421,8 +1335,7 @@ On re-invocation the user is asked new or resume, then supplies the APP-NNN. The
 3. Axis classification section still `_(pending)_` in the session log → Phase 6.
 4. All filled → Phase 8 (re-QC).
 
-One-line announce, auto-proceed, no interactive confirm. The probe relies on Phase 3 atomicity (folder + `jd.md` + session log written together per `role-intake-jd-persistence-2026-05`). Phase 6 → Phase 7 split deliberately not introduced — re-running axis-classifier is a cheap recovery from interruption in that narrow window, and avoids splitting `assemble.py finalize`.
-Supersedes resume rule in `role-intake-control-flow`.
+One-line announce, auto-proceed, no interactive confirm. The probe relies on Phase 3 atomicity (folder + `jd.md` + session log written together per `role-intake-jd-persistence-2026-05`). Phase 6 → Phase 7 split deliberately not introduced — re-running axis-classifier is a cheap recovery from interruption in that narrow window, and avoids splitting `assemble.py finalize`. Supersedes resume rule in `role-intake-control-flow`.
 Refs: `role-intake-jd-persistence-2026-05`.
 
 #### role-intake-metadata-confirmation-gate-2026-05
@@ -1506,8 +1419,7 @@ Role-intake gains a critical-requirements extraction step. A new sub-agent `crit
 
 **Guard refined to recover-then-reject (2026-06-23).** The 2026-06-09 guard was a pure detector: it hard-failed every off-spec value and the orchestrator hand-corrected the table and re-ran on every occurrence. Practice showed two distinct deviation modes that warrant different handling, so the guard now distinguishes them (`_normalize_requirement_types` in `assemble.py`):
 - *Compound (recoverable):* a category label is bolted onto a valid severity token, e.g. `education (must-have)`. The severity is unambiguous and the category has no schema field, so the guard strips the decoration, keeps the bare token, and emits a stderr warning (the deviation stays visible without halting the pipeline). Recovery fires only when exactly one of the four tokens is present in the cell.
-- *Substitution / ambiguous (unrecoverable):* a "kind of requirement" word with no severity token (`Competency`), or two-plus tokens. Severity cannot be inferred without guessing, which is the exact corruption the 2026-06-09 guard protects against, so the write still fails loudly.
-The agent prompt (`critical-requirements-extractor.md`) was hardened in the same change to forbid compounding/substituting the Type cell at source (defense in depth; the guard remains the deterministic gate). No `Category` column was added: the *kind* of requirement has no downstream consumer (gap-analysis weights severity only), so carrying it would be the speculative optionality rejected elsewhere (cf. the dropped `Purpose` field).
+- *Substitution / ambiguous (unrecoverable):* a "kind of requirement" word with no severity token (`Competency`), or two-plus tokens. Severity cannot be inferred without guessing, which is the exact corruption the 2026-06-09 guard protects against, so the write still fails loudly. The agent prompt (`critical-requirements-extractor.md`) was hardened in the same change to forbid compounding/substituting the Type cell at source (defense in depth; the guard remains the deterministic gate). No `Category` column was added: the *kind* of requirement has no downstream consumer (gap-analysis weights severity only), so carrying it would be the speculative optionality rejected elsewhere (cf. the dropped `Purpose` field).
 
 **Downstream consumption:**
 - Retrieval: critical requirements are the matching target for the LLM-judgment passes (inventory entries, narratives, themes), replacing raw JD text as the matching target.
@@ -1778,9 +1690,7 @@ career_brief, cv_general, positioning skill designed at their build time.
 
 **Superseded by `staging-without-tracking-2026-10`.** Kept for the reasoning.
 
-`personal/profile/profile_updates_pending.md` carries two sections. `## Entries`
-is a queue of PU entries waiting to be promoted; `## Migrated` is a permanent,
-append-only record of every PU entry that has left it, one line each:
+`personal/profile/profile_updates_pending.md` carries two sections. `## Entries` is a queue of PU entries waiting to be promoted; `## Migrated` is a permanent, append-only record of every PU entry that has left it, one line each:
 
 ```
 PU-005: EX-229; EX-230; EX-231; EX-049
@@ -1788,261 +1698,115 @@ PU-008: dropped
 PU-009: duplicate
 ```
 
-Left side is the `PU-NNN`. Right side is what became of it: the targets its
-content landed in (entry IDs or list addresses, several separated by `; `
-because a list address can contain a comma), `dropped` for a user retraction,
-or `duplicate` when the profile already carried the substance. Every departure
-is recorded, including the two that write nothing, so the invariant is that
+Left side is the `PU-NNN`. Right side is what became of it: the targets its content landed in (entry IDs or list addresses, several separated by `; ` because a list address can contain a comma), `dropped` for a user retraction, or `duplicate` when the profile already carried the substance. Every departure is recorded, including the two that write nothing, so the invariant is that
 **every PU-NNN ever issued appears exactly once across the two sections**.
 
-Why the record is not optional. A PU entry's body is disposable once the
-inventory holds the content, but its *number* has two consumers that outlive
-it:
+Why the record is not optional. A PU entry's body is disposable once the inventory holds the content, but its *number* has two consumers that outlive it:
 
-- `staging_append.py` takes the next `PU-NNN` from the highest number in the
-  file. Reading the queue alone makes the counter non-monotonic: promoting the
-  highest-numbered entry lowers the max, and the next entry is issued a
-  number already in use. Inline-mode profile-update promotes exactly the
-  newest entries, so this fires on the very next gap-analysis run.
-- A `Closure ref: PU-NNN` written into a `gap_analysis.md` is permanent. With
-  no record of the promoted entry, `gap_qc.py` could not tell a promoted
-  reference from a fabricated one, and G7 and G8 had to stop checking `PU-NNN`
-  at all.
+- `staging_append.py` takes the next `PU-NNN` from the highest number in the file. Reading the queue alone makes the counter non-monotonic: promoting the highest-numbered entry lowers the max, and the next entry is issued a number already in use. Inline-mode profile-update promotes exactly the newest entries, so this fires on the very next gap-analysis run.
+- A `Closure ref: PU-NNN` written into a `gap_analysis.md` is permanent. With no record of the promoted entry, `gap_qc.py` could not tell a promoted reference from a fabricated one, and G7 and G8 had to stop checking `PU-NNN` at all.
 
-Both are restored by the record: the counter spans both sections, and G7/G8
-resolve a reference against either. `profile_update_qc.py` P12 checks the
-record's form and that its targets resolve; P9 checks that an entry reported
-as finished both left the queue and gained its line. `close` and `drop` perform
-the removal and the recording in one write, so an entry cannot lose its body
-without leaving its number behind.
+Both are restored by the record: the counter spans both sections, and G7/G8 resolve a reference against either. `profile_update_qc.py` P12 checks the record's form and that its targets resolve; P9 checks that an entry reported as finished both left the queue and gained its line. `close` and `drop` perform the removal and the recording in one write, so an entry cannot lose its body without leaving its number behind.
 
-Supersedes the pure-queue model, under which a promoted entry was deleted
-outright. `duplicate` replaces the `no change` disposition label; one state,
-one word.
+Supersedes the pure-queue model, under which a promoted entry was deleted outright. `duplicate` replaces the `no change` disposition label; one state, one word.
 
-Refs: `templates/profile_updates_pending.md` (schema authority),
-`scripts/profile_update.py`, `scripts/staging_append.py`, `scripts/gap_qc.py`,
-`scripts/profile_update_qc.py`, `.claude/skills/profile-update/SKILL.md`,
-`.claude/agents/qc-profile-update.md`.
+Refs: `templates/profile_updates_pending.md` (schema authority), `scripts/profile_update.py`, `scripts/staging_append.py`, `scripts/gap_qc.py`, `scripts/profile_update_qc.py`, `.claude/skills/profile-update/SKILL.md`, `.claude/agents/qc-profile-update.md`.
 
 #### close-reports-recorded-writes-2026-08-26
 
 **Superseded by `staging-without-tracking-2026-10`.** Kept for the reasoning.
 
-`insert`, `set`, and `list-add` each take `--pu PU-NNN` and append a
-`- **Written:** <target>` bullet to that PU entry as they run. `close` builds
-the migrated line from those bullets and takes no target list at all. A write
-made by hand, which is only ever an enrichment of `narratives.md` or
-`positioning.md`, uses `record` to leave the same bullet.
+`insert`, `set`, and `list-add` each take `--pu PU-NNN` and append a `- **Written:** <target>` bullet to that PU entry as they run. `close` builds the migrated line from those bullets and takes no target list at all. A write made by hand, which is only ever an enrichment of `narratives.md` or `positioning.md`, uses `record` to leave the same bullet.
 
-The reason is that verifying a target exists proves a write happened for
-exactly one of the three write paths. A newly inserted entry proves its own
-write, because the ID would not exist otherwise. An enriched entry and a list
-category both existed before the run, so resolving them says nothing. Under the
-old `--targets` interface a `set` that failed on an empty value file or an
-off-roster field name could still be closed against the entry it was meant to
-change, and the resulting migrated line would then pass P12 forever, because
-the entry it names is real.
+The reason is that verifying a target exists proves a write happened for exactly one of the three write paths. A newly inserted entry proves its own write, because the ID would not exist otherwise. An enriched entry and a list category both existed before the run, so resolving them says nothing. Under the old `--targets` interface a `set` that failed on an empty value file or an off-roster field name could still be closed against the entry it was meant to change, and the resulting migrated line would then pass P12 forever, because the entry it names is real.
 
 Consequences:
 
-- `close` refuses a PU entry that recorded no writes, which is what surfaces a
-  write that failed or was skipped.
-- `--duplicate` replaces `--targets duplicate`, and is refused on a PU entry
-  that recorded writes, since "nothing needed writing" and "these writes
-  happened" cannot both hold.
-- The bullets live on the PU entry and are deleted with it. Nothing is retained
-  past the migrated line, so the queue does not drift back into an archive.
+- `close` refuses a PU entry that recorded no writes, which is what surfaces a write that failed or was skipped.
+- `--duplicate` replaces `--targets duplicate`, and is refused on a PU entry that recorded writes, since "nothing needed writing" and "these writes happened" cannot both hold.
+- The bullets live on the PU entry and are deleted with it. Nothing is retained past the migrated line, so the queue does not drift back into an archive.
 
-Also retires the coined noun "capture" for a `PU-NNN` block, across the skill,
-scripts, template, agent, and this file. It was undefined vocabulary that made
-every one of these documents harder to read cold; "PU entry" needs no gloss.
+Also retires the coined noun "capture" for a `PU-NNN` block, across the skill, scripts, template, agent, and this file. It was undefined vocabulary that made every one of these documents harder to read cold; "PU entry" needs no gloss.
 
-Refs: `scripts/profile_update.py`, `.claude/skills/profile-update/SKILL.md`
-(Step 3e/3f), `scripts/profile_update_qc.py`,
-`staging-queue-with-migrated-record-2026-08-26` (the section these lines feed).
+Refs: `scripts/profile_update.py`, `.claude/skills/profile-update/SKILL.md` (Step 3e/3f), `scripts/profile_update_qc.py`, `staging-queue-with-migrated-record-2026-08-26` (the section these lines feed).
 
 #### staging-without-tracking-2026-10
 
-The staging file is a queue and nothing else (#70). No `PU-NNN` numbers, no
-`## Migrated` record, no Written bullets, no `--pu` on the write commands, no
-`close`, `drop`, or `record`. An item is found by its label, which
-`staging_append.py` keeps unique, and `profile_update.py remove` deletes it.
+The staging file is a queue and nothing else (#70). No `PU-NNN` numbers, no `## Migrated` record, no Written bullets, no `--pu` on the write commands, no `close`, `drop`, or `record`. An item is found by its label, which `staging_append.py` keeps unique, and `profile_update.py remove` deletes it.
 
-- **Removal waits for review.** The skill removes an item only after its entry
-  passes Phase 4. Removing first is what made every review fix fail with "not in
-  the staging queue" (2026-10-05 run).
-- **The profile is the source.** A history of how a fact reached it was read by
-  nothing a user needs; CV claims cite inventory IDs.
-- **A fact not yet in the inventory is cited as `GAP CR-NNN`.** `cv_qc.py` C9
-  requires the requirement to be `closed` or `partial-match` in that
-  application's gap analysis; `qc-cv-targeted` judges the claim against its
-  Notes. `gap_qc.py` G7 now checks that each waiting item an application staged
-  names a requirement its gap analysis carries; closure refs are gone.
-- **Captures have required fields.** Work role, Did, Others did, Outcome,
-  Limits, read from the template schema and refused when missing or blank
-  (the 2026-08-25 run needed every entry's attribution corrected).
+- **Removal waits for review.** The skill removes an item only after its entry passes Phase 4. Removing first is what made every review fix fail with "not in the staging queue" (2026-10-05 run).
+- **The profile is the source.** A history of how a fact reached it was read by nothing a user needs; CV claims cite inventory IDs.
+- **A fact not yet in the inventory is cited as `GAP CR-NNN`.** `cv_qc.py` C9 requires the requirement to be `closed` or `partial-match` in that application's gap analysis; `qc-cv-targeted` judges the claim against its Notes. `gap_qc.py` G7 now checks that each waiting item an application staged names a requirement its gap analysis carries; closure refs are gone.
+- **Captures have required fields.** Work role, Did, Others did, Outcome, Limits, read from the template schema and refused when missing or blank (the 2026-08-25 run needed every entry's attribution corrected).
 
-Refs: `templates/profile_updates_pending.md`, `rules/profile/staging-writing.md`,
-`scripts/staging_append.py`, `scripts/profile_update.py`, `scripts/gap_qc.py`,
-`scripts/cv_qc.py`, `profile-writing-rules-2026-10`.
+Refs: `templates/profile_updates_pending.md`, `rules/profile/staging-writing.md`, `scripts/staging_append.py`, `scripts/profile_update.py`, `scripts/gap_qc.py`, `scripts/cv_qc.py`, `profile-writing-rules-2026-10`.
 
 #### profile-writing-rules-2026-10
 
-Writing rules for the profile live in `rules/profile/`, one file per job:
-`routing.md` (where a staged fact goes), `staging-writing.md` (how a fact is
-captured), `inventory-writing.md` (how each entry type is written). Skills and
-agents read them only through `scripts/rules_slice.py`, which prints the shared
-rules plus the one entry type being written. The template keeps the schema;
-skills and the review agent keep no copies of the rules.
+Writing rules for the profile live in `rules/profile/`, one file per job: `routing.md` (where a staged fact goes), `staging-writing.md` (how a fact is captured), `inventory-writing.md` (how each entry type is written). Skills and agents read them only through `scripts/rules_slice.py`, which prints the shared rules plus the one entry type being written. The template keeps the schema; skills and the review agent keep no copies of the rules.
 
-Anything a script can settle is a script: required capture fields
-(`staging_append.py`), the related-entry pull (`profile_slice.py related`), and
-mechanical wording (`profile_update_qc.py` P15, sharing `_wording.py` with
-`cv_qc.py`). The model decides routing and wording only. The judgment reviewer
-gets a context file written by `profile_update_qc.py context`, not a
-hand-composed prompt.
+Anything a script can settle is a script: required capture fields (`staging_append.py`), the related-entry pull (`profile_slice.py related`), and mechanical wording (`profile_update_qc.py` P15, sharing `_wording.py` with `cv_qc.py`). The model decides routing and wording only. The judgment reviewer gets a context file written by `profile_update_qc.py context`, not a hand-composed prompt.
 
-Narratives and positioning rules come after the next application: 1 of about 43
-staged facts ever targeted a narrative, so a narrative-bound item waits in the
-queue until then, as positioning already does.
+Narratives and positioning rules come after the next application: 1 of about 43 staged facts ever targeted a narrative, so a narrative-bound item waits in the queue until then, as positioning already does.
 
 Refs: `design/profile_rules_plan.md`, `staging-without-tracking-2026-10`.
 
 #### ex-hands-on-tools-2026-10
 
-EX entries carry an optional `Hands-on Tools:` field, after Description: the
-software and languages the candidate used hands-on, pipe-separated. A tool that
-was the object of the work (one being evaluated) stays in Description; tools a
-directed team used go in Context.
+EX entries carry an optional `Hands-on Tools:` field, after Description: the software and languages the candidate used hands-on, pipe-separated. A tool that was the object of the work (one being evaluated) stays in Description; tools a directed team used go in Context.
 
-- **Why a field, not Description.** Naming every tool in Description made it
-  long, and CVs carried tool lists too granular for high-level roles. Description
-  now uses an umbrella term, and the CV writer picks the granularity.
-- **Why not Context.** Retrieval does not score Context
-  (`cv-targeted-retrieval-architecture-2026-05`). Adding it would raise scoring
-  cost and score before-state text, so an entry could match on a process the
-  candidate replaced.
-- **Hands-on only.** Retrieval surfaces only tool matches the candidate can
-  defend; a leadership entry never reads as hands-on skill.
-- `retrieval_payload.py` appends the field to the payload. `profile_update_qc.py`
-  P2 reads it from the template roster.
+- **Why a field, not Description.** Naming every tool in Description made it long, and CVs carried tool lists too granular for high-level roles. Description now uses an umbrella term, and the CV writer picks the granularity.
+- **Why not Context.** Retrieval does not score Context (`cv-targeted-retrieval-architecture-2026-05`). Adding it would raise scoring cost and score before-state text, so an entry could match on a process the candidate replaced.
+- **Hands-on only.** Retrieval surfaces only tool matches the candidate can defend; a leadership entry never reads as hands-on skill.
+- `retrieval_payload.py` appends the field to the payload. `profile_update_qc.py` P2 reads it from the template roster.
 
-Refs: `templates/inventory.md`, `rules/profile/inventory-writing.md`,
-`scripts/retrieval_payload.py`, `scripts/profile_slice.py`.
+Refs: `templates/inventory.md`, `rules/profile/inventory-writing.md`, `scripts/retrieval_payload.py`, `scripts/profile_slice.py`.
 
 #### ex-topic-groups-2026-10
 
-Within each `### RL-NNN` role group, EX entries sit in topic groups the user
-defines, each opened by a `--- <label>` line (three dashes, a space, the label).
-Replaces the within-role sort (primary Orientation, then Specialty, then ID)
-from `inventory-section-8-rl-grouping-2026-05`; the role grouping itself stands.
+Within each `### RL-NNN` role group, EX entries sit in topic groups the user defines, each opened by a `--- <label>` line (three dashes, a space, the label). Replaces the within-role sort (primary Orientation, then Specialty, then ID) from `inventory-section-8-rl-grouping-2026-05`; the role grouping itself stands.
 
-- **Why groups, not the sort.** The user reorganized the inventory by body of
-  work (105 groups by 2026-10-26). The axis sort put unrelated work side by side
-  and could not be kept by hand; the topical headings that decision removed
-  lacked a naming rule, which the writing rules now supply.
-- **Why markers, not ID'd parent entries** (the alternative left open in
-  `design/profile_rules_plan.md`). Parents would need IDs, retrieval items, and a
-  renumbering migration; markers were already in place across every role.
-- **Rules.** Every EX entry sits in a group; a group holds at least one entry;
-  labels are unique within a role. Order of groups and of entries is the user's.
-  `profile_update.py insert` takes `--group` (the entry closes that group) or
-  `--new-group` (opened at the end of the role). `profile_update_qc.py` P4 checks
-  membership, marker shape, empty groups, and repeated labels, not order or
-  wording. Label wording is a writing rule (`verb phrase: qualifier`; a label
-  with no qualifier stays valid).
-- **A marker ends an entry block.** Before this, an entry ran to the next `ID:`
-  line, so a group's last entry carried the next group's label into every slice,
-  and `set` on its last field deleted the label or wrote below it.
-- `profile_slice.py related` prints the role's entries under their labels, so
-  routing can name the group.
+- **Why groups, not the sort.** The user reorganized the inventory by body of work (105 groups by 2026-10-26). The axis sort put unrelated work side by side and could not be kept by hand; the topical headings that decision removed lacked a naming rule, which the writing rules now supply.
+- **Why markers, not ID'd parent entries** (the alternative left open in `design/profile_rules_plan.md`). Parents would need IDs, retrieval items, and a renumbering migration; markers were already in place across every role.
+- **Rules.** Every EX entry sits in a group; a group holds at least one entry; labels are unique within a role. Order of groups and of entries is the user's. `profile_update.py insert` takes `--group` (the entry closes that group) or `--new-group` (opened at the end of the role). `profile_update_qc.py` P4 checks membership, marker shape, empty groups, and repeated labels, not order or wording. Label wording is a writing rule (`verb phrase: qualifier`; a label with no qualifier stays valid).
+- **A marker ends an entry block.** Before this, an entry ran to the next `ID:` line, so a group's last entry carried the next group's label into every slice, and `set` on its last field deleted the label or wrote below it.
+- `profile_slice.py related` prints the role's entries under their labels, so routing can name the group.
 
-Refs: `inventory-section-8-rl-grouping-2026-05`, `templates/inventory.md`,
-`rules/profile/inventory-writing.md`, `rules/profile/routing.md`,
-`scripts/inventory_model/ex.py`.
+Refs: `inventory-section-8-rl-grouping-2026-05`, `templates/inventory.md`, `rules/profile/inventory-writing.md`, `rules/profile/routing.md`, `scripts/inventory_model/ex.py`.
 
 #### test-corpus-and-invariant-checks-2026-08-26
 
-`tests/fixture/` holds a complete invented candidate (profile documents plus one
-application) that the scripts run against instead of the real profile.
-`tests/run_tests.py` drives the real command-line entry points against a
-throwaway copy of it and asserts the invariants.
+`tests/fixture/` holds a complete invented candidate (profile documents plus one application) that the scripts run against instead of the real profile. `tests/run_tests.py` drives the real command-line entry points against a throwaway copy of it and asserts the invariants.
 
-Redirection is by environment variable: `CAREER_FIXTURE` names a repo-root
-relative folder, and `_config.load()` rebases every path that lives under the
-`personal` root onto it. Rebasing is by prefix rather than by naming the keys, so
-a new personal-rooted path in `config.yaml` is redirected without a code change.
-A value naming a folder that does not exist raises rather than silently falling
-back to the real profile.
+Redirection is by environment variable: `CAREER_FIXTURE` names a repo-root relative folder, and `_config.load()` rebases every path that lives under the `personal` root onto it. Rebasing is by prefix rather than by naming the keys, so a new personal-rooted path in `config.yaml` is redirected without a code change. A value naming a folder that does not exist raises rather than silently falling back to the real profile.
 
-Why it exists. Until this, the only way to test a change to the profile
-machinery was to run it against the candidate's own documents, or to copy them
-out, run, and copy them back. That put the real profile in the blast radius of
-every test, and it meant any situation his data does not contain (an empty
-profile, a first-ever staged entry, a drained queue) went untested until it hit
-him. The corpus is chosen for shapes rather than realism; `tests/README.md`
-tabulates which shape each part covers.
+Why it exists. Until this, the only way to test a change to the profile machinery was to run it against the candidate's own documents, or to copy them out, run, and copy them back. That put the real profile in the blast radius of every test, and it meant any situation his data does not contain (an empty profile, a first-ever staged entry, a drained queue) went untested until it hit him. The corpus is chosen for shapes rather than realism; `tests/README.md` tabulates which shape each part covers.
 
 Two rules the check set is built on:
 
-- **Each check corresponds to a defect that actually shipped.** The set is a
-  record of what has broken, not a guess at what might. Each docstring names
-  what it caught.
-- **A check is only finished once it has been seen to fail.** Reintroduce the
-  bug, watch it go red, restore. Both headline checks were validated that way at
-  the time of writing.
+- **Each check corresponds to a defect that actually shipped.** The set is a record of what has broken, not a guess at what might. Each docstring names what it caught.
+- **A check is only finished once it has been seen to fail.** Reintroduce the bug, watch it go red, restore. Both headline checks were validated that way at the time of writing.
 
-Two checks target the checkers rather than the documents: they break the fixture
-nine ways and require a complaint each time. The worst failure this repo has had
-was not a missing check but a check written to tolerate two shapes
-(`role-intake` axis drift, four months undetected), and that failure mode is
-invisible from the passing side.
+Two checks target the checkers rather than the documents: they break the fixture nine ways and require a complaint each time. The worst failure this repo has had was not a missing check but a check written to tolerate two shapes (`role-intake` axis drift, four months undetected), and that failure mode is invisible from the passing side.
 
-Refs: `tests/README.md`, `tests/run_tests.py`, `scripts/_config.py`
-(`FIXTURE_ENV`), `.gitignore` (`tests/.run/`).
+Refs: `tests/README.md`, `tests/run_tests.py`, `scripts/_config.py` (`FIXTURE_ENV`), `.gitignore` (`tests/.run/`).
 
 #### positioning-content-is-hand-driven-2026-08-26
 
-`positioning.md` is never written by a skill run. Not a new entry, not an
-enrichment. The profile-update skill's write scope is `inventory.md` plus
-enrichments of `narratives.md`, and that is the whole of it.
+`positioning.md` is never written by a skill run. Not a new entry, not an enrichment. The profile-update skill's write scope is `inventory.md` plus enrichments of `narratives.md`, and that is the whole of it.
 
 The reason is the nature of the content rather than a missing template.
-Positioning is abstract framing: how the candidate is presented, what he leads
-with, what he declines to say. It is not the kind of fact a gap-analysis or prep
-run surfaces and hands off, and it does not feed a CV the way an inventory entry
-does. Where something abstract does surface that genuinely belongs in
-positioning, it is staged like anything else, but deciding where it goes,
-whether it is accurate, and how to say it concisely is a judgment the user
-drives with the model assisting. So such a `PU-NNN` stays in the queue and waits
-for him; the skill names it, says plainly that it needs him, and moves on.
+Positioning is abstract framing: how the candidate is presented, what he leads with, what he declines to say. It is not the kind of fact a gap-analysis or prep run surfaces and hands off, and it does not feed a CV the way an inventory entry does. Where something abstract does surface that genuinely belongs in positioning, it is staged like anything else, but deciding where it goes, whether it is accurate, and how to say it concisely is a judgment the user drives with the model assisting. So such a `PU-NNN` stays in the queue and waits for him; the skill names it, says plainly that it needs him, and moves on.
 
-This is the second time the rule has been decided and the first time it is
-written down. It was absent from the design record when profile-update was
-built, so the skill was given a positioning write path by default, and
-`verify_targets` waved through any ID whose prefix the inventory template did
-not define - which meant a made-up `ST-999` or a positioning target resolved
-clean and could reach a permanent migrated line.
+This is the second time the rule has been decided and the first time it is written down. It was absent from the design record when profile-update was built, so the skill was given a positioning write path by default, and `verify_targets` waved through any ID whose prefix the inventory template did not define - which meant a made-up `ST-999` or a positioning target resolved clean and could reach a permanent migrated line.
 
 Consequences:
 
-- Step 3e drops `positioning.md` from its write paths and gains an explicit
-  never-write clause.
-- `verify_targets` now requires every ID target to exist in `inventory.md` or
-  `narratives.md`. Neither needs a structure-authority template for that:
-  narratives carries real `ID:` lines, and existence is the only question
-  asked. An ID in neither is rejected.
-- `record` verifies at record time as well as at close, so a bad target is
-  caught while the edit is fresh.
+- Step 3e drops `positioning.md` from its write paths and gains an explicit never-write clause.
+- `verify_targets` now requires every ID target to exist in `inventory.md` or `narratives.md`. Neither needs a structure-authority template for that: narratives carries real `ID:` lines, and existence is the only question asked. An ID in neither is rejected.
+- `record` verifies at record time as well as at close, so a bad target is caught while the edit is fresh.
 - `positioning.md` is neither read nor written by the skill or its QC.
 
-The narratives out-of-scope boundary is unchanged and still template-pending:
-creating a NEW narrative entry waits on a narratives builder. Positioning is not
-waiting on anything.
+The narratives out-of-scope boundary is unchanged and still template-pending: creating a NEW narrative entry waits on a narratives builder. Positioning is not waiting on anything.
 
-Refs: `.claude/skills/profile-update/SKILL.md` (Step 3e),
-`scripts/profile_update.py` (`verify_targets`, `_narratives_path`),
-`scripts/profile_update_qc.py` (P12), `.claude/agents/qc-profile-update.md`,
-`COMPONENTS.md`, `positioning-schema`, `knowledge-doc-update-mechanism`
-(2026-05 hand-edit stance this is consistent with).
+Refs: `.claude/skills/profile-update/SKILL.md` (Step 3e), `scripts/profile_update.py` (`verify_targets`, `_narratives_path`), `scripts/profile_update_qc.py` (P12), `.claude/agents/qc-profile-update.md`, `COMPONENTS.md`, `positioning-schema`, `knowledge-doc-update-mechanism` (2026-05 hand-edit stance this is consistent with).

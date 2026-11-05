@@ -1,36 +1,17 @@
 # Experience Inventory - template
 
-**Used by:** the inventory builder (creates a first `inventory.md` for a user),
-the profile-update skill (inserts and enriches entries), and
-`scripts/profile_update_qc.py` (parses this file at check time for the section
-roster and the per-prefix field rosters).
-**Structure authority** for `personal/profile/inventory.md` per
-`structure-authority-is-the-template`. Change the schema here, not in the
-consuming scripts.
+**Used by:** the inventory builder (creates a first `inventory.md` for a user), the profile-update skill (inserts and enriches entries), and `scripts/profile_update_qc.py` (parses this file at check time for the section roster and the per-prefix field rosters).
+**Structure authority** for `personal/profile/inventory.md` per `structure-authority-is-the-template`. Change the schema here, not in the consuming scripts.
 
-Lives at `personal/profile/inventory.md`. One per user. Every downstream skill
-(retrieval, gap-analysis, cv-targeted, the prep skills) reads from it and none
-writes to it directly; writes go through the profile-update skill.
+Lives at `personal/profile/inventory.md`. One per user. Every downstream skill (retrieval, gap-analysis, cv-targeted, the prep skills) reads from it and none writes to it directly; writes go through the profile-update skill.
 
 ## How this template is parsed
 
 Two blocks below are machine-read. Nothing else in this file is.
 
-- **`## Document skeleton`** - the fenced block gives the section roster and its
-  canonical order. A heading written literally (`## Education`) is schema and
-  must be present. A heading written as a placeholder (`### {Category}`) is the
-  per-user category mechanism: the heading level and its position are schema,
-  the names are derived per user and are never copied from this file or from
-  another user's inventory.
-  A section that no entry schema claims and that carries sub-headings is a
-  **list section**: it holds flat item lines rather than entries, so it has no
-  IDs, and `profile-update` reaches it with `list-add` against a
-  `<Section> / <Category>` address rather than with `insert`. Adding one here is
-  the whole change; no script names these sections.
-- **`## Entry schemas`** - each `### <PREFIX>` fenced block gives that entry
-  type's field roster in canonical order. A field line ending in `{optional}`
-  may be omitted. Every other field line is required. Field order in a written
-  entry matches the order here.
+- **`## Document skeleton`** - the fenced block gives the section roster and its canonical order. A heading written literally (`## Education`) is schema and must be present. A heading written as a placeholder (`### {Category}`) is the per-user category mechanism: the heading level and its position are schema, the names are derived per user and are never copied from this file or from another user's inventory. A section that no entry schema claims and that carries sub-headings is a
+  **list section**: it holds flat item lines rather than entries, so it has no IDs, and `profile-update` reaches it with `list-add` against a `<Section> / <Category>` address rather than with `insert`. Adding one here is the whole change; no script names these sections.
+- **`## Entry schemas`** - each `### <PREFIX>` fenced block gives that entry type's field roster in canonical order. A field line ending in `{optional}` may be omitted. Every other field line is required. Field order in a written entry matches the order here.
 
 Placeholders are `{...}`. `{NNN}` is a zero-padded three-digit counter.
 
@@ -131,17 +112,9 @@ Placeholders are `{...}`. `{NNN}` is a zero-padded three-digit counter.
 {flat item lines, or '**{Proficiency}:** language, language' lines}
 ```
 
-Section order is three clusters per `inventory-section-denumbering-and-reorder-2026-07`:
-work (Employment & Role History through Technical Experience), credentials
-(Education through Professional Certifications), professional standing
-(Professional Affiliations through Awards & Honors). Languages closes the
-document after them, as a personal capability rather than a professional
-standing. Headings carry no numeric prefix; heading text is the sole section
-identifier.
+Section order is three clusters per `inventory-section-denumbering-and-reorder-2026-07`: work (Employment & Role History through Technical Experience), credentials (Education through Professional Certifications), professional standing (Professional Affiliations through Awards & Honors). Languages closes the document after them, as a personal capability rather than a professional standing. Headings carry no numeric prefix; heading text is the sole section identifier.
 
-A section holding no entries carries a single `Entries: None` line rather than
-being omitted, so a downstream skill can distinguish observed absence from an
-unscaffolded document.
+A section holding no entries carries a single `Entries: None` line rather than being omitted, so a downstream skill can distinguish observed absence from an unscaffolded document.
 
 ## Entry schemas
 
@@ -161,9 +134,7 @@ End Date: {YYYY-MM, blank if current}
 Entries: None {optional}
 ```
 
-`Entries: None` asserts that the role is intentionally carried with zero EX and
-PR entries (a background role). Present it only on that assertion; absence of
-the field means entries are expected.
+`Entries: None` asserts that the role is intentionally carried with zero EX and PR entries (a background role). Present it only on that assertion; absence of the field means entries are expected.
 
 ### EX - Experience Entries
 
@@ -197,25 +168,15 @@ Objective: {one sentence}
 Elements:
 ```
 
-`Role:` and `Company:` are mutually exclusive. Use `Role:` whenever a role
-record exists; `Company:` is the fallback for a project with no role record.
+`Role:` and `Company:` are mutually exclusive. Use `Role:` whenever a role record exists; `Company:` is the fallback for a project with no role record.
 
-One block per objective. A project with a second objective gets a second block
-with the same `Project:`; blocks sharing a project agree on Role or Company,
-Orientation, Level and Work-state.
+One block per objective. A project with a second objective gets a second block with the same `Project:`; blocks sharing a project agree on Role or Company, Orientation, Level and Work-state.
 
-`Elements:` is a multi-line field: the label sits on its own line and each
-element follows, indented two spaces, as `- PR-{NNN}.{NN}: {element}`. An
-optional `Outcome: {observed result}` line sits under its element, indented four
-spaces.
+`Elements:` is a multi-line field: the label sits on its own line and each element follows, indented two spaces, as `- PR-{NNN}.{NN}: {element}`. An optional `Outcome: {observed result}` line sits under its element, indented four spaces.
 
-How the Objective, elements and Outcomes are written, and when work is a new
-objective rather than an element: `rules/profile/inventory-writing.md`, PR
-section.
+How the Objective, elements and Outcomes are written, and when work is a new objective rather than an element: `rules/profile/inventory-writing.md`, PR section.
 
-- Element numbers are two digits, assigned max+1 within the block, never reused.
-  A removed element retires to `inventory-ret.md` with its text in Notes, so a
-  CV that already cites it can still be traced.
+- Element numbers are two digits, assigned max+1 within the block, never reused. A removed element retires to `inventory-ret.md` with its text in Notes, so a CV that already cites it can still be traced.
 
 ### ED - Education
 
@@ -229,8 +190,7 @@ End Date: {YYYY}
 Coursework: {optional}
 ```
 
-`Coursework:` is a multi-line field: the label sits on its own line and each
-following line is indented two spaces as `{Category}: {items}`.
+`Coursework:` is a multi-line field: the label sits on its own line and each following line is indented two spaces as `{Category}: {items}`.
 
 ### TR - Professional Training
 
@@ -243,8 +203,7 @@ Start Date: {YYYY-MM}
 End Date: {YYYY-MM, blank if in progress}
 ```
 
-Completion status is carried by which sub-section the entry sits in, not by a
-field.
+Completion status is carried by which sub-section the entry sits in, not by a field.
 
 ### CERT - Professional Certifications
 
@@ -268,10 +227,7 @@ End Date: {YYYY, blank if current}
 Status: {Active | Inactive}
 ```
 
-This section carries active professional service (committee and working-group
-roles, advisory boards, peer review, conference organizing, board service)
-alongside passive memberships. The `Membership:` field carries the distinction;
-there is no heading split.
+This section carries active professional service (committee and working-group roles, advisory boards, peer review, conference organizing, board service) alongside passive memberships. The `Membership:` field carries the distinction; there is no heading split.
 
 ### PB - Publications
 
@@ -325,55 +281,16 @@ Recognizes: EX-{NNN} {optional}
 Description: {what it was for} {optional}
 ```
 
-Reference content, not retrieval-scored. `Recognizes:` links the award to the
-work entry it recognizes so cv-targeted can pull it alongside a cited entry.
-`Description:` is carried only when the award name does not self-describe.
+Reference content, not retrieval-scored. `Recognizes:` links the award to the work entry it recognizes so cv-targeted can pull it alongside a cited entry. `Description:` is carried only when the award name does not self-describe.
 
 ## Field notes
 
-- **IDs** are per-prefix sequential counters, zero-padded to three digits, and
-  are never reused or renumbered. A new entry takes the highest existing number
-  for its prefix plus one, derived by scanning the document rather than from any
-  recorded count.
-- **Axis fields** (`Industry`, `Specialty`, `Orientation`, `Level`,
-  `Work-state`) take values from the axis registries under `rules/`. A field may
-  carry multiple values separated by ` | `; the value before the first pipe is
-  the primary.
-- **Omit `Industry` when the work has no industry the registry recognizes.**
-  The industry registry is a matching vocabulary listing the industries the
-  candidate applies into, not a descriptive taxonomy of every industry they have
-  worked in. Self-directed work has no client industry at all, and work done for
-  an industry outside the registry can never match a job classified against it.
-  In both cases the field is omitted rather than filled with an invented value:
-  scoring is identical either way (no match, 0.0), and the entry still reaches
-  retrieval on its other axes. Keep the real industry as prose in an EX entry's
-  `Context:` where it is worth recording; for self-directed work the role record already
-  carries `Type: Independent`. Never widen the registry to cover a source
-  industry the candidate does not target.
-- **Retrieval participation.** EX, PR, PB, and PS entries are axis-tagged and
-  scored during retrieval. RL, ED, TR, CERT, AFF, and AW entries are reference
-  content: they are addressable by ID and by section heading, and they are not
-  scored.
-- **PR entries** carry Objective and Elements in place of Description, Impact
-  and Context.
-- **How every field is written** lives in `rules/profile/inventory-writing.md`,
-  one section per entry type, read through `scripts/rules_slice.py`. This
-  template holds only the schema: fields, order, and placement.
-- **EX entry placement.** Entries sit under the `### RL-{NNN}` sub-heading
-  matching their `Role:` field, inside a topic group opened by a
-  `--- {label}` line (three dashes, a space, the label). Every EX entry sits in
-  a group; a group holds at least one entry; labels are unique within a role.
-  The order of groups, and of entries within a group, is the user's: a new
-  entry closes the group it names, and a new group closes its role. How labels
-  are worded: `rules/profile/inventory-writing.md`, EX section. The RL
-  sub-headings themselves run in the same order as the Employment & Role
-  History records.
-- **List lines** are comma-separated items under a label. What counts as an
-  item: the LIST section of `rules/profile/inventory-writing.md`.
-- **Per-user category sets.** The `### {Category}` headings under Industry
-  Exposure Profile are derived per user from their field and its hiring
-  conventions, never copied from another inventory. The current user's
-  Technical Experience sub-sections were recorded as schema by
-  `experience-inventory-section-5-restructure` and have not been reclassified;
-  a builder serving a user outside clinical research should treat that roster as
-  an open question rather than copying it.
+- **IDs** are per-prefix sequential counters, zero-padded to three digits, and are never reused or renumbered. A new entry takes the highest existing number for its prefix plus one, derived by scanning the document rather than from any recorded count.
+- **Axis fields** (`Industry`, `Specialty`, `Orientation`, `Level`, `Work-state`) take values from the axis registries under `rules/`. A field may carry multiple values separated by ` | `; the value before the first pipe is the primary.
+- **Omit `Industry` when the work has no industry the registry recognizes.** The industry registry is a matching vocabulary listing the industries the candidate applies into, not a descriptive taxonomy of every industry they have worked in. Self-directed work has no client industry at all, and work done for an industry outside the registry can never match a job classified against it. In both cases the field is omitted rather than filled with an invented value: scoring is identical either way (no match, 0.0), and the entry still reaches retrieval on its other axes. Keep the real industry as prose in an EX entry's `Context:` where it is worth recording; for self-directed work the role record already carries `Type: Independent`. Never widen the registry to cover a source industry the candidate does not target.
+- **Retrieval participation.** EX, PR, PB, and PS entries are axis-tagged and scored during retrieval. RL, ED, TR, CERT, AFF, and AW entries are reference content: they are addressable by ID and by section heading, and they are not scored.
+- **PR entries** carry Objective and Elements in place of Description, Impact and Context.
+- **How every field is written** lives in `rules/profile/inventory-writing.md`, one section per entry type, read through `scripts/rules_slice.py`. This template holds only the schema: fields, order, and placement.
+- **EX entry placement.** Entries sit under the `### RL-{NNN}` sub-heading matching their `Role:` field, inside a topic group opened by a `--- {label}` line (three dashes, a space, the label). Every EX entry sits in a group; a group holds at least one entry; labels are unique within a role. The order of groups, and of entries within a group, is the user's: a new entry closes the group it names, and a new group closes its role. How labels are worded: `rules/profile/inventory-writing.md`, EX section. The RL sub-headings themselves run in the same order as the Employment & Role History records.
+- **List lines** are comma-separated items under a label. What counts as an item: the LIST section of `rules/profile/inventory-writing.md`.
+- **Per-user category sets.** The `### {Category}` headings under Industry Exposure Profile are derived per user from their field and its hiring conventions, never copied from another inventory. The current user's Technical Experience sub-sections were recorded as schema by `experience-inventory-section-5-restructure` and have not been reclassified; a builder serving a user outside clinical research should treat that roster as an open question rather than copying it.

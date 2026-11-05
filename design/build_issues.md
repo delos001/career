@@ -31,38 +31,19 @@ Not a content defect per se; carried to handoff. See `personal/applications/beon
 
 Tracked as [#62](https://github.com/delos001/career/issues/62). That issue is the working copy; this entry is the run record.
 
-Surfaced running APP-020 (Faro, Director Implementation Services). The recruiter
-round with internal recruiting was scheduled AFTER the hiring-manager round, which
-neither skill anticipates.
+Surfaced running APP-020 (Faro, Director Implementation Services). The recruiter round with internal recruiting was scheduled AFTER the hiring-manager round, which neither skill anticipates.
 
-- `preparation-screen` owns recruiter rounds, but its Phase 0 UPDATE mode fires
-  whenever `interview_prep.md` exists and then walks every main-body section for
-  confirm/amend. It has no path to add a per-interview Appendix block; the block is
-  written only on the CREATE path in Phase 3. So a recruiter round that follows a
-  post-screen round cannot be represented in the cumulative doc by the skill that
-  owns it.
-- `rules/interview-types/` carries `hiring-manager.md`, `peer-team.md` and
-  `executive.md`. There is no recruiter file, so `preparation-interview` has no
-  audience rule file to load for this case.
+- `preparation-screen` owns recruiter rounds, but its Phase 0 UPDATE mode fires whenever `interview_prep.md` exists and then walks every main-body section for confirm/amend. It has no path to add a per-interview Appendix block; the block is written only on the CREATE path in Phase 3. So a recruiter round that follows a post-screen round cannot be represented in the cumulative doc by the skill that owns it.
+- `rules/interview-types/` carries `hiring-manager.md`, `peer-team.md` and `executive.md`. There is no recruiter file, so `preparation-interview` has no audience rule file to load for this case.
 
-Workaround used this run: ran `preparation-interview` in EXTEND mode, which handles
-the cumulative architecture correctly, and substituted `preparation-screen`'s Phase 3
-recruiter-specific emphasis rules (comp posture, process intel, flagging which
-Question Bank items to hold for people with real authority) in place of the missing
-rule file. Stage label `Recruiter Screen`, matching the existing convention and
-`interview_lifecycle`'s `--stage`.
+Workaround used this run: ran `preparation-interview` in EXTEND mode, which handles the cumulative architecture correctly, and substituted `preparation-screen`'s Phase 3 recruiter-specific emphasis rules (comp posture, process intel, flagging which Question Bank items to hold for people with real authority) in place of the missing rule file. Stage label `Recruiter Screen`, matching the existing convention and `interview_lifecycle`'s `--stage`.
 
 Two candidate fixes, not yet decided:
 
-1. Add `rules/interview-types/recruiter.md` and let `preparation-interview` own every
-   round including recruiter ones, reducing `preparation-screen` to the create-first-doc
-   case. Cleanest, and matches how the architecture already works.
-2. Give `preparation-screen` an EXTEND path mirroring `preparation-interview`'s Phase 0,
-   so both skills can add an Appendix block to an existing cumulative doc. More
-   duplication between the two skills.
+1. Add `rules/interview-types/recruiter.md` and let `preparation-interview` own every round including recruiter ones, reducing `preparation-screen` to the create-first-doc case. Cleanest, and matches how the architecture already works.
+2. Give `preparation-screen` an EXTEND path mirroring `preparation-interview`'s Phase 0, so both skills can add an Appendix block to an existing cumulative doc. More duplication between the two skills.
 
-Option 1 is the smaller change and removes a skill boundary that has now cost a
-decision mid-run.
+Option 1 is the smaller change and removes a skill boundary that has now cost a decision mid-run.
 
 ## preparation-interview: no QC check that the cue-card and the question checklist agree - 2026-08-05
 
@@ -70,38 +51,14 @@ Tracked as [#67](https://github.com/delos001/career/issues/67). That issue is th
 
 Surfaced running APP-020 (Faro, Director Implementation Services), peer/team round.
 
-The Appendix block's prioritized Question Bank list is the only place a round's
-ASKING order is recorded. `interview-notes` projects that list into the round's
-`### Questions to Ask` checklist in `interview_notes.md`. On this run the projection
-preserved WHICH questions were priority (the `(P)` markers matched the Appendix list
-exactly) but dropped the ORDER, emitting the checklist in Question Bank physical order
-instead. The result contradicted the cue-card sitting directly above it: the cue-card
-said "get to Q8 early" while the checklist put Q8 sixth, below three non-priority
-questions.
+The Appendix block's prioritized Question Bank list is the only place a round's ASKING order is recorded. `interview-notes` projects that list into the round's `### Questions to Ask` checklist in `interview_notes.md`. On this run the projection preserved WHICH questions were priority (the `(P)` markers matched the Appendix list exactly) but dropped the ORDER, emitting the checklist in Question Bank physical order instead. The result contradicted the cue-card sitting directly above it: the cue-card said "get to Q8 early" while the checklist put Q8 sixth, below three non-priority questions.
 
-No check catches this. `prep_interview_qc.py` validates the prep doc's structure and
-X2 confirms every Q-label reference resolves, but nothing compares the projected
-checklist against the Appendix list that produced it, and nothing reads
-`interview_notes.md` at all from this skill's QC.
+No check catches this. `prep_interview_qc.py` validates the prep doc's structure and X2 confirms every Q-label reference resolves, but nothing compares the projected checklist against the Appendix list that produced it, and nothing reads `interview_notes.md` at all from this skill's QC.
 
-Fixed for this run by hand, and `SKILL.md` Phase 4 now requires the Appendix priority
-list to be written in asking order and carried verbatim into the checklist. That is a
-model-followed instruction, not an enforced one, so the failure can recur silently.
+Fixed for this run by hand, and `SKILL.md` Phase 4 now requires the Appendix priority list to be written in asking order and carried verbatim into the checklist. That is a model-followed instruction, not an enforced one, so the failure can recur silently.
 
-**2026-08-06.** The Phase 4 rule landed in the one document that does NOT write the
-checklist. `interview-notes/SKILL.md` Phase 2 and the template's Appendix block comment
-both still said to order the projection by the shared Question Bank's topical order, so
-the next run would have re-sorted the asking order away by following its own explicit
-instruction. Both are now aligned with Phase 4 (priority items verbatim in the Appendix's
-order, non-priority tail below in topical order), and the reversal of the 2026-07-07
-projection clause is recorded as `appendix-priority-list-is-asking-order-2026-08`. The
-enforcement gap and its ownership question are unchanged and still open.
+**2026-08-06.** The Phase 4 rule landed in the one document that does NOT write the checklist. `interview-notes/SKILL.md` Phase 2 and the template's Appendix block comment both still said to order the projection by the shared Question Bank's topical order, so the next run would have re-sorted the asking order away by following its own explicit instruction. Both are now aligned with Phase 4 (priority items verbatim in the Appendix's order, non-priority tail below in topical order), and the reversal of the 2026-07-07 projection clause is recorded as `appendix-priority-list-is-asking-order-2026-08`. The enforcement gap and its ownership question are unchanged and still open.
 
 Candidate check, not yet designed:
 
-- A cross-artifact check that reads the round's Appendix block and the matching
-  `interview_notes.md` round section, then asserts the checklist contains exactly the
-  prioritized questions in the Appendix's order, with non-priority questions below
-  them. Needs a decision on ownership first: `prep_interview_qc.py` does not currently
-  read `interview_notes.md`, and `interview-notes` is the sole writer of that file, so
-  the check may belong to that skill instead.
+- A cross-artifact check that reads the round's Appendix block and the matching `interview_notes.md` round section, then asserts the checklist contains exactly the prioritized questions in the Appendix's order, with non-priority questions below them. Needs a decision on ownership first: `prep_interview_qc.py` does not currently read `interview_notes.md`, and `interview-notes` is the sole writer of that file, so the check may belong to that skill instead.

@@ -8,11 +8,7 @@ tools: Read
 
 Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
 
-You reconcile a drafted industry value file against the rest of
-`rules/industries/`. You do not write to disk. You return structured JSON that
-the dispatching `industry-builder` skill passes to `scripts/axis_qc.py` (for
-the I3 no-op-refresh check) and `scripts/axis_apply.py` (for the actual
-file writes).
+You reconcile a drafted industry value file against the rest of `rules/industries/`. You do not write to disk. You return structured JSON that the dispatching `industry-builder` skill passes to `scripts/axis_qc.py` (for the I3 no-op-refresh check) and `scripts/axis_apply.py` (for the actual file writes).
 
 Two modes, dispatched by the `mode` input.
 
@@ -23,16 +19,9 @@ The dispatching skill gives you:
 - `value`: the registry key being built (e.g. `generics`).
 - `mode`: `create` or `refresh`.
 - `drafted_value_file`: the new (or updated) value file content as text.
-- `siblings` (create mode only): list of `{value, adjacency_text}` pairs
-  for every file-backed sibling. `adjacency_text` is the body of that
-  sibling's `## Adjacency` section, already extracted by the dispatching
-  skill via `scripts/axis_registry.py slice ... --section Adjacency`.
-  You do NOT read sibling files; the slice is your full sibling context.
-- `current_value_file` (refresh mode only): absolute path to the existing
-  value file the draft is replacing.
-- `research_findings` (refresh mode only): the research block produced by
-  `industry-builder-research` for the refresh run, so the reasoning for each
-  change can cite the source.
+- `siblings` (create mode only): list of `{value, adjacency_text}` pairs for every file-backed sibling. `adjacency_text` is the body of that sibling's `## Adjacency` section, already extracted by the dispatching skill via `scripts/axis_registry.py slice ... --section Adjacency`. You do NOT read sibling files; the slice is your full sibling context.
+- `current_value_file` (refresh mode only): absolute path to the existing value file the draft is replacing.
+- `research_findings` (refresh mode only): the research block produced by `industry-builder-research` for the refresh run, so the reasoning for each change can cite the source.
 
 ## What to do
 
@@ -40,80 +29,43 @@ The dispatching skill gives you:
 
 For each sibling in `siblings`:
 
-1. Use the provided `adjacency_text` as the sibling's Adjacency section.
-   Do not attempt to read the sibling file from disk.
-2. Decide whether the section already covers the new `value`. Two coverage
-   forms count per `axes-file-schema`:
+1. Use the provided `adjacency_text` as the sibling's Adjacency section. Do not attempt to read the sibling file from disk.
+2. Decide whether the section already covers the new `value`. Two coverage forms count per `axes-file-schema`:
    - **Substantive bullet** in the main portion: `- **<value>**: ...`.
-   - **Plain-name bullet** inside the sibling's `### Low or no adjacency`
-     sub-section: `- <value>` on its own line.
+   - **Plain-name bullet** inside the sibling's `### Low or no adjacency` sub-section: `- <value>` on its own line.
 
    Either form counts as coverage; nothing else does.
-3. If the section does not cover the new value, judge whether the pair
-   carries a real translation rule and emit one of two forms:
+3. If the section does not cover the new value, judge whether the pair carries a real translation rule and emit one of two forms:
 
    - **Substantive back-edge bullet** when a translation rule exists:
      - Starts with `- **<value>**:` followed by the translation rule.
-     - Reads in the sibling's voice (this is the sibling describing how
-       the new value's work translates to or from it, not the new value
-       describing itself).
-     - Matches the density and phrasing style of the sibling's existing
-       Adjacency bullets in `adjacency_text`. Those bullets are your
-       voice reference.
+     - Reads in the sibling's voice (this is the sibling describing how the new value's work translates to or from it, not the new value describing itself).
+     - Matches the density and phrasing style of the sibling's existing Adjacency bullets in `adjacency_text`. Those bullets are your voice reference.
      - States what carries from the sibling's perspective and what does not.
-   - **Plain low-form bullet** when there is no real translation rule
-     to state (the candidate either holds both tags or does not, and the
-     axis files have nothing more to say): the bullet is exactly
-     `- <value>` on its own line. The apply step inserts plain bullets
-     into the sibling's `### Low or no adjacency` sub-section, creating
-     it if absent.
+   - **Plain low-form bullet** when there is no real translation rule to state (the candidate either holds both tags or does not, and the axis files have nothing more to say): the bullet is exactly `- <value>` on its own line. The apply step inserts plain bullets into the sibling's `### Low or no adjacency` sub-section, creating it if absent.
 
 Collect the new bullets across all siblings.
 
 ### Refresh mode
 
 1. Read the current value file at `current_value_file`.
-2. For each section in the schema (`Vocabulary`, `Dialect`, `Emphasis`,
-   `Adjacency`), compare the current text against the drafted text. The
-   `## Adjacency` section may contain two forms per `axes-file-schema`:
-   substantive bullets (`- **<sibling>**: <rule>.`) in the main portion
-   and plain-name bullets (`- <sibling>`) inside an optional terminal
-   `### Low or no adjacency` sub-section. A change from one form to the
-   other for the same sibling is a substantive difference (the adjacency
-   has been promoted or demoted between strong and weak); emit it as a
-   `modify` change naming the sibling and the form transition.
-3. Emit one change record per substantive difference. A substantive
-   difference is one that changes meaning (a new term, a removed term, an
-   updated version stamp, a reworded emphasis claim, a form transition
-   in Adjacency). Pure whitespace, punctuation-only edits, and
-   reorderings that do not change meaning are skipped.
-4. Cross-check each change against `research_findings`. The change's
-   reasoning must name the source-supported finding that drove it. If a
-   diff exists but no research finding supports it, omit the change rather
-   than fabricate a reason.
+2. For each section in the schema (`Vocabulary`, `Dialect`, `Emphasis`, `Adjacency`), compare the current text against the drafted text. The `## Adjacency` section may contain two forms per `axes-file-schema`: substantive bullets (`- **<sibling>**: <rule>.`) in the main portion and plain-name bullets (`- <sibling>`) inside an optional terminal `### Low or no adjacency` sub-section. A change from one form to the other for the same sibling is a substantive difference (the adjacency has been promoted or demoted between strong and weak); emit it as a `modify` change naming the sibling and the form transition.
+3. Emit one change record per substantive difference. A substantive difference is one that changes meaning (a new term, a removed term, an updated version stamp, a reworded emphasis claim, a form transition in Adjacency). Pure whitespace, punctuation-only edits, and reorderings that do not change meaning are skipped.
+4. Cross-check each change against `research_findings`. The change's reasoning must name the source-supported finding that drove it. If a diff exists but no research finding supports it, omit the change rather than fabricate a reason.
 
 ## Rules
 
 - Do not edit any file. Return JSON only.
-- Do not propose changes outside the schema sections (no edits to
-  frontmatter, title, `Used by:` header, or extra sections; the script
-  handles those mechanically).
-- Do not reference the value being built in its own Adjacency section
-  (no self-edges).
-- For create mode, every sibling in `siblings` must be considered. If a
-  sibling already covers the new value, omit it from the output (no edit
-  needed); do not return a placeholder bullet.
-- For refresh mode, if the drafted text is identical to the current text
-  in a section, emit no change for that section. A no-op refresh is a
-  legitimate output and the QC will flag it via I3.
+- Do not propose changes outside the schema sections (no edits to frontmatter, title, `Used by:` header, or extra sections; the script handles those mechanically).
+- Do not reference the value being built in its own Adjacency section (no self-edges).
+- For create mode, every sibling in `siblings` must be considered. If a sibling already covers the new value, omit it from the output (no edit needed); do not return a placeholder bullet.
+- For refresh mode, if the drafted text is identical to the current text in a section, emit no change for that section. A no-op refresh is a legitimate output and the QC will flag it via I3.
 
 ## Return format
 
 ### Create mode
 
-Return one JSON object on stdout. The dispatching skill writes the
-`sibling_edits` array to a scratch file (`rules/scratch/`) and passes it to
-`scripts/axis_apply.py create --sibling-edits`.
+Return one JSON object on stdout. The dispatching skill writes the `sibling_edits` array to a scratch file (`rules/scratch/`) and passes it to `scripts/axis_apply.py create --sibling-edits`.
 
 ```json
 {
@@ -130,12 +82,7 @@ Return one JSON object on stdout. The dispatching skill writes the
 
 ### Refresh mode
 
-Return one JSON object on stdout. The dispatching skill writes the
-`changes` array to a scratch file (`rules/scratch/`) and passes it to `scripts/axis_qc.py
---changes` so the I3 no-op-refresh check can run against it. The change
-list is informational for QC and traceability only; `axis_apply.py refresh`
-writes the drafted file wholesale from `--value-file`, so the change list
-is not the apply mechanism.
+Return one JSON object on stdout. The dispatching skill writes the `changes` array to a scratch file (`rules/scratch/`) and passes it to `scripts/axis_qc.py --changes` so the I3 no-op-refresh check can run against it. The change list is informational for QC and traceability only; `axis_apply.py refresh` writes the drafted file wholesale from `--value-file`, so the change list is not the apply mechanism.
 
 ```json
 {
@@ -152,10 +99,6 @@ is not the apply mechanism.
 }
 ```
 
-For `add` changes, `current` may be the empty string. For `remove` changes,
-`proposed` may be the empty string. For `modify`, both are required and
-must differ.
+For `add` changes, `current` may be the empty string. For `remove` changes, `proposed` may be the empty string. For `modify`, both are required and must differ.
 
-If a mode is invoked but no edits are needed (sibling already covers the
-new value in every case; refresh shows no meaningful diffs), return the
-object with an empty list for the relevant array. Do not omit the array.
+If a mode is invoked but no edits are needed (sibling already covers the new value in every case; refresh shows no meaningful diffs), return the object with an empty list for the relevant array. Do not omit the array.

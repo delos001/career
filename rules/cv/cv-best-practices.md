@@ -6,8 +6,7 @@ last_researched: 2026-05
 
 **Used by:** cv-targeted (career-strategist grounding); evidence base behind `cv-structure.md`.
 
-Refresh per the `cv-best-practices-refresh` deferral. The cv-targeted skill warns
-when `last_researched` is over ~12 months old (the AI-tell guidance ages fastest).
+Refresh per the `cv-best-practices-refresh` deferral. The cv-targeted skill warns when `last_researched` is over ~12 months old (the AI-tell guidance ages fastest).
 
 ## Overall Summary
 

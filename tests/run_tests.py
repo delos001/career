@@ -1379,6 +1379,30 @@ def test_back_to_back_app_ids_differ():
 
 
 # ---------------------------------------------------------------------------
+# Markdown convention
+# Prose is one paragraph or bullet per line (md_unwrap.py). Fenced skeletons
+# are machine-read, so the unwrap must leave them byte for byte.
+# ---------------------------------------------------------------------------
+
+def test_markdown_has_no_hard_wraps():
+    """Decided 2026-11-05 (GitHub #5): files mixed 80-column hard wraps with
+    one-line paragraphs. Every in-scope file must pass md_unwrap.py check, and
+    the check must catch a wrapped paragraph while sparing a fenced skeleton.
+    """
+    code, out = run('md_unwrap.py', 'check')
+    assert code == 0, f'hard-wrapped prose in scope:\n{out}'
+    sample = ('Prose that was wrapped\nat a column.\n\n'
+              '```\n- Field: {{value}}\nline two\n```\n')
+    path = write_block('wrapped.md', sample)
+    code, out = run('md_unwrap.py', 'check', '--file', path)
+    assert code == 1, f'check missed a wrapped paragraph:\n{out}'
+    run('md_unwrap.py', 'apply', '--file', path)
+    fixed = _util.read(path)
+    assert 'Prose that was wrapped at a column.' in fixed, 'paragraph was not joined'
+    assert '```\n- Field: {{value}}\nline two\n```' in fixed, 'fenced skeleton was altered'
+
+
+# ---------------------------------------------------------------------------
 # Agent definitions
 # Sub-agents run in their own context, so the global rules reach them only if
 # the definition points there. Web-only agents cannot read files and are

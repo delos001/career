@@ -1,15 +1,8 @@
 # cv-targeted Skill Audit (2026-06-01)
 
-Working ledger for the full audit of the cv-targeted skill, its agents, scripts,
-rules, and interfaces. Objective: a stable, effective process that ingests
-upstream outputs and produces an interview-winning CV, with appropriate artifacts
-and minimal bloat. Criteria: (1) errors, (2) logical faults, (3) dead paths,
-(4) gaps, (5) upstream-ingest integrity, (6) downstream enablement,
-(7) artifact appropriateness & writeback, (8) objective alignment, (9) bloat &
-redundancy, (10) internal consistency.
+Working ledger for the full audit of the cv-targeted skill, its agents, scripts, rules, and interfaces. Objective: a stable, effective process that ingests upstream outputs and produces an interview-winning CV, with appropriate artifacts and minimal bloat. Criteria: (1) errors, (2) logical faults, (3) dead paths, (4) gaps, (5) upstream-ingest integrity, (6) downstream enablement, (7) artifact appropriateness & writeback, (8) objective alignment, (9) bloat & redundancy, (10) internal consistency.
 
-Disposition: `open` (surfaced) / `agreed` (fix confirmed) / `fixed` / `rejected`
-(not a defect) / `deferred`.
+Disposition: `open` (surfaced) / `agreed` (fix confirmed) / `fixed` / `rejected` (not a defect) / `deferred`.
 
 | ID | Crit | File | Finding | Fix direction | Disp |
 |----|------|------|---------|---------------|------|

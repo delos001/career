@@ -5,44 +5,20 @@ description: Build or refresh a level value file in rules/levels/. Researches th
 
 # level-builder - build or refresh a levels axis value file
 
-User-invoked. Not called from role-intake; role-intake's Phase 6 may recommend
-invoking it after flagging an axis gap.
+User-invoked. Not called from role-intake; role-intake's Phase 6 may recommend invoking it after flagging an axis gap.
 
 ## Operating rules
 
 - Read `rules/global-rules.md` first; operate under it throughout.
-- **Run-scratch goes in the builder scratch folder.** `<bscratch>` denotes
-  `rules/scratch/`; create it if absent. Write every working file this build
-  produces (the drafted value file, the reconciler's sibling-edit /
-  registry-entry / change-list JSON, and any other scratch) under `<bscratch>`,
-  never the shared `temp/`; the `<temp>` placeholders below denote files under
-  `<bscratch>`. Unlike the application pipeline, builder scratch is removed at
-  the end of this build (final phase) via `python scripts/scratch_cleanup.py
-  --builder --apply`.
+- **Run-scratch goes in the builder scratch folder.** `<bscratch>` denotes `rules/scratch/`; create it if absent. Write every working file this build produces (the drafted value file, the reconciler's sibling-edit / registry-entry / change-list JSON, and any other scratch) under `<bscratch>`, never the shared `temp/`; the `<temp>` placeholders below denote files under `<bscratch>`. Unlike the application pipeline, builder scratch is removed at the end of this build (final phase) via `python scripts/scratch_cleanup.py --builder --apply`.
 - Phases below run in order; each has a declared input and output.
-- Each phase opens with the bold lead line under its heading. Speak it verbatim
-  before running the phase.
-- Halt on any failure or ambiguity outside the QC auto-fix loop; never proceed
-  on partial content; never fabricate.
-- User-facing status uses plain English. No internal check IDs, no
-  implementation jargon. Translate every phase summary, loop status, and
-  error message to what the user needs to know to wait, decide, or act.
-  Reserve technical detail for explicit dev-triage contexts.
-- **Script failure categorization.** Every `scripts/axis_*.py` invocation
-  follows the same exit contract:
+- Each phase opens with the bold lead line under its heading. Speak it verbatim before running the phase.
+- Halt on any failure or ambiguity outside the QC auto-fix loop; never proceed on partial content; never fabricate.
+- User-facing status uses plain English. No internal check IDs, no implementation jargon. Translate every phase summary, loop status, and error message to what the user needs to know to wait, decide, or act. Reserve technical detail for explicit dev-triage contexts.
+- **Script failure categorization.** Every `scripts/axis_*.py` invocation follows the same exit contract:
   - Exit 0: success. Parse stdout per the subcommand's documented output.
-  - Exit 2 with `ContractError:` stderr prefix: a subagent's JSON output
-    did not match the declared shape. The build cannot continue. Halt and
-    tell the user verbatim:
-    "The build couldn't continue because one of the helper outputs didn't
-    match the expected shape. Details logged for dev triage."
-    Then append a section to `design/build_issues.md` (header
-    `## <YYYY-MM-DD> - <axis>-builder <mode> - <value> (contract failure)`),
-    with one bullet containing the full stderr text and one bullet naming
-    which subagent produced the offending output. Do not retry.
-  - Exit 1 with `Error:` stderr prefix: any other failure (file missing,
-    registry malformed, mode invariant violated). Translate the stderr
-    text to plain English using the situation context; halt.
+  - Exit 2 with `ContractError:` stderr prefix: a subagent's JSON output did not match the declared shape. The build cannot continue. Halt and tell the user verbatim: "The build couldn't continue because one of the helper outputs didn't match the expected shape. Details logged for dev triage." Then append a section to `design/build_issues.md` (header `## <YYYY-MM-DD> - <axis>-builder <mode> - <value> (contract failure)`), with one bullet containing the full stderr text and one bullet naming which subagent produced the offending output. Do not retry.
+  - Exit 1 with `Error:` stderr prefix: any other failure (file missing, registry malformed, mode invariant violated). Translate the stderr text to plain English using the situation context; halt.
 
 ## Phase 0 - Intro
 
@@ -55,22 +31,14 @@ invoking it after flagging an axis gap.
 
 **Resolving the target level value and mode.**
 
-- Input: invocation arguments (may include `<value>`). Mode is NOT a
-  user-supplied argument; the registry state determines the only valid
-  mode. Ignore any `create`/`refresh` token the user may have passed.
+- Input: invocation arguments (may include `<value>`). Mode is NOT a user-supplied argument; the registry state determines the only valid mode. Ignore any `create`/`refresh` token the user may have passed.
 - Ask the user for the target value if it is not in the arguments.
-- Run `python scripts/axis_registry.py list levels`. It returns
-  `{"entries": [{value, state, value_file_path}, ...]}` with every
-  registry entry.
+- Run `python scripts/axis_registry.py list levels`. It returns `{"entries": [{value, state, value_file_path}, ...]}` with every registry entry.
 - Find the target value's entry. If absent, treat as `not-in-registry`.
 - Derive mode from state and ask the user a yes/no continuation:
-  - `not-in-registry` or `file-deferred` -> mode is `create`. Tell the
-    user "No file exists yet for `<value>`. Want me to create one now?"
-    Wait for yes/no.
-  - `file-backed` -> mode is `refresh`. Tell the user "`<value>` already
-    has a file (last researched `<YYYY-MM>`). Refresh it?" Wait for yes/no.
-  - `registry-only` -> refuse. "`<value>` is intentionally registry-only;
-    no file should be built. Stopping."
+  - `not-in-registry` or `file-deferred` -> mode is `create`. Tell the user "No file exists yet for `<value>`. Want me to create one now?" Wait for yes/no.
+  - `file-backed` -> mode is `refresh`. Tell the user "`<value>` already has a file (last researched `<YYYY-MM>`). Refresh it?" Wait for yes/no.
+  - `registry-only` -> refuse. "`<value>` is intentionally registry-only; no file should be built. Stopping."
 - Build the siblings list as every non-self entry from the `list` output.
 - Output: `{value, mode, state, value_file_path or null, siblings}`.
 
@@ -79,33 +47,21 @@ invoking it after flagging an axis gap.
 **Researching the target level.**
 
 - Input: target value, siblings list (from Phase 1).
-- Dispatch the `level-builder-research` subagent with the inputs it
-  declares in `.claude/agents/level-builder-research.md`:
+- Dispatch the `level-builder-research` subagent with the inputs it declares in `.claude/agents/level-builder-research.md`:
   - `axis`: `levels`
   - `value`: the target value
-  - `siblings`: every non-self entry from Phase 1's siblings list, as just
-    the value names.
-- Output: research findings block per the agent's return schema (identity
-  framing, voice register, verb vocabulary, scope signals, adjacency
-  translation considerations per sibling).
+  - `siblings`: every non-self entry from Phase 1's siblings list, as just the value names.
+- Output: research findings block per the agent's return schema (identity framing, voice register, verb vocabulary, scope signals, adjacency translation considerations per sibling).
 
 ## Phase 3 - Draft value file (and registry entry, create mode)
 
 **Drafting the new (or updated) value file from the research findings.**
 
 - Input: research findings, mode, value file path (refresh only).
-- Draft the value file content per the per-axis schema: frontmatter
-  (`level: <value>`, `last_researched: <current YYYY-MM>`), `Used by:`
-  header, then Identity, Voice, Verb vocabulary, Scope signals, Adjacency.
-- Match the voice and density of existing files in `rules/levels/`.
-  `leadership.md` is the canonical reference.
-- **Identity scoping discipline.** The Identity section names what the CV
-  is framed as at this level, when to select it, and the explicit
-  exclusion conditions that route to a sibling level instead. Other
-  levels' identities must not be paraphrased here (D1 enforces).
-- **Create mode only**: also draft the one-line registry-entry bullet
-  Phase 6 will splice into `rules/levels/registry.md`. Format:
-  `- **<value>** - <short scope description>. File: <value>.md.`
+- Draft the value file content per the per-axis schema: frontmatter (`level: <value>`, `last_researched: <current YYYY-MM>`), `Used by:` header, then Identity, Voice, Verb vocabulary, Scope signals, Adjacency.
+- Match the voice and density of existing files in `rules/levels/`. `leadership.md` is the canonical reference.
+- **Identity scoping discipline.** The Identity section names what the CV is framed as at this level, when to select it, and the explicit exclusion conditions that route to a sibling level instead. Other levels' identities must not be paraphrased here (D1 enforces).
+- **Create mode only**: also draft the one-line registry-entry bullet Phase 6 will splice into `rules/levels/registry.md`. Format: `- **<value>** - <short scope description>. File: <value>.md.`
 - Output:
   - Refresh: drafted value file content as text.
   - Create: drafted value file content as text + registry-entry line as text.
@@ -114,10 +70,8 @@ invoking it after flagging an axis gap.
 
 **Reconciling the draft against the rest of the rules/levels/ folder.**
 
-- Input: drafted value file content, mode, siblings list (from Phase 1),
-  value file path (refresh only), research findings (refresh only).
-- **Create mode pre-step (extract sibling Adjacency slices).** For each
-  file-backed sibling from Phase 1's siblings list, run:
+- Input: drafted value file content, mode, siblings list (from Phase 1), value file path (refresh only), research findings (refresh only).
+- **Create mode pre-step (extract sibling Adjacency slices).** For each file-backed sibling from Phase 1's siblings list, run:
 
   ```
   python scripts/axis_registry.py slice levels <sibling_value> \
@@ -125,14 +79,12 @@ invoking it after flagging an axis gap.
   ```
 
   Capture the stdout as `adjacency_text` for that sibling.
-- Dispatch the `level-builder-reconciler` subagent with the inputs it
-  declares in `.claude/agents/level-builder-reconciler.md`:
+- Dispatch the `level-builder-reconciler` subagent with the inputs it declares in `.claude/agents/level-builder-reconciler.md`:
   - `axis`: `levels`
   - `value`: the target value
   - `mode`: `create` or `refresh`
   - `drafted_value_file`: the Phase 3 drafted text
-  - `siblings` (create mode only): `{value, adjacency_text}` pairs for
-    every file-backed sibling.
+  - `siblings` (create mode only): `{value, adjacency_text}` pairs for every file-backed sibling.
   - `current_value_file` (refresh only): the existing value-file path
   - `research_findings` (refresh only): the Phase 2 research block
 
@@ -147,8 +99,7 @@ invoking it after flagging an axis gap.
 - Input: Phase 4 output, research findings, mode.
 - The QC runs in two halves per `rules/quality_control/qc-level-builder.md`:
 
-  **Script half - mechanical checks + auto-fix.** Write the drafted value
-  file to a scratch file (`<bscratch>`). Run:
+  **Script half - mechanical checks + auto-fix.** Write the drafted value file to a scratch file (`<bscratch>`). Run:
 
   ```
   python scripts/axis_qc.py levels <value> \
@@ -159,20 +110,11 @@ invoking it after flagging an axis gap.
     [--changes <temp>]         # refresh mode
   ```
 
-  Re-read the (possibly mutated) value-file temp before dispatching the
-  subagent.
+  Re-read the (possibly mutated) value-file temp before dispatching the subagent.
 
-  **Subagent half - judgment checks.** Dispatch `qc-level-builder` with
-  the (post-script) drafted file, the research findings, the file-backed
-  sibling file paths, and (create mode only) the sibling edits plus the
-  registry entry text.
+  **Subagent half - judgment checks.** Dispatch `qc-level-builder` with the (post-script) drafted file, the research findings, the file-backed sibling file paths, and (create mode only) the sibling edits plus the registry entry text.
 
-- Aggregate failures from both halves. For each failure, follow the
-  Fix-on-fail entry for that check in
-  `rules/quality_control/qc-level-builder.md` - it names the phase to
-  re-enter, or directs a halt for invocation errors - then re-run Phase 5.
-  Loop up to 3 iterations. After 3 iterations, accept the best draft and
-  treat unresolved failures as the provisional-issues list.
+- Aggregate failures from both halves. For each failure, follow the Fix-on-fail entry for that check in `rules/quality_control/qc-level-builder.md` - it names the phase to re-enter, or directs a halt for invocation errors - then re-run Phase 5. Loop up to 3 iterations. After 3 iterations, accept the best draft and treat unresolved failures as the provisional-issues list.
 
 - Output:
   - Final drafted value file + sibling edits (create) or change list (refresh).
@@ -209,7 +151,5 @@ python scripts/axis_apply.py refresh levels <value> \
 - Output:
   - Clean: `build completed; <value file path>`.
   - Provisional: `build completed (provisional, issues logged); <value file path>`.
-- For create mode, also state the sibling files modified and the registry
-  entry's new state.
-- Remove the build scratch: run `python scripts/scratch_cleanup.py --builder --apply`
-  to delete `rules/scratch/`.
+- For create mode, also state the sibling files modified and the registry entry's new state.
+- Remove the build scratch: run `python scripts/scratch_cleanup.py --builder --apply` to delete `rules/scratch/`.

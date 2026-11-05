@@ -14,20 +14,13 @@ Subject: <short plain subject, e.g. Thank you>
 <Recipient first name>,
 
 <Paragraph 1 - thank and echo. Thank them for their time, then name one or two
-specifics from the round in the interviewer's own phrasing, traceable to the
-notes. Echo the conversation, for example a problem worked through in the room,
-rather than reciting each interviewer's own scope of work back to them; on a
-panel, one shared reference beats one per person. No generic praise.>
+specifics from the round in the interviewer's own phrasing, traceable to the notes. Echo the conversation, for example a problem worked through in the room, rather than reciting each interviewer's own scope of work back to them; on a panel, one shared reference beats one per person. No generic praise.>
 
 <Paragraph 2 - the one substantive beat. Sourced from the debrief's "rough
-patches to address in follow-up" field. Either show the candidate already doing
-the role's thinking, or pose the single clarifying question that moves the
-candidate's decision forward. Anchor any ask to something real from the round,
-for example an offer the interviewer made. One beat only.>
+patches to address in follow-up" field. Either show the candidate already doing the role's thinking, or pose the single clarifying question that moves the candidate's decision forward. Anchor any ask to something real from the round, for example an offer the interviewer made. One beat only.>
 
 <Optional single conviction line - a flat, forwardable positive from
-positioning.md that explains why this role. Include only when the goal is
-re-engagement; omit for a neutral, door-open note.>
+positioning.md that explains why this role. Include only when the goal is re-engagement; omit for a neutral, door-open note.>
 
 <Closing line - thank again and set the expected next touch without overstating.>
 

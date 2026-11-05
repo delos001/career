@@ -81,8 +81,7 @@ Return exactly this JSON structure (parseable by `json.loads`). Two shapes depen
   "reasoning": "<one-sentence>"
 }
 ```
-`requirement_text` and `requirement_type` are omitted; the assembler reads them from research.md. The dispatching skill looks them up from its Phase 1 requirements list when it needs them for the user-facing loop.
-`language_shift` is `null` for `gap`. `evidence` is `[]` for `gap`.
+`requirement_text` and `requirement_type` are omitted; the assembler reads them from research.md. The dispatching skill looks them up from its Phase 1 requirements list when it needs them for the user-facing loop. `language_shift` is `null` for `gap`. `evidence` is `[]` for `gap`.
 
 **Wrapper:**
 ```

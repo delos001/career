@@ -92,6 +92,19 @@ related_pull:
   max_chars: 50000          # a pull larger than this splits into parts, read one --part at a time
   min_shared_words: 2       # an entry outside the item's role is pulled when it shares this many key words with the item
 
+# Markdown line-wrap convention (scripts/md_unwrap.py). Prose is never
+# hard-wrapped: one paragraph or bullet per line. These repo-relative globs are
+# the files the convention is checked and applied on.
+markdown_no_wrap:
+  globs:
+    - templates/*.md
+    - .claude/skills/*/SKILL.md
+    - .claude/agents/*.md
+    - rules/**/*.md
+    - design/*.md
+    - "*.md"
+    - tests/README.md
+
 # Naming patterns.
 naming:
   # <stem> identifies one evaluated job. Tokens: {slug} {app_id} {ym}.

@@ -5,57 +5,33 @@ description: Evaluate candidate-to-role fit. Reads role-intake's research file a
 
 # gap-analysis - evaluate candidate-to-role fit
 
-Produces a **gap analysis artifact** at
-`personal/applications/<SLUG>_APP-NNN_YYYY-MM/gap_analysis.md` plus a brief
-session log section pointing to the artifact (run date, path, fit score, QC
-verdict). New information the user raises during gap closure is appended to
-a profile-level staging file at `personal/profile/profile_updates_pending.md`
-for a separate profile-update skill to process later.
+Produces a **gap analysis artifact** at `personal/applications/<SLUG>_APP-NNN_YYYY-MM/gap_analysis.md` plus a brief session log section pointing to the artifact (run date, path, fit score, QC verdict). New information the user raises during gap closure is appended to a profile-level staging file at `personal/profile/profile_updates_pending.md` for a separate profile-update skill to process later.
 
-The gap analysis is a **stopping point**: the user reads it to decide whether
-to pursue the role. If they pursue, downstream skills (CV creation, interview
-prep, career brief) consume this artifact.
+The gap analysis is a **stopping point**: the user reads it to decide whether to pursue the role. If they pursue, downstream skills (CV creation, interview prep, career brief) consume this artifact.
 
 ## Operating rules
 
 - Read `rules/global-rules.md` first; operate under it throughout.
 - Phases below run in order; each has a declared input and output.
-- Each phase opens with the **bold lead line** under its heading - speak it
-  verbatim before running the phase.
-- User-facing status and prompts use plain English. No raw QC check tags or
-  route-back labels, no implementation jargon (subagent, JSON). Translate
-  every finding, loop status, and error message to what the user needs to
-  know to decide or act.
+- Each phase opens with the **bold lead line** under its heading - speak it verbatim before running the phase.
+- User-facing status and prompts use plain English. No raw QC check tags or route-back labels, no implementation jargon (subagent, JSON). Translate every finding, loop status, and error message to what the user needs to know to decide or act.
 - Phase 7 (QC) loops back per *Phase routing on failure*.
-- Heavy reading (retrieval manifest, inventory/narrative bodies) lives in
-  sub-agents' isolated context, not the main skill's. The main skill
-  receives only structured outcomes for the interactive loop.
-- **Run-scratch goes in the application's scratch folder.** `<scratch>` denotes
-  `<app_folder>/scratch/`; create it if absent. Write every working file this
-  skill produces - and tell every sub-agent it spawns to write its output files -
-  under `<scratch>`, never the shared `temp/`. Scratch persists for the life of
-  the application (a resumed run reuses it); it is wiped in one shot by
-  `scratch_cleanup.py` when the application is declined (gap-analysis) or closed
-  (the `close-application` skill).
+- Heavy reading (retrieval manifest, inventory/narrative bodies) lives in sub-agents' isolated context, not the main skill's. The main skill receives only structured outcomes for the interactive loop.
+- **Run-scratch goes in the application's scratch folder.** `<scratch>` denotes `<app_folder>/scratch/`; create it if absent. Write every working file this skill produces - and tell every sub-agent it spawns to write its output files - under `<scratch>`, never the shared `temp/`. Scratch persists for the life of the application (a resumed run reuses it); it is wiped in one shot by `scratch_cleanup.py` when the application is declined (gap-analysis) or closed (the `close-application` skill).
 
 ## Resume check - run before Phase 0
 
 Ask if this session is for a new gap analysis or to resume a previous one?
 
-- **New:** ask the APP-NNN; locate the matching folder under
-  `personal/applications/`. Confirm that `research.md` AND `retrieval.md`
-  exist in the folder (gap analysis depends on both). If either is missing,
-  halt and direct the user to run the missing upstream skill.
-- **Resume:** ask the APP-NNN; locate the matching folder. Probe and land
-  per the ladder (first match wins):
+- **New:** ask the APP-NNN; locate the matching folder under `personal/applications/`. Confirm that `research.md` AND `retrieval.md` exist in the folder (gap analysis depends on both). If either is missing, halt and direct the user to run the missing upstream skill.
+- **Resume:** ask the APP-NNN; locate the matching folder. Probe and land per the ladder (first match wins):
   1. Folder missing - halt; APP-NNN likely wrong. Ask for APP-NNN again.
   2. `research.md` missing - halt; direct the user to run `/role-intake`.
   3. `retrieval.md` missing - halt; direct the user to run `/retrieval`.
   4. `gap_analysis.md` exists - announce ("Gap analysis already exists for APP-NNN at <path>. Re-run? Y/N.") and on Y resume at **Phase 1**; on N print the path and exit (no Phase 8 walk - the user can open the file directly).
   5. Otherwise - resume at start of **Phase 1**.
 
-  Announce ("Resuming APP-NNN at Phase N.") and proceed without prompting
-  further.
+  Announce ("Resuming APP-NNN at Phase N.") and proceed without prompting further.
 
 ## Phase 0 - Intro
 
@@ -92,8 +68,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - **Geographic Preferences**: if the role's modality (remote/hybrid/onsite), location, or travel requirements conflict with user preferences, flag.
   - **Availability**: if the role states a required start window the user cannot meet, flag.
   - **Compensation**: if the role posts a compensation range, show it and ask the user whether it clears their floor for this role; if not, flag.
-  - **Exclusions**: if the role's industry or company type matches a user exclusion, flag.
-  These confirmed constraints are recorded in the gap analysis artifact's Eligibility Flags section (including confirmed non-flags for modality, travel, availability, and any posted comp range), so downstream skills (preparation-screen) can read them instead of re-asking.
+  - **Exclusions**: if the role's industry or company type matches a user exclusion, flag. These confirmed constraints are recorded in the gap analysis artifact's Eligibility Flags section (including confirmed non-flags for modality, travel, availability, and any posted comp range), so downstream skills (preparation-screen) can read them instead of re-asking.
 - Present flags to the user in plain English (if any) with override option per flag: `override` (continue) or `stop` (end the skill). Non-flags are not surfaced.
 - Flags do NOT short-circuit the skill on their own. User chooses to continue or stop. Each flag's user decision is recorded for the gap analysis artifact and the recommendation logic in Phase 5.
 - If the user chose `stop` on any flag, exit the skill with a brief summary, recording the declined decision on the session log per Phase 8's "no" path.
@@ -137,8 +112,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - `closed` - short paraphrase of what the user surfaced (e.g., "User cited 18 months of healthcare regulatory work at Acme"). A CV that uses this fact before it reaches the inventory cites `GAP CR-NNN`, so the note must carry the fact itself.
   - `partial-match` - describe the transferable element and the gap that remains (e.g., "Spotfire and SQL Server dashboard experience is transferable but Power BI specifically has only sparse usage; CV cites dashboard expertise, gap visible at interview").
   - `interview-deferred` - user's stated reason for deferring (or default: "Deferred to interview; no CV-side evidence to cite").
-  - `unresolved` - user's stated acknowledgment (or default: "Acknowledged gap; no plan to close").
-  `covered` and `language-shift` requirements do not need notes.
+  - `unresolved` - user's stated acknowledgment (or default: "Acknowledged gap; no plan to close"). `covered` and `language-shift` requirements do not need notes.
 - **Step 4f - General CV notes.** Ask the user: "Before we score: any general CV framing guidance from this session that isn't tied to a specific requirement? For example, overall positioning cues, things the CV architect should avoid throughout, or cross-cutting narrative priorities. Reply with your notes, or say 'none' to continue." Capture the response as free-text general CV notes (empty string if the user says none).
 - **Step 4g - Write Phase 4 scratch files.** Immediately after Step 4f, write three scratch files to disk before proceeding to Phase 5:
   - `<scratch>/gap_requirements.json` — the per-requirement final records (each carrying `requirement_id` / `status` / `evidence` / `notes` / optional `language_shift` — omit `requirement_text` and `requirement_type`)

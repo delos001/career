@@ -7,167 +7,93 @@ last_updated: 2026-05
 
 **Used by:** qc-orientation-builder, orientation-builder, scripts/axis_qc.py, scripts/axis_apply.py
 
-Quality checks the `qc-orientation-builder` subagent runs against a drafted
-orientation value file plus the per-sibling Adjacency edits (create mode) or
-structured change list (refresh mode). The QC is part of the build loop, not a
-user surface: every failed check either gets auto-fixed within the loop or is
-written to the build issues log when the loop exits with unresolved items.
+Quality checks the `qc-orientation-builder` subagent runs against a drafted orientation value file plus the per-sibling Adjacency edits (create mode) or structured change list (refresh mode). The QC is part of the build loop, not a user surface: every failed check either gets auto-fixed within the loop or is written to the build issues log when the loop exits with unresolved items.
 
 ## Loop and exit
 
-The builder runs QC, attempts fixes for any failures, and re-runs QC. The loop
-caps at **3 iterations**. On the final iteration:
+The builder runs QC, attempts fixes for any failures, and re-runs QC. The loop caps at **3 iterations**. On the final iteration:
 - All checks pass: build proceeds clean.
-- One or more checks still fail: build proceeds with the latest draft as
-  provisional. Unresolved findings are emitted to `--issues` for
-  `scripts/axis_apply.py` to attach to the file's frontmatter and append to
-  `design/build_issues.md`.
+- One or more checks still fail: build proceeds with the latest draft as provisional. Unresolved findings are emitted to `--issues` for `scripts/axis_apply.py` to attach to the file's frontmatter and append to `design/build_issues.md`.
 
 ## Checks
 
-Each check has a stable ID, a rule, an **owner** (which runtime executes the
-check), and the fix the build attempts on failure.
+Each check has a stable ID, a rule, an **owner** (which runtime executes the check), and the fix the build attempts on failure.
 
 Two owners:
 
-- **`script`** - `scripts/axis_qc.py` runs the check and, where the fix is
-  purely textual, auto-fixes the value file in place.
-- **`subagent`** - `qc-orientation-builder` subagent runs the check in
-  isolated context (LLM judgment required).
+- **`script`** - `scripts/axis_qc.py` runs the check and, where the fix is purely textual, auto-fixes the value file in place.
+- **`subagent`** - `qc-orientation-builder` subagent runs the check in isolated context (LLM judgment required).
 
-The calling skill runs the script first (auto-fixes applied), then the
-subagent (judgment-only set), then aggregates both result lists. It routes
-each failure per the failing check's **Fix on fail** entry below, which
-names the phase to re-enter (or directs a halt). This file is the single
-routing source; the skill's Phase 5 does not carry its own routing table.
+The calling skill runs the script first (auto-fixes applied), then the subagent (judgment-only set), then aggregates both result lists. It routes each failure per the failing check's **Fix on fail** entry below, which names the phase to re-enter (or directs a halt). This file is the single routing source; the skill's Phase 5 does not carry its own routing table.
 
 ### A - Frontmatter and metadata
 
-- **A1** *(script)*: Frontmatter present and bounded by `---` fences at
-  the top of the value file.
+- **A1** *(script)*: Frontmatter present and bounded by `---` fences at the top of the value file.
   - Fix on fail: report; Phase 5 routes the failure to Phase 3 redraft.
-- **A2** *(script)*: `orientation: <value>` key present and matches the
-  value being built.
+- **A2** *(script)*: `orientation: <value>` key present and matches the value being built.
   - Fix on fail: insert or correct the line.
-- **A3** *(script)*: `last_researched: YYYY-MM` key present and equals
-  the current year-month of the build.
+- **A3** *(script)*: `last_researched: YYYY-MM` key present and equals the current year-month of the build.
   - Fix on fail: insert or correct the line.
-- **A4** *(script)*: A top-level title line is present and ends with
-  `- CV Framing Rules` (case-insensitive on the suffix).
-  - Fix on fail: report; Phase 5 routes the failure to Phase 3 for the
-    drafter to write or correct the title line.
-- **A5** *(script)*: `**Used by:** <consumers>` header present on the
-  first non-blank line after the title.
-  - Fix on fail: insert the standard header listing `cv-targeted,
-    axis-classifier`. If buried elsewhere in the body, report and route
-    to Phase 3.
+- **A4** *(script)*: A top-level title line is present and ends with `- CV Framing Rules` (case-insensitive on the suffix).
+  - Fix on fail: report; Phase 5 routes the failure to Phase 3 for the drafter to write or correct the title line.
+- **A5** *(script)*: `**Used by:** <consumers>` header present on the first non-blank line after the title.
+  - Fix on fail: insert the standard header listing `cv-targeted, axis-classifier`. If buried elsewhere in the body, report and route to Phase 3.
 
 ### B - Structural schema
 
-- **B1** *(script)*: All four required sections present, unique, and
-  non-empty: `## Identity`, `## Summary lead`, `## Section emphasis`,
-  `## Adjacency`. Duplicate headings fail B1 too.
-  - Fix on fail: re-enter Phase 3 to draft the missing or merge the
-    duplicated section from research.
-- **B2** *(script)*: Section order matches the schema (Identity, Summary
-  lead, Section emphasis, Adjacency).
-  - Fix on fail: order mismatches are auto-fixed. The only failure the
-    script surfaces is "cannot reorder: duplicate headings," which always
-    co-occurs with a B1 duplicate-heading failure; B1's Phase 3 redraft
-    resolves it. No separate routing.
+- **B1** *(script)*: All four required sections present, unique, and non-empty: `## Identity`, `## Summary lead`, `## Section emphasis`, `## Adjacency`. Duplicate headings fail B1 too.
+  - Fix on fail: re-enter Phase 3 to draft the missing or merge the duplicated section from research.
+- **B2** *(script)*: Section order matches the schema (Identity, Summary lead, Section emphasis, Adjacency).
+  - Fix on fail: order mismatches are auto-fixed. The only failure the script surfaces is "cannot reorder: duplicate headings," which always co-occurs with a B1 duplicate-heading failure; B1's Phase 3 redraft resolves it. No separate routing.
 - **B3** *(script)*: No sections beyond the schema (no extra `## ` headings).
-  - Fix on fail: re-enter Phase 3 to relocate content from extra sections
-    into the appropriate schema section, then remove the extra heading.
-- **B4** *(script)*: `## Adjacency` contains the mandatory
-  `### Low or no adjacency` sub-section per `axes-file-schema`.
-  - Fix on fail: insert the sub-section at the end of `## Adjacency`
-    with the `_(none)_` placeholder. Auto-fix.
+  - Fix on fail: re-enter Phase 3 to relocate content from extra sections into the appropriate schema section, then remove the extra heading.
+- **B4** *(script)*: `## Adjacency` contains the mandatory `### Low or no adjacency` sub-section per `axes-file-schema`.
+  - Fix on fail: insert the sub-section at the end of `## Adjacency` with the `_(none)_` placeholder. Auto-fix.
 
 ### C - Content traceability
 
-- **C1** *(subagent)*: Every named framework, methodology, or convention
-  in the drafted file traces to a source in `research_findings`.
+- **C1** *(subagent)*: Every named framework, methodology, or convention in the drafted file traces to a source in `research_findings`.
   - Fix on fail: re-enter Phase 2 to re-research the missing citation.
-- **C2** *(subagent)*: Version-stamped references carry stamps consistent
-  with the research findings' currency. Orientation files rarely carry
-  version stamps; pass silently when none are present.
-  - Fix on fail: re-enter Phase 2 to re-confirm the reference's current
-    version; correct or remove the stamp on redraft.
-- **C3** *(subagent)*: Every quantitative or temporal claim traces to a
-  source.
-  - Fix on fail: re-enter Phase 2 to re-research; if still unsourced,
-    rewrite the claim qualitatively or remove it on redraft.
+- **C2** *(subagent)*: Version-stamped references carry stamps consistent with the research findings' currency. Orientation files rarely carry version stamps; pass silently when none are present.
+  - Fix on fail: re-enter Phase 2 to re-confirm the reference's current version; correct or remove the stamp on redraft.
+- **C3** *(subagent)*: Every quantitative or temporal claim traces to a source.
+  - Fix on fail: re-enter Phase 2 to re-research; if still unsourced, rewrite the claim qualitatively or remove it on redraft.
 
 ### D - Cross-file responsibility boundaries
 
-- **D1** *(subagent)*: The drafted file's Identity section does not
-  paraphrase the identity of a sibling orientation. Each orientation's
-  identity is uniquely owned by its own file; the new file's identity
-  should be distinct enough that the exclusion conditions explicitly
-  route sibling cases away.
-  - Fix on fail: re-enter Phase 3 to remove or rewrite the overlapping
-    content to make the distinction explicit.
-- **D2** *(subagent)*: The drafted file's content stays within the
-  orientations axis (identity framing, summary-lead concepts, section
-  emphasis, adjacency translation rules). Off-axis content includes:
-  industry-specific terminology or regulatory framing (industries
-  territory), capability vocabulary (specialties territory), voice-and-verb
-  framing or scope signals (levels territory), achievement framing by
-  work-state (work-states territory).
+- **D1** *(subagent)*: The drafted file's Identity section does not paraphrase the identity of a sibling orientation. Each orientation's identity is uniquely owned by its own file; the new file's identity should be distinct enough that the exclusion conditions explicitly route sibling cases away.
+  - Fix on fail: re-enter Phase 3 to remove or rewrite the overlapping content to make the distinction explicit.
+- **D2** *(subagent)*: The drafted file's content stays within the orientations axis (identity framing, summary-lead concepts, section emphasis, adjacency translation rules). Off-axis content includes: industry-specific terminology or regulatory framing (industries territory), capability vocabulary (specialties territory), voice-and-verb framing or scope signals (levels territory), achievement framing by work-state (work-states territory).
   - Fix on fail: re-enter Phase 3 to remove off-axis content.
 
 ### E - Adjacency completeness
 
-- **E1** *(script)*: The drafted file's `## Adjacency` section enumerates
-  every non-self entry in `rules/orientations/registry.md` in one of two
-  forms per `axes-file-schema`: substantive bullet
-  (`- **<sibling>**: <translation rule>.`) or plain bullet inside
-  `### Low or no adjacency` (`- <sibling>`). Missing from both is the
-  failure case.
+- **E1** *(script)*: The drafted file's `## Adjacency` section enumerates every non-self entry in `rules/orientations/registry.md` in one of two forms per `axes-file-schema`: substantive bullet (`- **<sibling>**: <translation rule>.`) or plain bullet inside `### Low or no adjacency` (`- <sibling>`). Missing from both is the failure case.
   - Fix on fail: re-enter Phase 3 to add the missing bullet(s).
-- **E2** *(script)*: The drafted file's `## Adjacency` section does not
-  reference itself.
+- **E2** *(script)*: The drafted file's `## Adjacency` section does not reference itself.
   - Fix on fail: remove the self-reference.
-- **E3** *(subagent, create only)*: Each per-sibling back-edge bullet is
-  phrased in that sibling's voice (describes when this orientation's
-  entries translate to the sibling's CV framing).
+- **E3** *(subagent, create only)*: Each per-sibling back-edge bullet is phrased in that sibling's voice (describes when this orientation's entries translate to the sibling's CV framing).
   - Fix on fail: re-enter Phase 4 reconciler to redraft the offending back-edge.
-- **E4** *(script)*: Each per-sibling back-edge targets the sibling's
-  `## Adjacency` section.
-  - Fix on fail: re-enter Phase 4 for the reconciler to re-target the
-    edit to the Adjacency section.
+- **E4** *(script)*: Each per-sibling back-edge targets the sibling's `## Adjacency` section.
+  - Fix on fail: re-enter Phase 4 for the reconciler to re-target the edit to the Adjacency section.
 
 ### F - Source quality
 
-- **F1** *(subagent)*: Sources cited in the research findings match the
-  acceptable source class for the claim type they support. Orientation
-  files are framing-heavy and rarely cite hard regulatory or quantitative
-  claims; F1 typically applies to hiring-pattern and CV-convention claims.
-  Acceptable sources at that tier: an authoritative reference if one
-  exists at the claim's granularity, otherwise verified industry
-  intelligence (recognized recruiter firms, established trade
-  publications, sector-specific newsletters with editorial accountability).
-  Marketing pages, unsourced blogs, sponsored content, and AI-generated
-  summaries without attribution fail F1.
+- **F1** *(subagent)*: Sources cited in the research findings match the acceptable source class for the claim type they support. Orientation files are framing-heavy and rarely cite hard regulatory or quantitative claims; F1 typically applies to hiring-pattern and CV-convention claims.
+  Acceptable sources at that tier: an authoritative reference if one exists at the claim's granularity, otherwise verified industry intelligence (recognized recruiter firms, established trade publications, sector-specific newsletters with editorial accountability). Marketing pages, unsourced blogs, sponsored content, and AI-generated summaries without attribution fail F1.
   - Fix on fail: re-enter Phase 2 to find a source in the acceptable class.
 
 ### G - Registry alignment
 
-- **G1** *(script)*: The registry entry text passed to `apply create` or
-  the existing registry entry (refresh) lists the same filename as the
-  value file being written.
-  - Fix on fail: re-enter Phase 3 to rewrite the registry entry text to
-    match.
-- **G2** *(subagent)*: The registry entry's one-line description summarizes
-  the file's scope.
+- **G1** *(script)*: The registry entry text passed to `apply create` or the existing registry entry (refresh) lists the same filename as the value file being written.
+  - Fix on fail: re-enter Phase 3 to rewrite the registry entry text to match.
+- **G2** *(subagent)*: The registry entry's one-line description summarizes the file's scope.
   - Fix on fail: re-enter Phase 3 to redraft the registry-entry line.
 
 ### H - Voice and style
 
-- **H1** *(subagent)*: Em dashes do not appear in body prose. Frontmatter
-  fences (`---`) and structural separators are exempt.
-  - Fix on fail: re-enter Phase 3 to redraft the offending sentence
-    without an em dash (period, semicolon, conjunction, or restructure).
+- **H1** *(subagent)*: Em dashes do not appear in body prose. Frontmatter fences (`---`) and structural separators are exempt.
+  - Fix on fail: re-enter Phase 3 to redraft the offending sentence without an em dash (period, semicolon, conjunction, or restructure).
 ### I - Mode invariants
 
 - **I1** *(script, create only)*: The value file did not exist before this run.
@@ -175,14 +101,11 @@ routing source; the skill's Phase 5 does not carry its own routing table.
 - **I2** *(script, refresh only)*: The value file existed before this run.
   - Fix on fail: halt; invocation error.
 - **I3** *(script, refresh only)*: At least one meaningful change is present.
-  - Fix on fail: re-enter Phase 2 with broader research scope; if still no
-    change, exit clean and note that the file is current.
+  - Fix on fail: re-enter Phase 2 with broader research scope; if still no change, exit clean and note that the file is current.
 
 ## Unresolved-finding output format
 
-When the loop exits with unresolved findings, the QC subagent emits a JSON
-list to the `--issues` temp file passed to `scripts/axis_apply.py`. Each
-entry:
+When the loop exits with unresolved findings, the QC subagent emits a JSON list to the `--issues` temp file passed to `scripts/axis_apply.py`. Each entry:
 
 ```json
 {
