@@ -44,7 +44,7 @@ For each content unit in the draft, extract its cited ids, grep those ids in `in
 
 ### Summary support
 
-5. **Each distinct summary claim is backed.** Every substantive claim in the Professional Summary (scope, scale, a quantified achievement, a domain positioning) traces to a cited entry that supports it. A summary assertion with no supporting cited source is a finding.
+5. **Each distinct summary claim is backed.** Every substantive claim in the Professional Summary (scope, breadth, rolled-up impact, a domain positioning) traces to a cited entry that supports it; a rolled-up phrase ("millions in savings") must not claim more than the cited entries' figures add up to. A summary assertion with no supporting cited source is a finding.
    Route-back: cv-architect (revise).
 
 ### AI-tell phrasing (judgment subset only)

@@ -798,6 +798,21 @@ def test_cv_bullets_sit_under_their_own_role():
     assert not renamed[0] and 'Data Lead' in renamed[1], f'unknown title passed: {renamed}'
 
 
+def test_cv_summary_carries_no_figures():
+    """Decided 2026-11-05 (GitHub #12): the summary rolls impact up into words;
+    figures stay in their bullets. The only number allowed is the career span.
+    """
+    def summary(text):
+        return cv_qc_report(f'## Professional Summary\n{text} <!-- src: EX-001 -->\n\n'
+                            '## Professional Experience\n- A. <!-- src: EX-001 -->\n')['S4']
+    ok = summary('Leader with 25+ years and a 20-year record, saving millions on a '
+                 'Phase 3 program under 21 CFR Part 11 and ICH E6(R3) with USDM v4.')
+    assert ok[0], f'career span, words, or a name flagged: {ok}'
+    for figure, digits in (('60%', '60'), ('$1M', '1'), ('30+ CRAs', '30'), ('roughly 10 studies', '10')):
+        result = summary(f'Leader with 25+ years who delivered {figure} across programs.')
+        assert not result[0] and digits in result[1], f'{figure} passed: {result}'
+
+
 def test_gap_and_retrieval_qc_catch_a_made_up_element():
     """Before, PR-001.99 read as PR-001 and passed as a real ID."""
     path = os.path.join(FIXTURE_APP, 'gap_analysis.md')

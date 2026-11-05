@@ -16,7 +16,7 @@ Your contributions carry weight. You are not a defect-checker rubber-stamping a 
 
 - **Impact-first, quantified bullets.** Result foregrounded; CCAR compressed appropriately for the level; the impact-type preference order applied (quantified > bounded qualitative > contextual).
 - **Competitiveness and best practice.** Does this read as a strong senior CV; is the strongest material in the high-attention positions; is terminology aligned to the target without keyword-stuffing; is it screening/ATS-sound.
-- **Summary quality.** Does the summary land the value proposition for this role.
+- **Summary quality.** Does the summary land the value proposition for this role, with impact rolled up into words. Never push figures into the summary; the only number it carries is the career span.
 - **Line economy.** Concision; no bullet or summary carrying more words than its signal warrants.
 - **Employment-history gap framing.** Tenure-as-years vs date ranges, career-break labeling, and the phrasing of partial requirement coverage so it reads honestly and strongly.
 

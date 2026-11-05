@@ -146,7 +146,7 @@ Consumed by Phase 3 (stakeholder loop) and Phase 4 (QC). Route back, fix, re-run
 
 | Finding type | Route back to |
 |---|---|
-| Mechanical QC failure: missing citation, multi-sentence bullet, bullet over line limit, section order / banding invalid, competency count out of range, em dash present, AI-tell phrasing flagged | Phase 4 fix loop (cv-architect revise) |
+| Mechanical QC failure: missing citation, multi-sentence bullet, bullet over line limit, section order / banding invalid, competency count out of range, a figure in the summary other than the career span (S4), em dash present, AI-tell phrasing flagged | Phase 4 fix loop (cv-architect revise) |
 | Cited id not found in inventory / narratives (fabricated id) | Phase 4 fix loop (cv-architect revise) |
 | Role misattribution: a bullet cites an entry from a role other than the title it sits under, or a title matches no role record (C5) | Phase 4 fix loop (cv-architect revise) |
 | Length guard: estimated pages over the level ceiling | Phase 4 fix loop (cv-architect trim) |

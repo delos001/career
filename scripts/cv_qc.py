@@ -643,6 +643,40 @@ def _check_s3_competency_count(sections, level):
     return _record('S3', False, 'Core Competencies section absent')
 
 
+# S4: a figure is any digit run, with a leading currency sign or trailing
+# percent / plus / magnitude suffix kept so the finding quotes it whole. The
+# career span ('25+ years', '20-year', 'over 15 years') is the one allowed
+# figure. Digits that are part of a name are not figures either: a trial phase
+# ('Phase 3'), a regulation ('21 CFR Part 11'), a version or standard id
+# ('v4', 'E6(R3)', digits glued to letters). Both are removed before the search.
+_SUMMARY_FIGURE_RE = re.compile(r'[$€£]?\d[\d,.]*(?:\s?[%+]|\s?[KMB]\b)?')
+_CAREER_SPAN_RE = re.compile(
+    r'\b\d+\+?\s*-?\s*years?\b'                 # career span
+    r'|\bPhase\s+\d+[a-z]?\b'                   # trial phase
+    r'|\b\d+\s+CFR(?:\s+Part\s+\d+)?'           # regulation
+    r'|\bPart\s+\d+\b'
+    r'|[A-Za-z]\d[\w.()]*',                     # version / standard id, e.g. v4, E6(R3)
+    re.IGNORECASE)
+
+
+def _check_s4_summary_no_figures(sections):
+    """S4: the Professional Summary carries no figures except the career span.
+
+    cv-structure.md 'No figures in the summary (hard rule)': impact is rolled
+    up into words and each figure stays in its owning bullet. Citation
+    comments are stripped first, since their entry ids carry digits.
+    """
+    body = next((b for _, norm, b in sections if norm == 'professional summary'), None)
+    if body is None:
+        return _record('S4', True, 'no Professional Summary to check')
+    visible = _CAREER_SPAN_RE.sub('', ANY_COMMENT_RE.sub('', body))
+    figures = [m.group(0).strip() for m in _SUMMARY_FIGURE_RE.finditer(visible)]
+    if figures:
+        return _record('S4', False,
+                       'summary carries figures; roll them up into words: ' + ', '.join(figures[:8]))
+    return _record('S4', True, 'summary carries no figures beyond the career span')
+
+
 # ---------------------------------------------------------------------------
 # Group L - Length guard
 # L1 is the document-level geometry estimate vs the level's page ceiling. A
@@ -814,6 +848,7 @@ def run_qc(args):
     checks.append(_check_s1_section_order(sections))
     checks.append(_check_s2_required_sections(sections))
     checks.append(_check_s3_competency_count(sections, args.level))
+    checks.append(_check_s4_summary_no_figures(sections))
 
     # --- Group L: length guard ---
     checks.append(_check_l1_page_estimate(text, args.level))
