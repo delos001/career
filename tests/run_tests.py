@@ -1534,6 +1534,44 @@ def test_skills_look_up_paths_instead_of_spelling_them():
     assert not offenders, 'files naming a personal/ path: ' + ', '.join(offenders)
 
 
+def test_interview_section_is_written_by_script():
+    """Built 2026-11-05 (GitHub #40, audit finding F5): four skills built the
+    '## Interview: <stage>' block by hand from the template. The script now
+    creates it with every required field in template order, changes only the
+    named fields on update, adds optional extras after Outcome, and refuses a
+    near-miss label as a typo.
+    """
+    log_path = os.path.join(FIXTURE_APP, 'session_log.md')
+    root, cfg = _config.load()
+    required = [f.rstrip(':') for f in _util.interview_section_fields(
+        _util.read(os.path.join(root, cfg['paths']['templates'], cfg['filenames']['session_log_template'])))]
+
+    def section():
+        text = _util.read(log_path)
+        m = re.search(r'^## Interview: Hiring Manager\n.*?(?=^## |\Z)', text, re.S | re.M)
+        assert m, 'section not written'
+        return m.group(0)
+
+    code, out = run('session_log.py', 'interview', '--folder', FIXTURE_APP, '--stage', 'Hiring Manager',
+                    '--set', 'Interview date=2026-11-12', '--set', 'Status=scheduled')
+    assert code == 0, out
+    labels = [ln[2:].split(':')[0] for ln in section().splitlines() if ln.startswith('- ')]
+    assert labels == required, f'fields not in template order: {labels}'
+    assert '- Interview date: 2026-11-12' in section()
+
+    code, out = run('session_log.py', 'interview', '--folder', FIXTURE_APP, '--stage', 'Hiring Manager',
+                    '--set', 'Status=held', '--set', 'Follow-up=pending')
+    assert code == 0, out
+    body = section()
+    assert '- Status: held' in body and '- Interview date: 2026-11-12' in body, body
+    assert body.index('- Follow-up: pending') > body.index('- Outcome:'), 'extra field not after Outcome'
+    assert _util.read(log_path).count('## Interview: Hiring Manager') == 1, 'section duplicated'
+
+    code, out = run('session_log.py', 'interview', '--folder', FIXTURE_APP, '--stage', 'Hiring Manager',
+                    '--set', 'Interveiw date=2026-11-13')
+    assert code != 0 and 'did you mean' in out, f'typo label accepted: {out}'
+
+
 # ---------------------------------------------------------------------------
 # Agent definitions
 # Sub-agents run in their own context, so the global rules reach them only if

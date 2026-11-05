@@ -42,7 +42,7 @@ Do not ask an open "is everything accurate?" question; the user will not remembe
   <YYYY-MM-DD>`, `Outcome: n/a (round cancelled)`).
 - A round whose notes `- Schedule changes:` line disagrees with the session-log `Schedule history:` / `Interview date:` fields. Show both, confirm, write.
 
-Apply confirmed corrections to the round's fields in place, in the shape defined by the `## Interview section` and `## Interview field notes` blocks of `templates/session_log.md`. Never rewrite a section wholesale; the fields you are not correcting stay as they are.
+Apply confirmed corrections with `python scripts/session_log.py interview --folder <app_folder> --stage "<stage>" --set "<Label>=<value>"`, passing only the fields being corrected; the script leaves every other field as it is. Value formats are in `templates/session_log.md` `## Interview field notes`.
 
 If nothing is unresolved, say so in one line and move on.
 

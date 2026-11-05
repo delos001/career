@@ -485,7 +485,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 **Built** (detailed entries below unless noted):
 - `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/display/introduce.py`, `scripts/assemble.py`
-- `scripts/session_log.py` (shared section-append for all skills that write to a session log)
+- `scripts/session_log.py` (shared section-append for all skills that write to a session log; `interview` creates or updates one `## Interview: <stage>` section field by field, with the field set read from `templates/session_log.md`, used by preparation-screen, preparation-interview, followup and close-application)
 - `scripts/profile_slice.py` (consumed by retrieval and downstream skills)
 - `scripts/retrieval_payload.py`, `scripts/retrieval_score_merge.py`, `scripts/retrieval_apply.py` (retrieval concern family)
 - `scripts/gap_context.py`, `scripts/gap_assemble.py`, `scripts/staging_append.py` (gap-analysis concern family)

@@ -68,7 +68,7 @@ After the main body, add this screen's **Recruiter Screen Appendix block** (the 
 
 ## Phase 4: session log, then QC
 
-1. Session log: append the `## Interview: Recruiter Screen` section (or update its fields in UPDATE mode) before QC runs, so the QC pass covers it. Use the field shape defined by the `## Interview section` and `## Interview field notes` blocks of `templates/session_log.md` (the single authority; read it, do not reproduce it from memory). `Interview date:` is a bare `YYYY-MM-DD`; time, duration, medium, and interviewers each have their own field. `Status: scheduled`, `Outcome: pending`. This section is the ONE home for the screen's scheduling metadata; the prep doc records none of it.
+1. Session log: write the `## Interview: Recruiter Screen` section before QC runs, so the QC pass covers it: `python scripts/session_log.py interview --folder <app_folder> --stage "Recruiter Screen" --set "Prep date=<YYYY-MM-DD>" --set "Prep artifact=interview_prep.md" --set "Interview date=<YYYY-MM-DD>" --set "Time=<HH:MM tz>" ...` with `Status=scheduled` and `Outcome=pending` (in UPDATE mode, pass only the fields that changed). Value formats are in `templates/session_log.md` `## Interview field notes`; `Interview date` is a bare `YYYY-MM-DD`. This section is the ONE home for the screen's scheduling metadata; the prep doc records none of it.
 
 2. QC, an internal loop; do not stall the user with check-by-check narration. Run: `python <repo>/scripts/prep_qc.py check --folder <absolute application folder>`
 3. Dispatch `qc-preparation-screen` (judgment checks) with the application folder and profile folder paths.
