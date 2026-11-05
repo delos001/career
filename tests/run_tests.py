@@ -776,6 +776,28 @@ def test_cv_cites_real_elements_with_their_objective():
         assert clean[check][0], clean[check]
 
 
+def test_cv_bullets_sit_under_their_own_role():
+    """Added 2026-11-05 (GitHub #11 follow-on): with every role now its own
+    sub-entry, the likely error is a bullet under the wrong role's title. C5
+    only counted titles against roles, and it counted the bold employer line as
+    a title, so a block holding two roles' bullets under one title passed.
+    """
+    def cv(northwind_bullets, calder_title='Manager, Clinical Data Systems'):
+        return ('## Professional Summary\nText. <!-- src: EX-001 -->\n\n'
+                '## Professional Experience\n'
+                '**Northwind Therapeutics** | Boston, MA | 2022 - 2025\n'
+                '**Director, Data Platform Operations** (2022 - 2025) | Remote\n'
+                f'{northwind_bullets}'
+                '**Calder Bio** | Austin, TX | 2018 - 2022\n'
+                f'**{calder_title}**\n'
+                '- B. <!-- src: EX-002 -->\n')
+    assert cv_qc_report(cv('- A. <!-- src: EX-004 -->\n'))['C5'][0], 'a correct CV failed'
+    wrong = cv_qc_report(cv('- A. <!-- src: EX-004 -->\n- C. <!-- src: EX-001 -->\n'))['C5']
+    assert not wrong[0] and 'EX-001' in wrong[1], f'bullet under the wrong role passed: {wrong}'
+    renamed = cv_qc_report(cv('- A. <!-- src: EX-004 -->\n', calder_title='Data Lead'))['C5']
+    assert not renamed[0] and 'Data Lead' in renamed[1], f'unknown title passed: {renamed}'
+
+
 def test_gap_and_retrieval_qc_catch_a_made_up_element():
     """Before, PR-001.99 read as PR-001 and passed as a real ID."""
     path = os.path.join(FIXTURE_APP, 'gap_analysis.md')

@@ -100,9 +100,7 @@ The qualifier values (Type, Style, Concurrent, Allocation, Agency) come from the
 
 **Ordering.** Lead each role with its strongest, most role-relevant bullet (impact-first), not the role's chronological first task. The top of each entry is high-attention space.
 
-**Multiple roles at one company.** When a candidate held more than one role at the same company, never merge the titles onto one header line (no `Title A; Title B`). Order the roles reverse-chronologically. Choose the layout by bullet volume:
-- Stacked: when the roles together carry only a few bullets (roughly one or two per role), stack the role titles, each with its own dates, directly under the company line, then a single shared bullet list ordered impact-first. Qualifiers shared by ALL the stacked roles (Style, Type/Agency) hoist to the company line (`Company | Location | Style | Type | dates`); each stacked title then shows only what differs (its allocation).
-- Separate sub-entries: when one or more roles carry enough substantial bullets to stand on their own (about three or more), give each role its own title, dates, bullets, and its own qualifiers (no hoisting, even when a qualifier repeats across the roles). Pick the form that keeps impact density high without fragmenting a short engagement into thin one-bullet entries.
+**Multiple roles at one company.** When a candidate held more than one role at the same company, never merge the titles onto one header line (no `Title A; Title B`). Order the roles reverse-chronologically. In Professional Experience, never stack: give each role its own title, dates, bullets, and qualifiers (no hoisting, even when a qualifier repeats across the roles), however few bullets a role carries. A shared bullet list hides which accomplishment belongs to which role, and the user stacks by hand when wanted (stacking is easy to do by hand; unstacking is not).
 
 **Earlier Professional Roles.** CV experience uses two sections: Professional Experience and Earlier Professional Roles. A role belongs in **Professional Experience** when any of these hold:
 1. It is currently active or ended within the last 10 years (threshold: current year minus 10).

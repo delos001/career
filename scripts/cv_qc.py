@@ -147,6 +147,11 @@ EM_DASH = _wording.EM_DASH
 # role-title lines (bold) so bullets can be grouped into role blocks.
 _EX_ROLE_RE = re.compile(
     r'^ID:\s+((?:EX|PR)-\d+)[ \t]*\n[ \t]*Role:\s+(RL-\d+)', re.MULTILINE)
+# An RL role record's title (the Title field sits on the line after the ID).
+_RL_TITLE_RE = re.compile(
+    r'^ID:\s+(RL-\d+)[ \t]*\n[ \t]*Title:\s+(.+?)[ \t]*$', re.MULTILINE)
+# The bold text at the start of a title line, e.g. '**Senior Manager**'.
+_BOLD_TEXT_RE = re.compile(r'^\*\*(.+?)\*\*')
 _PE_LOCATION_RE = re.compile(
     r'\((?:remote|onsite|on-site|hybrid)\)|,\s*[A-Z]{2}\b', re.IGNORECASE)
 _BOLD_LINE_RE = re.compile(r'^\*\*.+\*\*')
@@ -375,72 +380,80 @@ def _check_c9_gap_citations(text, gap_text):
     return _record('C9', True, f'all {len(cited)} GAP citation(s) resolve')
 
 
-def _check_c5_role_attribution(sections, ex_to_rl):
-    """C5: experience bullets are attributed to the right employer/role.
+def _check_c5_role_attribution(sections, ex_to_rl, rl_titles):
+    """C5: every experience bullet sits under the title of its own role.
 
-    Within each Professional Experience role block, the distinct Role tags of the
-    cited EX/PR entries must not exceed the number of role-title lines in that
-    block (1 for a normal role; N for a stacked multi-role block). An entry whose
-    Role tag belongs to a different employer than the block it sits under is the
-    misattribution this catches. ST narrative citations are ignored (cross-role
-    by design); entries with no resolvable Role are skipped.
+    Each cited EX/PR entry carries a Role tag (RL-NNN), and each RL record
+    carries a Title. Within a Professional Experience role block, every cited
+    entry's role must be one of the roles named by that block's title line(s)
+    (one title for a normal role; several for a hand-stacked block). Two
+    defects fail: a bullet whose entry belongs to another role (the wrong role
+    at the same employer, or another employer entirely), and a title line that
+    matches no RL record's Title, since then its bullets cannot be checked. ST
+    narrative citations are ignored (cross-role by design); entries with no
+    resolvable Role are skipped.
+
+    Line kinds mirror C7: a bold line carrying a location token is a company
+    line, any other bold line is a title. The company line is bold in the
+    current CV format, so testing boldness first would count it as a title.
     """
     pe_body = next((body for _, norm, body in sections
                     if norm == 'professional experience'), None)
     if pe_body is None:
         return _record('C5', True, 'no Professional Experience section to check')
 
-    blocks = []      # closed role blocks: {'titles': int, 'rls': set, 'label': str}
-    cur = None       # block under construction
-    prev = None      # 'company' | 'title' | 'bullet'
+    # Normalized title -> the RL ids carrying it (a title can recur across roles).
+    title_to_rls = {}
+    for rl, title in rl_titles.items():
+        title_to_rls.setdefault(title.casefold(), set()).add(rl)
 
-    def _close(block):
-        if block is not None and block['titles'] >= 1:
-            blocks.append(block)
+    misplaced = []   # 'EX-001 (RL-001 Title) under Other Title'
+    unknown = []     # title lines matching no RL record
+    titles = []      # titles of the block under construction
+    prev = None      # 'company' | 'title' | 'bullet'
 
     for raw_line in pe_body.splitlines():
         line = raw_line.strip()
         if not line:
             continue
         if re.match(r'^-\s+', line):
-            if cur is not None:
+            allowed = set().union(*(title_to_rls.get(t.casefold(), set()) for t in titles))
+            # Only judge bullets whose block titles all resolved; an unknown
+            # title is reported once, not again for each of its bullets.
+            if titles and all(t.casefold() in title_to_rls for t in titles):
                 for m in SRC_RE.finditer(raw_line):
                     for cid in ENTRY_ID_RE.findall(m.group(1)):
-                        if cid.startswith('ST-'):
-                            continue
                         rl = ex_to_rl.get(cid)
-                        if rl:
-                            cur['rls'].add(rl)
+                        if cid.startswith('ST-') or not rl or rl in allowed:
+                            continue
+                        misplaced.append(f"{cid} ({rl} {rl_titles.get(rl, '?')}) "
+                                         f"under {' / '.join(titles)}")
             prev = 'bullet'
             continue
         visible = ANY_COMMENT_RE.sub('', line).strip()
-        if _BOLD_LINE_RE.match(visible):
-            # Role-title line. After bullets it opens a new block; consecutive
-            # titles (after a company or another title) stack into one block.
-            if prev == 'bullet' or cur is None:
-                _close(cur)
-                cur = {'titles': 1, 'rls': set(), 'label': visible[:40]}
-            else:
-                cur['titles'] += 1
+        is_bold = bool(_BOLD_LINE_RE.match(visible))
+        if _PE_LOCATION_RE.search(visible):
+            # Company line (bold or legacy plain): its role titles follow.
+            titles, prev = [], 'company'
+        elif is_bold:
+            # Title line. After bullets it opens a new role block; consecutive
+            # titles (a hand-stacked block) share the bullets that follow.
+            title = _BOLD_TEXT_RE.match(visible).group(1).strip()
+            titles = [title] if prev == 'bullet' else titles + [title]
             prev = 'title'
-        elif _PE_LOCATION_RE.search(visible):
-            # Company line: closes the prior block; role titles follow.
-            _close(cur)
-            cur = None
-            prev = 'company'
+            if title.casefold() not in title_to_rls:
+                unknown.append(title)
         # any other plain line (e.g. a '### CR' subheading) is ignored
-    _close(cur)
 
-    bad = [b for b in blocks if len(b['rls']) > b['titles']]
-    if bad:
-        sample = '; '.join(
-            f"{b['label']} ({len(b['rls'])} employers under {b['titles']} "
-            f"title{'s' if b['titles'] > 1 else ''})" for b in bad[:3])
-        return _record('C5', False,
-                       f'{len(bad)} role block(s) cite entries from more employers '
-                       f'than roles, likely misattribution: {sample}')
-    return _record('C5', True,
-                   'experience bullets attributed to the correct employer/role')
+    problems = []
+    if misplaced:
+        problems.append(f'{len(misplaced)} bullet(s) under the wrong role: '
+                        + '; '.join(misplaced[:5]))
+    if unknown:
+        problems.append('title line(s) matching no role record: ' + '; '.join(unknown[:5]))
+    if problems:
+        return _record('C5', False, ' | '.join(problems))
+    return _record('C5', True, 'every experience bullet sits under its own role')
 
 
 def _check_c6_no_project_in_experience(sections):
@@ -773,8 +786,9 @@ def run_qc(args):
     inv_text = _util.read(args.inventory)
     valid_ids = set(ENTRY_ID_RE.findall(inv_text))
     valid_ids.update(ENTRY_ID_RE.findall(_util.read(args.narratives)))
-    # EX/PR -> RL map for C5 (employer/role attribution).
+    # EX/PR -> RL and RL -> Title maps for C5 (bullet-to-role attribution).
     ex_to_rl = dict(_EX_ROLE_RE.findall(inv_text))
+    rl_titles = dict(_RL_TITLE_RE.findall(inv_text))
 
     checks = []
 
@@ -787,7 +801,7 @@ def run_qc(args):
         valid_crs = set(CR_ID_RE.findall(gap_text))
         checks.append(_check_c4_subheading_crs(text, valid_crs))
     checks.append(_check_c9_gap_citations(text, gap_text))
-    checks.append(_check_c5_role_attribution(sections, ex_to_rl))
+    checks.append(_check_c5_role_attribution(sections, ex_to_rl, rl_titles))
     checks.append(_check_c6_no_project_in_experience(sections))
     checks.append(_check_c7_role_titles_present(sections))
     checks.append(_check_c8_element_with_objective(text))
