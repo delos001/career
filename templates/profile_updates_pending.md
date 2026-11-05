@@ -3,7 +3,7 @@
 **Used by:** gap-analysis (appends items during the Phase 4 loop) and the prep skills (facts surfaced during interview preparation).
 **Processed by:** the profile-update skill, which writes each item into `inventory.md` and removes it once the written entry passes review.
 
-Lives at `personal/profile/profile_updates_pending.md`. **Cross-application** - one file accumulates items across every run until the profile-update skill processes them.
+Lives in the profile folder (`python scripts/paths.py profile`). **Cross-application** - one file accumulates items across every run until the profile-update skill processes them.
 
 How a capture is written is governed by `rules/profile/staging-writing.md`. `scripts/staging_append.py` is the only writer; it renders each item from the caller's capture file and refuses a capture with a field missing.
 

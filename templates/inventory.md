@@ -1,9 +1,9 @@
 # Experience Inventory - template
 
 **Used by:** the inventory builder (creates a first `inventory.md` for a user), the profile-update skill (inserts and enriches entries), and `scripts/profile_update_qc.py` (parses this file at check time for the section roster and the per-prefix field rosters).
-**Structure authority** for `personal/profile/inventory.md` per `structure-authority-is-the-template`. Change the schema here, not in the consuming scripts.
+**Structure authority** for `inventory.md` in the profile folder (`python scripts/paths.py profile`) per `structure-authority-is-the-template`. Change the schema here, not in the consuming scripts.
 
-Lives at `personal/profile/inventory.md`. One per user. Every downstream skill (retrieval, gap-analysis, cv-targeted, the prep skills) reads from it and none writes to it directly; writes go through the profile-update skill.
+Lives in the profile folder. One per user. Every downstream skill (retrieval, gap-analysis, cv-targeted, the prep skills) reads from it and none writes to it directly; writes go through the profile-update skill.
 
 ## How this template is parsed
 

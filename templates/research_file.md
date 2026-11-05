@@ -2,7 +2,7 @@
 
 **Used by:** role-intake (creates). Downstream skills append their own sections below role-intake's; each writing skill owns its own sections and its own portion of this spec.
 
-One per evaluated job, written to `personal/applications/<SLUG>_APP-NNN_YYYY-MM/research.md`.
+One per evaluated job, written to `research.md` in the application folder (`python scripts/paths.py app <APP-NNN>`).
 
 A **current-state document**: re-running or deepening research overwrites the affected sections; it does not accumulate a history of everything ever found.
 

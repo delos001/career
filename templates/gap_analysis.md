@@ -2,7 +2,7 @@
 
 **Used by:** gap-analysis (creates and updates). Downstream skills (CV creation, interview prep, career brief) read sections directly via section-level retrieval.
 
-One per evaluated job, written to `personal/applications/<SLUG>_APP-NNN_YYYY-MM/gap_analysis.md`.
+One per evaluated job, written to `gap_analysis.md` in the application folder (`python scripts/paths.py app <APP-NNN>`).
 
 A **current-state document**: re-running gap-analysis overwrites the file. The session log carries the durable cross-run record (fit score, recommendation, key gaps).
 

@@ -2,7 +2,7 @@
 
 **Used by:** interview-notes (creates and appends). The follow-up skill reads round sections after each interview.
 
-One per evaluated job, written to `personal/applications/<SLUG>_APP-NNN_YYYY-MM/interview_notes.md`.
+One per evaluated job, written to `interview_notes.md` in the application folder (`python scripts/paths.py app <APP-NNN>`).
 
 An **append-and-amend document**: `scripts/notes_assemble.py init` renders the file shell once; `add-round` appends one round section per interview, rendered from the blocks below. Hand-written notes fill the scaffold between scaffold runs; nothing the script does overwrites them. Section identity is the round heading (`## <N>. <stage> | <YYYY-MM-DD>`), where `N` is the round's append order. Identity for duplicate-detection and amend is stage + date; the number is a cosmetic ordinal, ignored when matching. The skill amends an existing section directly instead of appending a duplicate.
 

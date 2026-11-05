@@ -2,7 +2,7 @@
 
 **Used by:** role-intake (creates and finalizes). Downstream skills append their own sections below role-intake's; each writing skill owns its own sections.
 
-One per evaluated job, written to `personal/applications/<SLUG>_APP-NNN_YYYY-MM/session_log.md`. `scripts/assemble.py` renders the skeleton below: tokens in `{{double braces}}` are substituted. The `{{research_completed_date}}`, `{{role_level}}`, `{{industry}}`, and `{{axis_*}}` tokens are set to a pending marker at `init` (Phase 3) and filled with real content at `finalize` (Phase 7). All other fields are populated at `init`.
+One per evaluated job, written to `session_log.md` in the application folder (`python scripts/paths.py app <APP-NNN>`). `scripts/assemble.py` renders the skeleton below: tokens in `{{double braces}}` are substituted. The `{{research_completed_date}}`, `{{role_level}}`, `{{industry}}`, and `{{axis_*}}` tokens are set to a pending marker at `init` (Phase 3) and filled with real content at `finalize` (Phase 7). All other fields are populated at `init`.
 
 ## Skeleton
 

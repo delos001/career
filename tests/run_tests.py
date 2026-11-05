@@ -1513,9 +1513,11 @@ def test_acronym_list_is_not_an_index_of_the_text():
 # ---------------------------------------------------------------------------
 
 def test_skills_look_up_paths_instead_of_spelling_them():
-    """Fixed 2026-11-05 (GitHub #22): skills and agents spelled out
-    personal/... paths and found application folders by hand. paths.py does
-    the lookup; no skill or agent file may name a personal/ path again.
+    """Fixed 2026-11-05 (GitHub #22): skills, agents, templates and rules
+    spelled out personal/... paths and found application folders by hand.
+    paths.py does the lookup; none of those files may name a personal/ path
+    again. (design/ and the root docs describe locations for the reader and
+    are out of scope.)
     """
     code, out = run('paths.py', 'app', 'APP-001')
     assert code == 0 and out.endswith('aldridge_APP-001_2026-01'), out
@@ -1524,12 +1526,12 @@ def test_skills_look_up_paths_instead_of_spelling_them():
     code, out = run('paths.py', 'profile')
     assert code == 0 and os.path.isdir(out), out
     offenders = []
-    for folder in ('skills', 'agents'):
-        for dirpath, _, files in os.walk(os.path.join(REPO_ROOT, '.claude', folder)):
+    for folder in ('.claude/skills', '.claude/agents', 'templates', 'rules'):
+        for dirpath, _, files in os.walk(os.path.join(REPO_ROOT, *folder.split('/'))):
             for name in files:
                 if name.endswith('.md') and 'personal/' in _util.read(os.path.join(dirpath, name)):
                     offenders.append(os.path.relpath(os.path.join(dirpath, name), REPO_ROOT))
-    assert not offenders, 'skill or agent files naming a personal/ path: ' + ', '.join(offenders)
+    assert not offenders, 'files naming a personal/ path: ' + ', '.join(offenders)
 
 
 # ---------------------------------------------------------------------------
