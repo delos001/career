@@ -109,7 +109,7 @@ Moved to GitHub **#18**. Resolve together with #11 (they point in opposite direc
 Moved to GitHub **#11**. Resolve together with #18.
 
 ### cv-best-practices-refresh
-Moved to GitHub **#47** (folded in). This was never a deferral: it is the refresh *procedure* for `cv-best-practices.md`, the one stamped file with no builder skill to own its refresh, and `cv-targeted/SKILL.md:112` references it at runtime ("per the `cv-best-practices-refresh` process"). #47 relocates the procedure into `rules/cv/cv-best-practices.md` itself and repoints the skill. **Do not delete this heading until that repoint lands** — the runtime pointer depends on it.
+**Resolved 2026-11-05 by GitHub #47.** The refresh procedure now lives in `rules/cv/cv-best-practices.md` ("How to refresh this document"), and cv-targeted no longer points here; nothing reads this heading at runtime. Kept as a tombstone for inbound `Refs:`.
 
 ### cv-targeted-length-remediation-levers
 Moved to GitHub: **#17** (the L1 lever reorder, part a) and **#12** (the summary-metric-repeat sub-question, part b).

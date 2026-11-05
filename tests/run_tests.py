@@ -1534,6 +1534,26 @@ def test_skills_look_up_paths_instead_of_spelling_them():
     assert not offenders, 'files naming a personal/ path: ' + ', '.join(offenders)
 
 
+def test_stale_rule_files_are_flagged():
+    """Fixed 2026-11-05 (GitHub #47): the 9-month staleness rule lived only in
+    prose, the one check that ran used ~12 months, and 23 of 24 stamped rule
+    files were never age-checked. staleness.py reads the threshold from config
+    and flags any file at or past it.
+    """
+    import staleness
+    root, cfg = _config.load()
+    months = cfg['staleness_months']
+    assert months == 9, f'threshold drifted from the decided 9 months: {months}'
+    assert staleness.months_old('2026-02', today='2026-11') == 9
+    assert staleness.is_stale('2026-02', months, today='2026-11')
+    assert not staleness.is_stale('2026-03', months, today='2026-11')
+    old = write_block('old_rule.md', '---\nlast_researched: 2020-01\n---\n# Old\n')
+    new = write_block('new_rule.md', f'---\nlast_researched: {_util.today_ym()}\n---\n# New\n')
+    code, out = run('staleness.py', '--file', old, '--file', new)
+    assert code == 0, out
+    assert 'old_rule.md' in out and 'new_rule.md' not in out, f'wrong files flagged:\n{out}'
+
+
 def test_interview_section_is_written_by_script():
     """Built 2026-11-05 (GitHub #40, audit finding F5): four skills built the
     '## Interview: <stage>' block by hand from the template. The script now

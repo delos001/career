@@ -94,6 +94,11 @@ related_pull:
   max_chars: 50000          # a pull larger than this splits into parts, read one --part at a time
   min_shared_words: 2       # an entry outside the item's role is pulled when it shares this many key words with the item
 
+# Rule-file staleness (scripts/staleness.py). A stamped rule file whose
+# frontmatter last_researched is this many months old or more is stale.
+# Decided as a repo-wide constant (design_decisions.md rule-staleness-threshold).
+staleness_months: 9
+
 # Markdown line-wrap convention (scripts/md_unwrap.py). Prose is never
 # hard-wrapped: one paragraph or bullet per line. These repo-relative globs are
 # the files the convention is checked and applied on.

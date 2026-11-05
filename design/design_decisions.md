@@ -1137,11 +1137,13 @@ Consuming skills read the stamp on load. If older than threshold, present binary
 > "Rule X was last researched N months ago. Proceed with existing information, or perform a research refresh first?"
 On refresh: skill invokes builder in `refresh` mode, reloads, continues.
 
+Wired 2026-11-05 (GitHub #47): consuming skills call `scripts/staleness.py --file ...` on the rule files they load. First consumer is cv-targeted Phase 1 (both CV rule files plus the role's resolved axis files); `cv-best-practices.md`, which has no builder, carries its own manual refresh procedure. `staleness.py --all` lists every stale stamped file under `rules/` on demand.
+
 #### rule-staleness-grouped-prompt
 Multiple stale rules at skill start: one grouped prompt, not a series.
 
 #### rule-staleness-threshold
-9 months as repo-wide constant.
+9 months as repo-wide constant. Machine-readable since 2026-11-05 as `config.yaml` `staleness_months`, read by `scripts/staleness.py`; the ~12-month figure that had drifted into cv-targeted and `cv-best-practices.md` is gone, and a test pins the value.
 Refs: `staleness-threshold-revisit`, `staleness-per-axis-overrides` (deferrals).
 
 #### organizations-folder

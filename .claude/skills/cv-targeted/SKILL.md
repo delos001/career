@@ -57,9 +57,9 @@ Ask if this session is for a new CV or to resume a previous one.
   - The `## CV Notes` section. This is general framing guidance from the gap-closure session that applies across the CV rather than to a single requirement. Surface it as a named input alongside the requirement statuses; the cv-architect must review and apply it before drafting begins.
 - Read `user-info.md` from the profile folder (`python scripts/paths.py profile`). Extract the contact block (name, location, contact line, profile links) for the CV header.
 - **Resolve the axis value files.** For each classified axis value, resolve its rule file path `rules/<axis>/<value>.md`. Pass the files that exist to the sub-agents; for any axis marked "File deferred" in the classification, note it (the architect proceeds without that axis's voice file and the gap is surfaced at handoff).
-- **CV best-practices staleness check.** Narrate this in plain English before running it, e.g. "Let me check that the CV best-practices guidance this skill relies on is still current." Do not name the field or call it a "staleness check" to the user. Read the `last_researched` field from `rules/cv/cv-best-practices.md`. If it is more than ~12 months older than today, surface a plain-English warning that the CV best-practices research may be due for a refresh (per the `cv-best-practices-refresh` process). Non-blocking; the run continues.
+- **Rule freshness check.** Narrate it in plain English first, e.g. "Let me check that the guidance this CV relies on is still current." Do not name the field or call it a "staleness check" to the user. Run `python scripts/staleness.py --file rules/cv/cv-best-practices.md --file rules/cv/cv-structure.md --file <each resolved axis file>`. If it lists any file, present them together in one prompt (per `rule-staleness-grouped-prompt`): which guidance, when it was last researched, and the choice: proceed with it as is, or refresh first. On refresh, refresh each listed file (an axis file through its builder skill in refresh mode; `cv-best-practices.md` through the procedure in that file), then reload and continue.
 - Do not load `inventory.md`, `narratives.md`, `retrieval.md`, `jd.md`, or `comms.md` here; the sub-agents read them in their own context (their file sets are listed in Phases 2 and 3).
-- Output: critical requirements; axis classification with resolved axis-file paths (and any deferred-axis note); level; per-requirement coverage; CV Notes (general framing guidance, or empty); contact block; staleness warning (if any).
+- Output: critical requirements; axis classification with resolved axis-file paths (and any deferred-axis note); level; per-requirement coverage; CV Notes (general framing guidance, or empty); contact block; the freshness choice (if any file was stale).
 
 ## Phase 2 - Initial draft
 
@@ -113,7 +113,7 @@ Ask if this session is for a new CV or to resume a previous one.
 
 **Presenting the CV and handing off to the render stage.**
 
-- Input: `cv_content.md` path, page count (measured or unmeasured), QC verdict, any unresolved items (open stakeholder contributions from a Phase 3 cap, or provisional QC findings from Phase 4), and the Phase 1 notes (best-practices staleness warning, deferred-axis note).
+- Input: `cv_content.md` path, page count (measured or unmeasured), QC verdict, any unresolved items (open stakeholder contributions from a Phase 3 cap, or provisional QC findings from Phase 4), and the Phase 1 notes (any stale guidance the user chose to proceed with, deferred-axis note).
 - **Compose Open items from `cv_collaboration_log.md`:** for each material contribution still open at the Phase 3 cap, list its advisor, the ask, and the architect's reason for not fully integrating it (pulled from the logged dispositions); add any provisional QC findings from Phase 4. This gives the user a precise, reviewable account of what was left unresolved and why, since the workflow proceeds without requiring full agreement. Render "none" if empty.
 - **Compose Possible missed requirements from `cv_collaboration_log.md`:** for each suspected extraction miss the hiring-manager flagged (deduped by JD element), state it as a plain advisory: the JD appears to emphasize this, it is absent from the tracked requirements and gap analysis, so the pipeline never evaluated it, and the user should address it upstream if it is a real requirement. This is advisory only (a reading of the raw JD that may be a false positive), kept separate from Open items, and does not block the run. Render "none" if empty.
 - **Compose QC reversals from `cv_collaboration_log.md`:** for each `qc_regression` the architect flagged, name the advisor, the contribution, and the QC constraint that forced the reversal, so the user sees any stakeholder win QC undid and why. Render "none" if empty.
@@ -132,7 +132,7 @@ Ask if this session is for a new CV or to resume a previous one.
   Possible missed requirements (or "none"):
     - The JD appears to emphasize <X>; it is not in your requirements or gap
       analysis, so the pipeline never evaluated it. Address upstream if it is real.
-  Notes: <best-practices staleness warning and/or deferred-axis note, if any>
+  Notes: <stale guidance used as is, and/or deferred-axis note, if any>
   ```
 
 - State the next step: the formatted .docx is produced by the separate render skill (cv-render); `cv_content.md` is its sole input. The user reviews `cv_content.md` (the citation comments are invisible in any render).

@@ -6,7 +6,13 @@ last_researched: 2026-05
 
 **Used by:** cv-targeted (career-strategist grounding); evidence base behind `cv-structure.md`.
 
-Refresh per the `cv-best-practices-refresh` deferral. The cv-targeted skill warns when `last_researched` is over ~12 months old (the AI-tell guidance ages fastest).
+**How to refresh this document.** cv-targeted flags it when `last_researched` reaches the staleness threshold (`config.yaml` `staleness_months`, 9), or refresh on demand when a CV run surfaces obsolete or missing guidance. This file has no builder skill, so the refresh is manual:
+1. Re-run the CV best-practice web research for each section below (senior leadership and senior IC, regulated industries), weighting sources as tagged (`[empirical]` over `[practitioner-consensus]`).
+2. Reconcile against this document: update findings that moved, add new ones, and keep the confidence tags and source links.
+3. Set `last_researched` to the current `YYYY-MM`.
+4. Cascade any changed rule into `rules/cv/cv-structure.md`, whose rules derive from this evidence, noting deliberate departures (as its no-figures summary rule does).
+
+The AI-tell guidance ages fastest; check it first.
 
 ## Overall Summary
 
