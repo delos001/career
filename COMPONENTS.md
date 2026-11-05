@@ -87,7 +87,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - positioning
 - inventory (profile-builder)
 - narratives (profile-builder)
-- presentation — referenced by preparation-interview for presentation-format rounds; deferred, tracked in `design/deferrals.md` (`presentation-build-skill`), not yet in design_decisions.
+- presentation — referenced by preparation-interview for presentation-format rounds; deferred, tracked in GitHub #44, not yet in design_decisions.
 
 ### Detailed Entries
 

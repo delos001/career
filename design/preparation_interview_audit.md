@@ -19,7 +19,7 @@ QC / consistency:
 - Both QC scripts hardcoded `Interview date:` / `Outcome:` value-validators that bypass the template-driven field set; added a fail-loud guard so a field rename can't silently disable the check.
 
 Skill seams:
-- F4: presentation-skill dead pointers softened to a manual-build path (skill still deferred; `presentation-build-skill`).
+- F4: presentation-skill dead pointers softened to a manual-build path (skill still deferred; GitHub #44).
 - Field-shape pointer named only `## Interview section` (tokens), not `## Interview field notes` (enums); fixed in all four writing skills (preparation-screen, preparation-interview, followup, close-application).
 - followup create-path now sets `Status: held` + explicit `Outcome:` so a no-prep-run round is not later flagged by close-application as "never happened".
 - close-application cancellation bullet now inlines the exact target strings (terminal, no-QC path).

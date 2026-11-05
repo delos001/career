@@ -52,94 +52,10 @@ Distinct from staleness *detection*, which is a live bug in GitHub #47, not a de
 
 ## Moved to GitHub (2026-07-16)
 
-Decided-but-unbuilt work. Headings retained so inbound `Refs:` pointers keep resolving.
-
-### skills-config-driven-paths
-Moved to GitHub **#22**.
-
-### vocabularies-reference-script
-Moved to GitHub **#38**.
-
-### metadata-header-reconciliation-script
-Moved to GitHub **#39**.
-
-### inventory-filter-tool
-Moved to GitHub **#25**.
-
-### inventory-builder-research-classification-sections-5-6
-Moved to GitHub **#27** (folded in as a sub-item of the inventory builder build).
-
-### inventory-builder-quality-check-encoding
-Moved to GitHub **#27** (folded in as a sub-item of the inventory builder build).
-
-### qc-rules-execution-mode-tagging
-Moved to GitHub **#49**. Sequencing note: do it before #27, not after — the inventory builder must encode these rules, and doing the tagging first means each rule is touched once.
-
-### inventory-qc-findings-decision-log
-Moved to GitHub **#48**, generalized beyond inventory. Its recorded trigger ("inventory builder skill design") was wrong: #10 needs the same mechanism today.
-
-### axis-builder-qc-drift-resolution
-Moved to GitHub **#10**.
-
-### registry-overlap-tracking
-Moved to GitHub **#43**, promoted to a skeleton build rather than waiting on the trigger.
-
-### participant-terminology-cross-file-consistency
-Moved to GitHub **#13**.
-
-### cv-qc-section-structure-single-source
-Moved to GitHub **#21**.
-
-### skill-file-line-wrap-normalization
-Moved to GitHub **#5**.
-
-### bloated-skill-architecture-revisit
-Moved to GitHub **#23**.
-
-### axis-programmatic-slicing-audit
-Moved to GitHub **#24**.
-
-### profile-startup-investment-gradient
-Moved to GitHub **#15**.
-
-### cv-architect-multi-role-employer-title-stacking
-Moved to GitHub **#18**. Resolve together with #11 (they point in opposite directions).
-
-### cv-stacking-newer-roles-standalone
-Moved to GitHub **#11**. Resolve together with #18.
-
-### cv-best-practices-refresh
-**Resolved 2026-11-05 by GitHub #47.** The refresh procedure now lives in `rules/cv/cv-best-practices.md` ("How to refresh this document"), and cv-targeted no longer points here; nothing reads this heading at runtime. Kept as a tombstone for inbound `Refs:`.
-
-### cv-targeted-length-remediation-levers
-Moved to GitHub: **#17** (the L1 lever reorder, part a) and **#12** (the summary-metric-repeat sub-question, part b).
-
-### presentation-build-skill
-Moved to GitHub **#44**, promoted to a skeleton build rather than waiting for an interview to demand one.
-
-### level-axis-finer-grained-files
-Moved to GitHub **#51**, and reframed. The original title presumed the fix was splitting into files; the diagnosis is that seniority is calibrated by research and then discarded at classification. Was decided-needed and back-burnered on time, so it is an enhancement, not a deferral.
+Citations of moved entries were repointed at their GitHub issues and the forwarding headings deleted (GitHub #55, 2026-11-05). The one kept below records where its content landed.
 
 ### cv-format-spec-from-axes
 **Status (2026-05-29):** Authored into `rules/cv/cv-structure.md`: two-band section order (with Affiliations conditional), Core Competencies counts (8-10 IC / 8-12 leadership), bullet length limits (2 target / 3 max / 4 never), page targets (IC 2-3, leadership ceiling 3), and the em-dash rule (tightened to no em dashes at all, superseding the header-separator allowance). `format_spec.md` stays .docx-rendering-only. The remaining step-c item (its dangling "section order set by archetype" pointer) moved to GitHub **#4**.
-
-### tenure-as-years-rendering
-Moved to GitHub **#20**.
-
-### cv-render-uppercase-section-headers
-Moved to GitHub **#19**.
-
-### scaffolding-folder-layout
-Moved to GitHub **#37** (both migration items folded into one issue).
-
-### scaffolding-content-updates
-Moved to GitHub **#37** (both migration items folded into one issue).
-
-### tracker-integration
-Moved to GitHub **#46**. Both this deferral and its paired decision (`tracker-integration-out-of-scope`) were one line each and referenced only each other; neither defined the action. #46 reconstructs it from what the repo and the tracker actually contain — confirm it matches intent before building.
-
-### cv-structure-rules-for-pb-ps-aw
-Moved to GitHub **#45**, promoted to a skeleton design rather than waiting on the first PB/PS/AW entry.
 
 ## Dropped (2026-07-16)
 
