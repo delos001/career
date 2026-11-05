@@ -50,60 +50,6 @@ Distinct from staleness *detection*, which is a live bug in GitHub #47, not a de
 - Blocks: nothing currently.
 - Refs: `rule-staleness-threshold`, GitHub #47.
 
-## Under Audit (GitHub #6)
-
-These entries are gated on triggers that have already fired, or whose premise may have dissolved. They are held here in full because #6's action is "confirm resolved and delete, or restate with a real trigger," and that work happens in these entries. Do not delete them ahead of that audit.
-
-### introduction-roster-ambiguous-skills
-Introduction classification for `cv_general`, `inventory`, `narratives`. (Resolved for the interview family: preparation-screen and interview-notes 2026-06-11, followup 2026-06-26; all open conversationally with intake, no introduce.py entry. `interview_capture` retired, superseded by interview-notes; see `interview-notes-architecture-2026-06`.)
-- Trigger: each skill at its design time.
-- Blocks: those skill builds.
-- Refs: `workflow-communication-conventions`. Under audit: GitHub #6.
-
-### builder-refresh-mechanics
-Diff presentation, approval gate shape, file-write flow for create vs refresh across the four axis builders.
-- Trigger: first builder skill at design time. **(Fired: all five axis builders are built.)**
-- Blocks: builder skill builds.
-- Refs: `builder-mode-parameter`, `builders-axis-parity`. Under audit: GitHub #6.
-
-### cv-targeted-weighted-matching
-Weighted matching by JD emphasis: industry-emphasis weights Industry higher; specialty-emphasis weights Specialty higher; both required = equal weight. Generalizes to all five axes once per-axis weighting heuristics are defined.
-- Trigger: cv_targeted skill design. **(Fired: cv-targeted is built.)**
-- Blocks: cv_targeted build.
-- Refs: `five-orthogonal-axes`, `experience-inventory-domain-scoping`, `axis-adjacency-weights-redefinition`. Under audit: GitHub #6.
-
-### cross-axis-composition-mechanism
-Mechanism by which cv_targeted reconciles per-axis composition outputs. Possibilities range from per-axis sub-agents proposing content for their owned surface and engaging in review/challenge rounds to converge, to rule-based application of default precedence with no cross-axis review. Specific implementation deferred to cv_targeted skill design.
-- Trigger: cv_targeted skill design. **(Fired: cv-targeted is built.)**
-- Blocks: cv_targeted build.
-- Refs: `axes-composition-precedence`, `cv-targeted-content-rules-from-axes`, `cv-targeted-weighted-matching`. Under audit: GitHub #6.
-
-### cv-targeted-content-rules-from-axes
-**Status (2026-05-29):** Largely authored into `rules/cv/cv-structure.md` (CCAR; impact types + fallback chain; Core Competencies zoning for data-analytics and platform-technology; project voice exception; adjacency translation; acronym rule). Routed elsewhere, not into the structure file: tag-query logic and inventory-coverage-gap flagging (owned by retrieval / the cv-targeted skill procedure); achievement-framing-by-orientation points to the orientation axis files' Section emphasis rather than being duplicated. Remaining procedure-level items resolve at step b (skill build). Procedural content stripped from axis rule files (`rules/orientations/*`, `rules/levels/*`, `rules/industries/*`, `rules/specialties/*`, `rules/work-states/*`) during data-only-discipline cleanup. Belongs in the cv_targeted skill, not the rule files. Items to apply when designing cv_targeted:
-- Bullet construction (CCAR framework). IC compresses Context/Challenge into one clause; leadership requires all four components.
-- Impact statement types and preference order: Type 1 quantified, Type 2 bounded qualitative, Type 3 contextual narrative. Fallback chain when quantitative data is absent (bounded qualitative → contextual narrative → proxy metrics → scope as signal).
-- Tag query logic: filter by Role Level for leadership; do not filter by Role Level for IC.
-- Compound tag query requirement for `platform-technology` orientation: single-tag queries on Technology Implementation are invalid; require Capability AND Capability or Capability AND Context combinations.
-- Core Competencies zoning for `data-analytics` orientation (3 zones: data strategy/governance, analytics capability/operating model, technical credibility) and `platform-technology` orientation (3 zones: technology strategy/platform governance, systems/domain knowledge, analytical/process credibility).
-- Selected Projects voice exception: leadership voice rules apply to Professional Experience entries only; project entries follow design/build voice without organizational framing.
-- Achievement framing patterns by orientation/level (problem → strategy → execution → outcome variants per orientation).
-- Inventory coverage gap flagging: when fewer than two High priority compound queries return qualifying entries, flag before generating.
-- Adjacency translation behavior: entries tagged with adjacent industries/specialties/orientations/work-states get translated (not filtered out) per adjacency weight; non-adjacent entries get role-translation only (cross-cutting capabilities), not industry-translation.
-- Acronym expansion rule: spell out less-common acronyms on first use; common in-industry acronyms (e.g., FDA, GCP, ICH, IRB in pharma) need no expansion.
-- Trigger: cv_targeted skill design. **(Fired: cv-targeted is built.)**
-- Blocks: cv_targeted build.
-- Refs: `rules/orientations/*`, `rules/levels/*`, `rules/industries/*`, `rules/specialties/*`, `rules/work-states/*`. Under audit: GitHub #6.
-
-### role-evaluation-orientation-selection-from-axes
-Orientation selection logic and match criteria stripped from axis rule files. Belongs in role_evaluation, not rule files. Items to apply when designing role_evaluation:
-- Orientation match criteria split by IC vs leadership scope (e.g., transformation-strategy at leadership level requires enterprise-level organizational change; transformation-strategy at IC level requires execution within a transformation program).
-- Disambiguation logic ("verify against orientation N if..."): if the role centers on standardization or steady-state efficiency, verify against process-operations; if platform-focused, verify against platform-technology; if data-strategy-focused, verify against data-analytics; if enterprise organizational transformation, verify against transformation-strategy.
-- Dual-orientation detection: when a role legitimately maps to two orientations; primary/secondary asymmetric authority per `dual-orientation-asymmetric-authority`.
-- Orientation exclusion criteria (route-to-other-orientation logic): each orientation file's Identity section names exclusion conditions; role_evaluation enforces them during orientation selection.
-- Trigger: role_evaluation skill design. **(Fired: role-intake is built.)**
-- Blocks: role_evaluation build.
-- Refs: `rules/orientations/*`, `dual-orientation-asymmetric-authority`. Under audit: GitHub #6.
-
 ## Moved to GitHub (2026-07-16)
 
 Decided-but-unbuilt work. Headings retained so inbound `Refs:` pointers keep resolving.
@@ -199,6 +145,12 @@ Moved to GitHub **#45**, promoted to a skeleton design rather than waiting on th
 
 Reviewed and removed as noise, not work. Headings retained for inbound refs.
 
+### introduction-roster-ambiguous-skills
+**Dropped 2026-11-05 (GitHub #6 audit): not undecided.** The `workflow-communication-conventions` heuristic (name conveys arc, brief; otherwise full) classifies each skill at build; cv_general, inventory and narratives are unbuilt. The interview family was resolved 2026-06 (preparation-screen, interview-notes, followup open conversationally with intake).
+
+### cv-targeted-weighted-matching
+**Dropped 2026-11-05 (GitHub #6 audit): fossil, the design it was written for was replaced.** It asked cv-targeted to weight axes by JD emphasis (industry-emphasis JD weights Industry higher, and so on). Matching then moved out of cv-targeted into the retrieval skill (`retrieval-architecture-2026-05`), where JD emphasis is carried by semantic scoring against the critical requirements, which are themselves extracted from the JD. The axis signal that remains (`retrieval_apply.py`: exact 1.0, adjacent 0.5, summed with equal axis weights) serves only as the single-axis inclusion floor and a tertiary sort, and it barely discriminates on this profile because nearly every entry is adjacent on at least one axis (`gap-detector-read-reduction`). Weighting it by emphasis would reorder a tie-break.
+
 ### session-log-parser-tests
 **Dropped: fossil.** The tests were blocked on a "production session log parser." No such parser exists or is planned, because the design it belonged to was replaced. `scripts/session_log.py` is a section *writer* (`_replace_or_append_section`), and `phase_complete` entries, decision entries, and latest-wins semantics appear nowhere in `templates/session_log.md` or `scripts/`. The recorded frontmatter schema is five flat fields with no event-log structure. Replace-or-append makes latest-wins true by construction, so there is nothing to resolve, no parser, and no tests. Revive only if a real session-log *reader* is ever built (e.g. a cross-application analytics pass) — and then write tests against that reader's actual semantics, not this spec.
 
@@ -217,6 +169,18 @@ Reviewed and removed as noise, not work. Headings retained for inbound refs.
 ## Resolved
 
 Retained as tombstones; inbound refs depend on these headings.
+
+### cv-targeted-content-rules-from-axes
+**Resolved 2026-11-05 (GitHub #6 audit).** Of the ten content rules stripped from the axis files, seven are built: CCAR with IC compression (`rules/cv/cv-structure.md`), impact types and fallback chain, Core Competencies zoning for data-analytics and platform-technology, the Selected Projects voice exception, adjacency translation, acronym expansion (all `cv-structure.md`), and achievement framing by orientation (each orientation file's Section emphasis). Three depended on tag queries that the design replaced: level filtering (retrieval includes on any single axis and never filters by level, `retrieval-architecture-2026-05`), compound Capability-tag queries (no Capability field exists, `competency-field-and-registry-removed-2026-05`), and the compound-query coverage flag (gap detection is the gap-analysis skill).
+
+### role-evaluation-orientation-selection-from-axes
+**Resolved 2026-11-05 (GitHub #6 audit).** Routing to another orientation, exclusion enforcement, and dual-orientation detection are built (each `rules/orientations/*.md` Identity section's "Do not select when... (use Y)"; `axis-classifier.md` selection/exclusion confirmation and primary/secondary). The IC-vs-leadership criteria split was not carried: orientation is classified independently of level (`five-orthogonal-axes`).
+
+### builder-refresh-mechanics
+**Resolved 2026-11-05 (GitHub #6 audit)** by `builder-refresh-qc-with-auto-fix-2026-05`: QC with auto-fix, no per-change approval gate, wholesale write via `axis_apply.py`. Create and refresh write paths are built in all five builders.
+
+### cross-axis-composition-mechanism
+**Resolved 2026-11-05 (GitHub #6 audit)** by `cv-content-agent-architecture-2026-05` and `cv-targeted-candidate-advocate-2026-05`: a single writer (cv-architect) reads and applies all five classified axis files, and the stakeholders are split by concern (hiring-manager, career-strategist, candidate-advocate), not by axis. No per-axis sub-agents and no cross-axis review rounds.
 
 ### cv-targeted-reviewer-autonomy-reconciliation
 **Resolved 2026-05-29** by `cv-targeted-name-and-structure-2026-05` and `cv-targeted-candidate-advocate-2026-05` (DACI stakeholder model). See those entries.

@@ -77,7 +77,7 @@ Each axis owns a primary surface for cv_targeted composition:
 
 Default conflict resolution: orientation governs structure; other axes govern content within that structure. The more-specific axis wins within its surface — specialty terminology supersedes industry vocabulary in capability descriptions; industry dialect supersedes specialty terminology for sector-recognized acronyms.
 
-Surface ownership is the default precedence, not absolute authority. cv_targeted may implement cross-axis review or challenge mechanisms (e.g., per-axis sub-agents proposing content for their owned surface and reviewing peers' outputs) where converged outputs override default precedence. Mechanism deferred to cv_targeted skill design.
+Surface ownership is the default precedence, not absolute authority. Mechanism resolved at cv-targeted build (2026-11-05 audit of `cross-axis-composition-mechanism`): a single writer applies all five axis files, with stakeholders split by concern rather than by axis (`cv-content-agent-architecture-2026-05`, `cv-targeted-candidate-advocate-2026-05`); no per-axis sub-agents. The default precedence above is applied by `cv-architect.md` (Rules).
 
 Refs: `five-orthogonal-axes`, `cv-targeted-content-rules-from-axes`, `cross-axis-composition-mechanism` (deferrals).
 
@@ -858,7 +858,7 @@ One builder per axis. Each wired to its corresponding research sub-agent.
 
 #### builder-mode-parameter
 - `create`: drafts new rule file from research output. Greenfield.
-- `refresh`: targets existing rule file, re-runs research, diffs against current, proposes updates. Both invoke research sub-agent.
+- `refresh`: targets existing rule file, re-runs research, redrafts it, and ships through QC with auto-fix (`builder-refresh-qc-with-auto-fix-2026-05`). Both invoke research sub-agent.
 Refs: `builder-refresh-mechanics` (deferral).
 
 #### research-sub-agents-roster
@@ -887,7 +887,7 @@ Three communication points in skills.
 - Full: multi-activity skills. Invokes `python scripts/display/introduce.py <skill_name>`. Reads from `scripts/display/introductions.yaml`. Ends with "Ready?" consent gate.
 - Brief inline: single-activity skills. One-sentence declaration in SKILL.md.
 Heuristic: name conveys arc → brief; otherwise → full.
-Roster: full = role_evaluation, cv_targeted, interview_prep. Brief = career_brief, industry_builder, specialty_builder, orientation_builder, level_builder, work_state_builder, profile_update, positioning. Ambiguous (deferred): interview_capture, interview_followup, cv_general, inventory, narratives.
+Roster: `scripts/display/introductions.yaml` lists the full-introduction skills; every other skill is brief. Unbuilt skills are classified by the heuristic at build.
 
 **Mid-flight narration:** before tool calls > a few seconds, narrate What/Why (one clause)/Duration (optional). Skip for fast operations. On return, brief acknowledgment.
 
@@ -901,8 +901,8 @@ The five builder research agents are named `<axis>-builder-research`: `industry-
 Refs: `builders-axis-parity`, `research-sub-agents-roster`.
 
 #### builder-adjacency-back-edge-handling
-When a builder creates a new value file, it also drafts back-edge bullets for the new value into each sibling file's Adjacency section, using the same research, presents all proposed sibling edits in one batch for user approval, then writes them. Builder takes responsibility for back-edges; user does not hand-author them.
-Refs: `builders-axis-parity`.
+When a builder creates a new value file, it also drafts back-edge bullets for the new value into each sibling file's Adjacency section, using the same research; the edits pass through the Phase 5 QC loop with the value file and are written by `axis_apply.py create`. No user-approval gate (amended 2026-11-05 to match the built skills; same model as `builder-refresh-qc-with-auto-fix-2026-05`). Builder takes responsibility for back-edges; user does not hand-author them.
+Refs: `builders-axis-parity`, `builder-refresh-qc-with-auto-fix-2026-05`.
 
 #### builder-refresh-diff-presentation
 **Superseded by `builder-refresh-qc-with-auto-fix-2026-05`.** The per-change interactive user-approval flow described here was replaced by the QC-with-auto-fix loop (no per-change approval; loop ships clean or provisional with unresolved findings logged). Subsequent audit (2026-05-18) further removed the change list from the apply mechanism entirely. Original body retained for history: Refresh mode presents changes one at a time in a fixed structure: change number, file, section, type (add/remove/modify), Current (exact text or `(none - new entry)`), Proposed (exact text), Reasoning (one sentence from research). User reply required: `approve`, `reject`, `modify: <edit>`, or `defer: <reason>`. No batching, no "approve all", non-answers do not advance.
@@ -966,6 +966,8 @@ Refs: `builders-axis-parity`, `builder-contract-drift-guardrails` (deferral; thi
 
 #### qc-h2-mechanical-script-check-2026-05
 H2 (Dialect acronym list reconciles with body usage) moves from the `qc-industry-builder` subagent to `scripts/axis_builder.py qc`. The check is deterministic regex extraction in both directions: acronyms used in body sections (Vocabulary, Emphasis, Adjacency) that are missing from the Dialect catalog, and acronyms in the catalog that are unused in body. Surfaced 2026-05-18 during the generics end-to-end test where the subagent oscillated across iterations catching different subsets of the same all-caps tokens each pass (iter 1 missed 9; iter 2 caught 7 of those but still missed 2; only converged on iter 3 with user manually catching gaps). Subagents are inconsistent at exhaustive token enumeration; the check definition is deterministic and belongs in the script. Implementation: regex `\b[A-Za-z]{2,6}\b` with filter "at least 2 uppercase letters" (captures pure all-caps and CamelCase initialisms like eCTD, QbD, SaMD; skips single-uppercase like Cmax/Tmax which the spec does not target); plural normalization so `ANDAs`/`ANDA` and `CRFs`/`CRF` match (lowercase 's' suffix where pre-'s' is uppercase); hardcoded exclusion set for Roman numerals (II..XII), the `CV` artifact from the canonical title suffix, and cross-domain world acronyms (DNA, RNA, UN, EU, UK, USA, XML) that no industry file would reasonably catalog as industry-specific. Report-only in both directions; the drafter handles in Phase 3 (add to list, rewrite to drop, or prune unused). Auto-fix on the "listed-but-unused" direction (splicing tokens out of the comma-separated catalog safely) is deferred to a v2 if it earns the complexity. Smoke test on the shipped generics.md drops from 21 raw findings (with 12 plural false positives + 3 cross-domain noise) to 6 actionable items (TE codes AA/AB/BX, brand-reference GSK, genuine misses KOL and PMA). Resolves deferral `qc-h2-acronym-reconciliation-should-be-mechanical`. General rule for the builder family: checks whose definition is deterministic regex extraction belong in the script, not a subagent.
+
+**Amended 2026-11-05 (GitHub #10).** The two-way comparison measured the wrong thing: the catalog names acronyms the hiring panel reads without expansion (`axes-file-schema`), not the acronyms the file's own prose happens to use. Across the industry files it raised 122 findings, and its "listed but unused" direction asked for valid entries (SDTM, eTMF in biotech) to be removed. Now H2 drops that direction, never fails, and returns the body acronyms missing from the catalog as `suggestions`; a new subagent check H3 judges which of those the panel reads unexpanded and only those become findings. Extraction stays in the script, judgment moves to the subagent, per the rule above. Test: `test_acronym_list_is_not_an_index_of_the_text`.
 Refs: `builders-axis-parity`, `builder-plain-english-narration-2026-05`, `builder-em-dash-judgment-not-regex-2026-05` (the inverse case: H1 stays subagent because em-dash removal requires sentence rewriting, not pattern matching).
 
 #### axis-builder-script-split-applied-2026-05

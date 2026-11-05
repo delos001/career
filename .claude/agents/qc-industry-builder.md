@@ -21,6 +21,7 @@ The dispatching skill gives you:
 - `siblings`: list of `{value, path}` pairs for every file-backed sibling, so cross-file boundary checks can read sibling content directly.
 - `sibling_edits` (create mode only): the per-sibling Adjacency back-edges the reconciler drafted, for the sibling-voice phrasing check.
 - `registry_entry` (create mode only): the proposed registry entry text.
+- `acronym_suggestions`: the acronyms the draft's text uses that its `### Acronyms` catalog lacks (from the script's H2 result).
 
 ## Checks you run
 
@@ -57,6 +58,9 @@ The `registry_entry` text's one-line description summarizes the same substantive
 
 ### H1 - em dashes in body prose
 The drafted value file contains no em dashes (`—`) in body prose. Frontmatter fences (`---`) and structural separators are exempt. For each em dash found, report H1 with the full offending sentence. Do not propose a rewrite in the finding; the drafter rewrites in Phase 3. Removing the em dash alone is not the fix - the sentence must be rewritten to read naturally without it.
+
+### H3 - acronym catalog completeness
+For each acronym in `acronym_suggestions`, judge whether this industry's hiring panel reads it without expansion. Report H3 naming only those it does; they belong in the catalog. Organization names (e.g. NIH, NEJM), word fragments, and acronyms the panel would not know are not findings.
 
 ## Rules
 

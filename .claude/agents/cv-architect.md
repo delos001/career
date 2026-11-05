@@ -83,6 +83,7 @@ Most apparent conflicts are not real conflicts; they are layer differences that 
 - Never fabricate. Every claim traces to a source entry; never invent an employer, title, metric, date, scope, or domain not present in the source. Adjacency translation rewords transferable experience toward the target's language; it does not invent the target domain.
 - "Relevant" means the retrieval manifest signals and gap-analysis coverage, read together. Do not re-judge relevance ad hoc.
 - Honor every `(hard rule)` in `cv-structure.md` as non-negotiable.
+- When axis files conflict: orientation governs structure, the other axes govern content within it; specialty terminology beats industry vocabulary in capability descriptions, and industry dialect beats specialty terminology for sector acronyms.
 - Hold back an entry that would send this employer a bad signal even though it scores as relevant (a job-search tool signals active job hunting).
 - Output is plain CV prose. The only non-CV text permitted in `cv_content.md` is the HTML-comment citation markers.
 

@@ -1403,7 +1403,26 @@ def test_markdown_has_no_hard_wraps():
 
 
 # ---------------------------------------------------------------------------
-# Agent definitions
+# Axis-builder QC: industry acronym list
+# The list names acronyms an industry's hiring panel reads without expansion.
+# It is not an index of the file's own prose, so the two need not match.
+# ---------------------------------------------------------------------------
+
+def test_acronym_list_is_not_an_index_of_the_text():
+    """Fixed 2026-11-05 (GitHub #10): H2 failed whenever a listed acronym was
+    absent from the file's own text, and asked for valid entries (SDTM, eTMF in
+    biotech) to be removed. A listed-but-unmentioned acronym must pass; an
+    acronym the text uses but the list lacks is passed on as a suggestion for
+    the reviewer to judge, not a failure.
+    """
+    import axis_qc
+    text = ('## Vocabulary\n\nSponsors file with the FDA and fund NIH work.\n\n'
+            '## Dialect\n\nPlain voice.\n\n### Acronyms\n\nFDA, SDTM, eTMF\n\n'
+            '## Emphasis\n\nNone.\n\n## Adjacency\n\nNone.\n')
+    _, rec = axis_qc._check_h2_acronym_reconciliation(text)
+    assert rec['passed'], f'H2 failed a list that only holds extra acronyms: {rec["detail"]}'
+    assert rec.get('suggestions') == ['NIH'], f'expected NIH as the one suggestion, got {rec}'
+
 # Sub-agents run in their own context, so the global rules reach them only if
 # the definition points there. Web-only agents cannot read files and are
 # exempt; their per-fact source URLs carry the no-fabrication rule instead.

@@ -112,7 +112,7 @@ User-invoked. Not called from role-intake; role-intake's Phase 6 may recommend i
 
   The script auto-fixes script-owned issues in place. Re-read the (possibly mutated) value-file temp before dispatching the subagent.
 
-  **Subagent half - judgment checks.** Dispatch `qc-industry-builder` with the (post-script) drafted file, the research findings, the file-backed sibling file paths (for D1), and (create mode only) the sibling edits plus the registry entry text.
+  **Subagent half - judgment checks.** Dispatch `qc-industry-builder` with the (post-script) drafted file, the research findings, the file-backed sibling file paths (for D1), the H2 check's `suggestions` list from the script output as `acronym_suggestions` (for H3), and (create mode only) the sibling edits plus the registry entry text.
 
 - Aggregate failures from both halves. For each failure, follow the Fix-on-fail entry for that check in `rules/quality_control/qc-industry-builder.md` - it names the phase to re-enter, or directs a halt for invocation errors - then re-run Phase 5. Loop up to 3 iterations. After 3 iterations, accept the best draft and treat unresolved failures as the provisional-issues list.
 

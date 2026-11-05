@@ -631,7 +631,7 @@ def _extract_acronyms(text):
 
 
 def _check_h2_acronym_reconciliation(text):
-    """H2: Dialect acronym catalog reconciles with body usage. Report-only.
+    """H2: list the body acronyms missing from the Dialect catalog. Never fails.
 
     Catalog location: '### Acronyms' sub-heading inside '## Dialect'
     (per axes-file-schema). The sub-section is terminal within Dialect;
@@ -642,14 +642,14 @@ def _check_h2_acronym_reconciliation(text):
     that genuinely carry no acronym catalog, have no '### Acronyms'
     sub-section and H2 reports a clean pass.
 
-    Reports two directions:
-      - in_body_not_listed: acronyms used in the body but absent from
-        the catalog. Drafter adds to the catalog or rewrites the body.
-      - in_list_not_in_body: acronyms in the catalog but unused in any
-        body section. Drafter prunes the catalog.
-
-    Both directions are report-only; auto-fix deferred to a v2 that
-    handles comma-list splicing safely.
+    The catalog names acronyms the industry's hiring panel reads without
+    expansion; it is not an index of the file's own prose. So a catalog
+    entry the body never mentions is fine and is not reported (that
+    direction once asked for valid entries such as SDTM to be pruned;
+    GitHub #10). Acronyms the body uses but the catalog lacks are returned
+    in 'suggestions' for the qc-industry-builder subagent's H3 judgment:
+    whether this panel reads each one unexpanded is a judgment, not a
+    token match, so the script finds them and the subagent decides.
     """
     try:
         dialect_start, dialect_end = axis_utils.find_section_bounds(text, 'Dialect')
@@ -683,19 +683,12 @@ def _check_h2_acronym_reconciliation(text):
     listed_norm = {_singular_acronym(t) for t in listed}
     body_norm = {_singular_acronym(t) for t in body_used}
 
-    in_body_not_listed = sorted(body_norm - listed_norm)
-    in_list_not_in_body = sorted(listed_norm - body_norm)
-
-    if not in_body_not_listed and not in_list_not_in_body:
-        return text, _record('H2', True, False,
-                             'acronym catalog reconciles with body usage')
-
-    parts = []
-    if in_body_not_listed:
-        parts.append('used in body but not listed: ' + ', '.join(in_body_not_listed))
-    if in_list_not_in_body:
-        parts.append('listed but unused in body: ' + ', '.join(in_list_not_in_body))
-    return text, _record('H2', False, False, '; '.join(parts))
+    suggestions = sorted(body_norm - listed_norm)
+    rec = _record('H2', True, False,
+                  'body acronyms not in the catalog, for H3 judgment: ' + ', '.join(suggestions)
+                  if suggestions else 'every body acronym is in the catalog')
+    rec['suggestions'] = suggestions
+    return text, rec
 
 
 # ---------------------------------------------------------------------------
