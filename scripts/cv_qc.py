@@ -69,6 +69,7 @@ Depends   : pyyaml (via _config); stdlib otherwise
 import argparse
 import json
 import math
+import os
 import re
 import sys
 
@@ -96,28 +97,10 @@ BULLET_LINE_MAX = 3           # cv-structure.md hard rule: 4+ lines never
 COMPETENCY_RANGE = {'ic': (8, 10), 'leadership': (8, 12)}
 PAGE_CEILING = {'ic': 3, 'leadership': 3}
 
-# Canonical section bands (cv-structure.md "Section order - two bands"). Members
-# are matched case-insensitively on a normalized heading; relevance-gated
-# members are optional, but when present must hold this relative order.
-EVIDENCE_BAND = [
-    'professional summary',
-    'core competencies',
-    'professional experience',
-    'earlier professional roles',  # optional; compressed Company|Title|Dates tail of experience
-    'work-output',          # Selected Projects / Publications / Research (matched loosely below)
-]
-CREDENTIALS_TAIL = [
-    'education',
-    'certifications & training',
-    'professional affiliations',
-    'technical proficiencies',
-]
-REQUIRED_SECTIONS = [
-    'professional summary',
-    'core competencies',
-    'professional experience',
-    'education',
-]
+# Section order and required sections are NOT held here. They come from the
+# fenced block under '## Section order' in rules/cv/cv-structure.md, the single
+# source the cv-architect also follows (GitHub #21: a script copy had drifted).
+# See parse_section_order.
 
 # ---------------------------------------------------------------------------
 # Regexes
@@ -181,16 +164,54 @@ def _record(check_id, passed, detail):
 # syntax and the citation-comment contract, not on exact heading spelling.
 # ---------------------------------------------------------------------------
 
-def _normalize_heading(h):
+def parse_section_order(rule_text):
+    """Return the CV section structure from cv-structure.md's Section order block.
+
+    The block is the first fenced block under '## Section order'. Band lines end
+    in ':'; member lines are '- <Name>' with an optional '(required)' tag, and the
+    work-output class is '- Work output: <member>, <member>, ...'. Returns
+    {'order': [normalized names, evidence band then credentials tail, with the
+    work-output class as 'work-output'], 'required': set, 'work_output': set}.
+    Raises if the block is missing or empty, so a rule edit that breaks the
+    contract fails loudly instead of checking nothing.
+    """
+    m = re.search(r'(?ms)^## Section order.*?^```\s*\n(.*?)\n```', rule_text)
+    if not m:
+        raise ValueError("cv-structure.md has no fenced block under '## Section order'")
+    order, required, work_output = [], set(), set()
+    for line in m.group(1).splitlines():
+        item = re.match(r'^-\s+(.+?)\s*$', line)
+        if not item:
+            continue   # band label lines ('Evidence band:') only mark grouping
+        text = item.group(1)
+        wo = re.match(r'(?i)^work output:\s*(.+)$', text)
+        if wo:
+            work_output.update(re.sub(r'\s+', ' ', n).strip().lower() for n in wo.group(1).split(','))
+            order.append('work-output')
+            continue
+        name = re.sub(r'\s+', ' ', re.sub(r'(?i)\(required\)', '', text)).strip().lower()
+        order.append(name)
+        if re.search(r'(?i)\(required\)', text):
+            required.add(name)
+    if not order:
+        raise ValueError("cv-structure.md Section order block lists no sections")
+    return {'order': order, 'required': required, 'work_output': work_output}
+
+
+def load_section_order():
+    """Read and parse the Section order block from the configured rules file."""
+    root, cfg = _config.load()
+    path = os.path.join(root, cfg['paths']['cv_rules'], cfg['filenames']['cv_structure_file'])
+    return parse_section_order(_util.read(path))
+
+
+def _normalize_heading(h, structure):
     """Lowercase, collapse whitespace; map work-output members to 'work-output'."""
     h = re.sub(r'\s+', ' ', h).strip().lower()
-    if h in ('selected projects', 'publications', 'research', 'patents',
-             'presentations'):
-        return 'work-output'
-    return h
+    return 'work-output' if h in structure['work_output'] else h
 
 
-def _split_sections(text):
+def _split_sections(text, structure):
     """Return an ordered list of (raw_heading, normalized_heading, body) tuples.
 
     Body is the text between this '## ' heading and the next one. Content above
@@ -202,7 +223,7 @@ def _split_sections(text):
         start = m.end()
         end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
         raw = m.group(1).strip()
-        sections.append((raw, _normalize_heading(raw), text[start:end]))
+        sections.append((raw, _normalize_heading(raw, structure), text[start:end]))
     return sections
 
 
@@ -566,14 +587,15 @@ def _check_b2_bullet_length(sections):
 # S1 verifies the two-band order; S2 required sections; S3 competency count.
 # ---------------------------------------------------------------------------
 
-def _check_s1_section_order(sections):
+def _check_s1_section_order(sections, structure):
     """S1: sections follow the two-band canonical order; Tech Proficiencies last.
 
-    Build the canonical index for each recognized heading (evidence band before
-    credentials tail), ignoring unrecognized headings, and verify the recognized
-    headings appear in non-decreasing canonical order.
+    Build the canonical index for each recognized heading from the rule file's
+    Section order block (evidence band before credentials tail), ignoring
+    unrecognized headings, and verify the recognized headings appear in
+    non-decreasing canonical order.
     """
-    canonical = {name: i for i, name in enumerate(EVIDENCE_BAND + CREDENTIALS_TAIL)}
+    canonical = {name: i for i, name in enumerate(structure['order'])}
     seen = [(norm, canonical[norm]) for _, norm, _ in sections if norm in canonical]
     order_idx = [idx for _, idx in seen]
     if order_idx != sorted(order_idx):
@@ -586,10 +608,10 @@ def _check_s1_section_order(sections):
     return _record('S1', True, 'section order valid')
 
 
-def _check_s2_required_sections(sections):
-    """S2: the required sections are all present."""
+def _check_s2_required_sections(sections, structure):
+    """S2: the sections the rule file marks (required) are all present."""
     present = {norm for _, norm, _ in sections}
-    missing = [s for s in REQUIRED_SECTIONS if s not in present]
+    missing = [s for s in structure['order'] if s in structure['required'] and s not in present]
     if missing:
         return _record('S2', False, f'missing required section(s): {", ".join(missing)}')
     return _record('S2', True, 'all required sections present')
@@ -812,7 +834,8 @@ def _check_n2_no_duplicate_ids(sections):
 def run_qc(args):
     """Run mechanical QC checks against --cv-file and print a per-check JSON report."""
     text = _util.read(args.cv_file)
-    sections = _split_sections(text)
+    structure = load_section_order()
+    sections = _split_sections(text, structure)
 
     # Valid id universe for C3: all EX/PR/PB/PS ids in the inventory plus all
     # ST ids in narratives. Membership only; references and definitions both
@@ -845,8 +868,8 @@ def run_qc(args):
     checks.append(_check_b2_bullet_length(sections))
 
     # --- Group S: structure / banding ---
-    checks.append(_check_s1_section_order(sections))
-    checks.append(_check_s2_required_sections(sections))
+    checks.append(_check_s1_section_order(sections, structure))
+    checks.append(_check_s2_required_sections(sections, structure))
     checks.append(_check_s3_competency_count(sections, args.level))
     checks.append(_check_s4_summary_no_figures(sections))
 

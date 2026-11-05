@@ -1592,6 +1592,9 @@ Post-step-b task logged: reviewer-autonomy reconciliation (deferral `cv-targeted
 
 Refs: `cv-content-structure-decisions-2026-05`, `arc-composition-for-high-impact-roles`, `cv-content-agent-architecture-2026-05`, `cv-targeted-content-rules-from-axes`, `cv-format-spec-from-axes`.
 
+#### cv-section-order-single-source-2026-11
+CV section order and the required-section set live once, in the fenced block under `## Section order` in `rules/cv/cv-structure.md`; `cv_qc.py` S1/S2 parse it (`parse_section_order`) instead of holding their own lists. The rule file was chosen over `config.yaml` because the cv-architect already reads it, the same structure-authority pattern as `templates/inventory.md`. Why (GitHub #21): the script copy had drifted (it placed Earlier Professional Roles, which the rule's list omitted, and required sections the rule never named). The block now names Earlier Professional Roles and marks the required sections. Test: `test_cv_section_order_comes_from_the_rule_file`.
+
 #### cv-tenure-as-years-not-adopted-2026-11
 Role headers keep date ranges; no tenure-as-years option (GitHub #20). The evidence (Kristal et al. 2022, recorded in `rules/cv/cv-best-practices.md`) is one UK field study, and it tested replacing date ranges, which the same brief notes can read as evasive and can break ATS date parsing; adding a length next to the dates was never tested. For a senior US candidate whose history has no gap (2026 independent work covers the time since the last employer), the risk outweighs an unproven gain. career-strategist no longer proposes it. Revisit only if a CV must frame a real employment gap.
 

@@ -13,6 +13,7 @@ paths:
   templates: templates                   # artifact templates
   rules: rules                           # axis rule files (one folder per axis)
   profile_rules: rules/profile           # writing rules for the profile documents and the staging file, read through scripts/rules_slice.py
+  cv_rules: rules/cv                     # CV structure and best-practice rules
   design: design                         # design state and build issue logs
   temp: temp                             # shared dev-scratch / reference material; per-application run-scratch now lives in <app-folder>/scratch/ (see filenames.scratch_subdir)
   self_assessment_rules: rules/self-assessment   # protocol + bootstrap prompt (generic, shareable)
@@ -40,6 +41,7 @@ filenames:
   positioning_file: positioning.md             # in the profile/ folder
   user_info_file: user-info.md                 # in the profile/ folder
   cv_content_file: cv_content.md               # written into each application folder by the cv-targeted skill
+  cv_structure_file: cv-structure.md           # in the cv_rules folder; its Section order block is parsed by cv_qc.py (S1, S2)
   interview_prep_file: interview_prep.md       # written into each application folder by the preparation-screen skill (preparation-interview appends later)
   interview_prep_template: interview_prep.md   # in the templates/ folder; structure authority parsed by prep_qc.py
   interview_notes_file: interview_notes.md     # written into each application folder by the interview-notes skill; hand-filled during interviews

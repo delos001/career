@@ -10,19 +10,23 @@ Cross-cutting CV skeleton consumed by the cv-targeted skill alongside the five a
 
 ## Section order - two bands
 
-The CV is two ordered bands, not one frozen list. Within each band the members hold a fixed order; relevance-gated members appear only when they earn space (see each section's gating rule).
+The CV is two ordered bands, not one frozen list. The evidence band (top) carries the case for fit; the credentials tail (bottom) verifies. Within each band the members hold the fixed order below. Sections marked `(required)` always appear; the others appear only when they earn space (see each section's gating rule), and Technical Proficiencies, when present, is always last. Work output is one class whose members (any of the names listed) share a slot.
 
-**Evidence band** (top - carries the case for fit):
-1. Professional Summary
-2. Core Competencies
-3. Professional Experience
-4. Work-output sections (Selected Projects / Publications / Research) - relevance-gated
+The block below is the single source for section order and required sections: `scripts/cv_qc.py` (S1, S2) reads it. Change the structure here, not in the script.
 
-**Credentials tail** (bottom - verifies):
-5. Education
-6. Certifications & Training
-7. Professional Affiliations - conditional, relevance-gated
-8. Technical Proficiencies (always last)
+```
+Evidence band:
+- Professional Summary (required)
+- Core Competencies (required)
+- Professional Experience (required)
+- Earlier Professional Roles
+- Work output: Selected Projects, Publications, Research, Patents, Presentations
+Credentials tail:
+- Education (required)
+- Certifications & Training
+- Professional Affiliations
+- Technical Proficiencies
+```
 
 Work-output sections sit in the evidence band, not the tail - a deliberate deviation from the academic-CV convention of tailing publications, because on a targeted industry CV these read as demonstrated work product, not credentials. The class is extensible (e.g. Patents, Presentations) under the same relevance gate.
 
@@ -251,6 +255,6 @@ This file owns CV content structure and writing rules only. It does not own, and
 - **Adjacency weights** - set by the retrieval manifest and the axis files' Adjacency sections. This file owns only the translation framing (how adjacent vs non-adjacent experience is worded; see Professional Experience).
 - **Axis voice and vocabulary** - level voice and verb vocabulary, orientation summary-lead and section-emphasis, and industry/specialty terminology come from the five axis files and compose with this structure.
 - **Critical-requirements extraction** - produced by role-intake (as text and type; the `CR-NNN` ids are assigned downstream by gap-analysis, in the same order). This file consumes them; it does not derive them.
-- **Visual rendering** - styling, fonts, authoritative pagination and page count, and the visual rendering of Earlier Professional Roles belong to cv-render (docx). The single handoff is cv_content.md. (The Earlier Professional Roles inclusion threshold and content density are owned by this file, above; only their visual rendering is deferred.)
+- **Visual rendering** - styling, fonts, and the visual rendering of Earlier Professional Roles belong to cv-render (docx); the page count is measured by this skill in Word (see Length is measured in Word). The single handoff is cv_content.md. (The Earlier Professional Roles inclusion threshold and content density are owned by this file, above; only their visual rendering is deferred.)
 - **No-fabrication, failure handling, partial-content discipline** - `global-rules.md`.
 - **Skill procedure** - the Drafter/reviewer/QC loop, orchestration, and citation mechanics live in the cv-targeted SKILL.md and its agents, not in this rule file.

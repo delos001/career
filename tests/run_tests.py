@@ -813,6 +813,28 @@ def test_cv_summary_carries_no_figures():
         assert not result[0] and digits in result[1], f'{figure} passed: {result}'
 
 
+def test_cv_section_order_comes_from_the_rule_file():
+    """Fixed 2026-11-05 (GitHub #21): cv_qc.py kept its own copy of the CV
+    section list, which had already drifted from cv-structure.md (Earlier
+    Professional Roles, the required set). The script now reads the rule's
+    Section order block, so changing the block changes the check.
+    """
+    import cv_qc
+    root, cfg = _config.load()
+    rule = _util.read(os.path.join(root, cfg['paths']['cv_rules'], cfg['filenames']['cv_structure_file']))
+    live = cv_qc.parse_section_order(rule)
+    assert 'earlier professional roles' in live['order'], live
+    assert live['required'] == {'professional summary', 'core competencies',
+                                'professional experience', 'education'}, live['required']
+    cv = ('## Professional Summary\nA.\n\n## Core Competencies\n- a\n\n'
+          '## Professional Experience\n- b\n\n## Selected Projects\n- c\n')
+    sections = cv_qc._split_sections(cv, live)
+    assert not cv_qc._check_s2_required_sections(sections, live)['passed'], 'missing Education passed'
+    relaxed = cv_qc.parse_section_order(rule.replace('- Education (required)', '- Education'))
+    assert cv_qc._check_s2_required_sections(sections, relaxed)['passed'], 'block edit did not reach the check'
+    assert any(norm == 'work-output' for _, norm, _ in sections), 'Selected Projects not read as work output'
+
+
 def test_cv_length_is_measured_not_estimated():
     """Fixed 2026-11-05 (GitHub #17): the L1 estimate passed CVs that rendered
     4-9 lines over, and once cut a vetted bullet for an estimated 2-line
