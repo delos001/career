@@ -35,6 +35,10 @@ A **current-state document**: re-running gap-analysis overwrites the file. The s
 
 {{partial_match_block}}
 
+## Work-State Coverage
+
+{{work_state_coverage_block}}
+
 ## CV Notes
 
 {{cv_notes_block}}
@@ -86,6 +90,7 @@ A **current-state document**: re-running gap-analysis overwrites the file. The s
 
   Evidence to cite is the `entries_to_reframe` list when the case carries language-shift framing, otherwise the requirement's evidence IDs. Renders `_(none)_` when no partial-match cases.
 
+- **{{work_state_coverage_block}}** - one bullet per work-state value the role was classified with, computed by `gap_assemble.py` from the session log and the inventory tags: how many entries match it exactly (with IDs), or that none do, plus the adjacent work-states that carry it and an interview flag. Renders `_(none)_` when the role has no work-state.
 - **{{cv_notes_block}}** - free-text general framing guidance for the CV architect captured during the Phase 4 gap-closure loop (not tied to any specific requirement). Renders `_(none)_` when no general notes were provided. Per-requirement Notes fields live inside `{{requirements_block}}` and are not repeated here.
 
 - **{{recommendation_block}}** - paragraph in the format `**<recommendation_label>.** <1-2 sentence rationale>`.

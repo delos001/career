@@ -60,10 +60,11 @@ from inventory_model import pr
 # Constants: locked vocabularies from the gap-analysis design
 # ---------------------------------------------------------------------------
 
-# The six H2 sections of gap_analysis.md, in canonical order.
+# The seven H2 sections of gap_analysis.md, in canonical order (must match
+# templates/gap_analysis.md; Work-State Coverage added 2026-11-05, GitHub #53).
 SECTIONS = [
     'Eligibility Flags', 'Requirements', 'Language-Shift Cases',
-    'Partial-Match Cases', 'CV Notes', 'Recommendation',
+    'Partial-Match Cases', 'Work-State Coverage', 'CV Notes', 'Recommendation',
 ]
 
 # Required header fields (bold-label lines under the H1).

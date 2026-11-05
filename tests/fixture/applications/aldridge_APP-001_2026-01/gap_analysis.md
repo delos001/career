@@ -58,6 +58,10 @@
 - **Remaining gap:** no line-management relationship and no headcount evidence
 - **Entries to cite:** EX-004
 
+## Work-State Coverage
+
+_(none)_
+
 ## CV Notes
 
 Lead on the operating-model work rather than the warehouse build; the role is

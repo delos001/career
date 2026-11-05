@@ -1534,6 +1534,22 @@ def test_skills_look_up_paths_instead_of_spelling_them():
     assert not offenders, 'files naming a personal/ path: ' + ', '.join(offenders)
 
 
+def test_gap_analysis_states_work_state_coverage():
+    """Built 2026-11-05 (GitHub #53): a role's work-state was classified and
+    then never reported, so a role no entry matched was carried silently by
+    adjacency. The gap analysis now says per classified value which entries
+    match exactly, or that none do, with the adjacent values carrying it.
+    """
+    import gap_assemble
+    entries = {'EX-001': ['pivot'], 'EX-002': ['scaling', 'pivot'], 'EX-003': ['mature']}
+    adjacency = {'pivot': ['scaling'], 'turnaround': ['mature', 'scaling']}
+    block = gap_assemble.render_work_state_coverage(['pivot', 'turnaround'], entries, adjacency)
+    assert '**pivot**: 2 entries match exactly (EX-001, EX-002)' in block, block
+    assert '**turnaround**: no entry matches exactly' in block, block
+    assert 'mature (1), scaling (1)' in block and 'interview' in block, block
+    assert gap_assemble.render_work_state_coverage([], entries, adjacency) == '_(none)_'
+
+
 def test_leadership_classification_carries_a_valid_tier():
     """Built 2026-11-05 (GitHub #51): research calibrated seniority (e.g. VP vs
     Associate Director) and classification threw it away, so every leadership

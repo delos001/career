@@ -1449,6 +1449,9 @@ Refs: `retrieval-architecture-2026-05`, `role-intake-architecture`, `role-intake
 
 (The skill formerly referenced as `role_evaluation` in pre-build design notes is named `gap-analysis` as built. The old slug `gap-analysis-cluster-derivation` is retained below as a deferred presentation enhancement; v1 of the built skill renders requirements in CR-NNN order rather than cluster-grouped.)
 
+#### gap-analysis-work-state-coverage-2026-11
+`gap_analysis.md` carries a `## Work-State Coverage` section (between Partial-Match Cases and CV Notes): per work-state value the role is classified with, the inventory entries tagged with it exactly, or "no entry matches exactly" plus the adjacent work-states carrying it and a flag that the interview will probe it. Computed deterministically by `gap_assemble.py` through retrieval's own inventory parser and adjacency lookup, so the counts match what retrieval scores. Work-state only for now, the axis with a demonstrated silent case (GitHub #53; three pivot roles never surfaced the axis). Built only after the #52 re-tag, because the old tags would have reported a false "none" (EX-042 vs Fortrea's post-merger-integration). Gap analyses written before 2026-11-05 lack the section and fail `gap_qc.py`'s section check if re-checked.
+
 #### gap-analysis-architecture-2026-05
 Built artifact-producing skill running after retrieval; stopping point for the user's pursue / don't-pursue decision; handoff for downstream CV creation, interview prep, and career brief.
 

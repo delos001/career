@@ -324,6 +324,72 @@ def _render_cv_notes(notes_text):
     return notes if notes else '_(none)_'
 
 
+# ---------------------------------------------------------------------------
+# Work-state coverage (GitHub #53)
+# The role's work-state is classified at role-intake and then used only as a
+# silent adjacency signal in retrieval. This block states, per classified
+# value, which inventory entries match it exactly, or that none do and which
+# adjacent values carry the role instead. Deterministic: tag counts only, read
+# through retrieval's own inventory parser and adjacency lookup so the counts
+# match what retrieval scores.
+# ---------------------------------------------------------------------------
+
+_ID_LIST_MAX = 8
+
+
+def render_work_state_coverage(classified, entry_states, adjacency):
+    """Render the Work-State Coverage block.
+
+    classified   the role's work-state values (primary first)
+    entry_states {entry id: [work-state values]}
+    adjacency    {work-state value: [adjacent values]}
+    """
+    if not classified:
+        return '_(none)_'
+    lines = []
+    for value in classified:
+        exact = sorted(i for i, states in entry_states.items() if value in states)
+        if exact:
+            shown = ', '.join(exact[:_ID_LIST_MAX])
+            more = f', and {len(exact) - _ID_LIST_MAX} more' if len(exact) > _ID_LIST_MAX else ''
+            lines.append(f'- **{value}**: {len(exact)} entr{"y matches" if len(exact) == 1 else "ies match"} '
+                         f'exactly ({shown}{more}).')
+            continue
+        carriers = []
+        for neighbour in adjacency.get(value, []):
+            n = sum(1 for states in entry_states.values() if neighbour in states)
+            if n:
+                carriers.append(f'{neighbour} ({n})')
+        carried = (f' The closest experience is tagged {", ".join(carriers)} (adjacent work-states).'
+                   if carriers else ' No adjacent work-state carries it either.')
+        lines.append(f'- **{value}**: no entry matches exactly.{carried} The CV relies on adjacent '
+                     'experience for this; expect the interview to probe it directly.')
+    return '\n'.join(lines)
+
+
+def _classified_work_states(session_log_path):
+    """Return the role's work-state values from the session log, primary first."""
+    text = _util.read(session_log_path)
+    m = re.search(r'(?m)^- Work-state:[ \t]*(.+)$', text)
+    if not m:
+        return []
+    values = re.split(r'[ \t]+-[ \t]+', m.group(1).strip(), maxsplit=1)[0]
+    return [re.sub(r'\s*\((?:primary|secondary)\)', '', v).strip()
+            for v in values.split(',') if v.strip()]
+
+
+def _work_state_inputs(repo_root, cfg, folder):
+    """Return (classified values, {entry id: states}, {value: adjacent values})."""
+    import retrieval_apply
+    import retrieval_payload
+    classified = _classified_work_states(os.path.join(folder, cfg['filenames']['session_log_file']))
+    inv_path = os.path.join(repo_root, cfg['paths']['profile'], cfg['filenames']['inventory_file'])
+    entries = retrieval_payload._parse_inventory_entries(_util.read(inv_path))
+    entry_states = {e['id']: e['work_state'] for e in entries if e['work_state']}
+    adjacency = {v: retrieval_apply._adjacency_for(repo_root, 'work-states', v) for v in classified}
+    return classified, entry_states, adjacency
+
+
 def _render_recommendation(label, rationale):
     """Render the Recommendation block: '**<label>.** <rationale>'."""
     rationale = (rationale or '').strip()
@@ -362,6 +428,7 @@ def cmd_assemble(args, repo_root, cfg):
     language_shift_block = _render_language_shift(requirements, req_lookup)
     partial_match_block = _render_partial_match(requirements, req_lookup)
     cv_notes_block = _render_cv_notes(cv_notes_text)
+    work_state_block = render_work_state_coverage(*_work_state_inputs(repo_root, cfg, args.folder))
     recommendation_block = _render_recommendation(args.recommendation_label, rationale)
 
     # Substitute tokens into the template skeleton.
@@ -379,6 +446,7 @@ def cmd_assemble(args, repo_root, cfg):
         'requirements_block': requirements_block,
         'language_shift_block': language_shift_block,
         'partial_match_block': partial_match_block,
+        'work_state_coverage_block': work_state_block,
         'cv_notes_block': cv_notes_block,
         'recommendation_block': recommendation_block,
     })
