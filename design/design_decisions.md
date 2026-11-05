@@ -1817,6 +1817,8 @@ Refs: `tests/README.md`, `tests/run_tests.py`, `scripts/_config.py` (`FIXTURE_EN
 
 `positioning.md` is never written by a skill run. Not a new entry, not an enrichment. The profile-update skill's write scope is `inventory.md` plus enrichments of `narratives.md`, and that is the whole of it.
 
+**Clarified 2026-11-05 by the user:** the rule forbids autonomous generation (a skill that reads the inventory and other documents and writes positioning on its own, or a pipeline skill writing it as a side effect). It does not forbid a skill the user drives section by section to revise, add, draft, retire and holistically review positioning, writing only what he approves, from a general template (GitHub #29, with the writing rules in #79).
+
 The reason is the nature of the content rather than a missing template.
 Positioning is abstract framing: how the candidate is presented, what he leads with, what he declines to say. It is not the kind of fact a gap-analysis or prep run surfaces and hands off, and it does not feed a CV the way an inventory entry does. Where something abstract does surface that genuinely belongs in positioning, it is staged like anything else, but deciding where it goes, whether it is accurate, and how to say it concisely is a judgment the user drives with the model assisting. So such a `PU-NNN` stays in the queue and waits for him; the skill names it, says plainly that it needs him, and moves on.
 

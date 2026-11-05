@@ -10,7 +10,6 @@ Produces a **CV content artifact**, `cv_content.md` in the application folder (t
 ## Operating rules
 
 - Read `rules/global-rules.md` first; operate under it throughout.
-- Phases below run in order; each has a declared input and output.
 - Each phase opens with the **bold lead line** under its heading - speak it verbatim before running the phase.
 - User-facing status and prompts use plain English. No raw check ids, route-back labels, or implementation jargon (subagent, JSON). Translate every finding, loop status, and error to what the user needs to decide or act.
 - **Single writer:** only the cv-architect edits the CV text. The stakeholders (career-strategist, hiring-manager, candidate-advocate) and QC return contributions and findings; the architect integrates them. This is the traceability control.
@@ -23,7 +22,7 @@ Produces a **CV content artifact**, `cv_content.md` in the application folder (t
 Ask if this session is for a new CV or to resume a previous one.
 
 - **New:** ask the APP-NNN; locate its folder with `python scripts/paths.py app <APP-NNN>`. Confirm `research.md`, `retrieval.md`, AND `gap_analysis.md` all exist in the folder (cv-targeted depends on all three). If any is missing, halt and direct the user to run the missing upstream skill.
-- **Resume:** ask the APP-NNN; locate the matching folder. Probe and land per the ladder (first match wins):
+- **Resume:** ask the APP-NNN; locate its folder the same way. Probe and land per the ladder (first match wins):
   1. Folder missing - halt; APP-NNN likely wrong. Ask for APP-NNN again.
   2. `research.md` missing - halt; direct the user to run `/role-intake`.
   3. `retrieval.md` missing - halt; direct the user to run `/retrieval`.
@@ -50,24 +49,24 @@ Ask if this session is for a new CV or to resume a previous one.
 
 - Input: application folder path (from the resume check), APP-NNN, slug.
 - Read `research.md` from the application folder. Extract:
-  - the `## Critical Requirements` section (each requirement's text and type; research.md carries no stable id, the `CR-NNN` ids are assigned downstream by gap-analysis, below),
+  - the `## Critical Requirements` section (each requirement's text and type),
   - the `## Role`, `## Company`, `## Industry` summary blocks (role context).
-- Read the session log (`session_log.md`) from the application folder. Extract the `## Axis Classification` section (the five axis values, each with primary and optional secondary), and from it the candidate **level** (`ic` or `leadership`, the level axis value). The session log is the authoritative source for the classification (per `retrieval-architecture-2026-05`); the same source retrieval reads.
+- Read the session log (`session_log.md`) from the application folder. Extract the `## Axis Classification` section (the five axis values, each with primary and optional secondary), and from it the candidate **level** (`ic` or `leadership`, the level axis value).
 - Read `gap_analysis.md`. Extract:
   - The per-requirement coverage statuses keyed by `CR-NNN`. The `CR-NNN` ids are gap-analysis's id space and are the authoritative requirement ids for the CV; each maps positionally (same order) to a `research.md` requirement, and to the bare "requirement N" references in `retrieval.md`.
   - The `## CV Notes` section. This is general framing guidance from the gap-closure session that applies across the CV rather than to a single requirement. Surface it as a named input alongside the requirement statuses; the cv-architect must review and apply it before drafting begins.
 - Read `user-info.md` from the profile folder (`python scripts/paths.py profile`). Extract the contact block (name, location, contact line, profile links) for the CV header.
 - **Resolve the axis value files.** For each classified axis value, resolve its rule file path `rules/<axis>/<value>.md`. Pass the files that exist to the sub-agents; for any axis marked "File deferred" in the classification, note it (the architect proceeds without that axis's voice file and the gap is surfaced at handoff).
 - **CV best-practices staleness check.** Narrate this in plain English before running it, e.g. "Let me check that the CV best-practices guidance this skill relies on is still current." Do not name the field or call it a "staleness check" to the user. Read the `last_researched` field from `rules/cv/cv-best-practices.md`. If it is more than ~12 months older than today, surface a plain-English warning that the CV best-practices research may be due for a refresh (per the `cv-best-practices-refresh` process). Non-blocking; the run continues.
-- Note the corpus paths the sub-agents will read in their own context, NOT loaded into the main skill. From the profile folder: `inventory.md`, `narratives.md`. From the application folder: `retrieval.md`, `gap_analysis.md`, `jd.md`, and `comms.md` (if present). From `rules/`: `rules/cv/cv-structure.md`, `rules/cv/cv-best-practices.md`, and the resolved axis files.
-- Output: critical requirements; axis classification with resolved axis-file paths (and any deferred-axis note); level; per-requirement coverage; CV Notes (general framing guidance, or empty); contact block; staleness warning (if any); corpus paths.
+- Do not load `inventory.md`, `narratives.md`, `retrieval.md`, `jd.md`, or `comms.md` here; the sub-agents read them in their own context (their file sets are listed in Phases 2 and 3).
+- Output: critical requirements; axis classification with resolved axis-file paths (and any deferred-axis note); level; per-requirement coverage; CV Notes (general framing guidance, or empty); contact block; staleness warning (if any).
 
 ## Phase 2 - Initial draft
 
 **Composing the first CV draft via the cv-architect.**
 
-- Input: from Phase 1 - folder path, level, the resolved axis-file paths, and the corpus paths.
-- Dispatch the `cv-architect` sub-agent in `mode = draft` with: the application folder path, the `level`, the CV Notes (general framing guidance extracted in Phase 1 — pass inline if short, or as a file path), and paths to `rules/cv/cv-structure.md`, the resolved axis files, `research.md`, `retrieval.md`, `gap_analysis.md`, `inventory.md`, `narratives.md`, and `user-info.md`. The architect must apply the CV Notes as standing constraints before selecting and framing any content. For requirements with status `partial-match`, the architect cites the transferable experience honestly without overclaiming — the CV shows the real capability the candidate has, not the full capability the JD requires; the Notes field on each partial-match requirement describes what to cite and what the gap is. The architect writes `drafting_plan.md` first (recording how CV Notes constraints and partial-match framings were applied), then composes `cv_content.md` with a citation on every unit, and returns its compact summary (paths, sections, estimated pages, entries held back, self-flagged issues).
+- Input: from Phase 1 - folder path, level, the resolved axis-file paths.
+- Dispatch the `cv-architect` sub-agent in `mode = draft` with: the application folder path, the `level`, the CV Notes (inline if short, or as a file path), and paths to `rules/cv/cv-structure.md`, the resolved axis files, `research.md`, `retrieval.md`, `gap_analysis.md`, `inventory.md`, `narratives.md`, and `user-info.md`. It writes `drafting_plan.md` and `cv_content.md` and returns its compact summary.
 - **Initialize the collaboration log.** Write `cv_collaboration_log.md` with a header (APP-NNN, role, company, date) and a Round 0 record of the initial draft (the architect's summary: sections, estimated pages, entries held back, self-flagged). The orchestrator writes this log directly throughout; it is an internal record, not handed to cv-render.
 - Output: `cv_content.md`, `drafting_plan.md`, and `cv_collaboration_log.md` on disk; the architect summary held for the loop.
 
@@ -75,17 +74,16 @@ Ask if this session is for a new CV or to resume a previous one.
 
 **Shaping the draft with the career-strategist, hiring-manager, and candidate-advocate.**
 
-- Input: `cv_content.md`, `drafting_plan.md`, and `cv_collaboration_log.md` paths, corpus paths, level.
+- Input: `cv_content.md`, `drafting_plan.md`, and `cv_collaboration_log.md` paths, the Phase 2 file set, level.
 - **Step 3a - Parallel stakeholder pass.** On the first round, spawn `career-strategist`, `hiring-manager`, and `candidate-advocate` in parallel with the input sets below. They do not see each other's output; the architect is the single reconciliation point. **The three advisors persist for the life of the run.** On every later round, do not spawn new advisor agents: continue each existing advisor (SendMessage to its agent id), passing only the architect's dispositions of its own prior-round contributions (from the architect's previous return) and the instruction to re-read the revised `cv_content.md` and re-assess. A continued advisor already holds its sources from the first round and must not re-read them. If an advisor cannot be continued (the run was resumed in a new session, or the agent is gone), re-spawn it fresh with its full first-round input set. The cv-architect also persists for the life of the run. Every revise pass, in Phase 3 and in the Phase 4 fix loop, continues the drafting architect (SendMessage to its agent id) instead of spawning a new one. Re-spawn it fresh only when the run resumes in a new session or the agent is gone.
   - `career-strategist` gets: `cv_content.md`, `rules/cv/cv-structure.md`, `rules/cv/cv-best-practices.md`, the level and orientation axis files, `research.md`, and `level`.
   - `hiring-manager` gets: `cv_content.md`, `research.md`, `gap_analysis.md`, `retrieval.md`, `jd.md` (and `comms.md` if present), and `level`.
   - `candidate-advocate` gets: `cv_content.md`, `retrieval.md`, `gap_analysis.md`, `inventory.md`, `narratives.md`, `research.md`, and `level`. Each returns a verdict (`satisfied` or `contributions`) and any contributions tagged `material` or `nit`. The hiring-manager may additionally return `suspected_extraction_misses[]` (a critical JD element absent from both the requirements and the gap analysis). Collect these separately; they are NOT contributions and do not enter the Phase 3c integrate loop or affect convergence. They are surfaced as an advisory note at handoff (Phase 6).
 - **Step 3b - Convergence check.** If all three return `satisfied` (no material contributions), the loop has converged. If any nits remain, carry them into one final integration; otherwise proceed directly to Phase 4. Do not run further stakeholder rounds once converged, regardless of how many of the 3 rounds remain.
-- **Step 3c - Integrate.** If any has material contributions, dispatch `cv-architect` in `mode = revise` with the combined contributions and the existing draft/plan paths. The architect seeks good-faith compromise on each contribution, arbitrates any genuine cross-advisor conflict by its precedence (logging the call in `drafting_plan.md`), edits `cv_content.md` in place, and returns its summary, including a disposition for every material contribution (integrated / partial / declined, with a reason addressed to the advisor on anything less than fully integrated) and any cross-advisor arbitration calls.
+- **Step 3c - Integrate.** If any has material contributions, dispatch `cv-architect` in `mode = revise` with the combined contributions and the existing draft/plan paths. It returns a disposition for every material contribution and any cross-advisor arbitration calls.
 - **Step 3d - Loop.** Repeat 3a-3c until converged or a **cap of 3 rounds**. If the cap is reached with material contributions still open, carry them forward to handoff for the user to see; do not block.
 - **Step 3e - Log the round.** Append a round record to `cv_collaboration_log.md`: each stakeholder's verdict and contributions verbatim (location, severity, observation, direction, rationale), then the architect's disposition of every material contribution (integrated / partial / declined, with the reason given to the advisor) and any cross-advisor arbitration calls. Every material contribution must appear with a disposition; none is dropped silently. Also record any `suspected_extraction_misses` the hiring-manager returned this round (deduped by JD element across rounds) under a `Suspected extraction misses` note; these carry forward to Phase 6 unchanged (the architect does not act on them).
 - Narrate each round in plain English (what each stakeholder contributed and that the architect is integrating), not check ids or agent mechanics.
-- Context-safe: the advisors hold their sources in their own persistent isolated contexts and the architect revises from on-disk state, so the main skill accumulates only compact contributions and a round counter. Advisor persistence is within-session only; a cross-session resume re-spawns fresh.
 - Output: the converged (or cap-reached) `cv_content.md` and `drafting_plan.md`; any unresolved material contributions carried forward; the log updated.
 
 ## Phase 4 - QC gate

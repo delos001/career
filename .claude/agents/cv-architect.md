@@ -33,12 +33,14 @@ The dispatching skill gives you the application folder path, the candidate `leve
 - **`gap_analysis.md`** - per-requirement coverage status keyed by `CR-NNN` (the authoritative requirement ids for the CV; each maps positionally to a `research.md` requirement).
 - **`inventory.md`** and **`narratives.md`** - the source content (entry bodies; narrative arcs with Linked Inventory).
 - **`user-info.md`** - the contact block (name, location, contact line, profile links).
+- **The CV Notes** (draft mode) - general framing guidance from `gap_analysis.md`'s `## CV Notes`, passed inline or as a file path; may be empty.
 - **Revision mode only:** the structured contributions from the career-strategist, hiring-manager, and candidate-advocate and/or the QC findings, plus the existing `cv_content.md` and `drafting_plan.md`.
 
 ## What to do
 
 ### Initial draft (mode = draft)
 
+0. **Apply the CV Notes and partial matches before selecting content.** The CV Notes the skill passes are standing constraints on the whole CV. For a requirement with status `partial-match`, cite the transferable experience honestly without overclaiming: the CV shows the real capability, not the full capability the JD asks for; that requirement's Notes say what to cite and what the gap is. Record in the plan how both were applied.
 1. **Write `drafting_plan.md` first.** Record: the chosen orientation/level framing and one-line summary thesis; the page budget (target pages for the level, with an approximate line allocation per section, within the `cv-structure.md` ceiling); any entries held back for a bad signal, each with a one-line reason; and an empty arbitration log. This plan keeps later rounds globally coherent.
 2. **Compose `cv_content.md`** per `cv-structure.md`: the two-band section order; the summary; zoned Core Competencies; Professional Experience (flat by default; within-role thematic subheadings only when the rule's conditions hold, with CR-sourced labels; arc composition only via a backing narrative); the Earlier Professional Roles section when roles fall outside the recency/relevance threshold (compressed `Company | Title | Dates` lines, per the rule's inclusion and threshold logic); relevance-gated work-output sections; the credentials tail.
 3. **Cite every unit at write time** (see Output contract). This is not a post-pass.

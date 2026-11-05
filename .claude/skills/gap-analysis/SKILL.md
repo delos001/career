@@ -12,7 +12,6 @@ The gap analysis is a **stopping point**: the user reads it to decide whether to
 ## Operating rules
 
 - Read `rules/global-rules.md` first; operate under it throughout.
-- Phases below run in order; each has a declared input and output.
 - Each phase opens with the **bold lead line** under its heading - speak it verbatim before running the phase.
 - User-facing status and prompts use plain English. No raw QC check tags or route-back labels, no implementation jargon (subagent, JSON). Translate every finding, loop status, and error message to what the user needs to know to decide or act.
 - Phase 7 (QC) loops back per *Phase routing on failure*.
@@ -24,7 +23,7 @@ The gap analysis is a **stopping point**: the user reads it to decide whether to
 Ask if this session is for a new gap analysis or to resume a previous one?
 
 - **New:** ask the APP-NNN; locate its folder with `python scripts/paths.py app <APP-NNN>`. Confirm that `research.md` AND `retrieval.md` exist in the folder (gap analysis depends on both). If either is missing, halt and direct the user to run the missing upstream skill.
-- **Resume:** ask the APP-NNN; locate the matching folder. Probe and land per the ladder (first match wins):
+- **Resume:** ask the APP-NNN; locate its folder the same way. Probe and land per the ladder (first match wins):
   1. Folder missing - halt; APP-NNN likely wrong. Ask for APP-NNN again.
   2. `research.md` missing - halt; direct the user to run `/role-intake`.
   3. `retrieval.md` missing - halt; direct the user to run `/retrieval`.
@@ -54,8 +53,8 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - `## Geographic Preferences` (Modality, Willing to Relocate, Travel).
   - `## Availability` (Start).
   - `## Exclusions` (Industries / Company Types).
-- Note the corpus paths the downstream consumers will read (`retrieval.md` in the application folder; `inventory.md` and `narratives.md` in the profile folder). These files are NOT loaded into main skill context; Phase 3's `gap_context.py` copies what the `gap-detector` sub-agent needs from them into files it reads in isolated context.
-- Output: critical-requirements block, role/company/industry summary, user-info eligibility sections, paths to `retrieval.md`, `inventory.md`, `narratives.md`.
+- Do not load `retrieval.md`, `inventory.md`, or `narratives.md` here; Phase 3's script hands what the detector needs to it directly.
+- Output: critical-requirements block, role/company/industry summary, user-info eligibility sections.
 
 ## Phase 2 - Eligibility / fit-signal check
 
@@ -79,9 +78,8 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 **Detecting per-requirement coverage gaps via the gap-detector sub-agent.**
 
 - Input: application folder path.
-- Run `python scripts/gap_context.py build --folder <app_folder> --temp-dir <scratch>`. It copies the Critical Requirements section, the Role / Company / Industry summaries, and every inventory section retrieval does not score (role history, systems and tools, industry exposure, credentials) verbatim into `<scratch>/gap_detector_context.md`; copies every inventory entry and narrative the manifest lists, whole, into `<scratch>/gap_detector_evidence_N.md` files that each fit one read; and prints the detector prompt between `=== PROMPT ===` and `=== END ===`. Non-zero exit = halt per global rules.
-- Dispatch `gap-detector` with the printed prompt **exactly as printed: nothing added, removed, reworded, or summarized.** Every input it needs is in the files that prompt names; if something looks missing, halt per global rules instead of supplying it by hand. The sub-agent reads the manifest and the evidence files in isolated context, assigns sequential `CR-NNN` IDs in the order requirements appear in role-intake's list, evaluates each requirement at arc-level first and entry-level second (per `arc-composition-for-high-impact-roles`), and returns a structured per-requirement assessment.
-- Returned shape varies by verdict. **Covered** (compact): `requirement_id`, `verdict`, `evidence` (flat list of 1-3 ID strings). **Gap / language-shift** (full): `requirement_id`, `verdict`, `evidence` (list of `{id, relevance}`), `missing` (gap only), `language_shift` (language-shift only), `reasoning`. Neither shape includes `requirement_text` or `requirement_type`; the assembler reads those from `research.md` and the dispatching skill looks them up from its Phase 1 requirements list when needed for the user-facing loop.
+- Run `python scripts/gap_context.py build --folder <app_folder> --temp-dir <scratch>`. It writes the detector's input files to `<scratch>` and prints its prompt between `=== PROMPT ===` and `=== END ===`. Non-zero exit = halt per global rules.
+- Dispatch `gap-detector` with the printed prompt **exactly as printed: nothing added, removed, reworded, or summarized.** If something looks missing, halt per global rules instead of supplying it by hand. Its return shape is defined in `gap-detector.md`; it omits requirement text and type, which you look up in the Phase 1 requirements list for the loop.
 - Output: per-requirement assessment list (JSON), held in memory for Phase 4.
 
 ## Phase 4 - Interactive gap closure loop
@@ -155,8 +153,8 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 **Running QC on the gap analysis artifact, session log, and staging additions.**
 
 - Input: application folder path.
-- **Step 7a - Mechanical checks (script).** Run `python scripts/gap_qc.py check --folder <app_folder>`. The script owns structure, header and session-log fields, requirement coverage, status taxonomy, Notes presence, staging anchors, ID existence, fit-score math, mirroring, and the recommendation label. On FAIL: translate the failed checks to plain English for the user, apply each per *Phase routing on failure*, re-run forward, and return to Step 7a.
-- **Step 7b - Judgment checks (subagent).** Only after Step 7a passes, dispatch `qc-gap-analysis` with the `gap_analysis.md` path. It verifies Notes substance only (mechanical checks are not re-run). **Loops on FINDINGS:** translate to plain English, apply per *Phase routing on failure*, re-run forward (Step 7a re-runs after any fix), return to Phase 7.
+- **Step 7a - Mechanical checks (script).** Run `python scripts/gap_qc.py check --folder <app_folder>`. On FAIL: translate the failed checks to plain English for the user, apply each per *Phase routing on failure*, re-run forward, and return to Step 7a.
+- **Step 7b - Judgment checks (subagent).** Only after Step 7a passes, dispatch `qc-gap-analysis` with the `gap_analysis.md` path. **Loops on FINDINGS:** translate to plain English, apply per *Phase routing on failure*, re-run forward (Step 7a re-runs after any fix), return to Phase 7.
 - Cap the loop at **3 iterations** across both steps. Exit earlier when both PASS. If findings remain after the third iteration, carry them to Phase 8 Step 8a, where the user decides each one on its own. After the QC verdict is known, re-run Step 6c to refresh the session log section's QC verdict field.
 - Output: PASS verdict, or unresolved findings after 3 iterations.
 
