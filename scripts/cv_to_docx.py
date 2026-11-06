@@ -22,16 +22,26 @@ Input grammar (the cv_qc.py + cv-architect contract):
 Bullets render as a native Word list (middle-dot U+00B7 in Cambria, indent
 left=144 / hanging=144), not a literal bullet character run.
 
+The command line refuses to overwrite a .docx that changed since this script last
+wrote it, or that it has no record of writing, because hand edits are never synced
+back to cv_content.md (GitHub #69). It exits 2 and writes nothing; --overwrite-edited
+overrides. The record is a hash in the output folder's scratch subfolder.
+
 Author    : Jason Delosh
 Created   : 2026-06-02
 Project   : career
 Usage     : python scripts/cv_to_docx.py --cv-file <cv_content.md> --out <out.docx>
-Depends   : python-docx
+                [--overwrite-edited]
+Depends   : python-docx, pyyaml (via _config)
 """
 
 import argparse
+import hashlib
+import os
 import re
 import sys
+
+import _config
 
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
@@ -448,6 +458,35 @@ def build_cv(md_path, out_path):
 
 
 # ---------------------------------------------------------------------------
+# Overwrite guard (GitHub #69)
+# Word rewrites the whole file on any save, so a hash of the file's bytes catches
+# every edit, formatting included. Lives here rather than in build_cv so that
+# cv_measure.py's throwaway renders are unaffected.
+# ---------------------------------------------------------------------------
+
+def _file_hash(path):
+    """Return the SHA-256 of a file's bytes."""
+    with open(path, 'rb') as f:
+        return hashlib.sha256(f.read()).hexdigest()
+
+
+def _record_path(out_path, scratch_subdir):
+    """Return where the hash of a rendered .docx is kept."""
+    folder, name = os.path.split(os.path.abspath(out_path))
+    return os.path.join(folder, scratch_subdir, f'{name}.render.sha256')
+
+
+def _is_unrecorded_or_edited(out_path, record_path):
+    """True when out_path exists and is not exactly what this script last wrote."""
+    if not os.path.exists(out_path):
+        return False
+    if not os.path.exists(record_path):
+        return True
+    with open(record_path, encoding='utf-8') as f:
+        return f.read().strip() != _file_hash(out_path)
+
+
+# ---------------------------------------------------------------------------
 # Command-line entry point
 # ---------------------------------------------------------------------------
 
@@ -456,11 +495,22 @@ def main():
         description='Render cv_content.md to a formatted .docx')
     parser.add_argument('--cv-file', required=True, help='path to cv_content.md')
     parser.add_argument('--out', required=True, help='path to the output .docx')
+    parser.add_argument('--overwrite-edited', action='store_true',
+                        help='replace the .docx even if it changed since the last render')
     args = parser.parse_args()
 
     try:
         sys.stdout.reconfigure(encoding='utf-8')
+        _, cfg = _config.load()
+        record = _record_path(args.out, cfg['filenames']['scratch_subdir'])
+        if not args.overwrite_edited and _is_unrecorded_or_edited(args.out, record):
+            print(f'Refused: {args.out} changed since it was last rendered, or has no render '
+                  'record, so it may hold hand edits. Nothing was written.', file=sys.stderr)
+            sys.exit(2)
         build_cv(args.cv_file, args.out)
+        os.makedirs(os.path.dirname(record), exist_ok=True)
+        with open(record, 'w', encoding='utf-8') as f:
+            f.write(_file_hash(args.out))
     except FileNotFoundError as e:
         print(f'Error: input file not found: {e.filename}', file=sys.stderr)
         sys.exit(1)

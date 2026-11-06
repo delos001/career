@@ -44,7 +44,8 @@ Renders `cv_content.md` in the application folder (the cv-targeted handoff) to a
 **Rendering the .docx.**
 
 - Run: `python scripts/cv_to_docx.py --cv-file <application folder>/cv_content.md --out <application folder>/<confirmed filename>`
-- A non-zero exit is a script error: halt per `global-rules.md` and surface the message; do not silently retry.
+- Exit 2 means the existing `.docx` may hold hand edits, and nothing was written. Tell the user in plain English that those edits are not in `cv_content.md` and a re-render would lose them, then ask: render under a new filename (recommended), or overwrite. Add `--overwrite-edited` only if they explicitly choose to overwrite.
+- Any other non-zero exit is a script error: halt per `global-rules.md` and surface the message; do not silently retry.
 
 ## Phase 4 - Handoff
 
@@ -61,5 +62,6 @@ Renders `cv_content.md` in the application folder (the cv-targeted handoff) to a
 |---|---|
 | Application folder missing | Halt; ask for APP-NNN again |
 | `cv_content.md` missing | Halt; direct the user to run `/cv-targeted` |
-| `cv_to_docx.py` non-zero exit (script error) | Halt per `global-rules.md`; surface the error; do not loop |
+| `cv_to_docx.py` exit 2 (the `.docx` may hold hand edits) | Ask per Phase 3; never overwrite without the user's choice |
+| `cv_to_docx.py` other non-zero exit (script error) | Halt per `global-rules.md`; surface the error; do not loop |
 | Page count over the level ceiling (measured by cv-targeted, or seen in Word when unmeasured) | Out of scope here; re-run `/cv-targeted` to trim content |

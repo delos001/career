@@ -1881,6 +1881,39 @@ def test_interview_section_is_written_by_script():
     assert code != 0 and 'did you mean' in out, f'typo label accepted: {out}'
 
 
+def test_render_will_not_overwrite_a_hand_edited_docx():
+    """Fixed 2026-11-05 (GitHub #69): hand edits to the rendered .docx are never
+    synced back to cv_content.md, and re-rendering silently destroyed them.
+    """
+    cv = write_block('render_cv.md', '# Name\nCity, ST | a@b.c\n\n## Professional Summary\nShort. <!-- src: EX-001 -->\n')
+    out = os.path.join(RUN_DIR, 'render_test.docx')
+
+    def render(*extra):
+        return run('cv_to_docx.py', '--cv-file', cv, '--out', out, *extra)
+
+    code, msg = render()
+    assert code == 0 and os.path.exists(out), msg
+    code, msg = render()
+    assert code == 0, f'an unedited .docx was refused: {msg}'
+
+    with open(out, 'ab') as f:
+        f.write(b'hand edit')
+    edited = open(out, 'rb').read()
+    code, msg = render()
+    assert code == 2 and 'Refused' in msg, f'an edited .docx was overwritten: {code} {msg}'
+    assert open(out, 'rb').read() == edited, 'the refused run changed the file'
+
+    code, msg = render('--overwrite-edited')
+    assert code == 0 and open(out, 'rb').read() != edited, msg
+    code, msg = render()
+    assert code == 0, f'the record was not refreshed after an overwrite: {msg}'
+
+    other = os.path.join(RUN_DIR, 'older_cv.docx')
+    _util.write(other, 'a file this script has no record of')
+    code, msg = run('cv_to_docx.py', '--cv-file', cv, '--out', other)
+    assert code == 2, f'a .docx with no record was overwritten: {msg}'
+
+
 def test_cv_rules_account_for_every_inventory_section():
     """Built 2026-11-05 (GitHub #68): CV sections followed the usual shape. Every
     inventory section must now have a stated CV outcome, so a new inventory section
