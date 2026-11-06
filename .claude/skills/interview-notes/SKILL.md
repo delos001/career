@@ -37,7 +37,7 @@ Then compose the live cue-card from `interview_prep.md` (skip when no prep exist
 ## Phase 3: scaffold
 
 1. Write the payload to `<app folder>/scratch/notes_round_payload.json`: `{"stage", "date" (YYYY-MM-DD), "datetime", "medium", "format", "cue_card": [..], "interviewers": [{"name", "title"}], "questions": [..]}`.
-2. Run: `python <repo>/scripts/notes_assemble.py add-round --folder <absolute app folder> --payload <absolute payload path>` The script appends the section, assigning the round number automatically from append order, and deletes the payload on success; on failure it leaves the payload for diagnosis. It refuses duplicate stage + date headings (the number and any status suffix are ignored when matching); that case should have been caught in Phase 1.
+2. Run: `python <repo>/scripts/notes_assemble.py add-round --folder <absolute app folder> --payload <absolute payload path>` The script appends the section, assigning the round number automatically from append order, and deletes the payload on success; on failure it leaves the payload for diagnosis. It refuses duplicate stage + date headings (the number and any status suffix are ignored when matching); that case should have been caught in Phase 1. It also refuses a checklist that disagrees with the round's Appendix priority list; if the user wants a different order, change the Appendix list first, since it is the one record of the order. AMEND edits are not checked.
 3. Show the user the appended section.
 
 ## Close

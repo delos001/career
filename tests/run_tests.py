@@ -1834,6 +1834,57 @@ def test_interview_section_is_written_by_script():
     assert code != 0 and 'did you mean' in out, f'typo label accepted: {out}'
 
 
+def test_notes_checklist_follows_the_appendix_order():
+    """Fixed 2026-11-05 (GitHub #67): the cue-card said to get to Q8 early while the
+    checklist put Q8 sixth, and nothing compared the two. add-round now refuses a
+    checklist that disagrees with the Appendix, while still allowing questions to
+    be skipped, reworded, or added.
+    """
+    import notes_assemble as na
+    q1, q2, q3, q4 = 'How is the team set up?', 'Who owns the roadmap?', 'What does success look like?', 'Why is this open?'
+    prep = (f'## Question Bank (questions to ask them)\n\n**Topic**\n\n- **Q1:** {q1}\n  - [Listen for: x]\n\n'
+            f'- **Q2:** Who owns\n  the roadmap?\n  - [Listen for: y]\n\n- **Q3:** {q3}\n\n- **Q4:** {q4}\n\n'
+            '## Concerns to Resolve\n\n'
+            '## Hiring Manager - Pat Lee\n\n- Prioritize from Question Bank: Q3, Q1.\n\n'
+            '## Panel - Three People\n\n- Prioritize from Question Bank, in this order:\n  - Q2, Q3.\n  - Then if time allows: Q1.\n- Do not raise: comp.\n')
+
+    assert na._priority_labels(prep, 'Panel') == ['Q2', 'Q3'], na._priority_labels(prep, 'Panel')
+    assert na.checklist_problems(prep, 'Panel', [f'(P) {q2}', f'(P) {q3}', q1]) == [], "an 'if time allows' item needs no (P)"
+    assert na._bank_questions(prep)[na._squash(q2)] == 'Q2', 'a wrapped question was not read whole'
+    good = [f'(P) {q3}', f'(P) {q1}', q4, 'A question I added myself']
+    assert na.checklist_problems(prep, 'Hiring Manager', good) == []
+    assert na.checklist_problems(prep, 'Hiring Manager', [f'(P) {q1}']) == [], 'skipping a question was refused'
+    assert na.checklist_problems(prep, 'Hiring Manager', ['(P) Reworded question', f'(P) {q1}']) == []
+    assert na.checklist_problems(prep, 'No Such Round', [f'(P) {q1}', f'(P) {q3}']) == [], 'a round with no block was refused'
+
+    bad_order = na.checklist_problems(prep, 'Hiring Manager', [f'(P) {q1}', f'(P) {q3}'])
+    assert len(bad_order) == 1 and 'Q3 comes after Q1' in bad_order[0], bad_order
+    assert 'not in the Appendix' in na.checklist_problems(prep, 'Hiring Manager', [f'(P) {q4}'])[0]
+    assert 'not marked (P)' in na.checklist_problems(prep, 'Hiring Manager', [q3])[0]
+    assert 'sits below' in na.checklist_problems(prep, 'Hiring Manager', [q4, f'(P) {q3}'])[0]
+
+    # The real entry point refuses, writes nothing, and keeps the payload.
+    root, cfg = _config.load()
+    _util.write(os.path.join(FIXTURE_APP, cfg['filenames']['interview_prep_file']), prep)
+    code, out = run('notes_assemble.py', 'init', '--folder', FIXTURE_APP, '--app-id', 'APP-001',
+                    '--company', 'Aldridge', '--role', 'Director')
+    notes_path = os.path.join(FIXTURE_APP, cfg['filenames']['interview_notes_file'])
+    before = _util.read(notes_path)
+
+    def add(questions):
+        payload = write_block('payload.json', json.dumps({
+            'stage': 'Hiring Manager', 'date': '2026-11-12', 'datetime': '2026-11-12 14:00 EST', 'medium': 'video',
+            'format': 'single', 'cue_card': [], 'interviewers': [], 'questions': questions}))
+        return payload, run('notes_assemble.py', 'add-round', '--folder', FIXTURE_APP, '--payload', payload)
+
+    payload, (code, out) = add([f'(P) {q1}', f'(P) {q3}'])
+    assert code != 0 and 'Q3 comes after Q1' in out, out
+    assert _util.read(notes_path) == before and os.path.exists(payload), 'a refused round changed something'
+    payload, (code, out) = add(good)
+    assert code == 0, out
+    assert '- [ ] (P) What does success look like?' in _util.read(notes_path)
+
+
 def test_round_prepped_before_booking_passes_only_as_unscheduled():
     """Fixed 2026-11-05 (GitHub #63): a round prepped before it was booked could not
     pass S1, since nothing could say it had no date yet. Blank is legal only with

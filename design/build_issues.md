@@ -47,7 +47,7 @@ Option 1 is the smaller change and removes a skill boundary that has now cost a 
 
 ## preparation-interview: no QC check that the cue-card and the question checklist agree - 2026-08-05
 
-Tracked as [#67](https://github.com/delos001/career/issues/67). That issue is the working copy; this entry is the run record.
+Fixed 2026-11-05: `notes_assemble.py add-round` refuses a disagreeing checklist ([#67](https://github.com/delos001/career/issues/67)). This entry is the run record.
 
 Surfaced running APP-020 (Faro, Director Implementation Services), peer/team round.
 

@@ -1077,6 +1077,9 @@ Refs: GitHub #46.
 
 ### Documentation Discipline
 
+#### backlog-tracking-2026-07
+GitHub issues hold bugs and decided-but-unbuilt work. This file holds closed decisions. `deferrals.md` holds only items whose need is undecided (its header has the entry tests). `open_questions.md` holds questions blocking work now.
+
 #### component-documentation-discipline
 Every skill, sub-agent, standalone script has a `COMPONENTS.md` entry: inputs, outputs, triggers, update triggers. Authored alongside the component. Component evolution requires entry update in same change. Repo `CLAUDE.md` references `COMPONENTS.md`.
 
@@ -1197,6 +1200,8 @@ P7 judges a heading as a `(depth, text)` pair under its template section, and re
 
 #### technical-briefing-section-2026-08
 `templates/interview_prep.md` carries a `## Technical Briefing {optional}` main-body section between `## Company & Industry` and `## The Role`. It holds the SPEAKABLE layer of domain substance for a technical round: working vocabulary, the position the candidate can defend under questioning, and any accuracy trap or hedge that must survive into the room. `research.md` keeps the depth, the full hedges, and the sources. Forced on 2026-08-07 by the APP-020 technical panel: three research runs produced material with no home, which the fixed vocabulary would otherwise have dispersed across `Fit and Gaps`, `Anticipated Questions`, and the Question Bank, leaving the candidate to reassemble it live. Passed all three heading tests in the template's Conventions block. Internal shape is bold labels, one per topic, never new sub-headings: the topic set varies by role and a fixed sub-heading list would be wrong for the next application. Questions stay single-homed in the Question Bank; each briefing topic ends with a label pointer (`Ask Q10.`), so `interview-notes` still projects the asking order per `appendix-priority-list-is-asking-order-2026-08`. Jargon rule, from user feedback the same day: domain terms are defined INLINE in parentheses at first use, and square brackets stay reserved for coaching so the two never blur. Term lists become one term per line with a short plain gloss.
+
+**Enforced 2026-11-05 (GitHub #67).** `notes_assemble.py add-round`, the file's sole writer, refuses a checklist whose order or (P) marks disagree with the Appendix list. Skipped, reworded, and added questions pass.
 
 Refs: `templates/interview_prep.md`, `.claude/skills/preparation-interview/SKILL.md`, memory `feedback_jargon_pervasive_in_written_outputs`.
 

@@ -17,8 +17,10 @@ Subcommands
   add-round   append one round section rendered from a JSON payload. Refuses
               to append when a section with the same stage + date heading
               already exists (the skill amends that section directly instead).
-              Deletes the payload file on success; leaves it in place on
-              failure so the run can be diagnosed and retried.
+              Also refuses a checklist that disagrees with the round's Appendix
+              priority list in interview_prep.md (GitHub #67). Deletes the payload
+              file on success; leaves it in place on failure so the run can be
+              diagnosed and retried.
 
 Payload (JSON, written by the dispatching skill, e.g. to <folder>/scratch/):
 
@@ -187,6 +189,97 @@ def _duplicate_exists(artifact, stage, date):
 
 
 # ---------------------------------------------------------------------------
+# Checklist against the Appendix priority list (GitHub #67)
+# The Appendix's 'Prioritize from Question Bank' list is the only record of the
+# asking order. Questions may be skipped or reworded, so only questions whose text
+# still matches the bank are compared; order and (P) marks are what must agree.
+# ---------------------------------------------------------------------------
+
+_LABEL_RE = re.compile(r'\b(Opener(?:-[a-z])?|Q\d+[a-z]?)\b')
+_BANK_ENTRY_RE = re.compile(r'^- \*\*(Opener(?:-[a-z])?|Q\d+[a-z]?):\*\*\s*(.*)$')
+_P_PREFIX = '(P) '
+
+
+def _squash(text):
+    """Lowercase and collapse whitespace, for comparing question text."""
+    return re.sub(r'\s+', ' ', text).strip().lower()
+
+
+def _h2_body(text, heading_re):
+    """Return the lines under the first '## ' heading matching heading_re."""
+    lines = text.split('\n')
+    for i, line in enumerate(lines):
+        if re.match(heading_re, line.rstrip()):
+            end = next((j for j in range(i + 1, len(lines)) if lines[j].startswith('## ')), len(lines))
+            return lines[i + 1:end]
+    return None
+
+
+def _priority_labels(prep_text, stage):
+    """Return the round's priority labels in asking order, or None if it has none."""
+    body = _h2_body(prep_text, rf'^## {re.escape(stage)}(?: - .*)?$')
+    if body is None:
+        return None
+    for i, line in enumerate(body):
+        if 'Prioritize from Question Bank' in line:
+            parts = [line]
+            # The list may run on in indented sub-bullets under the cue.
+            for following in body[i + 1:]:
+                if not following.startswith((' ', '\t')) or 'if time allows' in following.lower():
+                    break  # 'if time allows' items are deliberately not priority
+                parts.append(following)
+            return _LABEL_RE.findall(' '.join(parts))
+    return None
+
+
+def _bank_questions(prep_text):
+    """Return {squashed question text: label} from the shared Question Bank."""
+    bank, label, parts = {}, None, []
+    for line in _h2_body(prep_text, r'^## Question Bank\b') or []:
+        m = _BANK_ENTRY_RE.match(line)
+        if m:
+            if label:
+                bank[_squash(' '.join(parts))] = label
+            label, parts = m.group(1), [m.group(2)]
+        elif label and parts and line.strip() and not line.lstrip().startswith('- '):
+            parts.append(line)  # a question wrapped onto the next line
+        elif label and parts:
+            bank[_squash(' '.join(parts))] = label
+            label, parts = None, []
+    if label:
+        bank[_squash(' '.join(parts))] = label
+    return bank
+
+
+def checklist_problems(prep_text, stage, questions):
+    """Return what is wrong with a round's checklist against its Appendix list."""
+    order = _priority_labels(prep_text, stage)
+    if not order:
+        return []
+    bank = _bank_questions(prep_text)
+    problems, last_position, seen_tail, last_label = [], -1, False, None
+    for question in questions:
+        is_priority = question.startswith(_P_PREFIX)
+        text = question[len(_P_PREFIX):] if is_priority else question
+        label = bank.get(_squash(text))
+        if is_priority and seen_tail:
+            problems.append(f'"{text[:50]}" is marked (P) but sits below a non-priority question')
+        seen_tail = seen_tail or not is_priority
+        if label is None:
+            continue  # reworded or user-added: nothing to compare against
+        if is_priority and label not in order:
+            problems.append(f'{label} is marked (P) but is not in the Appendix priority list')
+        elif not is_priority and label in order:
+            problems.append(f'{label} is in the Appendix priority list but is not marked (P)')
+        elif is_priority:
+            position = order.index(label)
+            if position < last_position:
+                problems.append(f'{label} comes after {last_label}, but the Appendix asks it first')
+            last_position, last_label = position, label
+    return problems
+
+
+# ---------------------------------------------------------------------------
 # Subcommand: init
 # ---------------------------------------------------------------------------
 
@@ -230,7 +323,16 @@ def cmd_add_round(args, repo_root, cfg):
             f"section already exists: \"{payload['stage']} | {payload['date']}\" "
             f'(amend it directly instead of re-running add-round)')
 
-    number = str(_next_round_number(artifact))
+    prep_path = os.path.join(os.path.abspath(args.folder), cfg['filenames']['interview_prep_file'])
+    if os.path.isfile(prep_path):
+        problems = checklist_problems(_util.read(prep_path), payload['stage'], payload['questions'])
+        if problems:
+            raise ValueError(
+                'the question checklist disagrees with the Appendix priority list in '
+                f"{cfg['filenames']['interview_prep_file']}: " + '; '.join(problems)
+                + '. Fix the checklist, or change the Appendix list if the order should change.')
+
+    number =str(_next_round_number(artifact))
 
     template = _load_template(repo_root, cfg)
     section = _fill(_block(template, 'Round block'), {
