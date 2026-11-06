@@ -41,7 +41,8 @@ Checks (FAIL blocks the build; WARN is advisory and leaves the exit code alone)
       the prep doc goes stale the moment the interview moves
   R1  each prep-attributed research.md section is dated, sourced, em-dash-free
   S1  each post-screen '## Interview: <audience>' session-log section has the
-      required field labels and no em dashes
+      required field labels, a bare YYYY-MM-DD 'Interview date:' (blank only when
+      Status is unscheduled or cancelled), and no em dashes
   S2  each such section's Outcome field is non-empty
   W1  (warn) no prose line directly under a heading (meta-narration proxy)
   W2  (warn) no single bullet packing a ';'-series that also carries its own
@@ -72,7 +73,8 @@ import _util
 from _prep_checks import (
     _COMMENT_RE, _read, _headings, _sections, _frontmatter_keys,
     _frontmatter_sources, _is_placeholder, _is_optional, check_connectors,
-    check_headings, check_xrefs, check_appendix_fields, check_appendix_status)
+    check_headings, check_xrefs, check_appendix_fields, check_appendix_status,
+    interview_date_problem)
 
 
 # ---------------------------------------------------------------------------
@@ -163,11 +165,6 @@ def check_research(research_text, findings):
 # Checks: post-screen session-log interview sections
 # ---------------------------------------------------------------------------
 
-# A bare ISO date is the only legal value of the 'Interview date:' field; the
-# other scheduling facts each have their own field (templates/session_log.md).
-_BARE_DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
-
-
 def check_session_log(log_text, required_fields, findings):
     """Run S1-S2 on '## Interview: <audience>' sections (Recruiter Screen excluded).
 
@@ -197,11 +194,9 @@ def check_session_log(log_text, required_fields, findings):
             problems.append(f'{h}: missing {missing}')
         if '—' in b:
             problems.append(f'{h}: em dash found')
-        dm = re.search(r'^-\s+Interview date:\s*(.*)$', b, re.MULTILINE)
-        if dm and not _BARE_DATE_RE.match(dm.group(1).strip()):
-            problems.append(f'{h}: Interview date must be a bare YYYY-MM-DD '
-                            f'(time / medium / interviewers have their own fields), '
-                            f'got "{dm.group(1).strip()}"')
+        date_problem = interview_date_problem(b)
+        if date_problem:
+            problems.append(f'{h}: {date_problem}')
         # Outcome presence is S2's concern (below), not S1's; keeping it out of
         # `problems` leaves S1 = fields present + em-dash-free, matching prep_qc.py.
         m = re.search(r'Outcome:\s*(\S.*)', b)

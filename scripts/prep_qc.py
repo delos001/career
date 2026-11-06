@@ -32,7 +32,8 @@ are held to the same formatting and architecture):
       least one source URL, and no em dashes
   S1  session log has '## Interview: Recruiter Screen' with the required field labels
       (read from templates/session_log.md's '## Interview section' block, the
-      single authority), a bare YYYY-MM-DD 'Interview date:', and no em dashes
+      single authority), a bare YYYY-MM-DD 'Interview date:' (blank only when
+      Status is unscheduled or cancelled), and no em dashes
   S2  the Outcome field is non-empty
 
 Usage
@@ -60,7 +61,7 @@ import _util
 from _prep_checks import (
     _read, _headings, _sections, _frontmatter_keys, _frontmatter_sources,
     _is_optional, check_connectors, check_headings, check_xrefs,
-    check_appendix_fields, check_appendix_status)
+    check_appendix_fields, check_appendix_status, interview_date_problem)
 
 
 # ---------------------------------------------------------------------------
@@ -166,11 +167,6 @@ def check_research(research_text, findings):
 # Checks: session log 'Interview: Recruiter Screen' section only
 # ---------------------------------------------------------------------------
 
-# A bare ISO date is the only legal value of the 'Interview date:' field; the
-# other scheduling facts each have their own field (templates/session_log.md).
-_BARE_DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
-
-
 def check_session_log(log_text, required_fields, findings):
     """Run S1-S2 on the Interview: Recruiter Screen section. Other sections out of scope.
 
@@ -196,10 +192,9 @@ def check_session_log(log_text, required_fields, findings):
     problems = [f'missing fields: {missing}'] if missing else []
     if '—' in section:
         problems.append('em dash found in section')
-    dm = re.search(r'^-\s+Interview date:\s*(.*)$', section, re.MULTILINE)
-    if dm and not _BARE_DATE_RE.match(dm.group(1).strip()):
-        problems.append('Interview date must be a bare YYYY-MM-DD (time / medium / '
-                        f'interviewers have their own fields), got "{dm.group(1).strip()}"')
+    date_problem = interview_date_problem(section)
+    if date_problem:
+        problems.append(date_problem)
     findings.append(('S1', not problems,
                      'Interview: Recruiter Screen fields present, em-dash-free' if not problems
                      else '; '.join(problems)))

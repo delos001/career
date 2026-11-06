@@ -29,6 +29,10 @@ tweaks are trivial manual edits; structural changes (single -> panel,
 add/remove interviewer) are handled by the skill plus the interview-notes AMEND
 flow, not here.
 
+Reschedule refuses a round still 'Status: unscheduled': its first date is a
+booking, not a move, and recording it here would write a false 'moved to' history.
+The prep skills set that date through session_log.py interview.
+
 Cancel has no downstream skill to catch it (a cancelled round never reaches the
 follow-up skill), so running `cancel` at the time is the accurate capture path;
 `close-application` verifies the record at close-out as a backstop. Reschedule is
@@ -151,7 +155,8 @@ _CANCELLED_TAG_RE = re.compile(r'\s*\[CANCELLED[^\]]*\]')
 
 
 def _edit_session_log(folder, cfg, stage, updates, appends, revive_outcome=False,
-                      seed_history=False, refuse_if_resolved=False):
+                      seed_history=False, refuse_if_resolved=False,
+                      refuse_if_unscheduled=False):
     """Set the given session-log fields on the round's '## Interview: <stage>'.
 
     updates: {label: new_value}   replace the field's value outright.
@@ -166,6 +171,8 @@ def _edit_session_log(folder, cfg, stage, updates, appends, revive_outcome=False
     refuse_if_resolved: raise rather than write when the round already holds a real
                   result (a happened-event Status or a non-pending Outcome). A
                   scheduling op must never bury a recorded outcome; cancel sets this.
+    refuse_if_unscheduled: raise rather than write when the round has never had a
+                  date, so a first booking is not recorded as a move; reschedule sets this.
     Fields named here must exist in the section; the template defines the set, so
     a missing field means the section was written against an older shape.
     """
@@ -181,6 +188,14 @@ def _edit_session_log(folder, cfg, stage, updates, appends, revive_outcome=False
     if missing:
         return (label_name, f'section missing field(s) {missing}; '
                             f'convert it to the current template shape')
+
+    if refuse_if_unscheduled:
+        ks = _field_index(lines, h, end, 'Status')
+        if ks is not None and _field_value(lines[ks]) == 'unscheduled':
+            raise ValueError(
+                f'round "{stage}" is unscheduled, so this is its first date, not a move. '
+                f'Record it with: session_log.py interview --stage "{stage}" '
+                f'--set "Interview date=<YYYY-MM-DD>" --set "Status=scheduled"')
 
     # A cancel must never bury a real recorded result. If the round already holds
     # a real Outcome or a happened-event Status, refuse outright rather than
@@ -354,7 +369,8 @@ def _apply(action, args, cfg):
         log_result = _edit_session_log(folder, cfg, args.stage, updates,
                                        appends={'Schedule history':
                                                 f'moved to {new_date}{suffix}'},
-                                       revive_outcome=True, seed_history=True)
+                                       revive_outcome=True, seed_history=True,
+                                       refuse_if_unscheduled=True)
         _abort_if_log_failed(log_result)
         results = [
             log_result,

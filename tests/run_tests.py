@@ -1834,6 +1834,57 @@ def test_interview_section_is_written_by_script():
     assert code != 0 and 'did you mean' in out, f'typo label accepted: {out}'
 
 
+def test_round_prepped_before_booking_passes_only_as_unscheduled():
+    """Fixed 2026-11-05 (GitHub #63): a round prepped before it was booked could not
+    pass S1, since nothing could say it had no date yet. Blank is legal only with
+    an explicit status, so a scheduled round missing its date is still a defect.
+    """
+    import prep_interview_qc
+    import prep_qc
+    root, cfg = _config.load()
+    fields = _util.interview_section_fields(
+        _util.read(os.path.join(root, cfg['paths']['templates'], cfg['filenames']['session_log_template'])))
+    log_path = os.path.join(FIXTURE_APP, 'session_log.md')
+
+    def set_fields(stage, *pairs):
+        args = ['interview', '--folder', FIXTURE_APP, '--stage', stage]
+        for pair in pairs:
+            args += ['--set', pair]
+        code, out = run('session_log.py', *args)
+        assert code == 0, out
+
+    def s1(module):
+        findings = []
+        module.check_session_log(_util.read(log_path), fields, findings)
+        return next(f for f in findings if f[0] == 'S1')
+
+    for module, stage in ((prep_interview_qc, 'Hiring Manager'), (prep_qc, 'Recruiter Screen')):
+        set_fields(stage, 'Status=unscheduled', 'Outcome=pending')
+        assert s1(module)[1], f'an unscheduled round failed: {s1(module)}'
+        set_fields(stage, 'Status=scheduled')
+        result = s1(module)
+        assert not result[1] and 'blank' in result[2], f'a scheduled round with no date passed: {result}'
+        set_fields(stage, 'Status=unscheduled', 'Interview date=2026-11-12')
+        assert not s1(module)[1], 'an unscheduled round holding a date passed'
+        set_fields(stage, 'Status=scheduled')
+        assert s1(module)[1], s1(module)
+        set_fields(stage, 'Interview date=Nov 12 at noon')
+        assert not s1(module)[1], 'a prose date passed'
+        set_fields(stage, 'Interview date=', 'Status=cancelled 2026-11-10')
+        assert s1(module)[1], f'a round cancelled before booking failed: {s1(module)}'
+
+    # A first booking must not be recorded as a move.
+    set_fields('Peer / Team', 'Status=unscheduled', 'Outcome=pending')
+    code, out = run('interview_lifecycle.py', 'reschedule', '--folder', FIXTURE_APP,
+                    '--stage', 'Peer / Team', '--new-datetime', '2026-11-20 14:00 EST')
+    assert code != 0 and 'first date' in out, f'reschedule accepted an unscheduled round: {out}'
+    assert 'moved to' not in _util.read(log_path), 'a first booking was recorded as a move'
+    # Cancelling one still works, and then leaves no S1 problem for later rounds.
+    code, out = run('interview_lifecycle.py', 'cancel', '--folder', FIXTURE_APP, '--stage', 'Peer / Team')
+    assert code == 0, out
+    assert '- Outcome: n/a (round cancelled)' in _util.read(log_path)
+
+
 # ---------------------------------------------------------------------------
 # Agent definitions
 # Sub-agents run in their own context, so the global rules reach them only if

@@ -305,15 +305,55 @@ def check_appendix_fields(artifact_text, findings):
 
 
 # ---------------------------------------------------------------------------
+# S1 helper: the 'Interview date:' value, read against 'Status:' (GitHub #63)
+# ---------------------------------------------------------------------------
+
+# A bare ISO date is the only legal non-blank value of 'Interview date:'; the
+# other scheduling facts each have their own field (templates/session_log.md).
+_BARE_DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+
+
+def _log_field(section, label):
+    """Return a '- <label>:' value, or None if absent. Stays on the field's own
+    line: a plain \\s* would cross a blank value's newline into the next field."""
+    m = re.search(rf'^-[ \t]+{re.escape(label)}:[ \t]*(.*)$', section, re.MULTILINE)
+    return m.group(1).strip() if m else None
+
+
+def interview_date_problem(section):
+    """Return what is wrong with a round's Interview date, or None.
+
+    A blank date is legal only when the round has none to give: prepped before it
+    was booked (unscheduled), or cancelled before it ever was. A blank on any other
+    status is a real defect, and an unscheduled round holding a date means Status
+    was not moved on when the booking came in.
+    """
+    date, status = _log_field(section, 'Interview date'), _log_field(section, 'Status') or ''
+    if date is None:
+        return None  # the missing-field check reports this
+    if not date:
+        if status == 'unscheduled' or status.startswith('cancelled'):
+            return None
+        return (f'Interview date is blank but Status is "{status}"; a round not yet '
+                'booked must say Status: unscheduled')
+    if not _BARE_DATE_RE.match(date):
+        return ('Interview date must be a bare YYYY-MM-DD (time / medium / '
+                f'interviewers have their own fields), got "{date}"')
+    if status == 'unscheduled':
+        return f'Interview date is {date} but Status is still unscheduled; set Status: scheduled'
+    return None
+
+
+# ---------------------------------------------------------------------------
 # X4: no scheduling metadata in an Appendix heading
 # ---------------------------------------------------------------------------
 
 _HEADING_DATE_RE = re.compile(r'\d{4}-\d{2}-\d{2}')
-# Status vocabulary per templates/session_log.md ("scheduled | held |
-# cancelled <date> | no-show"). Keep in sync with that line; a later change may
+# Status vocabulary per templates/session_log.md ("unscheduled | scheduled | held
+# | cancelled <date> | no-show"). Keep in sync with that line; a later change may
 # derive this from the template so it cannot drift.
 _EVENT_STATUS_RE = re.compile(
-    r'\b(scheduled|held|cancelled|no-show)\b', re.IGNORECASE)
+    r'\b(unscheduled|scheduled|held|cancelled|no-show)\b', re.IGNORECASE)
 
 
 def check_appendix_status(artifact_text, findings):

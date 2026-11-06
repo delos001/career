@@ -52,13 +52,13 @@ The session log is the ONE home for an interview's scheduling metadata. Each fac
 ## Interview field notes
 
 - **{{prep_date}}** / **{{prep_artifact}}** / **{{research_added}}** - `n/a` when the round ran with no prep skill run.
-- **{{interview_date}}** - `YYYY-MM-DD`, bare. The current date, rewritten on a reschedule. Never prose; the other facts have their own fields.
+- **{{interview_date}}** - `YYYY-MM-DD`, bare. The current date, rewritten on a reschedule. Never prose; the other facts have their own fields. Blank only while Status is `unscheduled`, or for a round cancelled before it was ever booked.
 - **{{time}}** - `HH:MM <tz>` (e.g. `12:30 EST`). Blank when not yet known.
 - **{{duration}}** - planned, or planned vs actual (`30 min`; `planned 25 min; ran 15 over`).
 - **{{medium}}** - phone | video | in-person.
 - **{{interviewers}}** - `<name> (<title>)`, comma-separated; `TBD` when unknown.
 - **{{schedule_history}}** - blank when nothing moved; otherwise one current-state line, e.g. `originally 2026-07-02; moved to 2026-07-20`. Written by `scripts/interview_lifecycle.py reschedule`, or reconciled from the notes round's `Schedule changes:` line by the follow-up skill.
-- **{{status}}** - `scheduled` | `held` | `cancelled <YYYY-MM-DD>` | `no-show`.
+- **{{status}}** - `unscheduled` (prepped before it was booked) | `scheduled` | `held` | `cancelled <YYYY-MM-DD>` | `no-show`.
   Distinct from Outcome: status is what happened to the *event*, outcome is its result.
 - **{{outcome}}** - `pending` until resolved; `n/a (round cancelled)` for a cancelled round. A `pending` outcome at close-out time is what `close-application` queries on.
 - **Optional extra fields** may follow `Outcome` (e.g. `Follow-up:` written by the follow-up skill; `Notes artifact:`; a `Role note:`). Only the fields above are required. `Follow-up:` is `pending` when the message is drafted but not yet sent, then `sent <YYYY-MM-DD> (<channel>)` once the user confirms the send.
