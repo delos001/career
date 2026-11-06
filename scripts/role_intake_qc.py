@@ -29,7 +29,8 @@ split into its mechanical half, check 5 stays with the agent):
       from rules/levels/leadership.md's Tiers block; other levels carry none.
   I7  Each requirement row's Source carries one verbatim quote found in jd.md,
       and its Text keeps every modifier (config requirement_qualifiers) in the
-      JD clause holding that quote.
+      JD clause holding that quote. A year count (config requirement_year_count)
+      must survive on at least one row quoting that clause.
 
 Output: one `<ID>  PASS|FAIL  <detail>` line per check, then a RESULT
 line. Exit 0 when all pass, 1 otherwise.
@@ -369,7 +370,7 @@ def _requirement_rows(research_text):
     return rows
 
 
-def check_requirement_text(research_text, jd_text, qualifiers, findings):
+def check_requirement_text(research_text, jd_text, qualifiers, year_count, findings):
     """I7: requirement Text keeps the modifiers that set the JD's bar (GitHub #83).
 
     The extractor once dropped 'familiarity with' from a must-have, and the
@@ -377,12 +378,18 @@ def check_requirement_text(research_text, jd_text, qualifiers, findings):
     clause rather than the quote alone: the extractor chooses the quote, so a
     narrow one would otherwise step around the check. A row that keeps every
     modifier but rewords the rest passes; this check guards the bar, not style.
+
+    A year count is held across the rows sharing a clause rather than on each
+    row: in '10 years in the industry, with at least 5 years in people management'
+    each count belongs to one of two requirements, so it needs only to survive on
+    some row from that clause. Wording modifiers stay per row.
     """
     rows = _requirement_rows(research_text)
     if jd_text is None:
         findings.append(('I7', False, 'jd.md not found, so requirement quotes cannot be checked'))
         return
     problems = []
+    texts_by_clause = {}
     for num, text, source in rows:
         quotes = _QUOTE_RE.findall(source)
         if len(quotes) != 1:
@@ -397,6 +404,13 @@ def check_requirement_text(research_text, jd_text, qualifiers, findings):
             for match in re.finditer(rf'\b(?:{pattern})\b', clause):
                 if not re.search(rf'\b{re.escape(match.group(0))}\b', norm_text):
                     problems.append(f"CR-{num:03d}: Text drops '{match.group(0)}' from the JD clause: {clause[:80]}")
+        texts_by_clause.setdefault(clause, []).append((num, norm_text))
+    for clause, entries in texts_by_clause.items():
+        for match in re.finditer(rf'\b(?:{year_count})\b', clause):
+            count = rf'\b{re.escape(match.group(0))}\b'
+            if not any(re.search(count, norm_text) for _, norm_text in entries):
+                ids = ', '.join(f'CR-{num:03d}' for num, _ in entries)
+                problems.append(f"{ids}: no row keeps '{match.group(0)}' from the JD clause: {clause[:80]}")
     findings.append(('I7', not problems, '; '.join(problems) or f'{len(rows)} requirement rows keep their JD modifiers'))
 
 
@@ -438,7 +452,7 @@ def cmd_check(args, repo_root, cfg):
     check_axis_line_form(log_text, findings)
     check_tier(log_text, leadership_tiers(repo_root, cfg), findings)
     check_requirement_text(research_text, _read(os.path.join(app_folder, fn['jd_file'])),
-                           cfg['requirement_qualifiers'], findings)
+                           cfg['requirement_qualifiers'], cfg['requirement_year_count'], findings)
 
     failed = [f for f in findings if not f[1]]
     for check, ok, detail in findings:

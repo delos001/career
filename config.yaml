@@ -105,7 +105,11 @@ requirement_qualifiers:
   - preferred
   - preferably
   - ideally
-  - \d+(?:-\d+)?\+? years   # the number must survive too
+
+# A year count sets a bar too, but a clause can hold one count per requirement
+# ('10 years..., with at least 5 years...'), so it must survive on at least one
+# row quoting that clause rather than on every row.
+requirement_year_count: \d+(?:-\d+)?\+? years
 
 # Profile-update related-entry pull (scripts/profile_slice.py related).
 related_pull:

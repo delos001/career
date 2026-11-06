@@ -1591,10 +1591,10 @@ def test_requirement_text_keeps_jd_modifiers():
         research = ('## Critical Requirements\n\n| # | Text | Type | Source |\n|---|---|---|---|\n'
                     f'| 1 | {text} | must-have | {source} |\n\n## Axis Gaps\n')
         findings = []
-        riq.check_requirement_text(research, jd, cfg['requirement_qualifiers'], findings)
+        riq.check_requirement_text(research, jd, cfg['requirement_qualifiers'], cfg['requirement_year_count'], findings)
         return findings[0]
 
-    whole = 'Knowledge of the industry, including familiarity with drug discovery'
+    whole ='Knowledge of the industry, including familiarity with drug discovery'
     assert result(whole, 'Quals #1 "including familiarity with drug discovery"')[1]
     dropped = result('Knowledge of the industry, including drug discovery', 'Quals #1 "including familiarity with drug discovery"')
     assert not dropped[1] and 'familiarity with' in dropped[2], dropped
@@ -1606,6 +1606,35 @@ def test_requirement_text_keeps_jd_modifiers():
     assert not result('Degree', 'Quals #2 "not in the JD"')[1], 'a quote absent from the JD passed'
     assert not result('Degree', 'Quals #2')[1], 'a row with no quote passed'
     assert result('Degree', 'Quals #2 "Bachelor\'s degree required"; also Summary')[1], 'a section pointer after the quote broke the row'
+
+
+def test_split_requirement_keeps_each_year_count():
+    """A clause can hold one year count per requirement. Requiring both counts on
+    every row failed a correct split of '10 years..., with at least 5 years...',
+    which left two tests sharing one gap verdict. Each count now needs to survive
+    on some row from the clause, and a count lost from all of them still fails.
+    """
+    import role_intake_qc as riq
+    _, cfg = _config.load()
+    jd = 'Minimum of 10 years in the industry, with at least 5 years in people management.\n'
+
+    def result(*rows):
+        body = ''.join(f'| {i} | {text} | must-have | Quals #1 "{quote}" |\n'
+                       for i, (text, quote) in enumerate(rows, 1))
+        research = ('## Critical Requirements\n\n| # | Text | Type | Source |\n|---|---|---|---|\n'
+                    f'{body}\n## Axis Gaps\n')
+        findings = []
+        riq.check_requirement_text(research, jd, cfg['requirement_qualifiers'], cfg['requirement_year_count'], findings)
+        return findings[0]
+
+    ten = 'Minimum of 10 years in the industry'
+    five = 'at least 5 years in people management'
+    split = result((ten, ten), (five, five))
+    assert split[1], f'a correct split failed: {split}'
+    assert result((f'{ten}, with {five}', ten))[1], 'the whole clause on one row failed'
+    lost = result((ten, ten), ('people management', 'people management'))
+    assert not lost[1] and '5 years' in lost[2], f'a count lost from every row passed: {lost}'
+    assert not result(('Minimum of 8 years in the industry', ten), (five, five))[1], 'a changed count passed'
 
 
 def test_stale_rule_files_are_flagged():
