@@ -1675,6 +1675,9 @@ The render skill (`cv-render`): converts `cv_content.md` (the cv-targeted handof
 
 Refs: `format_spec.md`, `rules/cv/cv-structure.md`, `scripts/cv_qc.py`, `.claude/agents/cv-architect.md`, `cv-format-spec-from-axes`.
 
+#### cv-clarity-rule-2026-11
+APP-028 shipped sentences such as "Delivered dashboards that study teams used to decide in meetings" with all QC passing and all three stakeholders satisfied. No rule required a clear sentence, the hiring-manager and candidate-advocate were barred from phrasing, the career-strategist's only related duty was concision, and QC fixes reached the page unread. `cv-structure.md` now holds a hard rule that each sentence reads clearly on one read and shows why the work mattered, outranking coverage and keywords. The career-strategist owns it and cannot return satisfied while a sentence fails; the hiring-manager may raise comprehension only; Step 4f has both re-read QC fixes. A script cannot judge this, so it stays with those agents.
+
 #### cv-targeted-render-refinements-2026-06
 First real-CV run of the full pipeline (APP-006 Takeda) drove a batch of user-confirmed refinements across cv-targeted, cv-render, and their QC. Rules live in the cited files; this logs the decisions.
 

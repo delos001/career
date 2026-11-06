@@ -230,6 +230,11 @@ The verifying band, below the evidence band, read at lower attention. Fixed orde
 
 Apply across every section.
 
+**Reads clearly on the first pass (hard rule).** The CV exists to win an interview, so every summary sentence and bullet must be a complete, natural sentence that a hiring manager who has never seen the source understands on one read, and that shows why the work mattered. A sentence that only makes sense to someone who already knows the work fails, however accurate it is. When a clear sentence will not fit, drop a fact, a list item, or a whole bullet; never drop the words that make it read clearly. This outranks adding coverage, keywords, or one more fact.
+
+- Fails: "Delivered dashboards that study teams used to decide in meetings and centralized data surveillance with real-time findings, and drove self-service analytics adoption."
+- Passes: "Replaced weekly spreadsheet reporting with near-real-time dashboards, so study teams could make decisions in the meeting instead of waiting on follow-up."
+
 **Impact-first.** Lead with the outcome/result wherever a claim has one, in bullets and in the summary. The high-attention position carries the strongest signal.
 
 **Acronym expansion.** Spell out a less-common acronym on first use, with the acronym in parentheses; use the acronym thereafter. Common in-industry acronyms the hiring panel reads fluently (e.g. FDA, GCP, ICH, IRB, GxP in pharma) need no expansion. Judge "common" by the target industry, not the general reader.

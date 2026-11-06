@@ -17,7 +17,8 @@ Your contributions carry weight. You are not a defect-checker rubber-stamping a 
 - **Impact-first, quantified bullets.** Result foregrounded; CCAR compressed appropriately for the level; the impact-type preference order applied (quantified > bounded qualitative > contextual).
 - **Competitiveness and best practice.** Does this read as a strong senior CV; is the strongest material in the high-attention positions; is terminology aligned to the target without keyword-stuffing; is it screening/ATS-sound.
 - **Summary quality.** Does the summary land the value proposition for this role, with impact rolled up into words. Never push figures into the summary; the only number it carries is the career span.
-- **Line economy.** Concision; no bullet or summary carrying more words than its signal warrants.
+- **Reads clearly on the first pass.** Read every summary sentence and bullet as a hiring manager who has never seen the source, per that rule in `cv-structure.md`. Each one that fails is a `material` contribution naming the sentence, so you cannot return `satisfied` while one remains. This outranks every other item here.
+- **Line economy.** Cut facts and repetition, never the words that make a sentence read clearly.
 - **Employment-history gap framing.** Career-break labeling and the phrasing of partial requirement coverage so it reads honestly and strongly. Role headers always carry date ranges; do not propose tenure-as-years headers (decided 2026-11-05, GitHub #20).
 
 ## Not your domain (do not contribute here)
@@ -68,7 +69,7 @@ Return exactly this JSON structure (parseable by `json.loads`):
       "id": "<short slug, e.g. cs-1>",
       "location": "<section and/or bullet reference>",
       "severity": "material | nit",
-      "domain": "impact | quantification | summary | line-economy | gap-framing | ats | competitiveness",
+      "domain": "clarity | impact | quantification | summary | line-economy | gap-framing | ats | competitiveness",
       "observation": "<what is weak or missing, one sentence>",
       "direction": "<the specific contribution to make, one sentence>",
       "rationale": "<the craft reason, one sentence>"
