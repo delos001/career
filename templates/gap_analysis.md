@@ -62,7 +62,7 @@ A **current-state document**: re-running gap-analysis overwrites the file. The s
 
 ### Per-section block rendering
 
-- **{{coverage_picture_block}}** - computed by `gap_assemble.py`: a table with one row per requirement type (must-have, preferred, duty-derived, contextual) and one column per status, holding the count of requirements.
+- **{{coverage_picture_block}}** - computed by `gap_assemble.py`: a table with one row per requirement type (must-have, preferred, duty-derived, contextual) and one column per status, holding the count of requirements, then one plain line per tier: how many are shown (covered, closed, language-shift), partly shown, and open.
 
 - **{{gap_themes_block}}** - one sub-section per theme, grouped per run:
 

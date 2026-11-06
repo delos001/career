@@ -14,6 +14,10 @@
 | Duty-derived (0) | 0 | 0 | 0 | 0 | 0 | 0 |
 | Contextual (1) | 0 | 0 | 0 | 0 | 0 | 1 |
 
+- **Must-have:** 2 of 4 shown, 1 partly shown, 1 open.
+- **Preferred:** 1 of 1 shown, 0 partly shown, 0 open.
+- **Contextual:** 0 of 1 shown, 0 partly shown, 1 open.
+
 ## Gap Themes
 
 ### Line management (structural)

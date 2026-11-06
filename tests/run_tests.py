@@ -1671,6 +1671,7 @@ def test_gap_analysis_leads_with_the_picture_not_a_score():
     assert built.index('## Coverage Picture') < built.index('## Gap Themes') \
         < built.index('## Recommendation') < built.index('## Requirements'), built
     assert '| Must-have (4) | 1 | 1 | 0 | 1 | 1 | 0 |' in built, built
+    assert '- **Must-have:** 2 of 4 shown, 1 partly shown, 1 open.' in built, built
     assert '**Unmet Must-Haves:** 1' in built, built
     assert all('PASS' in line for line in report().values()), report()
 
@@ -1936,6 +1937,86 @@ def test_dispatch_prompts_are_printed_not_composed():
         for agent in agents:
             assert f'dispatch_prompt.py {agent}' in text, f'{skill} does not print the {agent} prompt'
     assert 'giving each the JD text' not in _util.read(os.path.join(skills, 'role-intake', 'SKILL.md'))
+
+
+def test_gap_verdicts_come_from_checked_claims():
+    """Built 2026-11-05 (GitHub #72): the detector wrote 'its only Veeva Vault use is
+    eTMF' with the other Vault systems in its context, and read silence as a gap.
+    It now answers parts with proof; a script checks the proof and sets the verdict.
+    """
+    import gap_verdicts as gv
+    reference = '## Technical Experience\n\n**Clinical:** Veeva Vault, Vault Submissions, Medidata Rave\n'
+    evidence = ('ID: EX-001\nDescription: **Ran the vendor oversight program.**\n\n'
+                'ID: PR-015\nObjective: Built a *requirements* graph.\n')
+
+    def one(*parts):
+        return gv.derive([{'requirement_id': 'CR-001', 'parts': list(parts)}], reference, evidence, 1)
+
+    direct = {'part': 'vendors', 'answer': 'direct', 'evidence_id': 'EX-001', 'quote': 'ran the vendor  oversight program'}
+    reworded = {'part': 'graph', 'answer': 'reworded', 'evidence_id': 'PR-015.03', 'quote': 'Built a requirements graph',
+                'role_term': 'ontology', 'candidate_term': 'graph'}
+    absent = {'part': 'IRT', 'answer': 'absent', 'searched_terms': ['Suvoda', 'IRT']}
+    silent = {'part': 'audience', 'answer': 'not-stated', 'not_stated': 'Was this for executives?'}
+    tool = {'part': 'Vault', 'answer': 'direct', 'evidence_id': 'reference', 'quote': 'Vault Submissions'}
+
+    def verdict(*parts):
+        records, rejected = one(*parts)
+        assert not rejected, rejected
+        return records[0]
+
+    assert verdict(direct, tool)['verdict'] == 'covered'
+    assert verdict(direct, tool)['evidence'] == ['EX-001'], 'reference lines have no ID to cite'
+    assert verdict(direct, reworded)['verdict'] == 'covered', 'one reworded part sank a requirement'
+    assert verdict(reworded)['verdict'] == 'language-shift'
+    assert verdict(reworded)['language_shift']['role_terminology'] == 'ontology'
+    assert verdict(silent)['verdict'] == 'not-stated', 'silence was read as something else'
+    assert verdict(silent)['question'] == 'Was this for executives?'
+    assert verdict(absent)['verdict'] == 'gap' and verdict(absent)['missing'] == 'IRT: not found'
+    assert verdict(direct, absent)['verdict'] == 'gap', 'absent parts matched shown parts'
+    assert verdict(silent, absent)['verdict'] == 'gap', 'a real absence was hidden by silence'
+
+    # One open part leaves a partial that says what is shown and what is open.
+    partial = verdict(direct, tool, silent)
+    assert partial['verdict'] == 'partial', 'one open part sank or hid a requirement'
+    assert partial['shown_parts'] == ['vendors', 'Vault'] and partial['open_parts'] == ['audience'], partial
+    assert verdict(direct, tool, absent)['verdict'] == 'partial'
+
+    # The APP-023 failure: a system claimed absent that the profile lists.
+    records, rejected = one({'part': 'Vault', 'answer': 'absent', 'searched_terms': ['Vault Submissions']})
+    assert not records and 'in the profile' in rejected['CR-001'][0], rejected
+    # A term must match whole words, so 'IRT' is not found inside 'shIRT'.
+    assert gv.derive([{'requirement_id': 'CR-001', 'parts': [absent]}], reference + 'shirt', evidence, 1)[0]
+
+    bad = [dict(direct, quote='Ran a program nobody ran'), dict(direct, evidence_id='EX-999'),
+           dict(direct, reasoning='its only use is eTMF'), {'part': 'x', 'answer': 'direct', 'evidence_id': 'EX-001'},
+           {'part': 'x', 'answer': 'maybe'}]
+    for part in bad:
+        records, rejected = one(part)
+        assert not records and rejected, f'accepted a bad claim: {part}'
+    assert gv.derive([], reference, evidence, 1)[1]['CR-001'] == ['no parts answered']
+
+    # A claim that keeps failing becomes a question, never a verdict.
+    records, _ = gv.derive([{'requirement_id': 'CR-001', 'parts': [bad[0]]}], reference, evidence, 1, final=True)
+    assert records[0]['verdict'] == 'not-stated' and 'Could not be verified' in records[0]['question'], records
+
+    # End to end through the command line.
+    scratch = os.path.join(RUN_DIR, 'gap_scratch')
+    os.makedirs(scratch)
+    _util.write(os.path.join(scratch, 'gap_detector_context.md'),
+                '# Critical Requirements\n\n| 1 | Veeva Vault | must-have | x |\n\n# Profile reference sections\n\n' + reference)
+    _util.write(os.path.join(scratch, 'gap_detector_evidence_0.md'), evidence)
+    output = os.path.join(scratch, 'gap_detector_output.json')
+    _util.write(output, json.dumps({'assessments': [{'requirement_id': 'CR-001', 'parts': [
+        {'part': 'Vault', 'answer': 'absent', 'searched_terms': ['Veeva Vault']}]}]}))
+    code, out = run('gap_verdicts.py', 'derive', '--temp-dir', scratch)
+    assert code == 1 and '=== PROMPT ===' in out and 'in the profile' in out, out
+    assert not os.path.exists(os.path.join(scratch, 'gap_detector_verdicts.json')), 'verdicts written despite a rejection'
+    _util.write(output, json.dumps({'assessments': [{'requirement_id': 'CR-001', 'parts': [tool]}]}))
+    code, out = run('gap_verdicts.py', 'derive', '--temp-dir', scratch)
+    assert code == 0 and 'covered: 1' in out, out
+
+    skill = _util.read(os.path.join(REPO_ROOT, '.claude', 'skills', 'gap-analysis', 'SKILL.md'))
+    assert 'gap_verdicts.py derive' in skill and 'Not-stated items' in skill
 
 
 def test_builder_prompts_share_one_script():

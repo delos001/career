@@ -264,9 +264,11 @@ def build_evidence(manifest_text, inventory_text, narratives_text, max_bytes):
 
 def detector_prompt(context_path, retrieval_path, evidence_paths):
     """Return the complete prompt for the gap-detector dispatch."""
+    output_path = os.path.join(os.path.dirname(context_path), 'gap_detector_output.json')
     return (f'Context file: {context_path}\n'
             f'retrieval.md: {retrieval_path}\n'
-            + ''.join(f'Evidence file: {path}\n' for path in evidence_paths)).rstrip('\n')
+            + ''.join(f'Evidence file: {path}\n' for path in evidence_paths)
+            + f'Write your output to: {output_path}').rstrip('\n')
 
 
 # ---------------------------------------------------------------------------

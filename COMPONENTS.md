@@ -493,6 +493,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - `scripts/axis_registry.py`, `scripts/axis_qc.py`, `scripts/axis_apply.py` (axis-builder concern family)
 - `scripts/_config.py`, `scripts/_util.py`, `scripts/axis_utils.py`, `scripts/_prep_checks.py` (shared helper modules; not standalone scripts, no separate entries)
 - `tests/run_tests.py` (invariant checks for the profile-update machinery; drives the real CLIs against a throwaway copy of the `tests/fixture/` corpus. Redirection is `CAREER_FIXTURE`, read by `scripts/_config.py`, which rebases every personal-rooted path onto the named folder. The runner refuses to start unless the resolved profile path is inside `tests/`. See `tests/README.md` and `test-corpus-and-invariant-checks-2026-08-26`.)
+- `scripts/gap_verdicts.py` (gap-analysis Phase 3: checks the gap-detector's quotes and absence claims, derives each verdict; roster entry only)
 - `scripts/axis_dispatch.py` (all five axis builders: writes sibling Adjacency slices and prints the research, reconciler, and QC dispatch prompts; roster entry only)
 - `scripts/dispatch_prompt.py` (role-intake, cv-targeted, gap-analysis, and both prep skills: prints a subagent's complete dispatch prompt from the application folder; roster entry only)
 - `scripts/cv_to_docx.py` (cv-render skill: renders cv_content.md to a formatted .docx; refuses to overwrite a .docx changed since its last render)

@@ -1509,6 +1509,9 @@ Derivation process: read the JD; identify distinct competency domains; group rel
 
 Refs: `role-evaluation-and-cv-targeted-separate`, `arc-composition-for-high-impact-roles`, `gap-analysis-architecture-2026-05`.
 
+#### gap-verdicts-from-checked-claims-2026-11
+The gap-detector answers each part of a requirement with proof and sets no verdict; `gap_verdicts.py` checks each quote and absence claim, then derives the verdict (GitHub #72). Silence is its own answer and never a gap. One weak part must not sink a requirement, because job descriptions list far more than any one candidate holds, so `partial` is a normal outcome: it names what is shown and open, and the recommendation weighs whether the open part matters to the role, never how many there are. Evidence: on APP-023 the old format repeated the 'eTMF only' claim and read silence as a gap, and the new one did neither. The cut-offs come from one run and are provisional. Running the detector twice was not adopted: two old-format runs differed on 2 of 45.
+
 #### gap-evidence-profile-order-2026-11
 The gap-detector's evidence files lay entries out in profile order: inventory entries under their `## ` section, `### RL-NNN` role and `--- <label>` topic-group lines (restated at the top of any file that starts mid-group), then narratives. Replaces retrieval-score order with no labels (in place since the 2026-10-27 switch to evidence files).
 

@@ -1,14 +1,14 @@
 ---
 name: gap-detector
-description: Detects per-requirement coverage gaps for the gap-analysis skill. Reads the retrieval manifest and the evidence files holding every entry and narrative it surfaces; evaluates each critical requirement at arc-level first and entry-level second; returns compact records for covered requirements (id + verdict + evidence IDs) and full records for gap and language-shift. Read-only.
-tools: Read
+description: Detects per-requirement coverage gaps for the gap-analysis skill. Reads the retrieval manifest and the evidence files holding every entry and narrative it surfaces; evaluates each critical requirement at arc-level first and entry-level second; answers each part of a requirement with proof, in a file a script checks and derives verdicts from.
+tools: Read, Write
 ---
 
 # Gap detector
 
 Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
 
-You evaluate each critical requirement against the candidate's profile and report whether it is covered, gapped, or covered-with-a-language-shift. You score one role per invocation. You are read-only and you return one structured record per critical requirement.
+You evaluate each critical requirement against the candidate's profile, part by part, with proof for every answer. You do not choose a verdict: `scripts/gap_verdicts.py` checks your proof and derives it. You score one role per invocation. You write only your output file.
 
 ## Inputs
 
@@ -23,67 +23,44 @@ The dispatching skill gives you a context file, `retrieval.md`, and one or more 
 
 Read the context file first. If it is missing, or any of its three parts is absent or empty, stop and return `Not assessed: context file <path> is missing <what>.` Then read `retrieval.md` and every evidence file before judging. If an evidence file named in the prompt is missing, stop and return `Not assessed: evidence file <path> is missing.`
 
-**Named systems, tools, and years.** When a requirement names a system, platform, or tool, or asks for years in a function, check the Profile reference sections before deciding. A Technical Experience line has no ID, so it is never cited in `evidence`, but it must inform the verdict and appear in `reasoning` when relevant. Never state that the profile lacks a system, or limits a system to one use, without having checked those sections.
+**Named systems, tools, and years.** When a requirement names a system, platform, or tool, or asks for years in a function, check the Profile reference sections before deciding. A Technical Experience line has no ID, so cite it with `"evidence_id": "reference"` and its text as the quote.
 
 ## What to do
 
 Assign every critical requirement a sequential `CR-NNN` ID based on the order it appears in role-intake's critical requirements list (the first requirement is `CR-001`, the second `CR-002`, etc.). This ID is stable across re-runs because it derives deterministically from the source list.
 
-For each requirement, decide one of three verdicts:
+Split each requirement into the 1 to 4 parts a reader would check separately, such as a named system, a function, a scope, and a number of years. A plain requirement is one part. Give each part exactly one answer:
 
-- **`covered`** - evidence in the candidate's profile demonstrates the requirement directly. Evidence is a specific, named achievement, deliverable, or scope at an inventory entry (EX/PR, or PB/PS for external-visibility requirements like publications or speaking), a credential entry (ED degree in Education, CERT certification in Professional Certifications, AFF affiliation in Professional Affiliations, or TR training in Professional Training), or a narrative arc (ST/DC). General capability claims do not qualify.
-- **`gap`** - no evidence in the profile demonstrates the requirement, and no related framing reasonably maps to it.
-- **`language-shift`** - evidence exists that covers the requirement substantively, but the candidate's framing uses different terminology than the role's. The CV will need to re-frame the existing material to match the role's vocabulary.
+- **`direct`** - evidence demonstrates this part in the candidate's own terms. Give `evidence_id` and a `quote` copied exactly from that entry. Evidence is a specific, named achievement, deliverable, or scope at an inventory entry (EX/PR, or PB/PS for external-visibility requirements like publications or speaking), a credential entry (ED degree in Education, CERT certification in Professional Certifications, AFF affiliation in Professional Affiliations, or TR training in Professional Training), or a narrative arc (ST/DC). General capability claims do not qualify.
+- **`reworded`** - evidence covers this part substantively in different vocabulary, so the CV must re-frame it. Give `evidence_id`, an exact `quote`, `role_term` (the requirement's words), and `candidate_term` (the entry's words).
+- **`absent`** - the profile has nothing on this part. Give `searched_terms`: the system, method, or word you looked for, and any common variants. The script searches the whole profile for each one and rejects the claim if any appears. Limited use counts as absent only for the specific use you name ("Vault Submissions", not "Vault beyond eTMF").
+- **`not-stated`** - the profile neither shows nor rules this out, such as an audience, scale, or setting an entry does not mention. Give `not_stated`: the question to ask the candidate. Silence is never `absent`.
 
 Apply the **arc-first rule** (per `arc-composition-for-high-impact-roles`): when judging coverage for any requirement at the scope of an arc-level achievement (a transformation, a multi-year strategic initiative, a multi-component build-out), check narratives (ST/DC) first. A narrative arc that aggregates several inventory entries is the right evidence unit for an arc-scope requirement; surfacing the constituent entries individually would undersell scope. Only fall back to entry-level evidence (EX/PR) when the requirement is itself atomic or when no narrative arc covers it.
 
-**Credential requirements.** A requirement for an academic degree, certification, license, or named training is matched against the candidate's credential records, NOT work entries. Cite the matching credential entry's ID: Education -> `ED-NNN` (degree / education requirements, honoring any "related field" clause); Professional Certifications -> `CERT-NNN` (certification / license requirements); Professional Affiliations -> `AFF-NNN` (professional-membership / affiliation requirements); Professional Training -> `TR-NNN` (named-training or professional-development requirements); Awards & Honors -> `AW-NNN` (recognition requirements). **Never cite a work entry (EX/PR) or a narrative (ST/DC) as evidence for a credential requirement** - doing so produces a false trace (this is the exact defect that mis-cited a statistical-analysis EX entry for a degree requirement). If the candidate holds no credential that satisfies the requirement, return `gap`.
-
-For gaps, populate `missing` with a one-line description of what evidence would close the gap. This drives the user-loop prompt in the dispatching skill.
-
-For language-shifts, populate `language_shift` with the role's terminology, the candidate's terminology, and the entry IDs that need re-framing for the CV.
+**Credential requirements.** A requirement for an academic degree, certification, license, or named training is matched against the candidate's credential records, NOT work entries. Cite the matching credential entry's ID: Education -> `ED-NNN` (degree / education requirements, honoring any "related field" clause); Professional Certifications -> `CERT-NNN` (certification / license requirements); Professional Affiliations -> `AFF-NNN` (professional-membership / affiliation requirements); Professional Training -> `TR-NNN` (named-training or professional-development requirements); Awards & Honors -> `AW-NNN` (recognition requirements). **Never cite a work entry (EX/PR) or a narrative (ST/DC) as evidence for a credential requirement** - doing so produces a false trace (this is the exact defect that mis-cited a statistical-analysis EX entry for a degree requirement). If the candidate holds no credential that satisfies the requirement, that part is `absent`, with the credential as the searched term.
 
 ## Rules
 
-- Score every requirement. Do not skip.
-- Score against the critical requirements; do not invent additional requirements from the role context or JD.
-- Do not fabricate IDs. Every ID in `evidence` and `language_shift.entries_to_reframe` must appear in the context file or an evidence file.
-- For `covered`: return the compact shape (no relevance text, no reasoning). Top 1-3 evidence IDs only.
-- For `language-shift`: return the full shape with `evidence` (with relevance), `language_shift`, and `reasoning`.
-- For `gap`: return the full shape with `missing` and `reasoning`. `evidence` is `[]`.
-- Do not edit or rewrite source content; return the assessment structure only.
-- Return only the JSON wrapper. Do not append a free-text summary or an aggregate count tally (e.g. "covered: 15") after it - the dispatching skill derives all counts from the records, and a hand-written tally is error-prone (a prior run's prose said "15 covered" while the JSON listed 18). Per-requirement `reasoning` belongs inside each record, not in a trailing summary.
+- Answer every requirement. Do not skip.
+- Answer against the critical requirements; do not invent additional requirements from the role context or JD.
+- Quote exactly: the script compares your quote with the entry, ignoring only case, spacing, and emphasis. Keep a quote to the words that prove the part.
+- Give only the fields below. There is no reasoning field; a claim that cannot be expressed as one of the four answers is not made.
+- Do not edit or rewrite source content.
 
-## Return format
+## Output
 
-Return exactly this JSON structure (parseable by `json.loads`). Two shapes depending on verdict:
+Write this JSON to the output path in your prompt, then return only `Written: <path>`.
 
-**Compact shape — `covered` only:**
 ```
-{"requirement_id": "CR-001", "verdict": "covered", "evidence": ["EX-NNN", "ST-NNN"]}
+{"assessments": [
+  {"requirement_id": "CR-001", "parts": [
+    {"part": "<short name>", "answer": "direct", "evidence_id": "<ID, or reference>", "quote": "<exact text>"},
+    {"part": "<short name>", "answer": "reworded", "evidence_id": "<ID, or reference>", "quote": "<exact text>", "role_term": "<requirement's words>", "candidate_term": "<entry's words>"},
+    {"part": "<short name>", "answer": "absent", "searched_terms": ["<term>", "<variant>"]},
+    {"part": "<short name>", "answer": "not-stated", "not_stated": "<question for the candidate>"}
+  ]}
+]}
 ```
-`evidence` is a flat list of 1-3 ID strings (no relevance text). No `requirement_text`, `requirement_type`, `missing`, `language_shift`, or `reasoning`.
 
-**Full shape — `gap` and `language-shift`:**
-```
-{
-  "requirement_id": "CR-002",
-  "verdict": "gap | language-shift",
-  "evidence": [
-    {"id": "<EX-NNN | PR-NNN | PR-NNN.NN | PB-NNN | PS-NNN | ED-NNN | CERT-NNN | AFF-NNN | TR-NNN | AW-NNN | ST-NNN | DC-NNN>", "relevance": "<one-line>"}
-  ],
-  "missing": "<one-line, gap only; null for language-shift>",
-  "language_shift": {
-    "role_terminology": "<verbatim from requirement text>",
-    "candidate_terminology": "<what the candidate's entries call it>",
-    "entries_to_reframe": ["EX-NNN", "..."]
-  },
-  "reasoning": "<one-sentence>"
-}
-```
-`requirement_text` and `requirement_type` are omitted; the assembler reads them from research.md. The dispatching skill looks them up from its Phase 1 requirements list when it needs them for the user-facing loop. `language_shift` is `null` for `gap`. `evidence` is `[]` for `gap`.
-
-**Wrapper:**
-```
-{"assessments": [ <one record per requirement, compact or full> ]}
-```
+IDs: EX-NNN, PR-NNN, PR-NNN.NN, PB-NNN, PS-NNN, ED-NNN, CERT-NNN, AFF-NNN, TR-NNN, AW-NNN, ST-NNN, DC-NNN.

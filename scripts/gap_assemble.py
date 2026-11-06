@@ -428,6 +428,14 @@ def render_coverage_picture(type_status_pairs):
         statuses = [status for rtype, status in type_status_pairs if rtype == tier]
         counts = [str(statuses.count(status)) for status, _ in _COVERAGE_COLUMNS]
         lines.append(f'| {tier.capitalize()} ({len(statuses)}) | ' + ' | '.join(counts) + ' |')
+    lines.append('')
+    for tier in _TIERS:
+        statuses = [status for rtype, status in type_status_pairs if rtype == tier]
+        if statuses:
+            shown = sum(statuses.count(s) for s in ('covered', 'closed', 'language-shift'))
+            partly = statuses.count('partial-match')
+            lines.append(f'- **{tier.capitalize()}:** {shown} of {len(statuses)} shown, {partly} partly shown, '
+                         f'{len(statuses) - shown - partly} open.')
     return '\n'.join(lines)
 
 
