@@ -23,7 +23,7 @@ The dispatching skill gives you: the target type, the company name, the role tit
 
 ## Rules
 
-- Cite every non-obvious claim with a source URL.
+- Cite every non-obvious claim with a numbered marker such as `[3]`, meaning the third URL in this block's Sources list. Number within this block only. A fact resting on several sources carries each marker (`[1][4]`). Negative findings and labeled inferences carry a marker only when a specific source supports them.
 - Corroborate each claim; flag single-source claims as low confidence.
 - Carry confidence qualifiers into the summary; never flatten a hedged finding into flat fact.
 - Do not fabricate. If a fact cannot be verified, say so rather than guessing.
@@ -40,10 +40,12 @@ Return exactly this structure:
 <2-4 sentences with confidence hedges carried.>
 
 ### Key facts
-- <fact> [source URL]
+- <fact> [1]
+- <fact> [2][3]
 - ...
 
 ### Sources
-- <URL>
-- ...
+1. <URL>
+2. <URL>
+3. <URL>
 ```

@@ -55,7 +55,7 @@ Evaluate by PURPOSE-FIT, never by artifact age. Enumerate gaps, state the count,
 - Per-interviewer intel is the primary gap: one `prep-research` invocation per interviewer. Degrade gracefully when a footprint is empty - output "confirm live" handling plus an opener question, do not pad guesses.
 - Plus any audience-specific gaps the rule file names.
 - All research via `prep-research`, one target per invocation, foreground. Append to `research.md` dated `**Added:** YYYY-MM-DD (interview prep,
-  <audience>)` with Summary / Key facts / Sources; relay with hedges intact.
+  <audience>)` with Summary / Key facts / Sources, keeping each fact's `[n]` source marker and the numbered Sources list as returned; relay with hedges intact.
 
 ## Phase 3: main body (build or refine)
 

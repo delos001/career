@@ -35,7 +35,7 @@ Evaluate existing research by PURPOSE-FIT against live-conversation needs, never
 
 Standard checklist (plus any role-specific gaps): the rule file's Research targets, plus interviewer context.
 
-ALL research goes through the `prep-research` subagent, one target per invocation, foreground (findings must return before any write, and the orchestrator does the writing; the subagent never writes files). This includes ad-hoc lookups raised mid-conversation by the user, however small; never answer one with an inline search. On return, append the findings to `research.md` as a dated section attributed `**Added:** YYYY-MM-DD (interview prep, phone screen)` with Summary / Key facts / Sources, then relay them with confidence hedges intact.
+ALL research goes through the `prep-research` subagent, one target per invocation, foreground (findings must return before any write, and the orchestrator does the writing; the subagent never writes files). This includes ad-hoc lookups raised mid-conversation by the user, however small; never answer one with an inline search. On return, append the findings to `research.md` as a dated section attributed `**Added:** YYYY-MM-DD (interview prep, phone screen)` with Summary / Key facts / Sources, keeping each fact's `[n]` source marker and the numbered Sources list as returned, then relay them with confidence hedges intact.
 
 ## Phase 3: draft section by section
 
