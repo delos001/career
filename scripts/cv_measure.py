@@ -17,9 +17,15 @@ estimate is advisory.
 When Word cannot be reached (no Word, no pywin32, automation error) the result
 is 'measured: false' with the reason, and the caller cuts nothing.
 
+A CV over the ceiling also gets trim_candidates: the bullets where the fewest
+characters save a whole line, so the writer can recover lines without losing
+content (GitHub #61). Word reports pages and lines, not which bullet wrapped
+where, so these use cv_qc.py's character model and are approximate.
+
 Output: one JSON object on stdout:
   {"measured": bool, "pages": int|null, "ceiling": int, "fits": bool|null,
-   "lines_over": int|null, "detail": str}
+   "lines_over": int|null, "detail": str,
+   "trim_candidates": [{"bullet": str, "chars_to_save_a_line": int}]  (only when over)}
 
 Author    : Jason Delosh
 Created   : 2026-11-05
@@ -35,6 +41,7 @@ import json
 import os
 import sys
 
+import _util
 import cv_qc
 import cv_to_docx
 
@@ -68,6 +75,27 @@ def unmeasured(ceiling, reason):
     """Return the result dict when Word could not measure the CV."""
     return {'measured': False, 'pages': None, 'ceiling': ceiling, 'fits': None,
             'lines_over': None, 'detail': f'not measured: {reason}'}
+
+
+def trim_candidates(cv_text, lines_over):
+    """Return the bullets cheapest to shorten by one line, cheapest first.
+
+    Citation comments are stripped first because they never render. Offers a few
+    more than the overage so the writer can skip any whose wording cannot give.
+    """
+    candidates = []
+    for line in cv_text.splitlines():
+        if not line.lstrip().startswith('- '):
+            continue
+        visible = cv_qc._strip_markup(line)
+        lines = cv_qc._estimate_lines(visible, cv_qc.CHARS_PER_LINE_BULLET)
+        if lines >= 2:
+            candidates.append({
+                'bullet': visible[:60],
+                'chars_to_save_a_line': len(visible) - (lines - 1) * cv_qc.CHARS_PER_LINE_BULLET,
+            })
+    candidates.sort(key=lambda c: c['chars_to_save_a_line'])
+    return candidates[:lines_over + 5]
 
 
 # ---------------------------------------------------------------------------
@@ -118,7 +146,10 @@ def measure(cv_file, level, scratch_dir):
         return unmeasured(ceiling, 'pywin32 is not installed')
     except Exception as e:  # any Word automation failure: report, never cut
         return unmeasured(ceiling, f'Word automation failed ({type(e).__name__}: {e})')
-    return assess(pages, lines_beyond, ceiling)
+    result = assess(pages, lines_beyond, ceiling)
+    if not result['fits']:
+        result['trim_candidates'] = trim_candidates(_util.read(cv_file), result['lines_over'])
+    return result
 
 
 def main():

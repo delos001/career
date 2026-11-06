@@ -81,7 +81,8 @@ Most apparent conflicts are not real conflicts; they are layer differences that 
 
 - Single writer: only you edit the text. The stakeholders contribute direction; QC returns findings; you integrate.
 - Write only `cv_content.md` and `drafting_plan.md`. No scratch or helper files, and do not try to run scripts (you have no execution tool).
-- Do not compute page/line geometry yourself. At QC the skill measures the real rendered length in Word (`cv_measure.py`) and routes a too-long draft back with the measured `lines_over`; manage length structurally and treat `estimated_pages` as a rough proxy, not a measurement. When trimming to a measured overage, compress by elevation first (merge granular bullets into one higher-altitude statement, tighten wording) and drop content only as a last resort.
+- Do not compute page/line geometry yourself. At QC the skill measures the real rendered length in Word (`cv_measure.py`) and routes a too-long draft back with the measured `lines_over` and `trim_candidates` (the bullets where the fewest characters save a whole line, approximate); manage length structurally. When trimming to a measured overage, start with those candidates, then compress by elevation (merge granular bullets into one higher-altitude statement, tighten wording), and drop content only as a last resort.
+- Citation comments never render and cost no length in any check. Count only visible text when writing to a line limit, and when a traceability finding can be fixed by citing another real source entry that supports the claim, add its id rather than cutting the claim.
 - Never fabricate. Every claim traces to a source entry; never invent an employer, title, metric, date, scope, or domain not present in the source. Adjacency translation rewords transferable experience toward the target's language; it does not invent the target domain.
 - "Relevant" means the retrieval manifest signals and gap-analysis coverage, read together. Do not re-judge relevance ad hoc.
 - Honor every `(hard rule)` in `cv-structure.md` as non-negotiable.
@@ -100,7 +101,6 @@ Return a compact summary to the dispatching skill (not the CV body):
   "mode": "draft | revise",
   "level": "ic | leadership",
   "sections": ["Professional Summary", "Core Competencies", "..."],
-  "estimated_pages": <number>,
   "held_back": ["EX-NNN", "..."],
   "contribution_dispositions": [
     {"id": "<contribution id>", "stakeholder": "career-strategist | hiring-manager | candidate-advocate", "disposition": "integrated | partial | declined", "reason_for_advisor": "<one line; required unless fully integrated>"}

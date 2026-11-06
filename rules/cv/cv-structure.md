@@ -236,7 +236,7 @@ Leadership: target 2-3 pages, hard ceiling 3. 4+ pages is a flagged exception on
 
 **Length is measured in Word, not estimated.** Markdown has no geometry and python-docx cannot paginate, so at QC the skill renders a throwaway .docx and asks Word for the page count (`scripts/cv_measure.py`). Only a measured overage routes back to the writer, who trims to the measured line count: compress by elevation first, drop content only as a last resort (single-writer preserved, capped). If Word is unavailable the length is reported as unmeasured and nothing is cut. The character-count estimate below (L1) is an early warning only and never triggers a cut; it ran 4 to 9 lines short of the rendered length.
 
-**Calibration guard constants** (US Letter, 0.75-inch margins, 0.5-inch header/footer, Calibri 11pt body; the cv-render layout fixed 2026-06-02. These mirror the `cv_qc.py` constants and must move with them):
+**Calibration guard constants** (US Letter, 0.75-inch margins, 0.5-inch header/footer, Calibri 11pt body; the cv-render layout fixed 2026-06-02. `cv_qc.py` owns these numbers; a test fails if the two below drift from it). Citation comments are stripped before every length check, so they cost no length:
 - Usable lines per page: ~47 (page 1, with the name and contact block) / ~50 (later pages).
 - Characters per line at wrap: ~100 full-width; bullets ~95 (bullets sit at a 0.25-inch indent).
 - Estimate each unit as ceil(characters / line capacity) and sum against the section's page budget. Early warning only; the Word measurement is authoritative.

@@ -494,7 +494,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - `scripts/_config.py`, `scripts/_util.py`, `scripts/axis_utils.py`, `scripts/_prep_checks.py` (shared helper modules; not standalone scripts, no separate entries)
 - `tests/run_tests.py` (invariant checks for the profile-update machinery; drives the real CLIs against a throwaway copy of the `tests/fixture/` corpus. Redirection is `CAREER_FIXTURE`, read by `scripts/_config.py`, which rebases every personal-rooted path onto the named folder. The runner refuses to start unless the resolved profile path is inside `tests/`. See `tests/README.md` and `test-corpus-and-invariant-checks-2026-08-26`.)
 - `scripts/cv_to_docx.py` (cv-render skill: renders cv_content.md to a formatted .docx)
-- `scripts/cv_measure.py` (cv-targeted Phase 4: renders a throwaway .docx with `cv_to_docx.build_cv` and asks Word, via pywin32 in a private hidden instance, for the page count and the lines past the level's ceiling; JSON result; `measured: false` when Word is unavailable, and nothing is cut; roster entry only)
+- `scripts/cv_measure.py` (cv-targeted Phase 4: renders a throwaway .docx with `cv_to_docx.build_cv` and asks Word, via pywin32 in a private hidden instance, for the page count and the lines past the level's ceiling; JSON result, with `trim_candidates` when over; `measured: false` when Word is unavailable, and nothing is cut; roster entry only)
 - `scripts/prep_qc.py` (preparation-screen skill: deterministic QC; detailed entry below)
 - `scripts/prep_interview_qc.py` (preparation-interview skill: deterministic QC; detailed entry below)
 - `scripts/interview_lifecycle.py` (preparation-interview skill: reschedule / cancel three-file sync; detailed entry below)

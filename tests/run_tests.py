@@ -835,6 +835,37 @@ def test_cv_section_order_comes_from_the_rule_file():
     assert any(norm == 'work-output' for _, norm, _ in sections), 'Selected Projects not read as work output'
 
 
+def test_length_finding_names_the_cheapest_lines_to_recover():
+    """Fixed 2026-11-05 (GitHub #61): on APP-020 the writer trimmed against its
+    own line model and counted citations, burning two QC rounds; five bullets
+    shortened slightly recovered the five lines needed. A length finding now names
+    those bullets, citations cost nothing, and the rules' numbers match the code.
+    """
+    import cv_measure
+    import cv_qc
+    capacity = cv_qc.CHARS_PER_LINE_BULLET
+    cheap, costly, short = 'a' * (capacity + 3), 'b' * (capacity + 60), 'c' * 40
+    cv = (f'## Professional Experience\n- {costly} <!-- src: EX-001 -->\n'
+          f'- {cheap} <!-- src: EX-002, EX-003, EX-004, EX-005, EX-006, EX-007 -->\n'
+          f'- {short} <!-- src: {"EX-008, " * 30}EX-009 -->\nA plain line {"d" * 200}\n')
+    found = cv_measure.trim_candidates(cv, 1)
+    assert [c['chars_to_save_a_line'] for c in found] == [3, 60], f'citations or prose were counted: {found}'
+    assert found[0]['bullet'] == cheap[:60], found
+    many = '\n'.join(f'- {"e" * (capacity + i)}' for i in range(1, 20))
+    assert len(cv_measure.trim_candidates(many, 2)) == 7, 'the list should stay near the overage'
+
+    root, cfg = _config.load()
+    rules = _util.read(os.path.join(root, cfg['paths']['cv_rules'], cfg['filenames']['cv_structure_file']))
+    usable = re.search(r'Usable lines per page: ~(\d+) \(page 1.*?~(\d+) \(later', rules)
+    chars = re.search(r'Characters per line at wrap: ~(\d+) full-width; bullets ~(\d+)', rules)
+    assert (int(usable[1]), int(usable[2])) == (cv_qc.USABLE_LINES_PAGE_1, cv_qc.USABLE_LINES_LATER), usable[0]
+    assert (int(chars[1]), int(chars[2])) == (cv_qc.CHARS_PER_LINE_FULL, cv_qc.CHARS_PER_LINE_BULLET), chars[0]
+
+    architect = _util.read(os.path.join(root, '.claude', 'agents', 'cv-architect.md'))
+    assert 'estimated_pages' not in architect, 'the writer must not keep a second page estimate'
+    assert 'cost no length' in architect, 'the writer must be told citations are free'
+
+
 def test_cv_length_is_measured_not_estimated():
     """Fixed 2026-11-05 (GitHub #17): the L1 estimate passed CVs that rendered
     4-9 lines over, and once cut a vetted bullet for an estimated 2-line
