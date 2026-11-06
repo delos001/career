@@ -25,10 +25,34 @@ Credentials tail:
 - Education (required)
 - Certifications & Training
 - Professional Affiliations
+- Languages
 - Technical Proficiencies
 ```
 
 Work-output sections sit in the evidence band, not the tail - a deliberate deviation from the academic-CV convention of tailing publications, because on a targeted industry CV these read as demonstrated work product, not credentials. The class is extensible (e.g. Patents, Presentations) under the same relevance gate.
+
+## Which sections appear
+
+Decide per role; no section appears because it usually does. For each optional section below, include it only if all three hold: (1) its inventory section has entries (not `Entries: None`), (2) they are relevant to this role, (3) they earn their lines against what else competes for the page. Record each decision in `drafting_plan.md`.
+
+```
+Inventory section -> CV section
+Employment & Role History -> Professional Experience, Earlier Professional Roles
+Experience Entries -> Professional Experience
+Independent & Volunteer Projects -> Selected Projects
+Industry Exposure Profile -> none of its own; may supply terms to Core Competencies and the Summary
+Technical Experience -> Technical Proficiencies
+Education -> Education
+Professional Training -> Certifications & Training
+Professional Certifications -> Certifications & Training
+Professional Affiliations -> Professional Affiliations
+Publications -> not designed; no entries yet
+Presentations -> not designed; no entries yet
+Awards & Honors -> not designed; no entries yet
+Languages -> Languages
+```
+
+A section marked not designed gets its rules when its first entry exists (`design/deferrals.md`, `cv-rules-for-empty-inventory-sections`).
 
 ## Header (name and contact)
 
@@ -190,13 +214,15 @@ One relevance-gated section class in the evidence band, demonstrating work produ
 
 ## Credentials tail
 
-The verifying band, below the evidence band, read at lower attention. Fixed order: Education, then Certifications & Training, then Professional Affiliations (conditional), then Technical Proficiencies (always last).
+The verifying band, below the evidence band, read at lower attention. Fixed order: Education, then Certifications & Training, then Professional Affiliations (conditional), then Languages (conditional), then Technical Proficiencies (always last).
 
 **Education.** Below Professional Experience (the experienced-candidate convention; education leads only for new graduates). Degree, discipline, institution, year. No GPA or honors (per inventory schema). List all degrees; short reference content, not relevance-gated.
 
 **Certifications & Training.** Certifications (with issuer and, where relevant, status/currency) and material training. Lead with credentials relevant to the target role; omit stale or off-target items that add noise rather than signal. Concise reference lines, not bulleted achievements.
 
 **Professional Affiliations (conditional, relevance-gated).** Include only for board, governance, or senior-leadership targets where memberships, board seats, or committee roles are a JD signal; omit otherwise. When included, place after Certifications & Training and before Technical Proficiencies. Affiliation, role (Member through Board / Officer / Committee Chair), and currency; concise reference lines drawn from the inventory's Professional Affiliations section.
+
+**Languages (conditional, relevance-gated).** Spoken languages with proficiency, on concise reference lines. Include when the role names a language or works across regions where one matters; omit a candidate's native language alone. Programming languages belong in Technical Proficiencies.
 
 **Technical Proficiencies (always last).** Tools, platforms, languages, and methods the candidate genuinely holds, tailored to mirror the JD's technical terminology (a secondary ATS keyword anchor). Group into short labeled clusters (e.g. Languages, Platforms, Methods) where that aids scanning. For pure-leadership targets the section may be brief or omitted when technical tooling is not a JD signal. Listed proficiencies must be real; never list a technology to match a keyword the candidate does not actually know.
 

@@ -77,6 +77,7 @@ FORCE_BULLET_SECTIONS = {
     'earlier professional roles',
     'certifications & training',
     'professional affiliations',
+    'languages',
     'technical proficiencies',
 }
 

@@ -14,6 +14,12 @@ Tombstones below are deliberate: `design_decisions.md` and several other files r
 
 ## Active Deferred Decisions
 
+### cv-rules-for-empty-inventory-sections
+**Undecided: how Publications, Presentations, and Awards & Honors render on a CV.** No entries exist, so designing now would be guesswork (GitHub #45, #68). To settle then: where each renders, citation format by entry type, and how `cv_qc.py` checks placement.
+- Trigger: the first entry in any of those three inventory sections.
+- Blocks: nothing currently.
+- Refs: `rules/cv/cv-structure.md`, GitHub #45, #68.
+
 ### gap-detector-read-reduction
 gap-detector reads retrieval.md plus every manifest-listed entry and narrative (via `gap_context.py` evidence files since 2026-10-27; ~60-80k tokens, once per application). Assessed 2026-07-14 and deliberately left alone: the manifest surfaces the entire corpus by design (broad recall so gap detection produces no false gaps; the axis floor cannot discriminate on this profile since nearly every entry is adjacent on at least one axis), so the only real read-reduction lever is making retrieval genuinely selective (semantic-score threshold), a recall-vs-cost design change, not an optimization.
 - Trigger: inventory grows several-fold beyond ~220 entries (the arithmetic then favors a scoring threshold on gap-detector's reading set despite the recall risk).

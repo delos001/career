@@ -1834,6 +1834,35 @@ def test_interview_section_is_written_by_script():
     assert code != 0 and 'did you mean' in out, f'typo label accepted: {out}'
 
 
+def test_cv_rules_account_for_every_inventory_section():
+    """Built 2026-11-05 (GitHub #68): CV sections followed the usual shape. Every
+    inventory section must now have a stated CV outcome, so a new inventory section
+    fails here until someone decides, and every CV section named must be real.
+    """
+    import cv_qc
+    import cv_to_docx
+    root, cfg = _config.load()
+    rules = _util.read(os.path.join(root, cfg['paths']['cv_rules'], cfg['filenames']['cv_structure_file']))
+    block = re.search(r'(?ms)^## Which sections appear.*?^```\s*\nInventory section -> CV section\n(.*?)\n```', rules)[1]
+    mapping = dict(line.split(' -> ') for line in block.splitlines())
+
+    template = _util.read(os.path.join(root, cfg['paths']['templates'], cfg['filenames']['inventory_template']))
+    skeleton = re.search(r'(?ms)^## Document skeleton.*?^```\s*\n(.*?)\n```', template)[1]
+    sections = set(re.findall(r'(?m)^## (.+)$', skeleton)) - {'Table of Contents'}
+    assert set(mapping) == sections, f'inventory and CV rules differ: {sorted(set(mapping) ^ sections)}'
+
+    structure = cv_qc.parse_section_order(rules)
+    known = set(structure['order']) | structure['work_output']
+    for inventory_section, outcome in mapping.items():
+        if outcome.startswith(('none', 'not designed')):
+            continue
+        for cv_section in outcome.split(', '):
+            assert cv_section.lower() in known, f'{inventory_section} points at unknown section {cv_section}'
+
+    assert structure['order'].index('languages') < structure['order'].index('technical proficiencies')
+    assert 'languages' in cv_to_docx.FORCE_BULLET_SECTIONS, 'Languages lines would not render as bullets'
+
+
 def test_notes_checklist_follows_the_appendix_order():
     """Fixed 2026-11-05 (GitHub #67): the cue-card said to get to Q8 early while the
     checklist put Q8 sixth, and nothing compared the two. add-round now refuses a
