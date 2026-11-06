@@ -79,8 +79,8 @@ gap-analysis: |
        arc level first, then entry level.
     5. Walk gaps with you: you may provide clarifying information that
        closes a gap. New information is queued for the staging file.
-    6. Compute fit score and generate the recommendation (Proceed /
-       Proceed with caution / Do not pursue).
+    6. Group the gaps into themes and generate the recommendation (Proceed /
+       Proceed with caution / Do not pursue) with the conditions it depends on.
     7. Write the gap analysis artifact, append staging entries, write the
        session log section, then QC.
     8. Present the decision block and ask whether to pursue.

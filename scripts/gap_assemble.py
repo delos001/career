@@ -17,10 +17,13 @@ Inputs (JSON files written by the dispatching skill):
                             language_shift. Text and type are
                             resolved from --research-file.
   --eligibility-file        Phase 2 flags + user decisions.
+  --themes-file             Phase 5 judgment: {themes: [{name, kind, requirements,
+                            meaning}], depends_on: [condition, ...]}.
 
-Plus header scalars (--fit-score, --unmet-must-haves, --recommendation-label,
---recommendation-rationale, --app-id, --date, --company, --role) and
-the application folder path (--folder) where the artifact is written.
+Plus header scalars (--recommendation-label, --recommendation-rationale-file,
+--app-id, --date, --company, --role) and the application folder path (--folder)
+where the artifact is written. The coverage table and the unmet must-have count
+are computed here from the statuses, never passed in.
 
 The script renders the artifact wholesale (it does not section-edit an
 existing file): gap_analysis.md is a current-state document and re-running
@@ -36,10 +39,9 @@ Project   : career
 Usage     : python scripts/gap_assemble.py assemble \\
                 --folder ... --app-id ... --date ... \\
                 --company ... --role ... \\
-                --fit-score ... --unmet-must-haves ... \\
                 --recommendation-label ... --recommendation-rationale-file ... \\
                 --research-file ... --requirements-file ... \\
-                --eligibility-file ...
+                --eligibility-file ... --themes-file ...
 Depends   : pyyaml (via _config)
 """
 
@@ -390,10 +392,59 @@ def _work_state_inputs(repo_root, cfg, folder):
     return classified, entry_states, adjacency
 
 
-def _render_recommendation(label, rationale):
-    """Render the Recommendation block: '**<label>.** <rationale>'."""
+# ---------------------------------------------------------------------------
+# Coverage picture and gap themes (GitHub #59)
+# The artifact leads with how the role maps to the candidate's experience, in
+# place of the single fit score it used to lead with. The table is arithmetic on
+# the statuses. The themes are per-run judgment, which this script only renders;
+# gap_qc.py checks that every soft requirement landed in exactly one theme.
+# ---------------------------------------------------------------------------
+
+_TIERS = ['must-have', 'preferred', 'duty-derived', 'contextual']
+_COVERAGE_COLUMNS = [('covered', 'Covered'), ('closed', 'Closed'),
+                     ('language-shift', 'Language-shift'), ('partial-match', 'Partial'),
+                     ('interview-deferred', 'Interview-deferred'), ('unresolved', 'Unresolved')]
+
+# Statuses that leave a must-have unmet.
+UNMET_STATUSES = {'interview-deferred', 'unresolved'}
+
+
+def render_coverage_picture(type_status_pairs):
+    """Render the coverage table: one row per requirement type, counted by status."""
+    lines = ['| Tier | ' + ' | '.join(label for _, label in _COVERAGE_COLUMNS) + ' |',
+             '|---|' + '---|' * len(_COVERAGE_COLUMNS)]
+    for tier in _TIERS:
+        statuses = [status for rtype, status in type_status_pairs if rtype == tier]
+        counts = [str(statuses.count(status)) for status, _ in _COVERAGE_COLUMNS]
+        lines.append(f'| {tier.capitalize()} ({len(statuses)}) | ' + ' | '.join(counts) + ' |')
+    return '\n'.join(lines)
+
+
+def count_unmet_must_haves(type_status_pairs):
+    """Return how many must-haves carry a status that leaves them unmet."""
+    return sum(1 for rtype, status in type_status_pairs
+               if rtype == 'must-have' and status in UNMET_STATUSES)
+
+
+def render_gap_themes(themes):
+    """Render the Gap Themes block, one sub-section per theme."""
+    if not themes:
+        return '_(none)_'
+    parts = []
+    for theme in themes:
+        parts.append(
+            f"### {theme.get('name', '')} ({theme.get('kind', '')})\n"
+            f"- **Requirements:** {', '.join(theme.get('requirements') or [])}\n"
+            f"- **What it means:** {(theme.get('meaning') or '').strip()}"
+        )
+    return '\n\n'.join(parts)
+
+
+def _render_recommendation(label, rationale, depends_on):
+    """Render the Recommendation block: the label, its rationale, its conditions."""
     rationale = (rationale or '').strip()
-    return f'**{label}.** {rationale}'
+    conditions = '\n'.join(f'- {c.strip()}' for c in depends_on or [])
+    return f'**{label}.** {rationale}\n\n**Depends on:**\n{conditions}'
 
 
 # ---------------------------------------------------------------------------
@@ -421,15 +472,23 @@ def cmd_assemble(args, repo_root, cfg):
     rationale = _util.read(args.recommendation_rationale_file).strip()
     cv_notes_text = _util.read(args.cv_notes_file).strip() if args.cv_notes_file else ''
     req_lookup = _parse_requirements_from_research(args.research_file)
+    judgment = _util.load_json(args.themes_file)
+    type_status_pairs = [
+        (req_lookup.get(req.get('requirement_id', ''), {}).get('type') or req.get('requirement_type', ''),
+         req.get('status', ''))
+        for req in requirements]
 
     # Render the per-section blocks.
+    coverage_block = render_coverage_picture(type_status_pairs)
+    themes_block = render_gap_themes(judgment.get('themes'))
     eligibility_block = _render_eligibility(flags)
     requirements_block = _render_requirements(requirements, req_lookup)
     language_shift_block = _render_language_shift(requirements, req_lookup)
     partial_match_block = _render_partial_match(requirements, req_lookup)
     cv_notes_block = _render_cv_notes(cv_notes_text)
     work_state_block = render_work_state_coverage(*_work_state_inputs(repo_root, cfg, args.folder))
-    recommendation_block = _render_recommendation(args.recommendation_label, rationale)
+    recommendation_block = _render_recommendation(args.recommendation_label, rationale,
+                                                  judgment.get('depends_on'))
 
     # Substitute tokens into the template skeleton.
     templates_dir = os.path.join(repo_root, cfg['paths']['templates'])
@@ -439,9 +498,10 @@ def cmd_assemble(args, repo_root, cfg):
         'role': args.role,
         'app_id': args.app_id,
         'date': args.date,
-        'fit_score_pct': args.fit_score,
-        'unmet_must_haves_count': str(args.unmet_must_haves),
+        'unmet_must_haves_count': str(count_unmet_must_haves(type_status_pairs)),
         'recommendation_label': args.recommendation_label,
+        'coverage_picture_block': coverage_block,
+        'gap_themes_block': themes_block,
         'eligibility_flags_block': eligibility_block,
         'requirements_block': requirements_block,
         'language_shift_block': language_shift_block,
@@ -475,10 +535,6 @@ def main():
     p_asm.add_argument('--date', required=True, help='YYYY-MM-DD')
     p_asm.add_argument('--company', required=True)
     p_asm.add_argument('--role', required=True)
-    p_asm.add_argument('--fit-score', required=True,
-                       help='percentage with one decimal place, e.g. 78.3%%')
-    p_asm.add_argument('--unmet-must-haves', required=True, type=int,
-                       help='integer count of must-haves with status interview-deferred or unresolved')
     p_asm.add_argument('--recommendation-label', required=True,
                        choices=['Proceed', 'Proceed with caution', 'Do not pursue'])
     p_asm.add_argument('--recommendation-rationale-file', required=True,
@@ -491,6 +547,8 @@ def main():
                        help='JSON: per-requirement decisions (status, evidence IDs, notes, language_shift)')
     p_asm.add_argument('--eligibility-file', required=True,
                        help='JSON: Phase 2 flags + decisions')
+    p_asm.add_argument('--themes-file', required=True,
+                       help='JSON: Phase 5 gap themes and the conditions the recommendation depends on')
     p_asm.set_defaults(func=cmd_assemble)
 
     args = parser.parse_args()

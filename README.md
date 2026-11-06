@@ -32,7 +32,7 @@ Every phase either interacts directly with the user or is gated for human review
   - Gap analysis names every critical requirement the user's profile does not cover and walks them one at a time.
   - Some gaps close on evidence not currently in the profile, or on the candidate's elaboration of existing evidence into more specific detail.
   - Some do not close, and the candidate decides how they will be handled in an interview.
-  - The fit score and the pursue decision wrap up the phase before a single line of CV is written.
+  - A picture of the coverage, the gaps grouped by theme, and a conditional recommendation wrap up the phase, and the candidate makes the pursue decision before a single line of CV is written.
 
 - **Decide the positioning.**
   - which strengths lead,
@@ -228,7 +228,7 @@ career/
 │   ├── skills/                          # one folder per skill; SKILL.md is the authoritative spec
 │   │   ├── role-intake/                 # pipeline: JD ingest, research, five-axis classification
 │   │   ├── retrieval/                   # pipeline: score profile against requirements
-│   │   ├── gap-analysis/                # pipeline: coverage gaps, fit score, pursue decision
+│   │   ├── gap-analysis/                # pipeline: coverage gaps, gap themes, pursue decision
 │   │   ├── cv-targeted/                 # pipeline: cited CV content (lead writer + 3 stakeholders)
 │   │   ├── cv-render/                   # pipeline: cv_content.md -> formatted .docx
 │   │   ├── preparation-screen/          # pipeline: recruiter / phone screen

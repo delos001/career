@@ -156,7 +156,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - User invocation: `/gap-analysis` after a retrieval run has completed for the same APP-NNN. Resumes prior runs via the APP-NNN probe.
 - **Update Triggers**:
   - When the gap_analysis.md template, the staging-file schema, or the session-log section schema change.
-  - When the fit-score formula or recommendation logic change.
+  - When the coverage table, gap theme kinds, or recommendation logic change.
   - When the gap-detector output JSON contract changes.
   - When the QC check set in `scripts/gap_qc.py` or `qc-gap-analysis` changes.
   - When downstream consumers (CV creation, interview prep, career brief, profile-update skill) require additional fields.
@@ -416,12 +416,12 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/gap_qc.py
 
-- **Purpose**: Deterministic QC for gap-analysis artifacts. Owns the mechanical checks (G1-G11): section structure, header and session-log fields, requirement coverage against research.md, status taxonomy, Notes presence, staging anchors (each waiting item this application staged names a real `CR-NNN`), ID existence against the profile documents, fit-score math, session-log mirroring, and the recommendation label set.
+- **Purpose**: Deterministic QC for gap-analysis artifacts. Owns the mechanical checks (G1-G13): section structure, header and session-log fields, requirement coverage against research.md, status taxonomy, Notes presence, staging anchors (each waiting item this application staged names a real `CR-NNN`), ID existence against the profile documents, coverage table and unmet-count arithmetic, session-log mirroring, the recommendation label set, gap theme completeness, and stated recommendation conditions.
 - **Status**: Designed
 - **Inputs**: Args (`check --folder <app_folder>`). Config: `config.yaml` (profile path + filenames) via `scripts/_config.py`. Filesystem: gap_analysis.md, research.md, session_log.md in the folder; inventory.md, narratives.md, profile_updates_pending.md in the profile folder.
 - **Outputs**: Per-check `PASS`/`FAIL` lines and a `RESULT` line to stdout; exit 0 when all pass, 1 otherwise.
 - **Triggers**: Invoked by `gap-analysis` Phase 7 Step 7a, before the `qc-gap-analysis` judgment agent.
-- **Update Triggers**: When the gap_analysis.md template, research-requirements format, staging-entry schema, session-log section schema, fit-score formula, or status taxonomy change.
+- **Update Triggers**: When the gap_analysis.md template, research-requirements format, staging-entry schema, session-log section schema, gap theme kinds, or status taxonomy change.
 
 #### prep-research
 
@@ -611,9 +611,9 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/gap_assemble.py
 
-- **Purpose**: Render the gap analysis artifact from collected signals — the deterministic portion of the gap-analysis Phase 6. Reads structured JSON inputs the dispatching skill prepares (per-requirement records, eligibility flags, recommendation rationale), substitutes tokens into `templates/gap_analysis.md`, writes the wholesale artifact to the application folder.
+- **Purpose**: Render the gap analysis artifact from collected signals — the deterministic portion of the gap-analysis Phase 6. Reads structured JSON inputs the dispatching skill prepares (per-requirement records, eligibility flags, gap themes and conditions, recommendation rationale), computes the coverage table and unmet must-have count from the statuses, substitutes tokens into `templates/gap_analysis.md`, writes the wholesale artifact to the application folder.
 - **Status**: Designed
-- **Inputs**: Subcommand args (`--folder`, `--slug`, `--app-id`, `--date`, `--company`, `--role`, `--fit-score`, `--unmet-must-haves`, `--recommendation-label`, `--recommendation-rationale-file`, `--requirements-file`, `--eligibility-file`, `--cv-notes-file`). Config: `config.yaml` (templates path, gap_analysis filename, gap_analysis_template name) via `scripts/_config.py`. Filesystem: the template under `templates/`.
+- **Inputs**: Subcommand args (`--folder`, `--slug`, `--app-id`, `--date`, `--company`, `--role`, `--recommendation-label`, `--recommendation-rationale-file`, `--research-file`, `--requirements-file`, `--eligibility-file`, `--themes-file`, `--cv-notes-file`). Config: `config.yaml` (templates path, gap_analysis filename, gap_analysis_template name) via `scripts/_config.py`. Filesystem: the template under `templates/`.
 - **Outputs**: `<folder>/gap_analysis.md` and its path printed to stdout. Errors to stderr with exit 1.
 - **Triggers**: Invoked by `gap-analysis` Phase 6 (Step 6a).
 - **Update Triggers**: When the gap_analysis.md template schema changes; when the per-section block rendering shapes change; when the recommendation-label set changes.

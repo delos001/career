@@ -56,7 +56,8 @@ Shapes chosen to exercise the machinery, not to look like a plausible career:
 | A staging queue with items waiting, one anchored to a requirement and one not | `Vendor management scope at Northwind` (`CR-002`), `Additional analytics tooling` (`n/a`) |
 | Every Work role form but `new:` | `RL-002`, `n/a (...)` |
 | Every requirement status in the taxonomy | `CR-001` through `CR-006` |
-| A fit score and unmet-must-have count that must compute | 63.3%, 1 unmet |
+| A coverage table and unmet-must-have count that must compute | `gap_analysis.md` Coverage Picture, 1 unmet |
+| Every gap theme kind | `gap_analysis.md` Gap Themes |
 | A JD carrying its own `##` headings, so the scoring context must keep them from cutting the requirements | `aldridge_APP-001` `jd.md` |
 
 ## What it does not cover yet

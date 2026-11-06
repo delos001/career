@@ -117,8 +117,8 @@ def _replace_section(text, heading, new_section):
 #
 #   - Compound (recoverable): a category label is bolted onto a valid severity
 #     token, e.g. "education (must-have)". The severity is unambiguous; the
-#     decoration carries no weight in the gap-analysis fit-score formula and has
-#     no schema field, so it is stripped and the bare token kept. A warning is
+#     decoration has no meaning in the gap-analysis coverage table and has no
+#     schema field, so it is stripped and the bare token kept. A warning is
 #     emitted so the deviation stays visible without halting the pipeline.
 #   - Substitution / ambiguous (unrecoverable): the cell carries a "kind of
 #     requirement" word with no severity token (Competency / Knowledge /
@@ -128,7 +128,7 @@ def _replace_section(text, heading, new_section):
 #     time instead of reaching gap-analysis unnoticed.
 # ---------------------------------------------------------------------------
 
-# The only Type values the downstream gap-analysis fit-score formula weights.
+# The only Type values the downstream gap-analysis coverage table counts.
 ALLOWED_REQUIREMENT_TYPES = {'must-have', 'preferred', 'duty-derived', 'contextual'}
 
 
@@ -200,7 +200,7 @@ def _normalize_requirement_types(block):
             f'critical-requirements Type column has unrecoverable off-spec values '
             f'({listed}); allowed: {allowed}. No single severity token could be '
             'recovered from these cells (substitution or ambiguous), so the severity '
-            'cannot be inferred without corrupting the fit score. Re-run the extractor '
+            'cannot be inferred without corrupting the coverage table. Re-run the extractor '
             'or correct the Type cells before assembling research.md.'
         )
     if changes:

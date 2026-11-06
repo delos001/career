@@ -1550,6 +1550,59 @@ def test_gap_analysis_states_work_state_coverage():
     assert gap_assemble.render_work_state_coverage([], entries, adjacency) == '_(none)_'
 
 
+def test_gap_analysis_leads_with_the_picture_not_a_score():
+    """Built 2026-11-05 (GitHub #59): a single fit score was the wrong deliverable
+    and read optimistic. The artifact now leads with a computed coverage table and
+    per-run themes, and the recommendation states what it depends on. Assembles
+    the fixture for real, then proves QC catches each way the picture can go wrong.
+    """
+    def report():
+        _, out = run('gap_qc.py', 'check', '--folder', FIXTURE_APP)
+        return {line.split()[0]: line for line in out.split('\n') if line.startswith('G')}
+
+    assert all('PASS' in line for line in report().values()), report()
+
+    requirements = [{'requirement_id': f'CR-{i:03d}', 'status': s, 'evidence': [], 'notes': 'n'}
+                    for i, s in enumerate(['covered', 'closed', 'language-shift', 'partial-match',
+                                           'interview-deferred', 'unresolved'], start=1)]
+    judgment = {'themes': [{'name': 'Soft spots', 'kind': 'reader-dependent',
+                            'requirements': ['CR-003', 'CR-004', 'CR-005', 'CR-006'],
+                            'meaning': 'Depends on the reader.'}],
+                'depends_on': ['They screen for transferable capability.']}
+    inputs = {name: write_block(f'{name}.json', json.dumps(body)) for name, body in
+              (('requirements', requirements), ('eligibility', []), ('themes', judgment))}
+    code, out = run('gap_assemble.py', 'assemble', '--folder', FIXTURE_APP, '--app-id', 'APP-001',
+                    '--date', '2026-01-12', '--company', 'Aldridge Pharma', '--role', 'Director',
+                    '--recommendation-label', 'Proceed with caution',
+                    '--recommendation-rationale-file', write_block('why.txt', 'Mixed.'),
+                    '--research-file', os.path.join(FIXTURE_APP, 'research.md'),
+                    '--requirements-file', inputs['requirements'],
+                    '--eligibility-file', inputs['eligibility'], '--themes-file', inputs['themes'])
+    assert code == 0, out
+    path = os.path.join(FIXTURE_APP, 'gap_analysis.md')
+    built = _util.read(path)
+    assert 'Fit Score' not in built, built
+    assert built.index('## Coverage Picture') < built.index('## Gap Themes') \
+        < built.index('## Recommendation') < built.index('## Requirements'), built
+    assert '| Must-have (4) | 1 | 1 | 0 | 1 | 1 | 0 |' in built, built
+    assert '**Unmet Must-Haves:** 1' in built, built
+    assert all('PASS' in line for line in report().values()), report()
+
+    def fails_check(check, old, new):
+        _util.write(path, built.replace(old, new))
+        assert old in built, f'{old!r} is not in the artifact, so this proves nothing'
+        result = report()[check]
+        assert 'FAIL' in result, f'{check} passed after replacing {old!r}: {result}'
+        return result
+
+    assert 'does not match' in fails_check('G10', '| Must-have (4) | 1 | 1 | 0 | 1 | 1 | 0 |',
+                                           '| Must-have (4) | 2 | 1 | 0 | 1 | 0 | 0 |')
+    assert 'CR-005' in fails_check('G12', 'CR-003, CR-004, CR-005, CR-006', 'CR-003, CR-004, CR-006')
+    fails_check('G12', '(reader-dependent)', '(depends)')
+    fails_check('G13', '- They screen for transferable capability.', '')
+    fails_check('G9', '**Recommendation:** Proceed with caution', '**Recommendation:** Proceed')
+
+
 def test_leadership_classification_carries_a_valid_tier():
     """Built 2026-11-05 (GitHub #51): research calibrated seniority (e.g. VP vs
     Associate Director) and classification threw it away, so every leadership

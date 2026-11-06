@@ -2,9 +2,43 @@
 
 **APP-NNN:** APP-001
 **Date:** 2026-01-12
-**Fit Score:** 63.3%
 **Unmet Must-Haves:** 1
 **Recommendation:** Proceed with caution
+
+## Coverage Picture
+
+| Tier | Covered | Closed | Language-shift | Partial | Interview-deferred | Unresolved |
+|---|---|---|---|---|---|---|
+| Must-have (4) | 1 | 1 | 0 | 1 | 1 | 0 |
+| Preferred (1) | 0 | 0 | 1 | 0 | 0 | 0 |
+| Duty-derived (0) | 0 | 0 | 0 | 0 | 0 | 0 |
+| Contextual (1) | 0 | 0 | 0 | 0 | 0 | 1 |
+
+## Gap Themes
+
+### Line management (structural)
+- **Requirements:** CR-004
+- **What it means:** Leadership has been matrix only, and preparation cannot change that. Be ready to say so directly.
+
+### Named warehouse platform (reader-dependent)
+- **Requirements:** CR-005
+- **What it means:** The warehouse was built on an internal schema. A reader who wants the capability accepts it; one screening for a named product does not.
+
+### Submission data packages (reader-independent)
+- **Requirements:** CR-006
+- **What it means:** Genuinely absent. Prepare a learning answer whoever is reading.
+
+### Standards and governance (strong-ground)
+- **Requirements:** CR-003
+- **What it means:** The work is the same and only the vocabulary differs.
+
+## Recommendation
+
+**Proceed with caution.** One must-have is unmet: no production experience on a named commercial warehouse platform. The vendor oversight and governance requirements are well covered.
+
+**Depends on:**
+- The warehouse platform requirement describes a capability, not a specific product.
+- The role accepts matrix leadership in place of line management.
 
 ## Eligibility Flags
 
@@ -66,10 +100,3 @@ _(none)_
 
 Lead on the operating-model work rather than the warehouse build; the role is
 asking for standards and vendor oversight, not platform engineering.
-
-## Recommendation
-
-**Proceed with caution.** Fit is moderate and one must-have is unmet: no
-production experience on a named commercial warehouse platform. The vendor
-oversight and governance requirements are well covered. Worth a screen to
-establish whether the platform requirement is literal.

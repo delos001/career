@@ -4,16 +4,16 @@ gap_qc.py - deterministic QC for the gap-analysis skill's artifacts
 
 Owns the mechanical checks that the qc-gap-analysis judgment subagent must
 not re-run: structure, field presence, taxonomy, ID existence, staging
-anchors, fit-score math, and cross-document mirroring. The judgment agent
-keeps only what a script cannot verify (whether Notes content actually
-names valid reasoning).
+anchors, coverage arithmetic, and cross-document mirroring. The judgment
+agent keeps only what a script cannot verify (whether Notes and themes
+actually carry valid reasoning).
 
 Checks (IDs mirror the original qc-gap-analysis check numbering):
-  G1  Section structure: H1 + the six H2 sections present, in order.
-  G2  Header completeness: APP-NNN / Date / Fit Score / Unmet Must-Haves /
-      Recommendation fields present and non-empty.
+  G1  Section structure: H1 + the H2 sections present, in order.
+  G2  Header completeness: APP-NNN / Date / Unmet Must-Haves / Recommendation
+      fields present and non-empty.
   G3  Session log ## Gap Analysis section carries Run date, Gap analysis
-      file, Fit score, QC verdict fields.
+      file, Recommendation, QC verdict fields.
   G4  Requirement coverage: every requirement in research.md's
       ## Critical Requirements appears exactly once as a CR-NNN sub-section.
   G5  Status taxonomy: every requirement Status is in the locked set.
@@ -28,11 +28,15 @@ Checks (IDs mirror the original qc-gap-analysis check numbering):
       in the profile documents (the prefix set is derived from the
       documents' own `ID:` lines, so new sections are covered without a
       code change); every CR-NNN is within the requirements range.
-  G9  Session log mirroring: session log fit score matches the artifact
-      header fit score.
-  G10 Math: header fit score equals the type-weighted formula result and
-      the unmet must-haves count matches the statuses.
+  G9  Session log mirroring: session log recommendation matches the artifact
+      header recommendation.
+  G10 Arithmetic: the Coverage Picture table and the unmet must-haves count
+      match the statuses.
   G11 Recommendation label is exactly one of the three approved labels.
+  G12 Gap themes: every language-shift, partial-match, interview-deferred, and
+      unresolved requirement sits in exactly one theme; each theme has a known
+      kind, real requirements, and a stated meaning.
+  G13 The Recommendation states at least one condition it depends on.
 
 Output: one `<ID>  PASS|FAIL  <detail>` line per check, then a RESULT
 line. Exit 0 when all pass, 1 otherwise, so the calling skill can gate on
@@ -52,6 +56,7 @@ import sys
 
 import _config
 import _util
+import gap_assemble
 import profile_update as pu
 from inventory_model import pr
 
@@ -60,30 +65,30 @@ from inventory_model import pr
 # Constants: locked vocabularies from the gap-analysis design
 # ---------------------------------------------------------------------------
 
-# The seven H2 sections of gap_analysis.md, in canonical order (must match
-# templates/gap_analysis.md; Work-State Coverage added 2026-11-05, GitHub #53).
+# The H2 sections of gap_analysis.md, in canonical order (must match
+# templates/gap_analysis.md). The picture and the recommendation lead (GitHub #59).
 SECTIONS = [
-    'Eligibility Flags', 'Requirements', 'Language-Shift Cases',
-    'Partial-Match Cases', 'Work-State Coverage', 'CV Notes', 'Recommendation',
+    'Coverage Picture', 'Gap Themes', 'Recommendation', 'Eligibility Flags',
+    'Requirements', 'Language-Shift Cases', 'Partial-Match Cases',
+    'Work-State Coverage', 'CV Notes',
 ]
 
 # Required header fields (bold-label lines under the H1).
-HEADER_FIELDS = ['APP-NNN', 'Date', 'Fit Score', 'Unmet Must-Haves', 'Recommendation']
+HEADER_FIELDS = ['APP-NNN', 'Date', 'Unmet Must-Haves', 'Recommendation']
 
 # Required session log ## Gap Analysis fields (label prefixes of `- ` lines).
-SESSION_LOG_FIELDS = ['Run date', 'Gap analysis file', 'Fit score', 'QC verdict']
+SESSION_LOG_FIELDS = ['Run date', 'Gap analysis file', 'Recommendation', 'QC verdict']
 
-# Locked status taxonomy and its scoring credits.
-STATUS_CREDIT = {
-    'covered': 1.0, 'closed': 1.0, 'language-shift': 1.0,
-    'partial-match': 0.5, 'interview-deferred': 0.0, 'unresolved': 0.0,
-}
+# Locked status taxonomy.
+STATUSES = {'covered', 'closed', 'language-shift', 'partial-match',
+            'interview-deferred', 'unresolved'}
 
-# Requirement-type weights for the fit-score formula.
-TYPE_WEIGHT = {'must-have': 3, 'preferred': 2, 'contextual': 1, 'duty-derived': 1}
+# Statuses whose requirements must each be grouped into a gap theme. 'covered'
+# and 'closed' may join a theme but need not.
+THEMED_STATUSES = {'language-shift', 'partial-match', 'interview-deferred', 'unresolved'}
 
-# Statuses that count a must-have as unmet.
-UNMET_STATUSES = {'interview-deferred', 'unresolved'}
+# Gap theme kinds: how far the outcome depends on who reads the application.
+THEME_KINDS = {'reader-dependent', 'reader-independent', 'structural', 'strong-ground'}
 
 # Approved recommendation labels.
 RECOMMENDATION_LABELS = {'Proceed', 'Proceed with caution', 'Do not pursue'}
@@ -228,15 +233,21 @@ def _session_log_section(log_text):
     return fields
 
 
-def _parse_pct(value):
-    """Extract the first `NN.N%` in value as a float, or None if absent.
-
-    Search rather than full-match: session log fit-score lines may carry a
-    suffix (e.g. `91.7% (Recommendation: ...)`), and the mirroring check
-    compares the number only.
-    """
-    m = re.search(r'(\d+(?:\.\d+)?)\s*%', value)
-    return float(m.group(1)) if m else None
+def _parse_themes(artifact_text):
+    """Return [{name, kind, requirements, meaning}] from the ## Gap Themes section."""
+    themes = []
+    for line in (_section_text(artifact_text, 'Gap Themes') or '').split('\n'):
+        m = re.match(r'^### (.+) \(([^()]*)\)\s*$', line)
+        if m:
+            themes.append({'name': m.group(1), 'kind': m.group(2), 'requirements': [], 'meaning': ''})
+            continue
+        m = _FIELD_LINE_RE.match(line)
+        if m and themes:
+            if m.group(1) == 'Requirements':
+                themes[-1]['requirements'] = re.findall(r'CR-\d+', m.group(2))
+            elif m.group(1) == 'What it means':
+                themes[-1]['meaning'] = m.group(2).strip()
+    return themes
 
 
 # ---------------------------------------------------------------------------
@@ -247,7 +258,7 @@ def _parse_pct(value):
 # ---------------------------------------------------------------------------
 
 def check_structure(artifact_text, findings):
-    """G1: H1 present; the six H2 sections present in canonical order."""
+    """G1: H1 present; the H2 sections present in canonical order."""
     problems = []
     if not re.match(r'^# Gap Analysis: ', artifact_text):
         problems.append('missing `# Gap Analysis:` H1')
@@ -305,7 +316,7 @@ def check_coverage(records, duplicates, req_types, findings):
 def check_taxonomy(records, findings):
     """G5: every Status value is in the locked set."""
     bad = [f"{cr} ({rec['status'] or 'missing'})" for cr, rec in sorted(records.items())
-           if rec['status'] not in STATUS_CREDIT]
+           if rec['status'] not in STATUSES]
     findings.append(('G5', not bad,
                      f"off-taxonomy or missing status: {', '.join(bad)}" if bad
                      else 'all statuses in the locked set'))
@@ -314,7 +325,7 @@ def check_taxonomy(records, findings):
 def check_notes_presence(records, findings):
     """G6: non-covered/non-language-shift requirements carry non-empty Notes."""
     bad = [cr for cr, rec in sorted(records.items())
-           if rec['status'] in STATUS_CREDIT
+           if rec['status'] in STATUSES
            and rec['status'] not in ('covered', 'language-shift')
            and (not rec['notes'] or rec['notes'] == '_(none)_')]
     findings.append(('G6', not bad,
@@ -367,52 +378,71 @@ def check_ids(artifact_text, profile_ids, req_count, findings):
 
 
 def check_mirroring(header, log_fields, findings):
-    """G9: session log fit score matches the artifact header fit score."""
+    """G9: session log recommendation matches the artifact header recommendation."""
     if log_fields is None:
         findings.append(('G9', False, 'session log has no ## Gap Analysis section'))
         return
-    art, log = header.get('Fit Score', ''), log_fields.get('Fit score', '')
-    ok = _parse_pct(art) is not None and _parse_pct(art) == _parse_pct(log)
+    art, log = header.get('Recommendation', ''), log_fields.get('Recommendation', '')
+    ok = bool(art) and art == log
     findings.append(('G9', ok,
-                     f'fit score diverges: artifact {art!r} vs session log {log!r}' if not ok
-                     else 'fit score mirrored'))
+                     f'recommendation diverges: artifact {art!r} vs session log {log!r}' if not ok
+                     else 'recommendation mirrored'))
 
 
-def check_math(header, records, req_types, findings):
-    """G10: fit score and unmet must-haves recompute from statuses and types."""
+def check_coverage_math(artifact_text, header, records, req_types, findings):
+    """G10: the coverage table and unmet must-haves recompute from the statuses."""
     # Compare key sets, not lengths: a dropped CR plus an invented one keeps
-    # the count equal but would KeyError the recompute loop below.
+    # the count equal but would KeyError the lookup below.
     expected = None if req_types is None else {f'CR-{i:03d}' for i in range(1, len(req_types) + 1)}
     if expected is None or set(records) != expected:
         findings.append(('G10', False,
                          'cannot recompute: requirements list and artifact do not align'))
         return
-    unknown_types = sorted({t for t in req_types if t not in TYPE_WEIGHT})
-    off_taxonomy = any(rec['status'] not in STATUS_CREDIT for rec in records.values())
-    if unknown_types or off_taxonomy:
-        findings.append(('G10', False,
-                         f"cannot recompute: unknown types {unknown_types}" if unknown_types
-                         else 'cannot recompute: off-taxonomy status present (see G5)'))
-        return
-    total = weighted = 0.0
-    unmet = 0
-    for i, rtype in enumerate(req_types, start=1):
-        rec = records[f'CR-{i:03d}']
-        weight = TYPE_WEIGHT[rtype]
-        total += weight
-        weighted += weight * STATUS_CREDIT[rec['status']]
-        if rtype == 'must-have' and rec['status'] in UNMET_STATUSES:
-            unmet += 1
-    expected_pct = round(100.0 * weighted / total, 1)
+    pairs = [(rtype, records[f'CR-{i:03d}']['status']) for i, rtype in enumerate(req_types, start=1)]
     problems = []
-    stated_pct = _parse_pct(header.get('Fit Score', ''))
-    # One-decimal rounding tolerance on the stated percentage.
-    if stated_pct is None or abs(stated_pct - expected_pct) > 0.05:
-        problems.append(f"fit score is {header.get('Fit Score')!r}, formula gives {expected_pct}%")
+    # The same renderer wrote the table, so any difference means the statuses
+    # and the picture no longer describe the same run.
+    table = (_section_text(artifact_text, 'Coverage Picture') or '').strip()
+    if table != gap_assemble.render_coverage_picture(pairs):
+        problems.append('the Coverage Picture table does not match the requirement statuses')
+    unmet = gap_assemble.count_unmet_must_haves(pairs)
     stated_unmet = header.get('Unmet Must-Haves', '')
     if not stated_unmet.isdigit() or int(stated_unmet) != unmet:
         problems.append(f"unmet must-haves is {stated_unmet!r}, statuses give {unmet}")
-    findings.append(('G10', not problems, '; '.join(problems) or 'fit math verified'))
+    findings.append(('G10', not problems, '; '.join(problems) or 'coverage arithmetic verified'))
+
+
+def check_themes(artifact_text, records, findings):
+    """G12: every soft requirement sits in exactly one well-formed theme."""
+    themes = _parse_themes(artifact_text)
+    placed = [cr for theme in themes for cr in theme['requirements']]
+    problems = []
+    for theme in themes:
+        if theme['kind'] not in THEME_KINDS:
+            problems.append(f"theme {theme['name']!r} has unknown kind {theme['kind']!r}")
+        if not theme['requirements']:
+            problems.append(f"theme {theme['name']!r} names no requirements")
+        if not theme['meaning']:
+            problems.append(f"theme {theme['name']!r} does not say what it means")
+    missing = sorted(cr for cr, rec in records.items()
+                     if rec['status'] in THEMED_STATUSES and cr not in placed)
+    if missing:
+        problems.append(f"not in any theme: {', '.join(missing)}")
+    repeated = sorted({cr for cr in placed if placed.count(cr) > 1})
+    if repeated:
+        problems.append(f"in more than one theme: {', '.join(repeated)}")
+    unknown = sorted(set(placed) - set(records))
+    if unknown:
+        problems.append(f"not in this gap analysis: {', '.join(unknown)}")
+    findings.append(('G12', not problems, '; '.join(problems) or f'{len(themes)} gap themes complete'))
+
+
+def check_depends_on(artifact_text, findings):
+    """G13: the Recommendation section lists at least one condition."""
+    section = _section_text(artifact_text, 'Recommendation') or ''
+    ok = re.search(r'^\*\*Depends on:\*\*\s*\n- \S', section, re.MULTILINE) is not None
+    findings.append(('G13', ok, 'recommendation states its conditions' if ok
+                     else 'recommendation states no condition it depends on'))
 
 
 def check_recommendation(header, findings):
@@ -465,8 +495,10 @@ def cmd_check(args, repo_root, cfg):
     check_ids(artifact_text, profile_ids,
               len(req_types) if req_types is not None else None, findings)
     check_mirroring(header, log_fields, findings)
-    check_math(header, records, req_types, findings)
+    check_coverage_math(artifact_text, header, records, req_types, findings)
     check_recommendation(header, findings)
+    check_themes(artifact_text, records, findings)
+    check_depends_on(artifact_text, findings)
 
     failed = [f for f in findings if not f[1]]
     for check, ok, detail in findings:

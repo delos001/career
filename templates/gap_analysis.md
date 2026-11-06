@@ -4,7 +4,7 @@
 
 One per evaluated job, written to `gap_analysis.md` in the application folder (`python scripts/paths.py app <APP-NNN>`).
 
-A **current-state document**: re-running gap-analysis overwrites the file. The session log carries the durable cross-run record (fit score, recommendation, key gaps).
+A **current-state document**: re-running gap-analysis overwrites the file. The session log carries the durable cross-run record (recommendation, QC verdict).
 
 `scripts/assemble.py gap-analysis` renders the skeleton below: tokens in `{{double braces}}` are substituted. Per-record blocks (Eligibility Flags, Requirements, Language-Shift Cases, Partial-Match Cases) are rendered from structured inputs the skill passes to the script.
 
@@ -15,9 +15,20 @@ A **current-state document**: re-running gap-analysis overwrites the file. The s
 
 **APP-NNN:** {{app_id}}
 **Date:** {{date}}
-**Fit Score:** {{fit_score_pct}}
 **Unmet Must-Haves:** {{unmet_must_haves_count}}
 **Recommendation:** {{recommendation_label}}
+
+## Coverage Picture
+
+{{coverage_picture_block}}
+
+## Gap Themes
+
+{{gap_themes_block}}
+
+## Recommendation
+
+{{recommendation_block}}
 
 ## Eligibility Flags
 
@@ -42,19 +53,26 @@ A **current-state document**: re-running gap-analysis overwrites the file. The s
 ## CV Notes
 
 {{cv_notes_block}}
-
-## Recommendation
-
-{{recommendation_block}}
 ```
 
 ## Field notes
 
-- **{{fit_score_pct}}** - the type-weighted fit score from Phase 5 as a percentage with one decimal place (e.g., `78.3%`).
-- **{{unmet_must_haves_count}}** - integer count of must-have requirements with final status `interview-deferred` or `unresolved`.
+- **{{unmet_must_haves_count}}** - computed by `gap_assemble.py`: integer count of must-have requirements with final status `interview-deferred` or `unresolved`.
 - **{{recommendation_label}}** - one of `Proceed`, `Proceed with caution`, `Do not pursue`.
 
 ### Per-section block rendering
+
+- **{{coverage_picture_block}}** - computed by `gap_assemble.py`: a table with one row per requirement type (must-have, preferred, duty-derived, contextual) and one column per status, holding the count of requirements.
+
+- **{{gap_themes_block}}** - one sub-section per theme, grouped per run:
+
+  ```
+  ### {{theme_name}} ({{kind}})
+  - **Requirements:** {{requirement_ids_comma_sep}}
+  - **What it means:** {{meaning}}
+  ```
+
+  Every `language-shift`, `partial-match`, `interview-deferred`, and `unresolved` requirement sits in exactly one theme. Kinds are defined in the gap-analysis skill, Step 5a. Renders `_(none)_` when there are no themes.
 
 - **{{eligibility_flags_block}}** - one bullet per flag in the format `- **<flag_type>**: <evidence>. User chose: <decision>.` Renders `_(none)_` when no flags fired.
 
@@ -93,4 +111,4 @@ A **current-state document**: re-running gap-analysis overwrites the file. The s
 - **{{work_state_coverage_block}}** - one bullet per work-state value the role was classified with, computed by `gap_assemble.py` from the session log and the inventory tags: how many entries match it exactly (with IDs), or that none do, plus the adjacent work-states that carry it and an interview flag. Renders `_(none)_` when the role has no work-state.
 - **{{cv_notes_block}}** - free-text general framing guidance for the CV architect captured during the Phase 4 gap-closure loop (not tied to any specific requirement). Renders `_(none)_` when no general notes were provided. Per-requirement Notes fields live inside `{{requirements_block}}` and are not repeated here.
 
-- **{{recommendation_block}}** - paragraph in the format `**<recommendation_label>.** <1-2 sentence rationale>`.
+- **{{recommendation_block}}** - `**<recommendation_label>.** <1-2 sentence rationale>`, then `**Depends on:**` and one bullet per condition the recommendation rests on.

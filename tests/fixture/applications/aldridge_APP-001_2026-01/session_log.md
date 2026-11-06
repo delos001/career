@@ -31,5 +31,5 @@ None.
 
 - Run date: 2026-01-12
 - Gap analysis file: gap_analysis.md
-- Fit score: 63.3%
+- Recommendation: Proceed with caution
 - QC verdict: PASS
