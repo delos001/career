@@ -37,8 +37,8 @@
 **Proceed with caution.** One must-have is unmet: no production experience on a named commercial warehouse platform. The vendor oversight and governance requirements are well covered.
 
 **Depends on:**
-- The warehouse platform requirement describes a capability, not a specific product.
-- The role accepts matrix leadership in place of line management.
+- The warehouse platform requirement describes a capability, not a specific product (CR-005).
+- The role accepts matrix leadership in place of line management (CR-004).
 
 ## Eligibility Flags
 

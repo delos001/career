@@ -67,7 +67,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - **Geographic Preferences**: if the role's modality (remote/hybrid/onsite), location, or travel requirements conflict with user preferences, flag.
   - **Availability**: if the role states a required start window the user cannot meet, flag.
   - **Compensation**: if the role posts a compensation range, show it and ask the user whether it clears their floor for this role; if not, flag.
-  - **Exclusions**: if the role's industry or company type matches a user exclusion, flag. These confirmed constraints are recorded in the gap analysis artifact's Eligibility Flags section (including confirmed non-flags for modality, travel, availability, and any posted comp range), so downstream skills (preparation-screen) can read them instead of re-asking.
+  - **Exclusions**: if the role's industry or company type matches a user exclusion, flag. These confirmed constraints are recorded in the gap analysis artifact's Eligibility Flags section (including confirmed non-flags for modality, travel, availability, and any posted comp range), so downstream skills (preparation-screen) can read them instead of re-asking. Each recorded line takes one decision in `gap_eligibility.json`: `confirmed` when it was checked and clears, `open` when the JD does not state it so it could not be checked (it renders as a question for the screen, never as settled), or `override` / `stop` on a real flag.
 - Present flags to the user in plain English (if any) with override option per flag: `override` (continue) or `stop` (end the skill). Non-flags are not surfaced.
 - Flags do NOT short-circuit the skill on their own. User chooses to continue or stop. Each flag's user decision is recorded for the gap analysis artifact and the recommendation logic in Phase 5.
 - If the user chose `stop` on any flag, exit the skill with a brief summary, recording the declined decision on the session log per Phase 8's "no" path.
@@ -135,7 +135,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - **`Proceed with caution`** - 1-2 unmet must-haves, an overridden eligibility flag, or must-haves resting on a `reader-dependent` theme.
   - **`Do not pursue`** - multiple unmet must-haves, or `reader-independent` or `structural` themes at the core of the role.
   - These are guides for consistency, not thresholds. Adapt to role context, and state the role-specific reason in the rationale.
-  - **Depends on:** at least one condition, each specific enough to confirm or rule out at a screen (e.g. "They screen for transferable capability; the buyer-side work is the hinge"). A `Do not pursue` states what would change it.
+  - **Depends on:** at least one condition, each specific enough to confirm or rule out at a screen (e.g. "They screen for transferable capability; the buyer-side work is the hinge (CR-004)"). Every must-have left `partial-match`, `interview-deferred`, or `unresolved` is named by its CR-NNN in a condition. A `Do not pursue` states what would change it.
   **Write both files to disk immediately:** `<scratch>/gap_rationale.txt` (the rationale) and `<scratch>/gap_themes.json`: `{"themes": [{"name": "...", "kind": "...", "requirements": ["CR-NNN"], "meaning": "..."}], "depends_on": ["..."]}`.
 - Output: `gap_rationale.txt` and `gap_themes.json` written to `<scratch>`.
 
@@ -201,5 +201,6 @@ Consumed by Phase 7 (QC failures). Route back, fix, re-run forward (Phase 7 alwa
 | Fabricated profile ID in Requirements evidence | Phase 3 |
 | Session log mirroring divergence | Phase 6 |
 | Coverage table or unmet-must-haves count does not match the statuses | Phase 6 |
-| Recommendation label off-set, or no condition stated | Phase 5 |
+| Recommendation label off-set, no condition stated, or a soft must-have no condition names | Phase 5 |
+| Eligibility line with an off-list ending | Phase 6 |
 | Requirement missing from the gap themes, or a theme malformed | Phase 5 |

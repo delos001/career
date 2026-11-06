@@ -1654,7 +1654,7 @@ def test_gap_analysis_leads_with_the_picture_not_a_score():
     judgment = {'themes': [{'name': 'Soft spots', 'kind': 'reader-dependent',
                             'requirements': ['CR-003', 'CR-004', 'CR-005', 'CR-006'],
                             'meaning': 'Depends on the reader.'}],
-                'depends_on': ['They screen for transferable capability.']}
+                'depends_on': ['They screen for transferable capability (CR-004, CR-005).']}
     inputs = {name: write_block(f'{name}.json', json.dumps(body)) for name, body in
               (('requirements', requirements), ('eligibility', []), ('themes', judgment))}
     code, out = run('gap_assemble.py', 'assemble', '--folder', FIXTURE_APP, '--app-id', 'APP-001',
@@ -1685,8 +1685,55 @@ def test_gap_analysis_leads_with_the_picture_not_a_score():
                                            '| Must-have (4) | 2 | 1 | 0 | 1 | 0 | 0 |')
     assert 'CR-005' in fails_check('G12', 'CR-003, CR-004, CR-005, CR-006', 'CR-003, CR-004, CR-006')
     fails_check('G12', '(reader-dependent)', '(depends)')
-    fails_check('G13', '- They screen for transferable capability.', '')
+    fails_check('G13', '- They screen for transferable capability (CR-004, CR-005).', '')
     fails_check('G9', '**Recommendation:** Proceed with caution', '**Recommendation:** Proceed')
+
+
+def test_every_soft_must_have_is_named_in_a_condition():
+    """Found on APP-028: the recommendation listed conditions but none tested the
+    SDTM and ADaM must-have, and QC only asked for at least one condition. A
+    must-have that is partial or unmet must now be named in a condition.
+    """
+    path = os.path.join(FIXTURE_APP, 'gap_analysis.md')
+    text = _util.read(path)
+
+    def g14():
+        _, out = run('gap_qc.py', 'check', '--folder', FIXTURE_APP)
+        return next(line for line in out.split('\n') if line.startswith('G14'))
+
+    assert 'PASS' in g14(), g14()
+    assert '(CR-004)' in text, 'the fixture names no CR-004 condition, so this proves nothing'
+    _util.write(path, text.replace(' (CR-004)', ''))
+    line = g14()
+    assert 'FAIL' in line and 'CR-004' in line, f'an unnamed must-have passed: {line}'
+
+
+def test_eligibility_lines_use_an_allowed_ending():
+    """Found on APP-028: location was open because the JD did not state it, but
+    the only endings available read 'Confirmed, no conflict' or 'User chose', so
+    an open question was recorded as settled.
+    """
+    import gap_assemble
+    line = gap_assemble._render_eligibility(
+        [{'flag_type': 'Modality', 'evidence': 'The JD states none', 'decision': 'open'}])
+    assert line == '- **Modality**: The JD states none. Not stated in the JD; ask at the screen.', line
+    try:
+        gap_assemble._render_eligibility([{'flag_type': 'x', 'evidence': 'y', 'decision': 'maybe'}])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError('an unknown eligibility decision rendered')
+
+    path = os.path.join(FIXTURE_APP, 'gap_analysis.md')
+    text = _util.read(path)
+
+    def g15():
+        _, out = run('gap_qc.py', 'check', '--folder', FIXTURE_APP)
+        return next(line for line in out.split('\n') if line.startswith('G15'))
+
+    assert 'PASS' in g15(), g15()
+    _util.write(path, text.replace('Confirmed, no conflict.', 'Probably fine.', 1))
+    assert 'FAIL' in g15(), f'an off-list eligibility ending passed: {g15()}'
 
 
 def test_leadership_classification_carries_a_valid_tier():

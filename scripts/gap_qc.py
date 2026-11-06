@@ -37,6 +37,10 @@ Checks (IDs mirror the original qc-gap-analysis check numbering):
       unresolved requirement sits in exactly one theme; each theme has a known
       kind, real requirements, and a stated meaning.
   G13 The Recommendation states at least one condition it depends on.
+  G14 Every must-have left partial-match, interview-deferred, or unresolved is
+      named by its CR-NNN in a Depends on condition.
+  G15 Every Eligibility Flags line ends with one of the allowed endings
+      (gap_assemble.ELIGIBILITY_ENDINGS).
 
 Output: one `<ID>  PASS|FAIL  <detail>` line per check, then a RESULT
 line. Exit 0 when all pass, 1 otherwise, so the calling skill can gate on
@@ -445,6 +449,36 @@ def check_depends_on(artifact_text, findings):
                      else 'recommendation states no condition it depends on'))
 
 
+def check_conditions_name_soft_must_haves(artifact_text, records, req_types, findings):
+    """G14: a must-have that is not fully met is tested by a stated condition."""
+    if req_types is None:
+        findings.append(('G14', False, 'research.md has no ## Critical Requirements section'))
+        return
+    section = _section_text(artifact_text, 'Recommendation') or ''
+    named = set(re.findall(r'CR-\d+', section.partition('**Depends on:**')[2]))
+    soft = {'partial-match'} | gap_assemble.UNMET_STATUSES
+    missing = []
+    for i, rtype in enumerate(req_types, start=1):
+        cr = f'CR-{i:03d}'
+        if rtype == 'must-have' and records.get(cr, {}).get('status') in soft and cr not in named:
+            missing.append(cr)
+    findings.append(('G14', not missing,
+                     f"must-haves no condition names: {', '.join(missing)}" if missing
+                     else 'every soft must-have is named in a condition'))
+
+
+def check_eligibility_endings(artifact_text, findings):
+    """G15: each eligibility line ends with an allowed ending, so an open question
+    cannot read as settled and no improvised wording reaches a later skill."""
+    endings = tuple(gap_assemble.ELIGIBILITY_ENDINGS.values())
+    section = _section_text(artifact_text, 'Eligibility Flags') or ''
+    bad = [line.split(':**')[0].lstrip('- *') for line in section.split('\n')
+           if line.startswith('- ') and not line.rstrip().endswith(endings)]
+    findings.append(('G15', not bad,
+                     f"eligibility lines with an off-list ending: {', '.join(bad)}" if bad
+                     else 'eligibility lines use allowed endings'))
+
+
 def check_recommendation(header, findings):
     """G11: recommendation label is exactly one of the approved three."""
     label = header.get('Recommendation', '')
@@ -499,6 +533,8 @@ def cmd_check(args, repo_root, cfg):
     check_recommendation(header, findings)
     check_themes(artifact_text, records, findings)
     check_depends_on(artifact_text, findings)
+    check_conditions_name_soft_must_haves(artifact_text, records, req_types, findings)
+    check_eligibility_endings(artifact_text, findings)
 
     failed = [f for f in findings if not f[1]]
     for check, ok, detail in findings:

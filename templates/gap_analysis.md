@@ -74,7 +74,7 @@ A **current-state document**: re-running gap-analysis overwrites the file. The s
 
   Every `language-shift`, `partial-match`, `interview-deferred`, and `unresolved` requirement sits in exactly one theme. Kinds are defined in the gap-analysis skill, Step 5a. Renders `_(none)_` when there are no themes.
 
-- **{{eligibility_flags_block}}** - one bullet per flag in the format `- **<flag_type>**: <evidence>. User chose: <decision>.` Renders `_(none)_` when no flags fired.
+- **{{eligibility_flags_block}}** - one bullet per flag in the format `- **<flag_type>**: <evidence>. <ending>`, where the ending is fixed by the decision: `confirmed` (Confirmed, no conflict.), `open` (Not stated in the JD; ask at the screen.), `override` or `stop` (User chose: ...). Renders `_(none)_` when no flags fired.
 
 - **{{requirements_block}}** - one sub-section per requirement:
 
@@ -111,4 +111,4 @@ A **current-state document**: re-running gap-analysis overwrites the file. The s
 - **{{work_state_coverage_block}}** - one bullet per work-state value the role was classified with, computed by `gap_assemble.py` from the session log and the inventory tags: how many entries match it exactly (with IDs), or that none do, plus the adjacent work-states that carry it and an interview flag. Renders `_(none)_` when the role has no work-state.
 - **{{cv_notes_block}}** - free-text general framing guidance for the CV architect captured during the Phase 4 gap-closure loop (not tied to any specific requirement). Renders `_(none)_` when no general notes were provided. Per-requirement Notes fields live inside `{{requirements_block}}` and are not repeated here.
 
-- **{{recommendation_block}}** - `**<recommendation_label>.** <1-2 sentence rationale>`, then `**Depends on:**` and one bullet per condition the recommendation rests on.
+- **{{recommendation_block}}** - `**<recommendation_label>.** <1-2 sentence rationale>`, then `**Depends on:**` and one bullet per condition the recommendation rests on. Every must-have left `partial-match`, `interview-deferred`, or `unresolved` is named by its CR-NNN in a condition.
