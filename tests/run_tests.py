@@ -1267,6 +1267,36 @@ def test_retrieval_qc_checks_the_calibration_record():
         assert 'FAIL' in line and expect in line, f'R9 passed a bad record ({expect}): {line}'
 
 
+def test_manifest_names_where_its_axes_came_from():
+    """Found on APP-028: the manifest said its axes came from research.md, but
+    they come from the session log, and research.md holds no classification.
+    The label is built from config, and QC fails a manifest naming another source.
+    """
+    _, cfg = _config.load()
+    log_name = cfg['filenames']['session_log_file']
+    label = f'**JD axis classification (from {log_name}):**'
+    empty = write_block('empty_scores.json', '{"scores": []}')
+    axes = write_block('axes.json', '{}')
+    code, out = run('retrieval_apply.py', 'assemble', '--folder', FIXTURE_APP, '--slug', 'x',
+                    '--app-id', 'APP-001', '--date', '2026-01-01', '--jd-axes-file', axes,
+                    '--inventory-scores-file', empty, '--narrative-scores-file', empty,
+                    '--theme-scores-file', empty)
+    assert code == 0, out
+    path = os.path.join(FIXTURE_APP, 'retrieval.md')
+    text = _util.read(path)
+    assert label in text, f'the manifest does not name {log_name} as its axis source'
+
+    def r1():
+        _, qc_out = run('retrieval_qc.py', 'check', '--folder', FIXTURE_APP)
+        return next(line for line in qc_out.split('\n') if line.startswith('R1'))
+
+    # Empty scores leave the tables empty, so R1 fails on those regardless; only
+    # its axis-classification finding is under test here.
+    assert 'axis classification' not in r1(), r1()
+    _util.write(path, text.replace(label, '**JD axis classification (from research.md):**'))
+    assert 'axis classification' in r1(), f'QC passed a manifest naming the wrong source: {r1()}'
+
+
 # ---------------------------------------------------------------------------
 # Gap-detector context
 # The detector's requirements, role context, and the inventory sections that

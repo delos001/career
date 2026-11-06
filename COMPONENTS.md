@@ -122,7 +122,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - Agents: `retrieval-scorer`.
   - Scripts: `scripts/display/introduce.py`, `scripts/retrieval_payload.py`, `scripts/retrieval_score_merge.py`, `scripts/retrieval_apply.py`, `scripts/retrieval_qc.py`.
   - Profile docs: `personal/profile/inventory.md`, `personal/profile/narratives.md`, `personal/profile/positioning.md` (read indirectly via the scripts above).
-  - Application artifacts: `personal/applications/<SLUG>/research.md` (axis classification + critical requirements), `personal/applications/<SLUG>/jd.md`.
+  - Application artifacts: `personal/applications/<SLUG>/session_log.md` (axis classification), `personal/applications/<SLUG>/research.md` (critical requirements), `personal/applications/<SLUG>/jd.md`.
   - User input: APP-NNN (resume) or implicit (new run; folder must exist with role-intake output already in place).
 - **Outputs**:
   - Files: `personal/applications/<SLUG>_APP-NNN_YYYY-MM/retrieval.md` (the manifest).

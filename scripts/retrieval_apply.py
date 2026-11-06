@@ -478,8 +478,9 @@ def _calibration_text(corpus, record):
 
 
 def _render_manifest(slug, app_id, date, jd_axes, inventory_rows, narrative_rows, theme_rows,
-                     calibration):
-    """Render the complete manifest markdown."""
+                     calibration, axis_source):
+    """Render the complete manifest markdown. axis_source names the file the
+    axis classification came from; retrieval_qc.py R1 checks the same label."""
     axis_lines = []
     for display_name, _, _ in _AXIS_CONFIG:
         block = jd_axes.get(display_name, {}) or {}
@@ -498,7 +499,7 @@ def _render_manifest(slug, app_id, date, jd_axes, inventory_rows, narrative_rows
         '',
         f"**Calibration:** {'; '.join(_calibration_text(c, r) for c, r in calibration)}",
         '',
-        '**JD axis classification (from research.md):**',
+        f'**JD axis classification (from {axis_source}):**',
         axis_block,
         '',
         '**Signal columns:** `Employer` is the entry\'s company, resolved from its '
@@ -582,6 +583,7 @@ def cmd_assemble(args, repo_root, cfg):
     manifest = _render_manifest(
         args.slug, args.app_id, args.date, jd_axes,
         inventory_rows, narrative_rows, theme_rows, calibration,
+        cfg['filenames']['session_log_file'],
     )
 
     manifest_path = os.path.join(args.folder, cfg['filenames']['retrieval_manifest'])

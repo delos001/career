@@ -176,15 +176,17 @@ def _normalize_axis_value(raw):
 # Checks
 # ---------------------------------------------------------------------------
 
-def check_structure(manifest_text, tables, findings):
-    """R1: H1, Generated line, axis block, signal explanation, three tables."""
+def check_structure(manifest_text, tables, findings, axis_source):
+    """R1: H1, Generated line, axis block naming its true source, signal
+    explanation, three tables."""
     problems = []
     if not re.match(r'^# Retrieval Manifest', manifest_text):
         problems.append('missing `# Retrieval Manifest` H1')
     if not re.search(r'^\*\*Generated:\*\*', manifest_text, re.MULTILINE):
         problems.append('missing `**Generated:**` line')
-    if not re.search(r'^\*\*JD axis classification', manifest_text, re.MULTILINE):
-        problems.append('missing JD axis classification block')
+    axis_label = f'**JD axis classification (from {axis_source}):**'
+    if not re.search(rf'^{re.escape(axis_label)}$', manifest_text, re.MULTILINE):
+        problems.append(f'JD axis classification block must be headed {axis_label}')
     if not re.search(r'^\*\*Signal columns:\*\*', manifest_text, re.MULTILINE):
         problems.append('missing signal-column explanation')
     for heading, (rows, header_ok) in tables.items():
@@ -383,7 +385,7 @@ def cmd_check(args, repo_root, cfg):
     theme_rows = tables['Triggered themes'][0]
 
     findings = []
-    check_structure(manifest_text, tables, findings)
+    check_structure(manifest_text, tables, findings, fn['session_log_file'])
     check_axis_consistency(manifest_text, log_text, findings)
     check_coverage(inv_rows, len(inv_ids), args.scored_inventory, findings)
     check_columns(inv_rows, findings)

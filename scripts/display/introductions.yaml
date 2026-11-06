@@ -38,8 +38,8 @@ retrieval: |
 
   Steps:
     1. Locate the application folder (new application or resume by APP-NNN).
-    2. Read the role-intake outputs - research.md (axis classification +
-       critical requirements) and jd.md.
+    2. Read the role-intake outputs - session_log.md (axis classification),
+       research.md (critical requirements), and jd.md.
     3. Build per-corpus payloads from inventory, narratives, and positioning.
     4. Score each corpus against the critical requirements list (inventory
        and narratives are chunked; a seed chunk is scored first so shared
