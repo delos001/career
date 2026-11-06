@@ -138,7 +138,7 @@ cv-render: |
 
   Runs after cv-targeted. Reads the cv_content.md that cv-targeted produced and
   renders it to a formatted Word document matching your CV format spec (Calibri
-  11pt, native middle-dot bullets, US Letter with 1-inch margins, page-number
+  11pt, native middle-dot bullets, US Letter with 0.75-inch margins, page-number
   footer). Produces one artifact: the .docx CV.
 
   Steps:

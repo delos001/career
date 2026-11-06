@@ -1,6 +1,6 @@
 ---
 name: cv-render
-description: Render a targeted CV to a formatted .docx. Reads the cv_content.md that the cv-targeted skill produced and renders it to a Word document matching the CV format spec (Calibri 11pt, native middle-dot bullets, US Letter / 1-inch margins, centered name and contact, page-number footer). Carries no judgment - it does not rewrite, re-order, or re-cite; cv_content.md is the sole input and its citation comments are stripped. Run after cv-targeted; the render is the final step of the CV pipeline.
+description: Render a targeted CV to a formatted .docx. Reads the cv_content.md that the cv-targeted skill produced and renders it to a Word document matching the CV format spec (Calibri 11pt, native middle-dot bullets, US Letter / 0.75-inch margins, centered name and contact, page-number footer). Carries no judgment - it does not rewrite, re-order, or re-cite; cv_content.md is the sole input and its citation comments are stripped. Run after cv-targeted; the render is the final step of the CV pipeline.
 ---
 
 # cv-render - render the targeted CV to a .docx
