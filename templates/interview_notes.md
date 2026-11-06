@@ -52,7 +52,7 @@ One appended per `add-round` run. `{{number}}` is the round's ordinal (its appen
 
 - Impression:
 - Interest level:
-- Gate: opened? when / what opened it:
+- Warmed up: did I relax and open up with them? when / what did it:
 - Format dynamic: scripted | conversational | shifted (when):
 - Rough patches to address in follow-up:
 - Personal connection threads:
@@ -79,4 +79,4 @@ One appended per `add-round` run. `{{number}}` is the round's ordinal (its appen
 - **{{format}}** - single | panel | sequential.
 - **{{number}}** - the round's ordinal, the count of existing round headings + 1 at append time; assigned once and never renumbered (a cancelled round keeps its number).
 - **Status suffix** - a round heading may carry a trailing bracketed status, `## <N>. <stage> | <date> [<STATUS>]`, so a dead or unusual round is visible in outline view. `interview_lifecycle.py cancel` writes `[CANCELLED <date>]` automatically; other statuses (e.g. `[NO-SHOW]`, `[DECLINED]`) may be added by hand.
-- **Round Debrief** - filled by hand after the round; consumed by the follow-up skill. Interest level is free text: a word or a fuller note; it is often more nuanced than a simple label.
+- **Round Debrief** - filled by hand after the round; consumed by the follow-up skill. Interest level is free text: a word or a fuller note; it is often more nuanced than a simple label. Warmed up is about the candidate, not the interviewer; the self-assessment scores it as the gate-open field (rounds before 2026-11-05 carry the old label `Gate: opened? when / what opened it:`).
