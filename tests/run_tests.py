@@ -1881,6 +1881,116 @@ def test_interview_section_is_written_by_script():
     assert code != 0 and 'did you mean' in out, f'typo label accepted: {out}'
 
 
+def test_dispatch_prompts_are_printed_not_composed():
+    """Built 2026-11-05 (GitHub #71): hand-composed prompts drifted silently (file
+    paths for content, a summarized JD, a retyped JD). Prompts now come from one
+    script, sources go by path, and a missing input stops the run.
+    """
+    def prompt(agent, *extra):
+        code, out = run('dispatch_prompt.py', agent, '--folder', FIXTURE_APP, *extra)
+        assert code == 0, f'{agent}: {out}'
+        return out.split('=== PROMPT ===\n')[1].split('\n=== END ===')[0]
+
+    jd_path = os.path.join(FIXTURE_APP, 'jd.md')
+    for agent in ('company-research', 'role-research', 'industry-research', 'critical-requirements-extractor'):
+        text = prompt(agent)
+        assert 'Company: Aldridge Pharma' in text and jd_path in text, text
+        assert 'Fixture job description' not in text, 'JD text was pasted into the prompt'
+    assert 'actually operates in' in prompt('industry-research')
+    assert 'Comms' not in prompt('axis-classifier'), 'an absent optional file was listed'
+    _util.write(os.path.join(FIXTURE_APP, 'comms.md'), 'A note.')
+    assert 'Comms: ' in prompt('axis-classifier')
+
+    # The CV Notes reach the writer byte for byte.
+    code, out = run('dispatch_prompt.py', 'cv-architect', '--folder', FIXTURE_APP)
+    assert code != 0 and 'Tier' in out, f'a leadership role with no tier got through: {out}'
+    _util.write(os.path.join(FIXTURE_APP, 'cv_content.md'), '# Name\n')
+    _util.write(os.path.join(FIXTURE_APP, 'retrieval.md'), '# Retrieval Manifest\n')
+    assert 'CV content: ' in prompt('hiring-manager') and 'JD: ' in prompt('hiring-manager')
+    architect = prompt('cv-architect', '--tier', 'function-lead')
+    assert 'Mode: draft' in architect and 'Tier: function-lead' in architect, architect
+    assert os.path.join('rules', 'industries', 'pharma.md') in architect, architect
+    notes = _util.read(os.path.join(FIXTURE_APP, 'scratch', 'cv_notes.md'))
+    gap = _util.read(os.path.join(FIXTURE_APP, 'gap_analysis.md'))
+    assert notes.strip() and notes in gap, f'CV Notes were not copied verbatim: {notes!r}'
+
+    # Run-produced input goes by file, and continued agents get only that.
+    code, out = run('dispatch_prompt.py', 'cv-architect', '--folder', FIXTURE_APP, '--mode', 'revise', '--tier', 'function-lead')
+    assert code != 0 and 'input-file' in out, out
+    brief = write_block('brief.md', 'Findings.')
+    continued = prompt('hiring-manager', '--continued', '--input-file', brief)
+    assert brief in continued and 'gap_analysis' not in continued, continued
+    code, out = run('dispatch_prompt.py', 'qc-gap-analysis', '--folder', FIXTURE_APP, '--continued', '--input-file', brief)
+    assert code != 0, 'a QC agent was treated as continued'
+
+    # A missing required file stops the run rather than dropping out of the prompt.
+    os.remove(os.path.join(FIXTURE_APP, 'research.md'))
+    code, out = run('dispatch_prompt.py', 'qc-role-intake', '--folder', FIXTURE_APP)
+    assert code != 0 and 'research.md' in out, f'a prompt was printed without its source: {out}'
+
+    # The skills use it, and no listed step still hands an agent pasted content.
+    skills = os.path.join(REPO_ROOT, '.claude', 'skills')
+    for skill, agents in (('role-intake', ['<agent>', 'axis-classifier', 'qc-role-intake']),
+                          ('cv-targeted', ['<agent>', 'cv-architect']), ('gap-analysis', ['qc-gap-analysis'])):
+        text = _util.read(os.path.join(skills, skill, 'SKILL.md'))
+        for agent in agents:
+            assert f'dispatch_prompt.py {agent}' in text, f'{skill} does not print the {agent} prompt'
+    assert 'giving each the JD text' not in _util.read(os.path.join(skills, 'role-intake', 'SKILL.md'))
+
+
+def test_builder_prompts_share_one_script():
+    """Built 2026-11-05 (GitHub #71): five builders each pasted the draft, research,
+    and sibling text into their agents' prompts. One script now prints path-only
+    prompts for all five, and sibling Adjacency text is copied verbatim.
+    """
+    import axis_dispatch
+    import axis_utils
+    root, cfg = _config.load()
+    scratch = os.path.join(RUN_DIR, 'bscratch')
+    os.makedirs(scratch)
+
+    def dispatch(kind, *extra):
+        return run('axis_dispatch.py', kind, 'industries', 'test-value', '--scratch-dir', scratch, *extra)
+
+    def prompt(kind, *extra):
+        code, out = dispatch(kind, *extra)
+        assert code == 0, f'{kind}: {out}'
+        return out.split('=== PROMPT ===\n')[1].split('\n=== END ===')[0]
+
+    assert 'siblings: ' in prompt('research') and 'pharma' in prompt('research')
+    code, out = dispatch('reconciler', '--mode', 'create')
+    assert code != 0 and 'value_file.md' in out, f'a prompt was printed without the draft: {out}'
+    code, out = dispatch('reconciler')
+    assert code != 0 and '--mode' in out, out
+
+    for name, text in (('value_file.md', 'DRAFT TEXT'), ('research_findings.md', 'FINDINGS'),
+                       ('sibling_edits.json', '[]'), ('registry_entry.md', '- entry'),
+                       ('qc_result.json', json.dumps({'checks': [{'id': 'H2', 'suggestions': ['GMP']}]}))):
+        _util.write(os.path.join(scratch, name), text)
+
+    reconciler = prompt('reconciler', '--mode', 'create')
+    assert 'DRAFT TEXT' not in reconciler and 'value_file.md' in reconciler, reconciler
+    copied = _util.read(os.path.join(scratch, 'sibling_adjacency.md'))
+    pharma = _util.read(axis_utils.value_file_path(root, cfg, 'industries', 'pharma.md'))
+    start, end = axis_utils.find_section_bounds(pharma, 'Adjacency')
+    assert f'# Sibling: pharma\n\n{pharma[start:end]}' in copied, 'sibling text was not copied verbatim'
+
+    qc = prompt('qc', '--mode', 'create')
+    assert 'FINDINGS' not in qc and 'research_findings.md' in qc and 'acronym_suggestions: GMP' in qc, qc
+    assert 'sibling pharma: ' in qc and 'sibling_edits.json' in qc, qc
+
+    # Every builder and its agents use it; no input list is left in the skills.
+    for name, axis in (('industry', 'industries'), ('specialty', 'specialties'), ('orientation', 'orientations'),
+                       ('level', 'levels'), ('work-state', 'work-states')):
+        skill = _util.read(os.path.join(REPO_ROOT, '.claude', 'skills', f'{name}-builder', 'SKILL.md'))
+        for kind in ('research', 'reconciler', 'qc'):
+            assert f'axis_dispatch.py {kind} {axis}' in skill, f'{name}-builder does not print its {kind} prompt'
+        assert '`drafted_value_file`:' not in skill, f'{name}-builder still lists pasted inputs'
+        agents = os.path.join(REPO_ROOT, '.claude', 'agents')
+        assert 'path to the new' in _util.read(os.path.join(agents, f'{name}-builder-reconciler.md'))
+        assert '`value_file_text`: path' in _util.read(os.path.join(agents, f'qc-{name}-builder.md'))
+
+
 def test_render_will_not_overwrite_a_hand_edited_docx():
     """Fixed 2026-11-05 (GitHub #69): hand edits to the rendered .docx are never
     synced back to cv_content.md, and re-rendering silently destroyed them.

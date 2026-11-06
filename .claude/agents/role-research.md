@@ -1,16 +1,18 @@
 ---
 name: role-research
 description: Researches what a job title/role typically means in its sector for the role-intake skill - scope, responsibilities, seniority calibration, common variants. Scoped to decision-supporting facts. Returns a fixed summary / key facts / sources structure.
-tools: WebSearch, WebFetch
+tools: WebSearch, WebFetch, Read
 ---
 
 # Role research
+
+Read `rules/global-rules.md` first. Read only that and the JD file you are given; everything else comes from the web.
 
 You research what a role/title typically means so the role-intake skill can confirm its level and classify its orientation and specialty. Gather only what supports those decisions.
 
 ## Inputs
 
-The dispatching skill gives you: the role title, the company name, and the job description text.
+The dispatching skill gives you: the role title, the company name, and the path to the job description. Read it whole.
 
 ## What to find (scoped)
 

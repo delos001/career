@@ -1077,6 +1077,9 @@ Refs: GitHub #46.
 
 ### Documentation Discipline
 
+#### dispatch-prompts-are-script-printed-2026-11
+Subagent prompts that carry source documents are printed by a script and sent exactly as printed (`dispatch_prompt.py`; `retrieval_payload.py`, `gap_context.py`, `profile_update_qc.py` for their steps), because hand-composed prompts drifted silently (GitHub #71). Sources go by file path, so the three role-intake research agents gained `Read`: a JD inside a prompt is still retyped when sent. The five axis builders share `axis_dispatch.py`, which also replaced the input lists repeated in each builder skill. Not converted: `prep-research`, which passes per-run values such as a target name or interviewer.
+
 #### backlog-tracking-2026-07
 GitHub issues hold bugs and decided-but-unbuilt work. This file holds closed decisions. `deferrals.md` holds only items whose need is undecided (its header has the entry tests). `open_questions.md` holds questions blocking work now.
 

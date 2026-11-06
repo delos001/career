@@ -47,10 +47,7 @@ User-invoked. Not called from role-intake; role-intake's Phase 6 may recommend i
 **Researching the target industry.**
 
 - Input: target value, siblings list (from Phase 1).
-- Dispatch the `industry-builder-research` subagent with the inputs it declares in `.claude/agents/industry-builder-research.md`:
-  - `axis`: `industries`
-  - `value`: the target value
-  - `siblings`: every non-self entry from Phase 1's siblings list, as just the value names.
+- Run `python scripts/axis_dispatch.py research industries <value> --scratch-dir <bscratch>` and dispatch the `industry-builder-research` subagent with the prompt between `=== PROMPT ===` and `=== END ===` exactly as printed. Write its findings block, verbatim, to `<bscratch>/research_findings.md`.
 - Output: research findings block per the agent's return schema (regulatory landscape, terminology and acronyms, hiring-panel emphasis, adjacency considerations per sibling).
 
 ## Phase 3 - Draft value file (and registry entry, create mode)
@@ -71,22 +68,7 @@ User-invoked. Not called from role-intake; role-intake's Phase 6 may recommend i
 **Reconciling the draft against the rest of the rules/industries/ folder.**
 
 - Input: drafted value file content, mode, siblings list (from Phase 1), value file path (refresh only), research findings (refresh only).
-- **Create mode pre-step (extract sibling Adjacency slices).** For each file-backed sibling from Phase 1's siblings list, run:
-
-  ```
-  python scripts/axis_registry.py slice industries <sibling_value> \
-    --section Adjacency
-  ```
-
-  Capture the stdout as `adjacency_text` for that sibling.
-- Dispatch the `industry-builder-reconciler` subagent with the inputs it declares in `.claude/agents/industry-builder-reconciler.md`:
-  - `axis`: `industries`
-  - `value`: the target value
-  - `mode`: `create` or `refresh`
-  - `drafted_value_file`: the Phase 3 drafted text
-  - `siblings` (create mode only): `{value, adjacency_text}` pairs for every file-backed sibling.
-  - `current_value_file` (refresh only): the existing value-file path
-  - `research_findings` (refresh only): the Phase 2 research block
+- Write the drafted value file to `<bscratch>/value_file.md`. Run `python scripts/axis_dispatch.py reconciler industries <value> --mode <create|refresh> --scratch-dir <bscratch>` and dispatch the `industry-builder-reconciler` subagent with the printed prompt exactly as printed. The script copies each file-backed sibling's Adjacency section verbatim for it. Write the returned sibling edits to `<bscratch>/sibling_edits.json` and the Phase 3 registry line to `<bscratch>/registry_entry.md` (create mode).
 
 - Output:
   - Create: drafted value file + per-sibling back-edge edits.
@@ -99,7 +81,7 @@ User-invoked. Not called from role-intake; role-intake's Phase 6 may recommend i
 - Input: Phase 4 output, research findings, mode.
 - The QC runs in two halves per `rules/quality_control/qc-industry-builder.md`: the script half (mechanical checks with auto-fix) and the subagent half (judgment checks).
 
-  **Script half - mechanical checks + auto-fix.** Write the drafted value file to a scratch file (`<bscratch>`). Run:
+  **Script half - mechanical checks + auto-fix.** The draft is at `<bscratch>/value_file.md`. Run, saving stdout to `<bscratch>/qc_result.json`:
 
   ```
   python scripts/axis_qc.py industries <value> \
@@ -112,7 +94,7 @@ User-invoked. Not called from role-intake; role-intake's Phase 6 may recommend i
 
   The script auto-fixes script-owned issues in place. Re-read the (possibly mutated) value-file temp before dispatching the subagent.
 
-  **Subagent half - judgment checks.** Dispatch `qc-industry-builder` with the (post-script) drafted file, the research findings, the file-backed sibling file paths (for D1), the H2 check's `suggestions` list from the script output as `acronym_suggestions` (for H3), and (create mode only) the sibling edits plus the registry entry text.
+  **Subagent half - judgment checks.** Run `python scripts/axis_dispatch.py qc industries <value> --mode <create|refresh> --scratch-dir <bscratch>` and dispatch `qc-industry-builder` with the printed prompt exactly as printed.
 
 - Aggregate failures from both halves. For each failure, follow the Fix-on-fail entry for that check in `rules/quality_control/qc-industry-builder.md` - it names the phase to re-enter, or directs a halt for invocation errors - then re-run Phase 5. Loop up to 3 iterations. After 3 iterations, accept the best draft and treat unresolved failures as the provisional-issues list.
 

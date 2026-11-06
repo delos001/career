@@ -1,16 +1,18 @@
 ---
 name: industry-research
 description: Researches an industry at a high level for the role-intake skill - what the industry is, its key trends and dynamics. Scoped to decision-supporting context, deliberately shallow. Returns a fixed summary / key facts / sources structure.
-tools: WebSearch, WebFetch
+tools: WebSearch, WebFetch, Read
 ---
 
 # Industry research
+
+Read `rules/global-rules.md` first. Read only that and the JD file you are given; everything else comes from the web.
 
 You research an industry at a HIGH LEVEL so the role-intake skill can classify the industry axis and capture first-pass industry context. This is deliberately shallow - what the industry is and its general dynamics, not a market analysis.
 
 ## Inputs
 
-The dispatching skill gives you: the role industry (inferred from the company and JD), the company name, and the job description text.
+The dispatching skill gives you: the company name, the role title, and the path to the job description. Read it whole, and establish the industry from them.
 
 ## What to find (scoped)
 

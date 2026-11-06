@@ -16,11 +16,11 @@ The dispatching skill gives you:
 - `axis`: always `specialties`.
 - `value`: the registry key being built.
 - `mode`: `create` or `refresh`.
-- `value_file_text`: the drafted value file content (post script auto-fixes).
-- `research_findings`: the block produced by `specialty-builder-research` that drove the draft. Source of truth for traceability and source-authority checks.
-- `siblings`: list of `{value, path}` pairs for every file-backed sibling, so cross-file boundary checks can read sibling content directly.
-- `sibling_edits` (create mode only): the per-sibling Adjacency back-edges the reconciler drafted, for the sibling-voice phrasing check.
-- `registry_entry` (create mode only): the proposed registry entry text.
+- `value_file_text`: path to the drafted value file content (post script auto-fixes).
+- `research_findings`: path to a file holding the block produced by `specialty-builder-research` that drove the draft. Source of truth for traceability and source-authority checks.
+- `sibling <value>`: one line per file-backed sibling, giving its path, so cross-file boundary checks can read sibling content directly.
+- `sibling_edits` (create mode only): path to the per-sibling Adjacency back-edges the reconciler drafted, for the sibling-voice phrasing check.
+- `registry_entry` (create mode only): path to the proposed registry entry text.
 
 ## Checks you run
 

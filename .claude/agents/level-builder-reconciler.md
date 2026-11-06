@@ -18,10 +18,10 @@ The dispatching skill gives you:
 - `axis`: always `levels`.
 - `value`: the registry key being built (e.g. `ic`, `leadership`).
 - `mode`: `create` or `refresh`.
-- `drafted_value_file`: the new (or updated) value file content as text.
-- `siblings` (create mode only): list of `{value, adjacency_text}` pairs for every file-backed sibling. `adjacency_text` is the body of that sibling's `## Adjacency` section, already extracted by the dispatching skill.
+- `drafted_value_file`: path to the new (or updated) value file. Read it whole.
+- `siblings` (create mode only): path to a file holding, under one `# Sibling: <value>` heading each, the `adjacency_text` of every file-backed sibling: the body of its `## Adjacency` section, copied verbatim by `scripts/axis_dispatch.py`. You do NOT read sibling files; this is your full sibling context.
 - `current_value_file` (refresh mode only): absolute path to the existing value file.
-- `research_findings` (refresh mode only): the research block produced by `level-builder-research`.
+- `research_findings` (refresh mode only): path to a file holding the research block produced by `level-builder-research`.
 
 ## What to do
 

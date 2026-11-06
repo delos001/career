@@ -155,7 +155,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 
 - Input: application folder path.
 - **Step 7a - Mechanical checks (script).** Run `python scripts/gap_qc.py check --folder <app_folder>`. On FAIL: translate the failed checks to plain English for the user, apply each per *Phase routing on failure*, re-run forward, and return to Step 7a.
-- **Step 7b - Judgment checks (subagent).** Only after Step 7a passes, dispatch `qc-gap-analysis` with the `gap_analysis.md` path. **Loops on FINDINGS:** translate to plain English, apply per *Phase routing on failure*, re-run forward (Step 7a re-runs after any fix), return to Phase 7.
+- **Step 7b - Judgment checks (subagent).** Only after Step 7a passes, run `python scripts/dispatch_prompt.py qc-gap-analysis --folder <app_folder>` and dispatch `qc-gap-analysis` with the printed prompt exactly as printed. **Loops on FINDINGS:** translate to plain English, apply per *Phase routing on failure*, re-run forward (Step 7a re-runs after any fix), return to Phase 7.
 - Cap the loop at **3 iterations** across both steps. Exit earlier when both PASS. If findings remain after the third iteration, carry them to Phase 8 Step 8a, where the user decides each one on its own. After the QC verdict is known, re-run Step 6c to refresh the session log section's QC verdict field.
 - Output: PASS verdict, or unresolved findings after 3 iterations.
 

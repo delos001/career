@@ -16,11 +16,11 @@ The dispatching skill gives you:
 - `axis`: always `levels`.
 - `value`: the registry key being built.
 - `mode`: `create` or `refresh`.
-- `value_file_text`: the drafted value file content (post script auto-fixes).
-- `research_findings`: the block produced by `level-builder-research`.
-- `siblings`: list of `{value, path}` pairs for every file-backed sibling.
-- `sibling_edits` (create mode only): the per-sibling Adjacency back-edges.
-- `registry_entry` (create mode only): the proposed registry entry text.
+- `value_file_text`: path to the drafted value file content (post script auto-fixes).
+- `research_findings`: path to a file holding the block produced by `level-builder-research`.
+- `sibling <value>`: one line per file-backed sibling, giving its path.
+- `sibling_edits` (create mode only): path to the per-sibling Adjacency back-edges.
+- `registry_entry` (create mode only): path to the proposed registry entry text.
 
 ## Checks you run
 

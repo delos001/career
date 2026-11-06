@@ -19,7 +19,7 @@ The five axes and their rule folders:
 
 ## Inputs
 
-The dispatching skill gives you the JD text and the research findings (the company / role / industry blocks).
+The dispatching skill gives you the paths to the JD, the comms file if any, and the research file (its company / role / industry blocks are your findings). Read each whole.
 
 ## Procedure - per axis, registry-first
 

@@ -47,10 +47,7 @@ User-invoked. Not called from role-intake; role-intake's Phase 6 may recommend i
 **Researching the target work-state.**
 
 - Input: target value, siblings list (from Phase 1).
-- Dispatch the `work-state-builder-research` subagent with the inputs it declares in `.claude/agents/work-state-builder-research.md`:
-  - `axis`: `work-states`
-  - `value`: the target value
-  - `siblings`: every non-self entry from Phase 1's siblings list, as just the value names.
+- Run `python scripts/axis_dispatch.py research work-states <value> --scratch-dir <bscratch>` and dispatch the `work-state-builder-research` subagent with the prompt between `=== PROMPT ===` and `=== END ===` exactly as printed. Write its findings block, verbatim, to `<bscratch>/research_findings.md`.
 - Output: research findings block per the agent's return schema (identity framing, achievement-framing signals, adjacency translation considerations per sibling).
 
 ## Phase 3 - Draft value file (and registry entry, create mode)
@@ -71,22 +68,7 @@ User-invoked. Not called from role-intake; role-intake's Phase 6 may recommend i
 **Reconciling the draft against the rest of the rules/work-states/ folder.**
 
 - Input: drafted value file content, mode, siblings list (from Phase 1), value file path (refresh only), research findings (refresh only).
-- **Create mode pre-step (extract sibling Adjacency slices).** For each file-backed sibling from Phase 1's siblings list, run:
-
-  ```
-  python scripts/axis_registry.py slice work-states <sibling_value> \
-    --section Adjacency
-  ```
-
-  Capture the stdout as `adjacency_text` for that sibling.
-- Dispatch the `work-state-builder-reconciler` subagent with the inputs it declares in `.claude/agents/work-state-builder-reconciler.md`:
-  - `axis`: `work-states`
-  - `value`: the target value
-  - `mode`: `create` or `refresh`
-  - `drafted_value_file`: the Phase 3 drafted text
-  - `siblings` (create mode only): `{value, adjacency_text}` pairs for every file-backed sibling.
-  - `current_value_file` (refresh only): the existing value-file path
-  - `research_findings` (refresh only): the Phase 2 research block
+- Write the drafted value file to `<bscratch>/value_file.md`. Run `python scripts/axis_dispatch.py reconciler work-states <value> --mode <create|refresh> --scratch-dir <bscratch>` and dispatch the `work-state-builder-reconciler` subagent with the printed prompt exactly as printed. The script copies each file-backed sibling's Adjacency section verbatim for it. Write the returned sibling edits to `<bscratch>/sibling_edits.json` and the Phase 3 registry line to `<bscratch>/registry_entry.md` (create mode).
 
 - Output:
   - Create: drafted value file + per-sibling back-edge edits.
@@ -99,7 +81,7 @@ User-invoked. Not called from role-intake; role-intake's Phase 6 may recommend i
 - Input: Phase 4 output, research findings, mode.
 - The QC runs in two halves per `rules/quality_control/qc-work-state-builder.md`:
 
-  **Script half - mechanical checks + auto-fix.** Write the drafted value file to a scratch file (`<bscratch>`). Run:
+  **Script half - mechanical checks + auto-fix.** The draft is at `<bscratch>/value_file.md`. Run, saving stdout to `<bscratch>/qc_result.json`:
 
   ```
   python scripts/axis_qc.py work-states <value> \
@@ -112,7 +94,7 @@ User-invoked. Not called from role-intake; role-intake's Phase 6 may recommend i
 
   Re-read the (possibly mutated) value-file temp before dispatching the subagent.
 
-  **Subagent half - judgment checks.** Dispatch `qc-work-state-builder` with the (post-script) drafted file, the research findings, the file-backed sibling file paths, and (create mode only) the sibling edits plus the registry entry text.
+  **Subagent half - judgment checks.** Run `python scripts/axis_dispatch.py qc work-states <value> --mode <create|refresh> --scratch-dir <bscratch>` and dispatch `qc-work-state-builder` with the printed prompt exactly as printed.
 
 - Aggregate failures from both halves. For each failure, follow the Fix-on-fail entry for that check in `rules/quality_control/qc-work-state-builder.md` - it names the phase to re-enter, or directs a halt for invocation errors - then re-run Phase 5. Loop up to 3 iterations. After 3 iterations, accept the best draft and treat unresolved failures as the provisional-issues list.
 

@@ -67,7 +67,7 @@ After the main body, add this screen's **Recruiter Screen Appendix block** (the 
 1. Session log: write the `## Interview: Recruiter Screen` section before QC runs, so the QC pass covers it: `python scripts/session_log.py interview --folder <app_folder> --stage "Recruiter Screen" --set "Prep date=<YYYY-MM-DD>" --set "Prep artifact=interview_prep.md" --set "Interview date=<YYYY-MM-DD>" --set "Time=<HH:MM tz>" ...` with `Status=scheduled` and `Outcome=pending` (in UPDATE mode, pass only the fields that changed). Value formats are in `templates/session_log.md` `## Interview field notes`; `Interview date` is a bare `YYYY-MM-DD`. A screen prepped before it is booked omits `Interview date` and passes `Status=unscheduled`; once booked, pass the date and `Status=scheduled`. This section is the ONE home for the screen's scheduling metadata; the prep doc records none of it.
 
 2. QC, an internal loop; do not stall the user with check-by-check narration. Run: `python <repo>/scripts/prep_qc.py check --folder <absolute application folder>`
-3. Dispatch `qc-preparation-screen` (judgment checks) with the application folder and profile folder paths.
+3. Run `python <repo>/scripts/dispatch_prompt.py qc-preparation-screen --folder <absolute application folder>` and dispatch `qc-preparation-screen` (judgment checks) with the printed prompt exactly as printed.
 4. Fix findings and re-run. Cap at 3 iterations; if findings remain, ship provisional, summarize the residual in plain English, and log it to `design/build_issues.md`.
 
 ## Phase 5: close out
