@@ -1575,6 +1575,39 @@ def test_leadership_classification_carries_a_valid_tier():
     assert not result('ic', '- Tier: function-lead - r\n')[1], 'ic with a tier passed'
 
 
+def test_requirement_text_keeps_jd_modifiers():
+    """Fixed 2026-11-05 (GitHub #83): the extractor dropped 'familiarity with'
+    from a must-have and nothing compared requirement text with the JD. Modifiers
+    are read from the JD clause holding the quote, so a narrow quote cannot step
+    around the check.
+    """
+    import role_intake_qc as riq
+    _, cfg = _config.load()
+    jd = ('Strong knowledge of the industry, including familiarity with drug discovery.\n'
+          "Bachelor's degree required; advanced degree preferred.\n"
+          'Master’s degree with 6 years of experience.\n')
+
+    def result(text, source):
+        research = ('## Critical Requirements\n\n| # | Text | Type | Source |\n|---|---|---|---|\n'
+                    f'| 1 | {text} | must-have | {source} |\n\n## Axis Gaps\n')
+        findings = []
+        riq.check_requirement_text(research, jd, cfg['requirement_qualifiers'], findings)
+        return findings[0]
+
+    whole = 'Knowledge of the industry, including familiarity with drug discovery'
+    assert result(whole, 'Quals #1 "including familiarity with drug discovery"')[1]
+    dropped = result('Knowledge of the industry, including drug discovery', 'Quals #1 "including familiarity with drug discovery"')
+    assert not dropped[1] and 'familiarity with' in dropped[2], dropped
+    assert not result('Knowledge of the industry, including drug discovery', 'Quals #1 "drug discovery"')[1], 'a narrow quote hid the dropped modifier'
+    assert result("Bachelor's degree", 'Quals #2 "Bachelor\'s degree required"')[1], "'preferred' from the next clause bound this row"
+    assert not result('Advanced degree required', 'Quals #2 "advanced degree preferred"')[1], 'a swapped modifier passed'
+    assert result("Master's degree with 6 years", 'Quals #3 "Master\'s degree with 6 years"')[1], 'curly apostrophe broke the match'
+    assert not result("Master's degree with 5 years", 'Quals #3 "Master\'s degree with 6 years"')[1], 'a changed year count passed'
+    assert not result('Degree', 'Quals #2 "not in the JD"')[1], 'a quote absent from the JD passed'
+    assert not result('Degree', 'Quals #2')[1], 'a row with no quote passed'
+    assert result('Degree', 'Quals #2 "Bachelor\'s degree required"; also Summary')[1], 'a section pointer after the quote broke the row'
+
+
 def test_stale_rule_files_are_flagged():
     """Fixed 2026-11-05 (GitHub #47): the 9-month staleness rule lived only in
     prose, the one check that ran used ~12 months, and 23 of 24 stamped rule

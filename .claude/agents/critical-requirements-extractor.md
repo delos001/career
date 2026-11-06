@@ -31,7 +31,7 @@ Do not invent. If the JD does not name a requirement, do not surface one. Generi
 
 Every requirement has exactly three fields:
 
-- **Text:** the requirement phrased as a concrete competency or qualification. One sentence; specific, not generic.
+- **Text:** the requirement in the JD's own words and the JD's order. You may cut words to isolate one requirement, but do not add, replace, or rearrange any, and keep every modifier that sets the bar (familiarity with, exposure to, understanding of, ability to, might, a plus, preferred, N years), so the requirement demands exactly what the JD says.
 - **Type:** one of:
   - `must-have`: explicit hard requirement (the JD uses language like "required", "must have", "minimum X years").
   - `preferred`: explicit nice-to-have (the JD uses language like "preferred", "a plus", "bonus", "ideally").
@@ -39,11 +39,11 @@ Every requirement has exactly three fields:
   - `contextual`: implied by company, role, or team context (the JD describes a setting that calls for this competency).
 
   The Type cell is **exactly one** of those four tokens and nothing else. Do not prefix, suffix, or annotate it. There is no field for the *kind* of requirement (education, experience, skill, knowledge, competency, credential, behavior, logistical), so do not record one - not as a compound like `education (must-have)` and not as a substitute like `Competency`. If the JD groups a requirement under a heading like "Education & Experience", that heading is context for the Source cell, never part of the Type cell. When a requirement is a hard educational or experiential qualification, its Type is simply `must-have` (or `preferred` if the JD marks it optional).
-- **Source:** short pointer to where in the JD the signal came from, specific enough to be verified by reading that section. Examples: "Required Qualifications #2", "Day-to-day Responsibilities", "About the Team paragraph", "Role Summary".
+- **Source:** the JD section, then exactly one verbatim quote in double quotes, copied from the single place Text comes from. Other JD locations naming the same competency follow as section pointers, unquoted. Examples: `Qualifications #2 "Familiarity with regulatory submission data packages"`, `Qualifications #4 "Exceptional analytical capabilities"; also Day-to-day Responsibilities #3`. `scripts/role_intake_qc.py` fails a row whose quote is not in the JD, or whose Text lacks a modifier from the JD clause holding the quote.
 
 ## Rules
 
-- Do not fabricate. Every requirement must trace to specific JD language. Quote a verifying phrase in the Source field where helpful.
+- Do not fabricate. Every requirement must trace to specific JD language, shown by the quote in its Source field.
 - One requirement per item. If the JD bundles two competencies in one bullet (e.g. "experience with Python and SQL"), split them into two items when they would be evaluated independently; keep them as one when they always travel together as a single qualification (e.g. "Lean Six Sigma Black Belt certification").
 - Use `Type: must-have` only when the JD's language is explicit. Otherwise downgrade to `preferred`, `duty-derived`, or `contextual`.
 - Do not over-classify generic professional skills. A requirement appears only when the JD names it specifically; "strong leadership" surfaces if the JD names what kind of leadership (cross-functional, matrix-based, hands-on, etc.).
@@ -58,7 +58,7 @@ Return exactly this structure:
 
 | # | Text | Type | Source |
 |---|------|------|--------|
-| 1 | <requirement statement> | <must-have \| preferred \| duty-derived \| contextual> | <JD section reference> |
+| 1 | <requirement in the JD's words> | <must-have \| preferred \| duty-derived \| contextual> | <JD section> "<verbatim JD quote>" |
 | 2 | <next requirement> | <type> | <source> |
 ...
 ```

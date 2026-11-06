@@ -130,7 +130,7 @@ Ask if this session is for a new role or to resume a previous one?
 **Running QC on the session log and research file.**
 
 - Input: session log path, research file path.
-- **Step 8a - Mechanical checks (script).** Run `python scripts/role_intake_qc.py check --folder <app_folder>`. The script owns section and field presence, pending markers, date form, URL presence, cross-file field equality, and axis-gap mirroring. On FAIL: translate the failed checks to plain English for the user, apply each per *Phase routing on failure* (or as a direct session-log edit for a one-field correction), re-run forward, and return to Step 8a.
+- **Step 8a - Mechanical checks (script).** Run `python scripts/role_intake_qc.py check --folder <app_folder>`. The script owns section and field presence, pending markers, date form, URL presence, cross-file field equality, axis-gap mirroring, and requirement quotes and modifiers against the JD. On FAIL: translate the failed checks to plain English for the user, apply each per *Phase routing on failure* (or as a direct session-log edit for a one-field correction), re-run forward, and return to Step 8a.
 - **Step 8b - Judgment checks (subagent).** Only after Step 8a passes, dispatch `qc-role-intake` with the session log and research file paths. It verifies substance only (axis classification supported by the research and applying each value file's selection and exclusion text, claims trace to sources, no section completed on partial content); mechanical checks are not re-run. **Loops on FINDINGS:** translate to plain English, apply per *Phase routing on failure*, re-run forward (Step 8a re-runs after any fix), and return to Phase 8.
 - **Show every content edit as before/after.** Whenever a fix changes the wording or substance of the session log or research file, present a before/after table (one row per changed passage: location, before, after) before re-running QC, so the user can spot-check the change. This covers any edit that alters claims, framing, or text - including those a sub-agent re-run produces. Skip the table only for purely mechanical fixes that have no meaningful "before" (filling a blank required field, a date, a path).
 - Cap the loop at **3 iterations**. Exit earlier on **PASS**. If findings remain after the third iteration, stop looping and carry them to Phase 9 Step 9a, where the user decides each one on its own.
@@ -176,6 +176,6 @@ Consumed by Phase 8 (QC failures) and Phase 9 (approval rejections). Route back,
 |---|---|
 | Title or company wrong | Phase 2 |
 | Level or industry wrong (both are axis-derived, not set at Phase 2) | Phase 6 (re-classify), then 7 |
-| Research incomplete or wrong | Phase 4 then 5 |
+| Research incomplete or wrong, or a requirement's quote or modifier fails against the JD | Phase 4 then 5 |
 | Axis classification wrong, or an axis gap reached handoff unresolved | Phase 6 (resolve the gap via the builder before proceeding; gaps must not pass the Phase 6 gate) |
 | Session log field missing | Phase 7 |

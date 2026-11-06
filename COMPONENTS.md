@@ -371,7 +371,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/role_intake_qc.py
 
-- **Purpose**: Deterministic QC for role-intake artifacts (I1-I4): research file structure and block subsections (with URL presence in Sources), session log metadata and axis-classification completeness (with date form and pending-marker detection), cross-file field equality (company / role / APP-NNN, metadata Level and Industry against the axis values), and axis-gap mirroring between the two files.
+- **Purpose**: Deterministic QC for role-intake artifacts (I1-I7): research file structure and block subsections (with URL presence in Sources), session log metadata and axis-classification completeness (with date form and pending-marker detection), cross-file field equality (company / role / APP-NNN, metadata Level and Industry against the axis values), axis-gap mirroring between the two files, axis line form, leadership tier, and requirement quotes and modifiers against `jd.md`.
 - **Status**: Designed
 - **Inputs**: Args (`check --folder <app_folder>`). Config: `config.yaml` (filenames) via `scripts/_config.py`. Filesystem: research.md and session_log.md in the folder.
 - **Outputs**: Per-check `PASS`/`FAIL` lines and a `RESULT` line to stdout; exit 0 when all pass, 1 otherwise.

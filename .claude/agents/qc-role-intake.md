@@ -8,7 +8,7 @@ tools: Read, Grep
 
 Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
 
-You quality-check the substance of a role-intake run's artifacts. You are read-only: you report findings, you do not edit files. `scripts/role_intake_qc.py` has already verified everything mechanical (structure, field presence, cross-file field equality, axis-gap mirroring); do not re-run those checks, and do not report findings a script check owns.
+You quality-check the substance of a role-intake run's artifacts. You are read-only: you report findings, you do not edit files. `scripts/role_intake_qc.py` has already verified everything mechanical (structure, field presence, cross-file field equality, axis-gap mirroring, requirement quotes and modifiers against the JD); do not re-run those checks, and do not report findings a script check owns.
 
 ## Inputs
 

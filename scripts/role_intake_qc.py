@@ -27,6 +27,9 @@ split into its mechanical half, check 5 stays with the agent):
       (`- <Axis>: <values> - <rationale>`, no bold, no bare label).
   I6  A leadership Level carries exactly one `- Tier:` line naming a tier
       from rules/levels/leadership.md's Tiers block; other levels carry none.
+  I7  Each requirement row's Source carries one verbatim quote found in jd.md,
+      and its Text keeps every modifier (config requirement_qualifiers) in the
+      JD clause holding that quote.
 
 Output: one `<ID>  PASS|FAIL  <detail>` line per check, then a RESULT
 line. Exit 0 when all pass, 1 otherwise.
@@ -73,6 +76,12 @@ _PENDING_RE = re.compile(r'_\(pending\)_|\{\{[a-z_]+\}\}')
 
 # Regex: a URL, for the Sources subsection check.
 _URL_RE = re.compile(r'https?://\S+')
+
+# Regex: a double-quoted span in a requirement's Source cell (straight or curly).
+_QUOTE_RE = re.compile(r'["“]([^"“”]+)["”]')
+
+# Regex: where a JD clause ends (see _clause_holding).
+_CLAUSE_END_RE = re.compile(r'[.;!?]\s')
 
 
 # ---------------------------------------------------------------------------
@@ -324,6 +333,73 @@ def check_tier(log_text, tiers, findings):
     findings.append(('I6', ok, detail))
 
 
+def _normalize(text):
+    """Lowercase, straighten quotes and dashes, drop bold, collapse whitespace."""
+    for fancy, plain in (('’', "'"), ('‘', "'"), ('–', '-'), ('—', '-'), ('*', '')):
+        text = text.replace(fancy, plain)
+    return re.sub(r'\s+', ' ', text).strip().lower()
+
+
+def _clause_holding(jd_text, quote):
+    """Return the normalized JD clause holding `quote`, or None if not found.
+
+    A clause runs between sentence ends and semicolons within one JD line, so
+    in 'Bachelor's degree required; advanced degree preferred.' the 'preferred'
+    never binds the Bachelor's row. A quote must sit on one line of the JD.
+    """
+    target = _normalize(quote)
+    for raw_line in jd_text.split('\n'):
+        line = _normalize(raw_line)
+        pos = line.find(target)
+        if pos < 0:
+            continue
+        start = max((m.end() for m in _CLAUSE_END_RE.finditer(line, 0, pos)), default=0)
+        end_match = _CLAUSE_END_RE.search(line, pos + len(target))
+        return line[start:end_match.start() + 1] if end_match else line[start:]
+    return None
+
+
+def _requirement_rows(research_text):
+    """Return [(row number, Text, Source)] from the Critical Requirements table."""
+    rows = []
+    for line in (_section_body(research_text, 'Critical Requirements') or '').split('\n'):
+        cells = [c.strip() for c in line.strip().strip('|').split('|')]
+        if len(cells) >= 4 and cells[0].isdigit():
+            rows.append((int(cells[0]), cells[1], ' | '.join(cells[3:])))
+    return rows
+
+
+def check_requirement_text(research_text, jd_text, qualifiers, findings):
+    """I7: requirement Text keeps the modifiers that set the JD's bar (GitHub #83).
+
+    The extractor once dropped 'familiarity with' from a must-have, and the
+    stricter text reached the gap walk. Modifiers are read from the whole JD
+    clause rather than the quote alone: the extractor chooses the quote, so a
+    narrow one would otherwise step around the check. A row that keeps every
+    modifier but rewords the rest passes; this check guards the bar, not style.
+    """
+    rows = _requirement_rows(research_text)
+    if jd_text is None:
+        findings.append(('I7', False, 'jd.md not found, so requirement quotes cannot be checked'))
+        return
+    problems = []
+    for num, text, source in rows:
+        quotes = _QUOTE_RE.findall(source)
+        if len(quotes) != 1:
+            problems.append(f'CR-{num:03d}: Source needs one quote, found {len(quotes)}')
+            continue
+        clause = _clause_holding(jd_text, quotes[0])
+        if clause is None:
+            problems.append(f'CR-{num:03d}: quote not found in the JD: {quotes[0][:60]}')
+            continue
+        norm_text = _normalize(text)
+        for pattern in qualifiers:
+            for match in re.finditer(rf'\b(?:{pattern})\b', clause):
+                if not re.search(rf'\b{re.escape(match.group(0))}\b', norm_text):
+                    problems.append(f"CR-{num:03d}: Text drops '{match.group(0)}' from the JD clause: {clause[:80]}")
+    findings.append(('I7', not problems, '; '.join(problems) or f'{len(rows)} requirement rows keep their JD modifiers'))
+
+
 def check_gap_mirroring(research_text, log_text, findings):
     """I4: the axes flagged as gaps match between the two files."""
     log_gaps, research_gaps = _gap_axes(log_text), _gap_axes(research_text)
@@ -361,6 +437,8 @@ def cmd_check(args, repo_root, cfg):
     check_gap_mirroring(research_text, log_text, findings)
     check_axis_line_form(log_text, findings)
     check_tier(log_text, leadership_tiers(repo_root, cfg), findings)
+    check_requirement_text(research_text, _read(os.path.join(app_folder, fn['jd_file'])),
+                           cfg['requirement_qualifiers'], findings)
 
     failed = [f for f in findings if not f[1]]
     for check, ok, detail in findings:

@@ -89,6 +89,24 @@ retrieval_calibration:
   slope_bounds: [0.5, 2.0]  # a fitted slope outside this range means the chunk's scoring is unusable; the merge stops
   max_post_residual: 0.08   # QC fails when anchors still disagree by more than this on average after correction; provisional
 
+# Modifiers that set a requirement's bar (scripts/role_intake_qc.py I7). One
+# case-insensitive regex each; whatever one matches in the JD clause holding a
+# requirement's quote must also appear in that requirement's Text. Add a word
+# here when a run shows it being dropped.
+requirement_qualifiers:
+  - familiar(?:ity)? with
+  - exposure to
+  - understanding of
+  - ability to
+  - might
+  - a plus
+  - bonus
+  - nice to have
+  - preferred
+  - preferably
+  - ideally
+  - \d+(?:-\d+)?\+? years   # the number must survive too
+
 # Profile-update related-entry pull (scripts/profile_slice.py related).
 related_pull:
   max_chars: 50000          # a pull larger than this splits into parts, read one --part at a time
