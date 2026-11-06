@@ -835,6 +835,31 @@ def test_cv_section_order_comes_from_the_rule_file():
     assert any(norm == 'work-output' for _, norm, _ in sections), 'Selected Projects not read as work output'
 
 
+def test_every_interview_audience_has_a_rule_file_and_stage_label():
+    """Fixed 2026-11-05 (GitHub #62): a recruiter round after a hiring-manager
+    round had no rule file to load and no stage label, so the skill choice was made
+    by hand mid-run. Every rule file must be offered at intake, and every audience
+    offered must have a file with the same sections as its siblings.
+    """
+    root, cfg = _config.load()
+    folder = os.path.join(root, cfg['paths']['rules'], 'interview-types')
+    files = {name[:-3] for name in os.listdir(folder) if name.endswith('.md')}
+    skill = _util.read(os.path.join(root, '.claude', 'skills', 'preparation-interview', 'SKILL.md'))
+    intake = re.search(r'- Audience \(rule-file key -> stage label\): (.+?)\. The key', skill)[1]
+    offered = dict(pair.split(' -> ') for pair in intake.split(', '))
+    assert set(offered) == files, f'intake offers {sorted(offered)}, rule files are {sorted(files)}'
+    assert offered['recruiter'] == 'Recruiter Screen', offered
+
+    def headings(name):
+        return re.findall(r'(?m)^## (.+)$', _util.read(os.path.join(folder, f'{name}.md')))
+    assert headings('recruiter') == headings('hiring-manager'), headings('recruiter')
+
+    screen = _util.read(os.path.join(root, '.claude', 'skills', 'preparation-screen', 'SKILL.md'))
+    assert 'rules/interview-types/recruiter.md' in screen, 'the screen skill must read the shared rule file'
+    assert 'other than Recruiter Screen' in screen, 'the screen skill must hand off a late recruiter round'
+    assert 'hold for later rounds' not in screen, 'recruiter emphasis must live only in the rule file'
+
+
 def test_length_finding_names_the_cheapest_lines_to_recover():
     """Fixed 2026-11-05 (GitHub #61): on APP-020 the writer trimmed against its
     own line model and counted citations, burning two QC rounds; five bullets

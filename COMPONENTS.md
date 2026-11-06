@@ -190,15 +190,15 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Outputs**:
   - Files: `<application folder>/interview_prep.md`; dated prep sections appended to `research.md`; `## Interview: Recruiter Screen` section in the session log; optional staged entries in `personal/profile/profile_updates_pending.md` (general facts only).
   - Skills: feeds the interview itself, interview-notes (tier-1 question sourcing), the followup skill, and preparation-interview (which appends to the same artifact).
-- **Triggers**: User invocation (`/preparation-screen`) after gap-analysis, when a screen is scheduled. UPDATE mode when `interview_prep.md` already exists.
+- **Triggers**: User invocation (`/preparation-screen`) after gap-analysis, when a screen is scheduled. UPDATE mode when `interview_prep.md` already exists for this same screen; hands off to `preparation-interview` when the doc already carries a post-screen round.
 - **Update Triggers**: When `templates/interview_prep.md` changes (structure authority for artifact and `prep_qc.py` alike); when the gap-analysis Eligibility Flags contract changes; when `positioning.md`'s why-leave section or `user-info.md`'s default fields change shape; when either subagent's contract changes.
 
 #### preparation-interview
 
-- **Purpose**: Prepare the candidate for a post-screen interview (hiring-manager, peer/team, or executive). Maintains the shared, cumulative `interview_prep.md` (a main body refined across interviews plus a thin per-interview Appendix block whose Emphasis feeds the live cue-card that the interview-notes skill composes into `interview_notes.md`). Per `preparation-interview-architecture-2026-07`.
+- **Purpose**: Prepare the candidate for a post-screen interview (hiring-manager, peer/team, or executive), or a recruiter round that follows one. Maintains the shared, cumulative `interview_prep.md` (a main body refined across interviews plus a thin per-interview Appendix block whose Emphasis feeds the live cue-card that the interview-notes skill composes into `interview_notes.md`). Per `preparation-interview-architecture-2026-07`.
 - **Status**: Built
 - **Inputs**:
-  - Rules: `rules/interview-types/<audience>.md` (hiring-manager / peer-team / executive; sets the interview's emphasis and audience-specific research gaps).
+  - Rules: `rules/interview-types/<audience>.md` (hiring-manager / peer-team / executive / recruiter; sets the interview's emphasis and audience-specific research gaps).
   - Agents: `prep-research` (per-interviewer intel + purpose-fit gaps; foreground), `qc-preparation-interview` (judgment QC).
   - Scripts: `scripts/prep_interview_qc.py` (deterministic QC), `scripts/interview_lifecycle.py` (reschedule / cancel three-file sync), `scripts/notes_assemble.py` (cue-card scaffolding via the interview-notes flow).
   - Templates: `templates/interview_prep.md` (the one canonical structure authority, shared with preparation-screen).

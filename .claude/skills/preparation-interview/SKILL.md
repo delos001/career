@@ -1,13 +1,13 @@
 ---
 name: preparation-interview
-description: Prepare the candidate for a post-screen interview (hiring manager, peer/team, or executive). Maintains ONE cumulative interview_prep.md per application - a shared main body refined across interviews plus a thin per-interview Appendix block - and projects a live cue-card into interview_notes.md. Prompts audience + format at intake and reads the matching rules/interview-types file. QC is a deterministic script plus a judgment subagent (qc-preparation-interview). Run after a post-screen interview is scheduled. Recruiter screens are the separate preparation-screen skill; building a presentation deliverable is the separate presentation skill.
+description: Prepare the candidate for a post-screen interview (hiring manager, peer/team, or executive), or a recruiter round that follows one. Maintains ONE cumulative interview_prep.md per application - a shared main body refined across interviews plus a thin per-interview Appendix block - and projects a live cue-card into interview_notes.md. Prompts audience + format at intake and reads the matching rules/interview-types file. QC is a deterministic script plus a judgment subagent (qc-preparation-interview). Run after a post-screen interview is scheduled. A recruiter round that comes first is the separate preparation-screen skill; building a presentation deliverable is the separate presentation skill.
 ---
 
 # preparation-interview
 
-Prepare the candidate for one post-screen interview: hiring manager, peer/team, or executive. The output artifact is `interview_prep.md` in the application folder, created from `templates/interview_prep.md` (the structure authority).
+Prepare the candidate for one post-screen interview: hiring manager, peer/team, or executive, or a recruiter round that follows one of them. The output artifact is `interview_prep.md` in the application folder, created from `templates/interview_prep.md` (the structure authority).
 
-Recruiter/phone screens are the separate `preparation-screen` skill. Both skills share the SAME `interview_prep.md`; this skill owns the cumulative architecture below and reconciles a screen-era doc into it. Building a presentation deliverable is a separate skill; here a presentation is only a flag in the Appendix.
+A recruiter/phone screen that comes first is the separate `preparation-screen` skill. Both skills share the SAME `interview_prep.md`; this skill owns the cumulative architecture below and reconciles a screen-era doc into it. Building a presentation deliverable is a separate skill; here a presentation is only a flag in the Appendix.
 
 ## Interaction contract (non-negotiable)
 
@@ -40,7 +40,7 @@ Rule file: `rules/interview-types/<audience>.md` for the prompted audience; it s
 
 One question per turn:
 
-- Audience (rule-file key -> stage label): hiring-manager -> Hiring Manager, peer-team -> Peer / Team, executive -> Executive. The key selects the rules/interview-types file; the stage label is what goes in every heading (Appendix, session log, notes round), matching interview_lifecycle's --stage.
+- Audience (rule-file key -> stage label): hiring-manager -> Hiring Manager, peer-team -> Peer / Team, executive -> Executive, recruiter -> Recruiter Screen. The key selects the rules/interview-types file; the stage label is what goes in every heading (Appendix, session log, notes round), matching interview_lifecycle's --stage.
 - Format: single | panel | presentation | technical (combine as needed; panel drives per-interviewer blocks; presentation sets the Appendix flag).
 - Purpose/objective: use it if the user has one; otherwise run the audience's standard prep. Never narrow to a stated purpose unless the user is certain it is the only topic - the stated purpose can be wrong or change (prepare for flex).
 - Interviewer(s): name + title each (empty allowed).

@@ -1,6 +1,6 @@
 ---
 name: preparation-screen
-description: Prepare for a recruiter / phone-screen interview. Reads the application's existing artifacts (research, gap analysis, session log) and the profile, closes purpose-fit research gaps via the prep-research subagent, then drafts interview_prep.md section by section with user approval before every write. QC is a deterministic script (prep_qc.py) plus a judgment subagent (qc-preparation-screen). Run after gap-analysis, when a screen is scheduled. Post-screen rounds are the separate preparation-interview skill, which extends the same interview_prep.md.
+description: Prepare for a recruiter / phone-screen interview that comes before any post-screen round. Reads the application's existing artifacts (research, gap analysis, session log) and the profile, closes purpose-fit research gaps via the prep-research subagent, then drafts interview_prep.md section by section with user approval before every write. QC is a deterministic script (prep_qc.py) plus a judgment subagent (qc-preparation-screen). Run after gap-analysis, when a screen is scheduled. Post-screen rounds, and a recruiter round that follows one, are the separate preparation-interview skill, which extends the same interview_prep.md.
 ---
 
 # preparation-screen
@@ -17,12 +17,13 @@ Prepare the candidate for a recruiter or phone-screen interview for one applicat
 
 ## Inputs
 
-From the application folder: `research.md`, `gap_analysis.md`, `session_log.md`, `jd.md`, `cv_content.md` (the CV the interviewer holds), and the Signature Theme score table in `retrieval.md` (targeted read of that table only, never the whole manifest). From the profile folder (`python scripts/paths.py profile`): `positioning.md` (all sections; the routing rules in Phase 3 say where each lands), `user-info.md` (static facts and dated defaults), `inventory.md` Employment & Role History section (authoritative role records; verify any date/scope/count claim here before writing it).
+From the application folder: `research.md`, `gap_analysis.md`, `session_log.md`, `jd.md`, `cv_content.md` (the CV the interviewer holds), and the Signature Theme score table in `retrieval.md` (targeted read of that table only, never the whole manifest). From the profile folder (`python scripts/paths.py profile`): `positioning.md` (all sections; the routing rules in Phase 3 say where each lands), `user-info.md` (static facts and dated defaults), `inventory.md` Employment & Role History section (authoritative role records; verify any date/scope/count claim here before writing it). Rule file: `rules/interview-types/recruiter.md`, which sets this round's emphasis, research targets, and Question Bank priorities.
 
 ## Phase 0: mode
 
-If `interview_prep.md` already exists in the application folder, run in
-UPDATE mode: walk the existing sections with the user, confirm or amend each, refresh research only where the user says something changed, bump `last_updated`, and add a dated line item to the existing session-log section rather than a new section. Otherwise run in CREATE mode (phases 1-5).
+If `interview_prep.md` already exists and carries an Appendix block for any round other than Recruiter Screen, stop: this recruiter round follows a post-screen round. Tell the user in plain English that the preparation-interview skill handles it, and to run it with the recruiter audience.
+
+If `interview_prep.md` already exists otherwise, this is a re-run before the same screen, so run in UPDATE mode: walk the existing sections with the user, confirm or amend each, refresh research only where the user says something changed, bump `last_updated`, and add a dated line item to the existing session-log section rather than a new section. Otherwise run in CREATE mode (phases 1-5).
 
 ## Phase 1: intake
 
@@ -32,12 +33,7 @@ Collect the screen facts conversationally (one question per turn): who is conduc
 
 Evaluate existing research by PURPOSE-FIT against live-conversation needs, never by artifact age. Enumerate the gaps, state the count, then present one per turn with: what it is, why a screen needs it, expected confidence, and an honest value ranking. The user approves or skips each.
 
-Standard checklist (plus any role-specific gaps):
-1. Compensation calibration (skip if a posted band and user numbers settle it).
-2. Interview-process intel.
-3. JD internal-reference decode (company shorthand; one per phrase found).
-4. Interviewer context.
-5. Company mission and core values (normally already captured at role-intake in research.md's Company section; add a top-up only if intake predated that capture or left them blank). Some employers screen explicitly against their values, so this grounds natural values-fit conversation.
+Standard checklist (plus any role-specific gaps): the rule file's Research targets, plus interviewer context.
 
 ALL research goes through the `prep-research` subagent, one target per invocation, foreground (findings must return before any write, and the orchestrator does the writing; the subagent never writes files). This includes ad-hoc lookups raised mid-conversation by the user, however small; never answer one with an inline search. On return, append the findings to `research.md` as a dated section attributed `**Added:** YYYY-MM-DD (interview prep, phone screen)` with Summary / Key facts / Sources, then relay them with confidence hedges intact.
 
@@ -61,8 +57,8 @@ The rules that need judgment emphasis (the template comments carry the rest):
   - "Why this company?" draws on Industry Trajectory and Where I Fit, matched to the company's strategic thesis.
   - "What are you looking for" is drafted fresh for THIS role; a generic answer reads as settling.
   - A Core-Philosophy leadership-style entry is a standard optional add; its authority/matrix/hands-on flex line is the defense layer for direct-reports probes.
-- Question Bank: the screen's informed questions become shared, reusable entries with stable labels; flag which to hold for later rounds when the recruiter's authority is limited.
-- Compensation / Logistics (one section): numbers confirmed this run, scope-conditional stated range, market data cited from the research ledger; logistics conditional facts confirmed this run, static facts from user-info.md shown to confirm.
+- Question Bank: the screen's informed questions become shared, reusable entries with stable labels; the rule file says which to flag.
+- Compensation / Logistics (one section): content per the rule file's Emphasis.
 
 After the main body, add this screen's **Recruiter Screen Appendix block** (the template's per-interview block): purpose + interviewer(s) + emphasis pointing INTO the main body (which Question Bank items to prioritize, what to lead with). Pointers, never copies. The heading is `## Recruiter Screen - <Interviewer(s)>`, with no date and no status: scheduling metadata lives only in `session_log.md`.
 

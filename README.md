@@ -294,7 +294,7 @@ career/
 │   │   └── cv-best-practices.md
 │   ├── interview-types/                 # sets emphasis + research gaps per audience
 │   │   ├── hiring-manager.md, peer-team.md
-│   │   └── executive.md
+│   │   └── executive.md, recruiter.md
 │   ├── profile/                         # profile writing rules, read through rules_slice.py
 │   │   ├── routing.md                   # where a staged fact goes
 │   │   ├── staging-writing.md           # how a new fact is captured
