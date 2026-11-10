@@ -1,6 +1,6 @@
 ---
 name: jd-needs-ranker
-description: Groups a job's extracted critical requirements into a handful of JD needs and ranks them by how much the JD signals each one matters, for the role-intake skill. Reads the JD and the research file's Critical Requirements table. Returns a Ranked Needs table that cv-targeted, gap-analysis and interview prep read in priority order. Read-only.
+description: Groups a job's extracted critical requirements into a handful of JD needs and ranks them by how much the JD signals each one matters, for the role-classify skill. Reads the JD and the research file's Critical Requirements table. Returns a Ranked Needs table that cv-targeted, gap-analysis and interview prep read in priority order. Read-only.
 tools: Read
 ---
 
@@ -36,7 +36,7 @@ The dispatching skill gives you the path to `jd.md` and to `research.md`. Read t
 - The `**The job:**` description is required. It shows the reader how you understood the JD, so a misreading can be caught.
 - Every requirement row number appears in exactly one need. None dropped, none repeated.
 - Do not invent a need the requirement rows do not carry. Ranking reorders and groups; it adds nothing.
-- `scripts/role_intake_qc.py` checks the row coverage, the ids, the Basis and Signals values, and that each quote is in the JD.
+- `scripts/role_classify_qc.py` checks the row coverage, the ids, the Basis and Signals values, and that each quote is in the JD.
 
 ## Return format
 

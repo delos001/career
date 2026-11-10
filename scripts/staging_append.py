@@ -164,7 +164,7 @@ def parse_capture(text, labels, known_roles):
 _META_RE = r'(?m)^-\s+{label}:\s*(.+?)\s*$'
 
 # Regex: an axis line, e.g. '- Industry: eclinical - Faro is a ...'. The form is
-# the axis-classifier's return-format spec, which assemble.py finalize writes
+# the axis-classifier's return-format spec, which role_classify_assemble.py finalize writes
 # into the session log verbatim; it carries no bold markers. Captures the first
 # value token, which is the primary per the classifier's
 # '<primary> (primary), <secondary> (secondary)' convention.

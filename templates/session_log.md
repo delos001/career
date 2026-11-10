@@ -1,8 +1,8 @@
 # Session Log - template
 
-**Used by:** role-intake (creates and finalizes). Downstream skills append their own sections below role-intake's; each writing skill owns its own sections.
+**Used by:** role-intake (creates); role-classify (fills the axis fields). Downstream skills append their own sections below role-intake's; each writing skill owns its own sections.
 
-One per evaluated job, written to `session_log.md` in the application folder (`python scripts/paths.py app <APP-NNN>`). `scripts/assemble.py` renders the skeleton below: tokens in `{{double braces}}` are substituted. The `{{research_completed_date}}`, `{{role_level}}`, `{{industry}}`, and `{{axis_*}}` tokens are set to a pending marker at `init` (Phase 3) and filled with real content at `finalize` (Phase 7). All other fields are populated at `init`.
+One per evaluated job, written to `session_log.md` in the application folder (`python scripts/paths.py app <APP-NNN>`). `scripts/assemble.py` renders the skeleton below: tokens in `{{double braces}}` are substituted. The `{{research_completed_date}}`, `{{role_level}}`, `{{industry}}`, and `{{axis_*}}` tokens are set to a pending marker at `init` (role-intake Phase 3). `assemble.py research` (role-intake Phase 5) fills the date; `role_classify_assemble.py finalize` fills the rest. All other fields are populated at `init`.
 
 ## Skeleton
 

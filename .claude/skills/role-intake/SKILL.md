@@ -1,6 +1,6 @@
 ---
 name: role-intake
-description: Understand a job opportunity - ingest a job description, research the company/role/industry, classify the job against the five axes, and produce a session log plus a research file for downstream gap analysis. Run this first when evaluating a new role.
+description: Understand a job opportunity - ingest a job description, research the company/role/industry, extract the critical requirements, and produce a session log plus a research file. Run this first when evaluating a new role; role-classify runs next.
 ---
 
 # role-intake - understand the job
@@ -13,7 +13,7 @@ Builds the foundational understanding of a job opportunity. It produces two arti
 - Phases below run in order; each has a declared input and output.
 - Each phase opens with the **bold lead line** under its heading - speak it verbatim before running the phase.
 - User-facing status and prompts use plain English. No raw QC check tags or route-back labels, no implementation jargon (subagent, JSON). Translate every finding, loop status, and error message to what the user needs to know to decide or act.
-- Phase 8 (QC) and Phase 9 (approval) loop back per *Phase routing on failure*.
+- Phase 6 (QC) and Phase 7 (approval) loop back per *Phase routing on failure*.
 - **Run-scratch goes in the application's scratch folder.** `<scratch>` denotes `<app_folder>/scratch/`; create it if absent. Write every working file this skill produces - and tell every sub-agent it spawns to write its output files - under `<scratch>`, never the shared `temp/`. Scratch persists for the life of the application (a resumed run reuses it); it is wiped in one shot by `scratch_cleanup.py` when the application is declined (gap-analysis) or closed (the `close-application` skill).
 
 ## Resume check - run before Phase 0
@@ -25,9 +25,7 @@ Ask if this session is for a new role or to resume a previous one?
   1. Folder missing - halt; APP-NNN likely wrong.  Ask for APP-NNN again.
   2. Session log missing - ingest already ran but init did not; re-confirm metadata with user and resume at **Phase 3b** (session log write only).
   3. `research.md` missing - resume at start of **Phase 4**.
-  4. `## Ranked Needs` in `research.md` missing or `_(pending)_` - resume at **Phase 5b**.
-  5. Axis classification still `_(pending)_` in the session log - resume at start of **Phase 6**.
-  6. All filled - resume at start of **Phase 8** (re-QC).
+  4. Otherwise - resume at start of **Phase 6** (re-QC).
 
   Before running the landing phase, reload its declared inputs from the artifacts already on disk - the prior phases' in-conversation outputs are gone on a resume. `jd.md` (and any `comms.md`) holds the JD and comms text; the session log holds the confirmed metadata; `research.md` holds the research findings.
 
@@ -55,7 +53,7 @@ Ask if this session is for a new role or to resume a previous one?
 **Extracting role title and company from the JD.**
 
 - Input: JD text + comms.
-- Infer title and company only. Do NOT infer level or industry here - inferring them from the JD alone is unreliable (a JD's industry is often recruiter-facing or generic, and level is a registry judgment). They are decided later, after the research is done and the axis files are read, by the axis-classifier (Phase 6) and written into the session log at finalize (Phase 7).
+- Infer title and company only. Do NOT infer level or industry here - inferring them from the JD alone is unreliable (a JD's industry is often recruiter-facing or generic, and level is a registry judgment). The role-classify skill decides them after the research is done.
 - Prompt the user for title or company if either cannot be inferred.
 - Present for explicit confirmation:
 
@@ -67,13 +65,13 @@ Ask if this session is for a new role or to resume a previous one?
   ```
 
 - Re-present on corrections until confirmed.
-- Output: user-confirmed {title, company}. Level and industry are deferred to Phase 6/7.
+- Output: user-confirmed {title, company}.
 
 ## Phase 3 - Session init
 
 **Creating the application folder and starting the session log.**
 
-- Input: title, company; JD text + source; comms text + source (if any). (Level and industry are not known yet - they are decided at Phase 6/7.)
+- Input: title, company; JD text + source; comms text + source (if any).
 - Run `python scripts/app_id.py` once; it claims the next APP-NNN and prints it. Use that ID for the whole run and never re-run the script for it (each run claims a new number). Determine the current `YYYY-MM`.
 - **Resolve the company slug from the registry first.** Run `python scripts/company_slug.py lookup --company "<confirmed company>"`.
   - If it prints a slug, reuse it (do NOT ask). Tell the user which slug is being reused, e.g. "Using the existing slug `thermofisher` for Thermo Fisher Scientific."
@@ -81,7 +79,7 @@ Ask if this session is for a new role or to resume a previous one?
 - Write JD (and comms if present) to scratch files under `<scratch>` (this first write creates the application folder; the `ingest` step in 3a tolerates the pre-existing folder).
 - **Step 3a - ingest (checkpoint):** Run `python scripts/assemble.py ingest` with `--slug`, `--app-id`, `--ym`, `--jd-text-file` (plus `--comms-text-file` if present). This creates the folder and writes `jd.md` and optionally `comms.md` immediately. Capture the printed paths: `app_folder`, `jd_path`, and optionally `comms_path`.
   - **Identity header for unlabeled JDs.** Check whether the confirmed role title and company each actually appear in the JD body. For any that do NOT, pass it so ingest prepends an identity header to `jd.md`: `--add-title "<title>"` and/or `--add-company "<company>"`. This keeps a JD that carries no in-text identifiers traceable to its application when read in isolation. Omit the flag for a value the JD already names (no redundant header).
-- **Step 3b - session log:** Run `python scripts/assemble.py init` with the slug, APP-NNN, YM, confirmed metadata (company, role), `--start-date`, and `--jd-source`. Do NOT pass `--level` or `--industry` - they are deferred to the axis-classifier; init writes them as pending and finalize (Phase 7) fills them. For `--jd-source`: pass `jd_path` from Step 3a, unless the original JD source was a URL (pass the URL instead). For `--comms-source`: pass `comms_path` from Step 3a if comms were written and the original source was a local file; pass `"pasted"` if comms were pasted; pass the URL if the original source was a URL; omit if no comms.
+- **Step 3b - session log:** Run `python scripts/assemble.py init` with the slug, APP-NNN, YM, confirmed metadata (company, role), `--start-date`, and `--jd-source`. Do NOT pass `--level` or `--industry`; init writes them as pending for role-classify. For `--jd-source`: pass `jd_path` from Step 3a, unless the original JD source was a URL (pass the URL instead). For `--comms-source`: pass `comms_path` from Step 3a if comms were written and the original source was a local file; pass `"pasted"` if comms were pasted; pass the URL if the original source was a URL; omit if no comms.
 - Output: paths printed by `assemble.py init`.
 
 ## Phase 4 - Research
@@ -104,90 +102,32 @@ Ask if this session is for a new role or to resume a previous one?
 
 - Input: four findings blocks.
 - Write each block to its own scratch file under `<scratch>`, then run `python scripts/assemble.py research` with `--folder`, `--app-id`, `--company`, `--role`, `--date`, and the four scratch-file paths (`--company-file`, `--role-file`, `--industry-file`, `--critical-requirements-file`). It section-replaces only role-intake's own sections so nothing else is clobbered.
-- Output: `research.md` written, with `## Ranked Needs` pending.
+- Output: `research.md` written and the session log's research-completed date filled. Ranked Needs, Axis Gaps, and the session log's axis sections stay pending for role-classify.
 
-## Phase 5b - Rank the JD's needs
-
-**Ranking what the job description says matters most.**
-
-- Input: application folder.
-- The requirement Type records where a requirement appeared in the JD, not how much it matters. Run `python scripts/dispatch_prompt.py jd-needs-ranker --folder <app_folder>` and dispatch `jd-needs-ranker` with the printed prompt exactly as printed. It groups the requirements into ranked needs.
-- Write its output to a scratch file under `<scratch>`, then run `python scripts/assemble.py needs --folder <app_folder> --needs-file <path>`.
-- Output: `research.md` carries the `## Ranked Needs` table. The user confirms it at Phase 9.
-
-## Phase 6 - Axis classification
-
-**Classifying the role against the five axes.**
-
-- Input: JD text, research findings.
-- Run `python scripts/dispatch_prompt.py axis-classifier --folder <app_folder>` and dispatch `axis-classifier` with the printed prompt exactly as printed. It gets the JD, the comms if any (recruiter or portal messages; a line such as "could be considered at director level" bears on level), and the research file. It classifies all five axes - including level and industry - from scratch; no level or industry is inferred earlier, so there are no "confirmed starting points" to hand it. The classifier is the authoritative source for every axis. It works registry-first per axis: read the registry, pick candidate value(s), read only the candidate value files, confirm each pick. It must commit to a value on every axis; an axis gap has only two legitimate causes - no registry value confirms, or a value confirms but its rule file is not yet authored (`File deferred`). Indecision between confirming values is never a gap.
-- **Resolution gate (checkpoint).** Every axis must carry a confirmed value before this skill proceeds to Phase 7, and that value must be usable downstream: either its rule file is present, or it is a `Registry-only` value (no file by design). The only blocked states are the two the classifier flags as an axis gap (a value confirms but its file is `File deferred`, or no registry value confirms). If the classifier returns any axis gap, do NOT continue to Phase 7. Halt here, state each gap to the user in plain English, and resolve it before moving on:
-  - **File deferred** (value confirmed, file missing) → run the matching builder skill (`orientation-builder`, `industry-builder`, `specialty-builder`, `level-builder`, or `work-state-builder`) to author the rule file, then re-invoke role-intake; the resume ladder returns to Phase 6 (axis still pending in the session log) and re-classifies against the now-complete rules.
-  - **No registry value confirms** → present the closest registry values; the user either maps the role to an existing value (re-run the classifier with that steer) or runs the builder to author a new registry value, after which role-intake is re-invoked and re-classifies. No axis gap is ever recorded-and-carried past this point. Only once all five axes are fully resolved (value + file) does the skill advance to Phase 7.
-- Output: per-axis primary/secondary with one-line rationale each; zero outstanding axis gaps.
-
-## Phase 7 - Session log finalization
-
-**Finalizing the session log with the classification results.**
-
-- Input: session log path, research file path, `axis-classifier` output, research-completed date.
-- Write the `axis-classifier` output to a scratch file under `<scratch>`. Run `python scripts/assemble.py finalize` with `--session-log`, `--date`, `--axis-file`, and `--research-file` pointing to `research.md`. It fills the date, fills the pending Level and Industry metadata lines from the axis result, replaces the pending axis sections in the session log, and writes the resolved `## Axis Gaps` section to `research.md`.
-- Output: session log complete (Level and Industry now filled from the axis classification); `research.md` Axis Gaps section filled.
-
-## Phase 8 - QC
+## Phase 6 - QC
 
 **Running QC on the session log and research file.**
 
 - Input: session log path, research file path.
-- **Step 8a - Mechanical checks (script).** Run `python scripts/role_intake_qc.py check --folder <app_folder>`. The script owns section and field presence, pending markers, date form, URL presence, cross-file field equality, axis-gap mirroring, and requirement quotes and modifiers against the JD. On FAIL: translate the failed checks to plain English for the user, apply each per *Phase routing on failure* (or as a direct session-log edit for a one-field correction), re-run forward, and return to Step 8a.
-- **Step 8b - Judgment checks (subagent).** Only after Step 8a passes, run `python scripts/dispatch_prompt.py qc-role-intake --folder <app_folder>` and dispatch `qc-role-intake` with the printed prompt exactly as printed. It verifies substance only (axis classification supported by the research and applying each value file's selection and exclusion text, claims trace to sources, no section completed on partial content); mechanical checks are not re-run. **Loops on FINDINGS:** translate to plain English, apply per *Phase routing on failure*, re-run forward (Step 8a re-runs after any fix), and return to Phase 8.
-- **Show every content edit as before/after.** Whenever a fix changes the wording or substance of the session log or research file, present a before/after table (one row per changed passage: location, before, after) before re-running QC, so the user can spot-check the change. This covers any edit that alters claims, framing, or text - including those a sub-agent re-run produces. Skip the table only for purely mechanical fixes that have no meaningful "before" (filling a blank required field, a date, a path).
-- Cap the loop at **3 iterations**. Exit earlier on **PASS**. If findings remain after the third iteration, stop looping and carry them to Phase 9 Step 9a, where the user decides each one on its own.
+- **Step 6a - Mechanical checks (script).** Run `python scripts/role_intake_qc.py check --folder <app_folder>`. The script owns section and field presence, pending markers, date form, URL presence, cross-file field equality, and requirement quotes and modifiers against the JD. On FAIL: translate the failed checks to plain English for the user, apply each per *Phase routing on failure* (or as a direct session-log edit for a one-field correction), re-run forward, and return to Step 6a.
+- **Step 6b - Judgment checks (subagent).** Only after Step 6a passes, run `python scripts/dispatch_prompt.py qc-role-intake --folder <app_folder>` and dispatch `qc-role-intake` with the printed prompt exactly as printed. It verifies substance only (claims trace to sources, no section completed on partial content). **Loops on FINDINGS:** translate to plain English, apply per *Phase routing on failure*, re-run forward (Step 6a re-runs after any fix), and return to Phase 6.
+- **Show every content edit as before/after.** Whenever a fix changes the wording or substance of the session log or research file, present a before/after table (one row per changed passage: location, before, after) before re-running QC. Skip the table only for purely mechanical fixes that have no meaningful "before" (filling a blank required field, a date, a path).
+- Cap the loop at **3 iterations**. Exit earlier on **PASS**. If findings remain after the third iteration, carry them to Phase 7 Step 7a.
 - Output: PASS verdict, or the unresolved findings after 3 iterations.
 
-## Phase 9 - User approval and handoff
+## Phase 7 - User approval and handoff
 
-**Reviewing key outputs with you and handing off to the gap-analysis skill.**
+**Reviewing the research with you and handing off to role-classify.**
 
-- Input: session log and research file - QC-passed, or with unresolved findings carried over after 3 QC iterations.
-- **Step 9a - unresolved findings, one at a time.** Skip if QC passed. Otherwise present each carried-over finding as its own decision, one per response: what is wrong, the recommended fix, and the before/after text. Wait for the user's decision on it (apply, route back per *Phase routing on failure*, or leave as-is) and act on it before presenting the next. Never fold a finding into the approval block; the block holds a single decision.
-- **Step 9b - confirm the ranked needs.** A wrong ranking steers every later skill, so the user confirms it as its own decision. Present the `## Ranked Needs` table in plain English: each need in rank order, its label, which requirements it groups, why it ranks where it does, and whether it was stated in the JD or derived. Ask the user to confirm, or to reorder, regroup or relabel. Apply any change as a direct edit to `research.md` (renumbering ids to rank order), show it as before/after, re-run Step 8a, and re-present until confirmed.
-- **Step 9c - approval.** Only after every finding is decided and the needs are confirmed, present the approval block:
-
-  ```
-  Title / Company / Level / Industry: <values>
-  Axis classification:
-    Orientation:  <primary>[, <secondary>] - <rationale>
-    Industry:     <value> - <rationale>
-    Specialty:    <primary>[, <secondary>] - <rationale>
-    Level:        <value> - <rationale>
-    Work-state:   <value> - <rationale>
-  Axis gaps: none  (all five axes are resolved by the Phase 6 gate; this line is
-             a backstop and must read "none" - if it does not, return to Phase 6)
-  Unresolved QC findings: none  (each was decided in Step 9a; this line is a
-             backstop and must read "none" - if it does not, return to Step 9a)
-  Ranked needs: confirmed  (Step 9b)
-  Session log + Research file: <paths>
-
-  Reply with corrections, or "approved" to hand off.
-  ```
-
-- **Loops on rejection.** For each issue, assess whether it could alter downstream conclusions or outcomes:
-  - Yes (level shifts axis, industry invalidates research, etc.) - recommend re-run; route back per *Phase routing on failure*.
-  - No (typo, capitalization, swap primary/secondary between value-file- confirmed values) - recommend direct edit to the session log or research file.
-
-  User chooses. Apply, re-QC, return to Phase 9.
-- On approval: state completion. Artifacts are ready for the retrieval skill. Run-scratch in `<scratch>` is left in place (it is wiped when the application is closed or declined), not deleted here.
+- **Step 7a - unresolved findings, one at a time.** Skip if QC passed. Otherwise present each carried-over finding as its own decision, one per response: what is wrong, the recommended fix, and the before/after text. Act on the user's decision before presenting the next.
+- **Step 7b - approval.** Give the session log and research file paths and ask for corrections or "approved". On a correction, route back per *Phase routing on failure*, re-QC, and return here.
+- On approval: tell the user the application is ready for `/role-classify`. Run-scratch in `<scratch>` is left in place (it is wiped when the application is closed or declined).
 
 ## Phase routing on failure
 
-Consumed by Phase 8 (QC failures) and Phase 9 (approval rejections). Route back, fix, re-run forward (Phase 8 always re-runs); for an approval-path rejection, return to Phase 9 to re-present the block.
+Consumed by Phase 6 (QC failures) and Phase 7 (corrections). Route back, fix, re-run forward; Phase 6 always re-runs.
 
 | Finding type | Route back to |
 |---|---|
 | Title or company wrong | Phase 2 |
-| Level or industry wrong (both are axis-derived, not set at Phase 2) | Phase 6 (re-classify), then 7 |
-| Research incomplete or wrong, or a requirement's quote or modifier fails against the JD | Phase 4 then 5, then 5b (re-extracted requirements void the ranking) |
-| Ranked needs fail coverage, ids or quotes, or rank against the JD's signals | Phase 5b, or a direct edit if the user is reordering at Step 9b |
-| Axis classification wrong, or an axis gap reached handoff unresolved | Phase 6 (resolve the gap via the builder before proceeding; gaps must not pass the Phase 6 gate) |
-| Session log field missing | Phase 7 |
+| Research incomplete or wrong, or a requirement's quote or modifier fails against the JD | Phase 4 then 5 (re-extracted requirements void any ranking, so role-classify reruns) |

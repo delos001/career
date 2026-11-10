@@ -1,6 +1,6 @@
 ---
 name: retrieval
-description: Surface the relevant profile content for a role. Reads role-intake's outputs, scores inventory entries, narratives, and Signature Themes against the role's critical requirements, and writes a retrieval manifest that downstream skills (gap analysis, CV creation, interview prep, career brief) consume. Run this after role-intake.
+description: Surface the relevant profile content for a role. Reads role-intake's outputs, scores inventory entries, narratives, and Signature Themes against the role's critical requirements, and writes a retrieval manifest that downstream skills (gap analysis, CV creation, interview prep, career brief) consume. Run this after role-classify.
 ---
 
 # retrieval - surface the relevant profile content
@@ -20,12 +20,13 @@ Produces one artifact for the role: a **retrieval manifest**, `retrieval.md` in 
 
 Ask if this session is for a new retrieval run or to resume a previous one?
 
-- **New:** ask the APP-NNN; locate its folder with `python scripts/paths.py app <APP-NNN>`. Confirm that `research.md` exists in the folder (retrieval depends on role-intake's output). If missing, halt and direct the user to run `/role-intake` first.
+- **New:** ask the APP-NNN; locate its folder with `python scripts/paths.py app <APP-NNN>`. Confirm that `research.md` exists in the folder (retrieval depends on role-intake's output); if missing, halt and direct the user to run `/role-intake` first. Confirm that the session log's `## Axis Classification` is filled; if it is still `_(pending)_`, halt and direct the user to run `/role-classify` first.
 - **Resume:** ask the APP-NNN; locate the matching folder. Probe and land per the ladder (first match wins):
   1. Folder missing - halt; APP-NNN likely wrong. Ask for APP-NNN again.
   2. `research.md` missing - halt; direct the user to run `/role-intake`.
-  3. `retrieval.md` missing - resume at start of **Phase 1**.
-  4. `retrieval.md` exists - announce ("Manifest already exists for APP-NNN. Re-run? Y/N.") and either resume at Phase 1 (re-run) or jump to Phase 6 (review existing).
+  3. Session log `## Axis Classification` still `_(pending)_` - halt; direct the user to run `/role-classify`.
+  4. `retrieval.md` missing - resume at start of **Phase 1**.
+  5. `retrieval.md` exists - announce ("Manifest already exists for APP-NNN. Re-run? Y/N.") and either resume at Phase 1 (re-run) or jump to Phase 6 (review existing).
 
   Announce ("Resuming APP-NNN at Phase N.") and proceed without prompting further.
 
@@ -39,7 +40,7 @@ Ask if this session is for a new retrieval run or to resume a previous one?
 
 ## Phase 1 - Load context
 
-**Loading the role-intake artifacts for this application.**
+**Loading the role-intake and role-classify artifacts for this application.**
 
 - Input: application folder path (from the resume check), APP-NNN, slug.
 - Confirm `research.md` and `jd.md` exist in the application folder. Do not extract or relay their content; Phase 2's `split` copies the Critical Requirements section and the JD into the scoring context file.

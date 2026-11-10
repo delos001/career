@@ -4,37 +4,31 @@ role_intake_qc.py - deterministic QC for the role-intake skill's artifacts
 
 Owns the mechanical checks that the qc-role-intake judgment subagent must
 not re-run: section and field presence, pending-marker detection, date
-form, URL presence in Sources, cross-file field equality, and axis-gap
-mirroring. The judgment agent keeps what a script cannot verify (whether
-the axis classification is supported by the research content, and whether
+form, URL presence in Sources, cross-file field equality, and requirement
+quotes. The judgment agent keeps what a script cannot verify (whether
 claims trace to sources).
 
-Checks (IDs map to the original qc-role-intake check numbering; check 3
-split into its mechanical half, check 5 stays with the agent):
+The sections role-classify fills (Ranked Needs, Axis Classification, Axis
+Gaps, and the Role Level and Industry metadata) are pending when role-intake
+hands off, so these checks skip them; scripts/role_classify_qc.py checks
+them. The checks that moved there were I4, I5, I6, I8 and I3's axis half.
+role_classify_qc.py imports this file's parsing helpers.
+
+Checks:
   I1  Research file completeness: H1 + APP-NNN + Research completed lines;
       Company / Role / Industry sections each carrying non-empty Summary,
       Key facts, and Sources (with at least one URL); Critical Requirements
-      with at least one row; Ranked Needs and Axis Gaps present. No pending
-      markers.
+      with at least one row. No pending markers outside role-classify's
+      sections.
   I2  Session log completeness: every Metadata field line present, the
-      required ones non-empty, dates well-formed; Axis Classification with
-      all five axis lines; Axis Gaps present. No pending markers.
-  I3  Cross-file consistency (mechanical half): company, role, and APP-NNN
-      match between the two files; the metadata Role Level and Industry
-      values match the Axis Classification's Level and Industry values.
-  I4  Axis gaps recorded in both: the set of axes flagged in the session
-      log's Axis Gaps matches the set flagged in the research file's.
-  I5  Axis lines match the axis-classifier's declared return format
-      (`- <Axis>: <values> - <rationale>`, no bold, no bare label).
-  I6  A leadership Level carries exactly one `- Tier:` line naming a tier
-      from rules/levels/leadership.md's Tiers block; other levels carry none.
+      required ones non-empty, dates well-formed. No pending markers outside
+      role-classify's sections.
+  I3  Cross-file consistency: company, role, and APP-NNN match between the
+      two files.
   I7  Each requirement row's Source carries one verbatim quote found in jd.md,
       and its Text keeps every modifier (config requirement_qualifiers) in the
       JD clause holding that quote. A year count (config requirement_year_count)
       must survive on at least one row quoting that clause.
-  I8  Ranked Needs: ids N-01.. in rank order, Basis stated|derived, Signals
-      from the allowed set, every requirement row in exactly one need, and
-      each need's quote verbatim in jd.md.
 
 Output: one `<ID>  PASS|FAIL  <detail>` line per check, then a RESULT
 line. Exit 0 when all pass, 1 otherwise.
@@ -64,19 +58,22 @@ RESEARCH_BLOCKS = ['Company', 'Role', 'Industry']
 BLOCK_SUBSECTIONS = ['Summary', 'Key facts', 'Sources']
 
 # Session log Metadata: fields that must be present AND non-empty. Comms
-# file/source must be present but may be blank (no comms ingested).
-METADATA_REQUIRED = ['APP-NNN', 'Company', 'Role', 'Role Level', 'Industry',
+# file/source must be present but may be blank (no comms ingested). Role Level
+# and Industry must be present but are filled later, by role-classify.
+METADATA_REQUIRED = ['APP-NNN', 'Company', 'Role',
                      'Session Start Date', 'Research Completed Date',
                      'JD file', 'JD source']
-METADATA_OPTIONAL = ['Comms file', 'Comms source']
+METADATA_OPTIONAL = ['Comms file', 'Comms source', 'Role Level', 'Industry']
 
 # Metadata date fields that must be YYYY-MM-DD.
 DATE_FIELDS = ['Session Start Date', 'Research Completed Date']
 
-# The five axes of the classification section.
-AXES = ['Orientation', 'Industry', 'Specialty', 'Level', 'Work-state']
+# What role-classify fills after role-intake hands off: whole sections, and
+# metadata lines. Their pending markers are not role-intake's to clear.
+CLASSIFY_SECTIONS = ['Ranked Needs', 'Axis Classification', 'Axis Gaps']
+_CLASSIFY_META_RE = re.compile(r'(?m)^- (?:Role Level|Industry):.*$')
 
-# Pending markers that finalize (Phase 7) must have replaced.
+# Pending markers and unfilled template tokens.
 _PENDING_RE = re.compile(r'_\(pending\)_|\{\{[a-z_]+\}\}')
 
 # Regex: a URL, for the Sources subsection check.
@@ -126,75 +123,15 @@ def _metadata_fields(log_text):
     return fields
 
 
-def _axis_values(log_text):
-    """Return {axis: value part} from ## Axis Classification lines.
+def _outside_classify(text):
+    """Return text with role-classify's sections and metadata lines removed.
 
-    Each line is `- <Axis>: <values> - <rationale>`; kebab-case values carry
-    no spaced hyphen, so the first ' - ' isolates the value part.
+    Used only for the pending-marker scan: those parts are legitimately pending
+    when role-intake hands off.
     """
-    body = _section_body(log_text, 'Axis Classification')
-    if body is None:
-        return None
-    values = {}
-    for line in body.split('\n'):
-        # The spec form is plain (`- Orientation:`). Bold and un-bulleted forms
-        # are classifier drift; `assemble.py finalize` now normalizes them away
-        # on write, so they should not reach a new log. Parsing stays tolerant
-        # so the other checks still work on a legacy log while check I5 reports
-        # the drift.
-        m = re.match(
-            r'^- (?:\*\*)?(Orientation|Industry|Specialty|Level|Work-state):(?:\*\*)?\s*(.+)$',
-            line)
-        if m:
-            values[m.group(1)] = m.group(2).split(' - ')[0].strip()
-    return values
-
-
-def check_axis_line_form(log_text, findings):
-    """I5: axis lines match the axis-classifier's declared return format.
-
-    The classifier's return-format spec (`.claude/agents/axis-classifier.md`)
-    emits `- <Axis>: <values> - <rationale>` with no bold markers, and
-    `assemble.py finalize` writes that output into the session log verbatim. So
-    a bolded or un-bulleted axis line is subagent drift from its own spec, not a
-    style choice. `_axis_values` deliberately tolerates the drifted forms so the
-    other checks keep working while it is corrected; this check is what makes
-    the drift visible instead of silently accommodated. Downstream readers
-    (`staging_append.py`) match the spec form and nothing else.
-    """
-    body = _section_body(log_text, 'Axis Classification')
-    if body is None:
-        findings.append(('I5', False, 'no `## Axis Classification` section to check'))
-        return
-    conforming = re.compile(
-        r'^- (?:Orientation|Industry|Specialty|Level|Work-state): \S')
-    drifted = [line.strip() for line in body.split('\n')
-               if re.search(r'\b(?:Orientation|Industry|Specialty|Level|'
-                            r'Work-state):', line)
-               and not conforming.match(line)]
-    findings.append((
-        'I5', not drifted,
-        '; '.join(f'axis line does not match the classifier return format: '
-                  f'{line[:60]}' for line in drifted)
-        or 'axis lines match the classifier return format'))
-
-
-def _gap_axes(text):
-    """Return the set of axis names flagged in a file's ## Axis Gaps section.
-
-    `- None` (or an empty body) means no gaps and yields the empty set.
-    Returns None if the section is absent.
-    """
-    body = _section_body(text, 'Axis Gaps')
-    if body is None:
-        return None
-    axes = set()
-    for line in body.split('\n'):
-        # Accept plain and bold labels (see _axis_values).
-        m = re.match(r'^- (?:\*\*)?(Orientation|Industry|Specialty|Level|Work-state)\b', line)
-        if m:
-            axes.add(m.group(1))
-    return axes
+    for heading in CLASSIFY_SECTIONS:
+        text = re.sub(rf'(?ms)^## {re.escape(heading)}[ \t]*\n.*?(?=^## |\Z)', '', text)
+    return _CLASSIFY_META_RE.sub('', text)
 
 
 def _h1_company_role(text, prefix):
@@ -233,17 +170,13 @@ def check_research(research_text, findings):
     elif not re.search(r'^\|\s*\d+\s*\|', cr_body, re.MULTILINE) \
             and not re.search(r'^- Text:', cr_body, re.MULTILINE):
         problems.append('`## Critical Requirements` carries no requirement rows')
-    if _section_body(research_text, 'Ranked Needs') is None:
-        problems.append('missing `## Ranked Needs` section')
-    if _section_body(research_text, 'Axis Gaps') is None:
-        problems.append('missing `## Axis Gaps` section')
-    if _PENDING_RE.search(research_text):
+    if _PENDING_RE.search(_outside_classify(research_text)):
         problems.append('pending markers or unfilled template tokens remain')
     findings.append(('I1', not problems, '; '.join(problems) or 'research file complete'))
 
 
 def check_session_log(log_text, meta, findings):
-    """I2: metadata fields, date form, axis classification, axis gaps."""
+    """I2: metadata fields and date form."""
     problems = []
     if meta is None:
         findings.append(('I2', False, 'session log has no ## Metadata section'))
@@ -258,23 +191,13 @@ def check_session_log(log_text, meta, findings):
         value = meta.get(field, '')
         if value and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', value):
             problems.append(f'{field} malformed: {value!r}')
-    axes = _axis_values(log_text)
-    if axes is None:
-        problems.append('missing `## Axis Classification` section')
-    else:
-        missing = [a for a in AXES if not axes.get(a)]
-        if missing:
-            problems.append(f"axis lines missing: {', '.join(missing)}")
-    if _gap_axes(log_text) is None:
-        problems.append('missing `## Axis Gaps` section')
-    if _PENDING_RE.search(log_text):
+    if _PENDING_RE.search(_outside_classify(log_text)):
         problems.append('pending markers or unfilled template tokens remain')
     findings.append(('I2', not problems, '; '.join(problems) or 'session log complete'))
 
 
 def check_consistency(research_text, log_text, meta, findings):
-    """I3: company/role/APP-NNN equality across files; metadata Level and
-    Industry equal the axis classification's values."""
+    """I3: company/role/APP-NNN equality across files."""
     problems = []
     if meta is None:
         findings.append(('I3', False, 'session log has no ## Metadata section'))
@@ -290,54 +213,7 @@ def check_consistency(research_text, log_text, meta, findings):
     m = re.search(r'^\*\*APP-NNN:\*\*\s*(\S+)', research_text, re.MULTILINE)
     if m and meta.get('APP-NNN', '') != m.group(1):
         problems.append(f"APP-NNN diverges: session log {meta.get('APP-NNN')!r} vs research {m.group(1)!r}")
-    axes = _axis_values(log_text) or {}
-    # Metadata Level/Industry are finalize-filled FROM the axis result; the
-    # metadata value must appear in the axis line's value part (which may
-    # carry primary/secondary annotations).
-    for meta_field, axis in (('Role Level', 'Level'), ('Industry', 'Industry')):
-        meta_val, axis_val = meta.get(meta_field, ''), axes.get(axis, '')
-        if meta_val and axis_val and meta_val not in axis_val:
-            problems.append(
-                f'metadata {meta_field} {meta_val!r} not in axis classification {axis} {axis_val!r}')
     findings.append(('I3', not problems, '; '.join(problems) or 'cross-file fields consistent'))
-
-
-def leadership_tiers(repo_root, cfg):
-    """Return the tier names from leadership.md's '### Tiers' block, in order.
-
-    The block is the single source of tier names (GitHub #51); each tier is a
-    bullet opening with its bold name, e.g. '- **function-lead** (...)'.
-    """
-    path = os.path.join(repo_root, cfg['paths']['rules'], 'levels', 'leadership.md')
-    body = _section_body(_util.read(path), 'Tiers', depth=3) or ''
-    return re.findall(r'(?m)^- \*\*([a-z][a-z-]*)\*\*', body)
-
-
-def check_tier(log_text, tiers, findings):
-    """I6: a leadership role records exactly one known tier; an IC role none.
-
-    Research calibrates seniority within leadership (Associate Director vs
-    VP); the tier line carries that calibration to the CV writer instead of
-    flattening every leadership role into one voice.
-    """
-    body = _section_body(log_text, 'Axis Classification')
-    if body is None:
-        findings.append(('I6', False, 'no `## Axis Classification` section to check'))
-        return
-    level = (_axis_values(log_text) or {}).get('Level', '')
-    tier_lines = re.findall(r'(?m)^- Tier:[ \t]*(.+)$', body)
-    values = [re.split(r'[ \t]+-[ \t]+', t.strip(), maxsplit=1)[0] for t in tier_lines]
-    if level == 'leadership':
-        if len(values) != 1:
-            ok, detail = False, f'leadership needs one `- Tier:` line, found {len(values)}'
-        elif values[0] not in tiers:
-            ok, detail = False, f"tier {values[0]!r} is not one of {', '.join(tiers)}"
-        else:
-            ok, detail = True, f'tier {values[0]}'
-    else:
-        ok = not values
-        detail = 'no tier for a non-leadership level' if ok else f'level {level!r} must carry no tier'
-    findings.append(('I6', ok, detail))
 
 
 def _normalize(text):
@@ -420,87 +296,6 @@ def check_requirement_text(research_text, jd_text, qualifiers, year_count, findi
     findings.append(('I7', not problems, '; '.join(problems) or f'{len(rows)} requirement rows keep their JD modifiers'))
 
 
-BASIS_VALUES = {'stated', 'derived'}
-# A Signals cell is a comma-separated list of these; repetition carries a count.
-_SIGNAL_RE = re.compile(r'^(?:priority-words|role-defining|repetition \d+|gating|space)$')
-
-
-def check_ranked_needs(research_text, jd_text, findings):
-    """I8: the Ranked Needs table covers every requirement once (GitHub #89).
-
-    The requirement Type records which JD section a row came from, so APP-028's
-    'primary focus' paragraph ranked last. jd-needs-ranker groups the rows into
-    ranked needs; this check holds the mechanical half: ids N-01.. in sequence,
-    allowed Basis and Signals values, each requirement row in exactly one need,
-    and each quote verbatim in the JD. Whether the ranking is right is
-    qc-role-intake's judgment and the user's confirmation.
-    """
-    body = _section_body(research_text, 'Ranked Needs')
-    if body is None or _PENDING_RE.search(body):
-        findings.append(('I8', False, 'no filled `## Ranked Needs` section (see I1)'))
-        return
-    req_nums = [num for num, _, _ in _requirement_rows(research_text)]
-    if not req_nums:
-        ok = '(none' in body
-        findings.append(('I8', ok, 'no requirements, no needs' if ok
-                         else 'needs listed though no requirement rows exist'))
-        return
-    problems = []
-    seen = {}
-    needs = 0
-    for line in body.split('\n'):
-        cells = [c.strip() for c in line.strip().strip('|').split('|')]
-        if len(cells) < 6 or not re.fullmatch(r'N-\d+', cells[0]):
-            continue
-        needs += 1
-        nid, label, basis, reqs, signals = cells[:5]
-        quote_cell = ' | '.join(cells[5:])
-        if nid != f'N-{needs:02d}':
-            problems.append(f'{nid}: expected N-{needs:02d}; ids run in rank order with no gaps')
-        if not label:
-            problems.append(f'{nid}: empty Label')
-        if basis not in BASIS_VALUES:
-            problems.append(f"{nid}: Basis {basis!r} is not stated or derived")
-        bad = [s for s in (x.strip() for x in signals.split(',')) if not _SIGNAL_RE.match(s)]
-        if not signals or bad:
-            problems.append(f'{nid}: Signals {signals!r} outside priority-words, role-defining, repetition N, gating, space')
-        for token in re.split(r'[,\s]+', reqs.strip()):
-            if not token:
-                continue
-            if not token.isdigit():
-                problems.append(f'{nid}: Requirements entry {token!r} is not a row number')
-                continue
-            seen.setdefault(int(token), []).append(nid)
-        quotes = _QUOTE_RE.findall(quote_cell)
-        if len(quotes) != 1:
-            problems.append(f'{nid}: Quote needs one quoted JD passage, found {len(quotes)}')
-        elif jd_text is not None and _clause_holding(jd_text, quotes[0]) is None:
-            problems.append(f'{nid}: quote not found in the JD: {quotes[0][:60]}')
-    if not needs:
-        problems.append('`## Ranked Needs` carries no need rows')
-    for num in req_nums:
-        if num not in seen:
-            problems.append(f'CR-{num:03d} belongs to no need')
-        elif len(seen[num]) > 1:
-            problems.append(f"CR-{num:03d} appears in {', '.join(seen[num])}")
-    for num in sorted(set(seen) - set(req_nums)):
-        problems.append(f'row {num} is not a requirement row')
-    findings.append(('I8', not problems, '; '.join(problems)
-                     or f'{needs} needs cover all {len(req_nums)} requirement rows once'))
-
-
-def check_gap_mirroring(research_text, log_text, findings):
-    """I4: the axes flagged as gaps match between the two files."""
-    log_gaps, research_gaps = _gap_axes(log_text), _gap_axes(research_text)
-    if log_gaps is None or research_gaps is None:
-        findings.append(('I4', False, 'an `## Axis Gaps` section is missing (see I1/I2)'))
-        return
-    ok = log_gaps == research_gaps
-    findings.append(('I4', ok,
-                     f'gap axes diverge: session log {sorted(log_gaps)} vs research {sorted(research_gaps)}'
-                     if not ok else 'axis gaps mirrored'))
-
-
 # ---------------------------------------------------------------------------
 # Command: check
 # ---------------------------------------------------------------------------
@@ -523,13 +318,9 @@ def cmd_check(args, repo_root, cfg):
     check_research(research_text, findings)
     check_session_log(log_text, meta, findings)
     check_consistency(research_text, log_text, meta, findings)
-    check_gap_mirroring(research_text, log_text, findings)
-    check_axis_line_form(log_text, findings)
-    check_tier(log_text, leadership_tiers(repo_root, cfg), findings)
     jd_text = _read(os.path.join(app_folder, fn['jd_file']))
     check_requirement_text(research_text, jd_text,
                            cfg['requirement_qualifiers'], cfg['requirement_year_count'], findings)
-    check_ranked_needs(research_text, jd_text, findings)
 
     failed = [f for f in findings if not f[1]]
     for check, ok, detail in findings:

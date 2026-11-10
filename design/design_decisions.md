@@ -1458,13 +1458,24 @@ Role-intake gains a critical-requirements extraction step. A new sub-agent `crit
 Refs: `retrieval-architecture-2026-05`, `role-intake-architecture`, `role-intake-research-scope`, `role-intake-artifacts`.
 
 #### role-intake-ranked-needs-2026-11
-Role-intake ranks the JD's needs (GitHub #89). On APP-028 the JD's "primary focus of this role" paragraph became requirements 33 and 34 of 35, typed `contextual`, and every downstream step read the flat list in which it sat last. Type records which JD section a row came from; nothing recorded importance.
+Role-intake ranks the JD's needs (GitHub #89; moved to role-classify, see the amendment below). On APP-028 the JD's "primary focus of this role" paragraph became requirements 33 and 34 of 35, typed `contextual`, and every downstream step read the flat list in which it sat last. Type records which JD section a row came from; nothing recorded importance.
 
 **Design.** A new agent, `jd-needs-ranker` (Phase 5b, after the research file is assembled), groups every requirement row into one of a handful of needs and ranks them by the JD's own signals: priority words first, then the sentence that says what the role is (said once, so repetition never counted it; APP-028 ranked its roadmap need 7th of 8), then repetition across sections, then gating minimums, with space as a tiebreaker. Each need is `stated` or `derived` (the JD never names the grouping) and carries one verbatim quote. `assemble.py needs` writes `## Ranked Needs` to `research.md`; `role_intake_qc.py` I8 checks ids, Basis and Signals values, that every requirement row sits in exactly one need, and quotes; `qc-role-intake` check 5 judges whether the ranking follows the signals. The user confirms the ranking at Phase 9 Step 9b as its own decision, because a wrong ranking steers every later skill.
 
 **Choices.** A separate agent, not more extractor output: extraction copies the JD's words under a modifier guard, ranking is a judgment, and the ranker reads the final numbered table so its row references are stable. Re-extracting requirements resets the ranking to pending, since row numbers may change. Every row must land in a need so grouping can never drop a requirement. Grouping follows how the JD groups items (shared bullet, heading, or a join in another section), since the layout is the author's view of the work; a single shared bullet with no other link is weak evidence and a need grouped on it is `derived`. Similar-item lists take a parent term to save space. The JD sets the count.
 
 Refs: `role-intake-critical-requirements-extraction-2026-05`, GitHub #88 (CV bullets will be tagged by ranked need).
+
+(Amended by `role-classify-split-2026-11`: the ranker, its checks and the user's confirmation now live in role-classify. I8 is `role_classify_qc.py` C6, `assemble.py needs` is `role_classify_assemble.py needs`, `qc-role-intake` check 5 is `qc-role-classify` check 3.)
+
+#### role-classify-split-2026-11
+Ranking the JD's needs and classifying the five axes moved out of role-intake into a new skill, role-classify. role-intake had grown to 193 lines, and long skills follow their own rules less reliably. Both steps read only files (`jd.md`, `comms.md`, `research.md`), so the new skill runs in a fresh session, and a ranking or classification can be redone without redoing the research.
+
+- role-intake ends after the research: Phases 0 to 5, then QC (6) and approval (7). `assemble.py research` now also fills the session log's research-completed date. It hands off with Ranked Needs, Axis Classification, Axis Gaps, Role Level and Industry pending; `role_intake_qc.py` skips those.
+- role-classify: rank (Phase 1), classify with the axis-gap gate and write the result (Phase 2), QC (3), the user's review (4: findings one at a time, then the ranking, then approval). `role_classify_assemble.py` writes the ranker's and classifier's output and prints the approval block, so no template is filled by hand. Checks: `role_classify_qc.py` C1 to C6 and the `qc-role-classify` agent.
+- Retrieval now halts if the classification is pending and points to `/role-classify`.
+
+Refs: `role-intake-ranked-needs-2026-11`, GitHub #89.
 
 ### gap-analysis
 

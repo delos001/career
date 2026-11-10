@@ -4,7 +4,7 @@ assemble.py - role-intake artifact assembler
 
 Writes the two artifacts the role-intake skill produces - the session log and the
 research file - so the skill does mechanical file-writing through a deterministic
-tool instead of by hand. Five subcommands, one per write point in the skill:
+tool instead of by hand. Three subcommands, one per write point in the skill:
 
   ingest    Phase 3a - create the application folder and write jd.md (plus
             comms.md if supplied) so raw inputs are persisted before the session
@@ -13,11 +13,11 @@ tool instead of by hand. Five subcommands, one per write point in the skill:
             sections marked pending) into the folder created by ingest.
   research  Phase 5 - write (or, on a re-run, refresh) research.md from the four
             Phase-4 subagent output blocks (company, role, industry, critical
-            requirements). Ranked Needs is written pending.
-  needs     Phase 5b - write the jd-needs-ranker output into research.md's
-            Ranked Needs section.
-  finalize  Phase 7 - complete the session log: fill the research-completed date
-            and replace the pending axis sections with the axis-classifier output.
+            requirements), and fill the session log's research-completed date.
+            Ranked Needs and Axis Gaps are written pending.
+
+The pending sections are filled by the role-classify skill
+(scripts/role_classify_assemble.py), which imports this file's section helpers.
 
 Nothing repo-dependent is hardcoded here. Folder locations, filenames, and naming
 patterns come from config.yaml (via _config); the artifact structures come from
@@ -31,8 +31,6 @@ Project   : career
 Usage     : python scripts/assemble.py ingest   --slug ... --app-id ... --ym ... --jd-text-file ... [--comms-text-file ...]
             python scripts/assemble.py init     --slug ... --app-id ... --ym ... --company ... --role ... [--level ...] [--industry ...] --start-date ... --jd-source ... [--comms-source ...]
             python scripts/assemble.py research --folder ... --app-id ... --company ... --role ... --date ... --company-file ... --role-file ... --industry-file ... --critical-requirements-file ...
-            python scripts/assemble.py needs    --folder ... --needs-file ...
-            python scripts/assemble.py finalize --session-log ... --date ... --axis-file ... [--research-file ...]
 Depends   : pyyaml (via _config)
 """
 
@@ -129,7 +127,7 @@ def _upsert_section(text, heading, new_section):
 
 # The Ranked Needs section before jd-needs-ranker has run, and again whenever the
 # requirements are re-extracted (row numbers may change, so a ranking built on the
-# old rows is void). The pending marker fails role_intake_qc.py I1 until filled.
+# old rows is void). role-classify fills it; role_classify_qc.py C6 fails until then.
 RANKED_NEEDS_PENDING = '## Ranked Needs\n\n_(pending)_'
 
 
@@ -321,8 +319,8 @@ def cmd_init(args, repo_root, cfg):
         'role': args.role,
         'ym': args.ym,
         'app_id': args.app_id,
-        # Level and industry are deferred to the axis-classifier (Phase 6) and
-        # written by finalize (Phase 7); init leaves them pending.
+        # Level and industry are decided by the role-classify skill, which
+        # writes them; init leaves them pending.
         'role_level': args.level or '_(pending)_',
         'industry': args.industry or '_(pending)_',
         'start_date': args.start_date,
@@ -330,7 +328,7 @@ def cmd_init(args, repo_root, cfg):
         'jd_source': args.jd_source,
         'comms_file': comms_file_value,
         'comms_source': comms_source_value,
-        # Not known yet; finalize (Phase 7) fills these in.
+        # Not known yet: the research step fills the date, role-classify the axes.
         'research_completed_date': '_(pending)_',
         'axis_classification': '## Axis Classification\n\n_(pending)_',
         'axis_gaps': '## Axis Gaps\n\n_(pending)_',
@@ -344,11 +342,15 @@ def cmd_init(args, repo_root, cfg):
 # Subcommand: research  (role-intake Phase 5)
 # Writes research.md from the four Phase 4 subagent output blocks: company,
 # role, industry, and critical requirements. On a re-run it replaces only
-# role-intake's own sections, leaving anything else.
+# role-intake's own sections, leaving anything else. Also fills the session
+# log's research-completed date, the last field role-intake owns there.
 # ---------------------------------------------------------------------------
 
 def cmd_research(args, repo_root, cfg):
     research_file = os.path.join(args.folder, cfg['filenames']['research_file'])
+    session_log = os.path.join(args.folder, cfg['filenames']['session_log_file'])
+    if not os.path.exists(session_log):
+        raise FileNotFoundError(f'session log not found (run init first): {session_log}')
     company_block = _util.read(args.company_file).strip()
     role_block = _util.read(args.role_file).strip()
     industry_block = _util.read(args.industry_file).strip()
@@ -372,9 +374,8 @@ def cmd_research(args, repo_root, cfg):
             'role_block': role_block,
             'industry_block': industry_block,
             'critical_requirements_block': critical_requirements_block,
-            # Filled by the 'needs' subcommand (Phase 5b) once jd-needs-ranker has run.
+            # Both filled by the role-classify skill.
             'ranked_needs': RANKED_NEEDS_PENDING,
-            # Filled at finalize (Phase 7) once axis-classifier has run.
             'axis_gaps': '## Axis Gaps\n\n_(pending)_',
         })
         _util.write(research_file, body)
@@ -396,143 +397,10 @@ def cmd_research(args, repo_root, cfg):
         # Re-extracted requirements void any ranking built on the old rows.
         text = _upsert_section(text, 'Ranked Needs', RANKED_NEEDS_PENDING)
         _util.write(research_file, text)
+    log_text = re.sub(r'(?m)^- Research Completed Date: .*$',
+                      lambda _m: f'- Research Completed Date: {args.date}', _util.read(session_log))
+    _util.write(session_log, log_text)
     print(research_file)
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: needs  (role-intake Phase 5b)
-# Writes the jd-needs-ranker output into research.md's Ranked Needs section.
-# Structure and coverage are checked by role_intake_qc.py I8, not here, so a
-# malformed ranking still lands where QC can name what is wrong with it.
-# ---------------------------------------------------------------------------
-
-def cmd_needs(args, repo_root, cfg):
-    research_file = os.path.join(args.folder, cfg['filenames']['research_file'])
-    if not os.path.exists(research_file):
-        raise FileNotFoundError(f'research file not found (run research first): {research_file}')
-    block = _util.read(args.needs_file).strip()
-    if not re.match(r'^## Ranked Needs[ \t]*\n', block):
-        raise ValueError('needs file must open with the "## Ranked Needs" heading')
-    text = _upsert_section(_util.read(research_file), 'Ranked Needs', block)
-    _util.write(research_file, text)
-    print(research_file)
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: finalize  (role-intake Phase 7)
-# Completes the session log: fills the research-completed date and replaces the
-# pending axis sections with the axis-classifier subagent's output.
-# ---------------------------------------------------------------------------
-
-# Regex: an axis label in any form the classifier has emitted - with or without
-# the leading bullet, with or without bold markers around the label.
-_AXIS_LINE_RE = re.compile(
-    r'^-?\s*\*{0,2}(Orientation|Industry|Specialty|Level|Work-state):\*{0,2}'
-    r'\s*(.*)$')
-
-
-def _normalize_axis_lines(body):
-    """Return an axis block rewritten into the classifier's declared form.
-
-    The classifier's return-format spec emits `- <Axis>: <values> - <rationale>`
-    with a bare label and a plain-hyphen separator, but it has drifted to bolded
-    labels, missing bullets, and em dash separators across runs. Normalizing on
-    the way in means the session log always carries the spec form no matter what
-    the subagent produced, so every downstream reader (staging_append.py,
-    retrieval_qc.py, role_intake_qc.py check I5) has one shape to match. Fixing
-    the generator rather than the artifact, per
-    feedback_qc_structural_finding_script_seam.
-
-    Lines carrying no axis label pass through untouched, so sub-bullets the
-    classifier adds are preserved rather than silently dropped.
-    """
-    out = []
-    for line in body.split('\n'):
-        m = _AXIS_LINE_RE.match(line)
-        if not m:
-            out.append(line)
-            continue
-        # Only the FIRST em dash is the value/rationale separator; any later one
-        # sits inside the rationale prose and is left alone.
-        rest = m.group(2).replace(' — ', ' - ', 1)
-        out.append(f'- {m.group(1)}: {rest}')
-    return '\n'.join(out)
-
-
-def cmd_finalize(args, repo_root, cfg):
-    # repo_root and cfg are unused here by design: finalize only edits an existing
-    # session log (path passed in), and the section headings it targets stay
-    # inline rather than in config.
-    text = _util.read(args.session_log)
-
-    # Fill the research-completed date line in the Metadata section.
-    text = re.sub(r'(?m)^- Research Completed Date: .*$',
-                  f'- Research Completed Date: {args.date}', text)
-
-    # Split the axis file into classification lines and gaps lines. The classifier
-    # may emit either '## Axis Gaps' (heading form) or 'Axis gaps:' (inline form);
-    # accept both so the split is reliable regardless of classifier output style.
-    axis_text = _util.read(args.axis_file).strip()
-    split_pat = re.compile(r'(?mi)^(?:##\s+)?Axis\s+Gaps:?\s*$')
-    parts = split_pat.split(axis_text, maxsplit=1)
-
-    classification_body = parts[0].strip()
-    # The classifier emits its own '## Axis Classification' heading; strip a
-    # leading one so the heading re-added below is not duplicated. (The gaps
-    # half needs no equivalent strip: the split above already consumed its
-    # 'Axis Gaps' heading.)
-    classification_body = re.sub(
-        r'(?i)\A##[ \t]+Axis[ \t]+Classification[ \t]*\n+', '', classification_body
-    ).strip()
-    # Normalize before anything reads or writes the block, so the value
-    # extraction below and the session log itself both see the spec form.
-    classification_body = _normalize_axis_lines(classification_body)
-    if len(parts) > 1:
-        gaps_body = _normalize_axis_lines(parts[1].strip())
-        gaps_content = 'None' if not gaps_body or gaps_body.lower() == 'none' else gaps_body
-    else:
-        gaps_content = 'None'
-
-    # Fill the deferred Level and Industry metadata lines from the axis result.
-    # Level and industry are not inferred at JD read-in (unreliable from the JD
-    # alone); the axis-classifier decides them after research, so init left both
-    # '_(pending)_' and finalize writes the resolved axis values here.
-    def _axis_value(axis_name):
-        # classification_body has been normalized to the classifier's declared
-        # form above, so only that form needs matching here.
-        m = re.search(rf'(?m)^- {re.escape(axis_name)}:[ \t]*(.+)$',
-                      classification_body)
-        if not m:
-            return None
-        # The classifier line is '<value> - <rationale>'; keep only the value.
-        return re.split(r'[ \t]+-[ \t]+', m.group(1).strip(), maxsplit=1)[0].strip()
-
-    level_value = _axis_value('Level')
-    industry_value = _axis_value('Industry')
-    # Replacement via lambda so a value containing a backslash or group ref is
-    # not interpreted as a regex replacement template.
-    if level_value:
-        text = re.sub(r'(?m)^- Role Level: .*$',
-                      lambda _m: f'- Role Level: {level_value}', text)
-    if industry_value:
-        text = re.sub(r'(?m)^- Industry: .*$',
-                      lambda _m: f'- Industry: {industry_value}', text)
-
-    # _replace_section replaces the whole matched block including its '## Heading'
-    # line, so each new_section must carry the heading itself.
-    classification_section = f'## Axis Classification\n\n{classification_body}'
-    gaps_section = f'## Axis Gaps\n\n{gaps_content}'
-
-    text = _replace_section(text, 'Axis Classification', classification_section)
-    text = _replace_section(text, 'Axis Gaps', gaps_section)
-    _util.write(args.session_log, text)
-    print(args.session_log)
-
-    if args.research_file:
-        research_text = _util.read(args.research_file)
-        research_text = _replace_section(research_text, 'Axis Gaps', gaps_section)
-        _util.write(args.research_file, research_text)
-        print(args.research_file)
 
 
 # ---------------------------------------------------------------------------
@@ -566,8 +434,8 @@ def main():
     p_init.add_argument('--ym', required=True, help='year-month, e.g. 2026-05')
     p_init.add_argument('--company', required=True)
     p_init.add_argument('--role', required=True)
-    # Level and industry are deferred to the axis-classifier (Phase 6) and filled
-    # by finalize (Phase 7); init writes them as pending if not supplied.
+    # Level and industry are decided and written by the role-classify skill;
+    # init writes them as pending if not supplied.
     p_init.add_argument('--level', default=None)
     p_init.add_argument('--industry', default=None)
     p_init.add_argument('--start-date', required=True, help='YYYY-MM-DD')
@@ -589,20 +457,6 @@ def main():
     p_res.add_argument('--critical-requirements-file', required=True,
                        help='path to a file holding the critical-requirements-extractor output block')
     p_res.set_defaults(func=cmd_research)
-
-    p_needs = sub.add_parser('needs', help='Phase 5b: write the Ranked Needs section of research.md')
-    p_needs.add_argument('--folder', required=True, help='the application folder')
-    p_needs.add_argument('--needs-file', required=True,
-                         help='path to a file holding the jd-needs-ranker output block')
-    p_needs.set_defaults(func=cmd_needs)
-
-    p_fin = sub.add_parser('finalize', help='Phase 7: complete the session log')
-    p_fin.add_argument('--session-log', required=True)
-    p_fin.add_argument('--date', required=True, help='YYYY-MM-DD')
-    p_fin.add_argument('--axis-file', required=True)
-    p_fin.add_argument('--research-file', default=None,
-                       help='path to research.md; when supplied, Axis Gaps is also written there')
-    p_fin.set_defaults(func=cmd_finalize)
 
     args = parser.parse_args()
     try:

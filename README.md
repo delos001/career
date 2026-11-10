@@ -120,7 +120,8 @@ Failure handling is uniform: on any quality-check failure, load failure, or ambi
 
 ```mermaid
 flowchart LR
-    A[role-intake] --> B[retrieval]
+    A[role-intake] --> A2[role-classify]
+    A2 --> B[retrieval]
     B --> C[gap-analysis]
     C --> D[cv-targeted]
     D --> E[cv-render]
@@ -137,15 +138,16 @@ flowchart LR
 | # | Stage | Skill | Reads | Writes |
 |---|---|---|---|---|
 | 1 | Role intake | `role-intake` | Job description, web research | `research.md`, `session_log.md` |
-| 2 | Retrieval | `retrieval` | `research.md`, profile slices | `retrieval.md` |
-| 3 | Gap analysis | `gap-analysis` | `retrieval.md`, `research.md` | `gap_analysis.md`, staged items |
-| 4 | CV content | `cv-targeted` | `gap_analysis.md`, `retrieval.md`, axis files | `cv_content.md` (cited), `drafting_plan.md` |
-| 5 | CV render | `cv-render` | `cv_content.md` | formatted `.docx` |
-| 6 | Screen prep | `preparation-screen` | `gap_analysis.md`, profile, live research | `interview_prep.md` |
-| 7 | Interview prep | `preparation-interview` | above plus `rules/interview-types/` | `interview_prep.md` (extended) |
-| 8 | Note taking | `interview-notes` | `interview_prep.md`, `session_log.md` | `interview_notes.md` |
-| 9 | Follow-up | `followup` | round debrief in `interview_notes.md` | `followup_<stage>_<date>.md` |
-| 10 | Closure | `close-application` | outcome from the user | session-log outcome, scratch wipe |
+| 2 | Role classify | `role-classify` | `jd.md`, `research.md`, axis registries | ranked needs, axis classification |
+| 3 | Retrieval | `retrieval` | `research.md`, profile slices | `retrieval.md` |
+| 4 | Gap analysis | `gap-analysis` | `retrieval.md`, `research.md` | `gap_analysis.md`, staged items |
+| 5 | CV content | `cv-targeted` | `gap_analysis.md`, `retrieval.md`, axis files | `cv_content.md` (cited), `drafting_plan.md` |
+| 6 | CV render | `cv-render` | `cv_content.md` | formatted `.docx` |
+| 7 | Screen prep | `preparation-screen` | `gap_analysis.md`, profile, live research | `interview_prep.md` |
+| 8 | Interview prep | `preparation-interview` | above plus `rules/interview-types/` | `interview_prep.md` (extended) |
+| 9 | Note taking | `interview-notes` | `interview_prep.md`, `session_log.md` | `interview_notes.md` |
+| 10 | Follow-up | `followup` | round debrief in `interview_notes.md` | `followup_<stage>_<date>.md` |
+| 11 | Closure | `close-application` | outcome from the user | session-log outcome, scratch wipe |
 
 Every artifact for one job lands in a single folder, `personal/applications/<SLUG>_APP-NNN_YYYY-MM/`, keyed by a global application counter. `session_log.md` is shared: each skill appends its own section, so the folder is a complete record of the pursuit.
 
@@ -188,6 +190,7 @@ Every skill that produces a durable artifact is gated by a script and, where jud
 | Skill | Deterministic gate | Judgment gate |
 |---|---|---|
 | `role-intake` | `role_intake_qc.py` | `qc-role-intake` |
+| `role-classify` | `role_classify_qc.py` | `qc-role-classify` |
 | `retrieval` | `retrieval_qc.py` | none needed; all checks were mechanical |
 | `gap-analysis` | `gap_qc.py` | `qc-gap-analysis` |
 | `cv-targeted` | `cv_qc.py` | `qc-cv-targeted` |
@@ -226,7 +229,8 @@ The corpus deliberately contains awkward shapes rather than a plausible career: 
 career/
 ├── .claude/
 │   ├── skills/                          # one folder per skill; SKILL.md is the authoritative spec
-│   │   ├── role-intake/                 # pipeline: JD ingest, research, five-axis classification
+│   │   ├── role-intake/                 # pipeline: JD ingest, research, requirements
+│   │   ├── role-classify/               # pipeline: ranked JD needs, five-axis classification
 │   │   ├── retrieval/                   # pipeline: score profile against requirements
 │   │   ├── gap-analysis/                # pipeline: coverage gaps, gap themes, pursue decision
 │   │   ├── cv-targeted/                 # pipeline: cited CV content (lead writer + 3 stakeholders)
@@ -244,14 +248,14 @@ career/
 │   │   ├── orientation-builder/
 │   │   ├── specialty-builder/
 │   │   └── work-state-builder/
-│   ├── agents/                          # 35 sub-agent definitions, flat
+│   ├── agents/                          # 36 sub-agent definitions, flat
 │   │   ├── company-research.md          # research family (role-intake)
 │   │   ├── role-research.md
 │   │   ├── industry-research.md
 │   │   ├── prep-research.md             # research family (interview prep)
 │   │   ├── critical-requirements-extractor.md
-│   │   ├── jd-needs-ranker.md           # ranks the JD's needs (role-intake)
-│   │   ├── axis-classifier.md
+│   │   ├── jd-needs-ranker.md           # ranks the JD's needs (role-classify)
+│   │   ├── axis-classifier.md           # five-axis classification (role-classify)
 │   │   ├── retrieval-scorer.md
 │   │   ├── gap-detector.md
 │   │   ├── cv-architect.md              # CV: lead writer, sole writer of cv_content.md
@@ -405,7 +409,7 @@ A JD pasted as text or handed over as `.txt` or `.docx` needs neither table beyo
 1. Clone the repo.
 2. Create `personal/profile/` and author four documents against the structure authorities in `templates/`: `inventory.md` (the evidence corpus, and the one that matters), `narratives.md`, `positioning.md`, `user-info.md`. `templates/inventory.md` defines the section roster and field schema that `profile_update_qc.py` enforces, so it is worth following exactly.
 3. Populate the axis registries under `rules/` for your sector, or run the `*-builder` skills to author the value files you need. The shipped values cover life sciences.
-4. Run `/role-intake` and follow the gates.
+4. Run `/role-intake`, then `/role-classify`, and follow the gates.
 
 Verify a setup by pointing the test suite at the fixture corpus first; if `python tests\run_tests.py` is green, the machinery is wired correctly independent of the profile.
 
@@ -413,7 +417,7 @@ Verify a setup by pointing the test suite at the fixture corpus first; if `pytho
 
 ## Status
 
-**Built and in use:** role-intake, retrieval, gap-analysis, cv-targeted, cv-render, preparation-screen, preparation-interview, interview-notes, followup, close-application, profile-update, self-assessment, five axis builders.
+**Built and in use:** role-intake, role-classify, retrieval, gap-analysis, cv-targeted, cv-render, preparation-screen, preparation-interview, interview-notes, followup, close-application, profile-update, self-assessment, five axis builders.
 
 **In progress:** LangGraph orchestration to remove the LLM from the control path.
 

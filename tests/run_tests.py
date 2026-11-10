@@ -1743,16 +1743,16 @@ def test_leadership_classification_carries_a_valid_tier():
     CV got one voice. A leadership role now records a tier named in
     leadership.md's Tiers block; an IC role records none.
     """
-    import role_intake_qc as riq
+    import role_classify_qc as rcq
     root, cfg = _config.load()
-    tiers = riq.leadership_tiers(root, cfg)
+    tiers = rcq.leadership_tiers(root, cfg)
     assert tiers == ['delivery-lead', 'function-lead', 'multi-function-head', 'executive'], tiers
 
     def result(level, tier_line):
         log = (f'## Axis Classification\n\n- Orientation: x (primary) - r\n- Industry: x - r\n'
                f'- Specialty: x - r\n- Level: {level} - r\n{tier_line}- Work-state: x - r\n\n## Axis Gaps\n\nNone\n')
         findings = []
-        riq.check_tier(log, tiers, findings)
+        rcq.check_tier(log, tiers, findings)
         return findings[0]
 
     assert result('leadership', '- Tier: function-lead - scope spans R&D\n')[1]
@@ -1830,7 +1830,7 @@ def test_ranked_needs_cover_every_requirement_once():
     of 35. Needs are now ranked, and every requirement belongs to exactly one, so
     grouping can never silently drop a requirement the CV must answer.
     """
-    import role_intake_qc as riq
+    import role_classify_qc as rcq
     research_path = os.path.join(FIXTURE_APP, 'research.md')
     jd = _util.read(os.path.join(FIXTURE_APP, 'jd.md'))
     fixture = _util.read(research_path)
@@ -1839,7 +1839,7 @@ def test_ranked_needs_cover_every_requirement_once():
     def result(needs_block):
         text = fixture.replace(good, needs_block.rstrip() + '\n\n')
         findings = []
-        riq.check_ranked_needs(text, jd, findings)
+        rcq.check_ranked_needs(text, jd, findings)
         return findings[0]
 
     assert result(good)[1], result(good)
@@ -1855,7 +1855,7 @@ def test_ranked_needs_cover_every_requirement_once():
     # re-extraction voids the ranking because row numbers may have changed.
     path = write_block('needs.md', good.replace('Leading a data team', 'Leading a data team of five'))
     for _ in range(2):
-        code, out = run('assemble.py', 'needs', '--folder', FIXTURE_APP, '--needs-file', path)
+        code, out = run('role_classify_assemble.py', 'needs', '--folder', FIXTURE_APP, '--needs-file', path)
         assert code == 0, out
     text = _util.read(research_path)
     assert text.count('## Ranked Needs') == 1 and 'data team of five |' in text, text
@@ -1867,6 +1867,62 @@ def test_ranked_needs_cover_every_requirement_once():
                     '--role-file', blocks['role'], '--industry-file', blocks['industry'], '--critical-requirements-file', reqs)
     assert code == 0, out
     assert '## Ranked Needs\n\n_(pending)_' in _util.read(research_path), 'a re-extraction kept a stale ranking'
+
+
+def test_role_intake_hands_classification_to_role_classify():
+    """Split 2026-11-09: ranking and axis classification moved out of role-intake
+    into role-classify, because role-intake had grown to 193 lines. role-intake
+    now hands off with those sections pending, so its checks must leave them
+    alone, and role-classify's checks must refuse them until filled.
+    """
+    import role_classify_qc as rcq
+    import role_intake_qc as riq
+    log_path = os.path.join(FIXTURE_APP, 'session_log.md')
+    research_path = os.path.join(FIXTURE_APP, 'research.md')
+    pending = '_(pending)_'
+    meta_lines = '- Role Level: {0}\n- Industry: {0}\n- Research Completed Date: {0}\n'
+    log = _util.read(log_path).replace('- Source: fixture\n', '- Source: fixture\n' + meta_lines.format(pending))
+    axes = log.split('## Axis Classification\n\n', 1)[1].split('\n\n## Axis Gaps', 1)[0]
+    handed_log = log.replace(axes, pending).replace('## Axis Gaps\n\nNone.', f'## Axis Gaps\n\n{pending}')
+    research = _util.read(research_path)
+    needs = research.split('## Ranked Needs\n\n', 1)[1].split('\n\n## ', 1)[0]
+    handed_research = research.replace(needs, pending)
+
+    def detail(check, *args):
+        findings = []
+        check(*args, findings)
+        return findings[0]
+
+    # role-intake's checks ignore what role-classify fills, but not its own fields.
+    assert 'pending' not in detail(riq.check_research, handed_research)[2], 'role-intake flagged the pending ranking'
+    handed_meta = riq._metadata_fields(handed_log)
+    dated_log = handed_log.replace(f'Research Completed Date: {pending}', 'Research Completed Date: 2026-01-11')
+    session = detail(riq.check_session_log, dated_log, riq._metadata_fields(dated_log))
+    assert 'pending' not in session[2] and 'Role Level' not in session[2], session
+    assert 'pending' in detail(riq.check_session_log, handed_log, handed_meta)[2], 'a pending research date passed'
+
+    # role-classify's checks refuse the hand-off state until it is filled.
+    complete = detail(rcq.check_complete, handed_research, handed_log, handed_meta)
+    assert not complete[1] and 'Role Level' in complete[2] and 'Axis Classification' in complete[2], complete
+
+    # The research step fills the date; finalize fills Level, Industry and the axes.
+    _util.write(log_path, handed_log)
+    blocks = {k: write_block(f'{k}.md', f'## {k.capitalize()}\n\nx\n') for k in ('company', 'role', 'industry')}
+    reqs = write_block('reqs.md', '## Critical Requirements' + research.split('## Critical Requirements', 1)[1].split('## Ranked Needs', 1)[0])
+    code, out = run('assemble.py', 'research', '--folder', FIXTURE_APP, '--app-id', 'APP-001', '--company', 'Aldridge Pharma',
+                    '--role', 'Director, Clinical Data Strategy', '--date', '2026-01-11', '--company-file', blocks['company'],
+                    '--role-file', blocks['role'], '--industry-file', blocks['industry'], '--critical-requirements-file', reqs)
+    assert code == 0, out
+    assert '- Research Completed Date: 2026-01-11' in _util.read(log_path), 'the research step left the date pending'
+    code, out = run('role_classify_assemble.py', 'finalize', '--folder', FIXTURE_APP,
+                    '--axis-file', write_block('axes.md', f'## Axis Classification\n\n{axes}\n\n## Axis Gaps\n\nNone'))
+    assert code == 0, out
+    filled_log, filled_research = _util.read(log_path), _util.read(research_path)
+    assert '- Role Level: leadership' in filled_log and '- Industry: pharma' in filled_log, filled_log
+    complete = detail(rcq.check_complete, filled_research, filled_log, riq._metadata_fields(filled_log))
+    assert complete[1], complete
+    code, out = run('role_classify_assemble.py', 'approval', '--folder', FIXTURE_APP)
+    assert code == 0 and 'Level:    leadership' in out, out
 
 
 def test_stale_rule_files_are_flagged():
@@ -1978,7 +2034,8 @@ def test_dispatch_prompts_are_printed_not_composed():
 
     # The skills use it, and no listed step still hands an agent pasted content.
     skills = os.path.join(REPO_ROOT, '.claude', 'skills')
-    for skill, agents in (('role-intake', ['<agent>', 'jd-needs-ranker', 'axis-classifier', 'qc-role-intake']),
+    for skill, agents in (('role-intake', ['<agent>', 'qc-role-intake']),
+                          ('role-classify', ['jd-needs-ranker', 'axis-classifier', 'qc-role-classify']),
                           ('cv-targeted', ['<agent>', 'cv-architect']), ('gap-analysis', ['qc-gap-analysis'])):
         text = _util.read(os.path.join(skills, skill, 'SKILL.md'))
         for agent in agents:

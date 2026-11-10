@@ -4,10 +4,10 @@ Status 2026-11-09. Pick up here. The plan this belongs to: `design/cv_persuasion
 
 ## Where it stands
 
-- Built and tested (uncommitted): `jd-needs-ranker` agent, role-intake Phase 5b and Step 9b, `assemble.py needs`, `role_intake_qc.py` I8, fixture, tests (72/72 pass). Design entry: `design_decisions.md` `role-intake-ranked-needs-2026-11`.
+- Built and tested: `jd-needs-ranker` agent, now run by the role-classify skill (Phase 1, user confirms at 4b), `role_classify_assemble.py needs`, `role_classify_qc.py` C6. Design entries: `design_decisions.md` `role-intake-ranked-needs-2026-11`, `role-classify-split-2026-11`.
 - The agent's instructions (`.claude/agents/jd-needs-ranker.md`) were patched one example at a time into long paragraphs. The user stopped the session over this. **Rewrite them as the steps below before any more test runs.**
 - Remove the "type or level of role words are an umbrella, not needs" sentence (Rank step, role-defining bullet). It tells the ranker "technical leader" is not about leading. Wrong: leading the build-out is not building it.
-- APP-028 (Jazz) `research.md` has `## Ranked Needs` reset to `_(pending)_`, so `role_intake_qc.py` I8 fails for Jazz until the ranker is re-run and its output written with `assemble.py needs`.
+- APP-028 (Jazz) `research.md` has `## Ranked Needs` reset to `_(pending)_`, so `role_classify_qc.py` C6 fails for Jazz until `/role-classify` is run on it.
 
 ## Proposed steps (user had not approved yet; present them first, one short message)
 

@@ -1,6 +1,6 @@
 ---
 name: axis-classifier
-description: Classifies a job against the five axes (orientation, industry, specialty, level, work-state) for the role-intake skill. Registry-first - reads each axis registry, picks candidates, reads only the candidate value files, and confirms each pick before recording it. Flags an axis gap where no registry value confirms. Read-only.
+description: Classifies a job against the five axes (orientation, industry, specialty, level, work-state) for the role-classify skill. Registry-first - reads each axis registry, picks candidates, reads only the candidate value files, and confirms each pick before recording it. Flags an axis gap where no registry value confirms. Read-only.
 tools: Read
 ---
 
@@ -8,7 +8,7 @@ tools: Read
 
 Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
 
-You classify a job against the five axes so the role-intake skill does not have to load axis files into its own context. You are read-only.
+You classify a job against the five axes so the role-classify skill does not have to load axis files into its own context. You are read-only.
 
 The five axes and their rule folders:
 - Orientation - `rules/orientations/`
@@ -76,4 +76,4 @@ Every axis line begins with `- ` and carries a bare label: `- Industry:`, never 
 
 **Tier** (leadership only): pick one tier name from the `### Tiers` block of `rules/levels/leadership.md` by the job's scope, per that block's rules, weighing the role research's seniority calibration (keep its stated confidence in mind), the JD's reach, and any level signal in the comms. The title is a weak hint, never the deciding factor. Do not write the words "Level:" or other axis labels inside the Tier rationale.
 
-`scripts/assemble.py finalize` writes this block into the session log verbatim, and `scripts/staging_append.py` reads the five values back out by matching that exact form. A bolded or un-bulleted label is not a style variation; it makes those values unreadable. `scripts/role_intake_qc.py` check I5 fails the run on any line that does not match.
+`scripts/role_classify_assemble.py finalize` writes this block into the session log verbatim, and `scripts/staging_append.py` reads the five values back out by matching that exact form. A bolded or un-bulleted label is not a style variation; it makes those values unreadable. `scripts/role_classify_qc.py` check C4 fails the run on any line that does not match.

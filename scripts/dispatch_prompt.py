@@ -30,6 +30,7 @@ import sys
 import _config
 import _util
 import retrieval_payload
+import role_classify_qc
 import role_intake_qc
 
 
@@ -54,6 +55,7 @@ AGENTS = {
     'jd-needs-ranker': {'files': ['jd', 'research']},
     'axis-classifier': {'files': ['jd', 'comms?', 'research']},
     'qc-role-intake': {'files': ['session_log', 'research', 'jd']},
+    'qc-role-classify': {'files': ['session_log', 'research', 'jd']},
     'qc-gap-analysis': {'files': ['gap_analysis']},
     'qc-preparation-screen': {'folders': True},
     'qc-preparation-interview': {'folders': True},
@@ -133,7 +135,7 @@ class _Sources:
 
     def axis_values(self, axis):
         """Return an axis's classified values from the session log, primary first."""
-        raw = (role_intake_qc._axis_values(self.log) or {}).get(axis)
+        raw = (role_classify_qc._axis_values(self.log) or {}).get(axis)
         if not raw:
             raise ValueError(f'session log has no {axis} classification')
         return [re.sub(r'\s*\([^)]*\)', '', v).strip() for v in raw.split(',') if v.strip()]

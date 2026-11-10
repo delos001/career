@@ -156,7 +156,7 @@ def _session_log_axes(log_text):
         if line.startswith('## '):
             break
         # The spec form is plain (`- Industry:`). Bold is classifier drift that
-        # `assemble.py finalize` now normalizes away on write; parsing stays
+        # `role_classify_assemble.py finalize` now normalizes away on write; parsing stays
         # tolerant so a legacy log still reads.
         m = re.match(
             r'^- (?:\*\*)?(Industry|Specialty|Orientation|Level|Work-state):(?:\*\*)?\s*(.+)$',

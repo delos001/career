@@ -5,7 +5,7 @@ description: Build or refresh a level value file in rules/levels/. Researches th
 
 # level-builder - build or refresh a levels axis value file
 
-User-invoked. Not called from role-intake; role-intake's Phase 6 may recommend invoking it after flagging an axis gap.
+User-invoked. Not called from role-classify; role-classify's Phase 2 may recommend invoking it after flagging an axis gap.
 
 ## Operating rules
 
