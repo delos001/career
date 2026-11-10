@@ -4,7 +4,7 @@ assemble.py - role-intake artifact assembler
 
 Writes the two artifacts the role-intake skill produces - the session log and the
 research file - so the skill does mechanical file-writing through a deterministic
-tool instead of by hand. Four subcommands, one per write point in the skill:
+tool instead of by hand. Five subcommands, one per write point in the skill:
 
   ingest    Phase 3a - create the application folder and write jd.md (plus
             comms.md if supplied) so raw inputs are persisted before the session
@@ -13,7 +13,9 @@ tool instead of by hand. Four subcommands, one per write point in the skill:
             sections marked pending) into the folder created by ingest.
   research  Phase 5 - write (or, on a re-run, refresh) research.md from the four
             Phase-4 subagent output blocks (company, role, industry, critical
-            requirements).
+            requirements). Ranked Needs is written pending.
+  needs     Phase 5b - write the jd-needs-ranker output into research.md's
+            Ranked Needs section.
   finalize  Phase 7 - complete the session log: fill the research-completed date
             and replace the pending axis sections with the axis-classifier output.
 
@@ -29,6 +31,7 @@ Project   : career
 Usage     : python scripts/assemble.py ingest   --slug ... --app-id ... --ym ... --jd-text-file ... [--comms-text-file ...]
             python scripts/assemble.py init     --slug ... --app-id ... --ym ... --company ... --role ... [--level ...] [--industry ...] --start-date ... --jd-source ... [--comms-source ...]
             python scripts/assemble.py research --folder ... --app-id ... --company ... --role ... --date ... --company-file ... --role-file ... --industry-file ... --critical-requirements-file ...
+            python scripts/assemble.py needs    --folder ... --needs-file ...
             python scripts/assemble.py finalize --session-log ... --date ... --axis-file ... [--research-file ...]
 Depends   : pyyaml (via _config)
 """
@@ -106,6 +109,28 @@ def _replace_section(text, heading, new_section):
     # is not read as a regex replacement template.
     replacement = new_section.rstrip() + '\n\n'
     return pattern.sub(lambda _m: replacement, text)
+
+
+def _upsert_section(text, heading, new_section):
+    """Replace '## heading' if present; otherwise insert it before '## Axis Gaps'.
+
+    Sections added to research.md after a file was first written (Critical
+    Requirements, Ranked Needs) must land on older files too. The insert uses a
+    string splice, not re.sub, so verbatim agent output is never read as a regex
+    replacement template. With no Axis Gaps section it appends at the end.
+    """
+    if re.search(r'(?m)^## ' + re.escape(heading) + r'\b', text):
+        return _replace_section(text, heading, new_section)
+    m_gaps = re.search(r'(?m)^## Axis Gaps\b', text)
+    if m_gaps:
+        return text[:m_gaps.start()] + new_section.rstrip() + '\n\n' + text[m_gaps.start():]
+    return text.rstrip() + '\n\n' + new_section.rstrip() + '\n'
+
+
+# The Ranked Needs section before jd-needs-ranker has run, and again whenever the
+# requirements are re-extracted (row numbers may change, so a ranking built on the
+# old rows is void). The pending marker fails role_intake_qc.py I1 until filled.
+RANKED_NEEDS_PENDING = '## Ranked Needs\n\n_(pending)_'
 
 
 # ---------------------------------------------------------------------------
@@ -347,6 +372,8 @@ def cmd_research(args, repo_root, cfg):
             'role_block': role_block,
             'industry_block': industry_block,
             'critical_requirements_block': critical_requirements_block,
+            # Filled by the 'needs' subcommand (Phase 5b) once jd-needs-ranker has run.
+            'ranked_needs': RANKED_NEEDS_PENDING,
             # Filled at finalize (Phase 7) once axis-classifier has run.
             'axis_gaps': '## Axis Gaps\n\n_(pending)_',
         })
@@ -363,25 +390,31 @@ def cmd_research(args, repo_root, cfg):
         text = _replace_section(text, 'Role', role_block)
         text = _replace_section(text, 'Industry', industry_block)
         # Critical Requirements is a newer section (added per
-        # role-intake-critical-requirements-extraction-2026-05). Insert it on
-        # research.md files that pre-date the addition; replace it on files
-        # that already have it. The Axis-Gaps insert path uses string splice
-        # rather than re.sub so the requirements text (verbatim subagent
-        # output) is not interpreted as a regex replacement string.
-        if re.search(r'(?m)^## Critical Requirements\b', text):
-            text = _replace_section(text, 'Critical Requirements', critical_requirements_block)
-        else:
-            m_gaps = re.search(r'(?m)^## Axis Gaps\b', text)
-            if m_gaps:
-                text = (
-                    text[:m_gaps.start()]
-                    + critical_requirements_block.rstrip()
-                    + '\n\n'
-                    + text[m_gaps.start():]
-                )
-            else:
-                text = text.rstrip() + '\n\n' + critical_requirements_block.rstrip() + '\n'
+        # role-intake-critical-requirements-extraction-2026-05); insert it on
+        # research.md files that pre-date the addition, replace it otherwise.
+        text = _upsert_section(text, 'Critical Requirements', critical_requirements_block)
+        # Re-extracted requirements void any ranking built on the old rows.
+        text = _upsert_section(text, 'Ranked Needs', RANKED_NEEDS_PENDING)
         _util.write(research_file, text)
+    print(research_file)
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: needs  (role-intake Phase 5b)
+# Writes the jd-needs-ranker output into research.md's Ranked Needs section.
+# Structure and coverage are checked by role_intake_qc.py I8, not here, so a
+# malformed ranking still lands where QC can name what is wrong with it.
+# ---------------------------------------------------------------------------
+
+def cmd_needs(args, repo_root, cfg):
+    research_file = os.path.join(args.folder, cfg['filenames']['research_file'])
+    if not os.path.exists(research_file):
+        raise FileNotFoundError(f'research file not found (run research first): {research_file}')
+    block = _util.read(args.needs_file).strip()
+    if not re.match(r'^## Ranked Needs[ \t]*\n', block):
+        raise ValueError('needs file must open with the "## Ranked Needs" heading')
+    text = _upsert_section(_util.read(research_file), 'Ranked Needs', block)
+    _util.write(research_file, text)
     print(research_file)
 
 
@@ -556,6 +589,12 @@ def main():
     p_res.add_argument('--critical-requirements-file', required=True,
                        help='path to a file holding the critical-requirements-extractor output block')
     p_res.set_defaults(func=cmd_research)
+
+    p_needs = sub.add_parser('needs', help='Phase 5b: write the Ranked Needs section of research.md')
+    p_needs.add_argument('--folder', required=True, help='the application folder')
+    p_needs.add_argument('--needs-file', required=True,
+                         help='path to a file holding the jd-needs-ranker output block')
+    p_needs.set_defaults(func=cmd_needs)
 
     p_fin = sub.add_parser('finalize', help='Phase 7: complete the session log')
     p_fin.add_argument('--session-log', required=True)

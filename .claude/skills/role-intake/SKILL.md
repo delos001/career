@@ -25,8 +25,9 @@ Ask if this session is for a new role or to resume a previous one?
   1. Folder missing - halt; APP-NNN likely wrong.  Ask for APP-NNN again.
   2. Session log missing - ingest already ran but init did not; re-confirm metadata with user and resume at **Phase 3b** (session log write only).
   3. `research.md` missing - resume at start of **Phase 4**.
-  4. Axis classification still `_(pending)_` in the session log - resume at start of **Phase 6**.
-  5. All filled - resume at start of **Phase 8** (re-QC).
+  4. `## Ranked Needs` in `research.md` missing or `_(pending)_` - resume at **Phase 5b**.
+  5. Axis classification still `_(pending)_` in the session log - resume at start of **Phase 6**.
+  6. All filled - resume at start of **Phase 8** (re-QC).
 
   Before running the landing phase, reload its declared inputs from the artifacts already on disk - the prior phases' in-conversation outputs are gone on a resume. `jd.md` (and any `comms.md`) holds the JD and comms text; the session log holds the confirmed metadata; `research.md` holds the research findings.
 
@@ -103,7 +104,16 @@ Ask if this session is for a new role or to resume a previous one?
 
 - Input: four findings blocks.
 - Write each block to its own scratch file under `<scratch>`, then run `python scripts/assemble.py research` with `--folder`, `--app-id`, `--company`, `--role`, `--date`, and the four scratch-file paths (`--company-file`, `--role-file`, `--industry-file`, `--critical-requirements-file`). It section-replaces only role-intake's own sections so nothing else is clobbered.
-- Output: `research.md` written.
+- Output: `research.md` written, with `## Ranked Needs` pending.
+
+## Phase 5b - Rank the JD's needs
+
+**Ranking what the job description says matters most.**
+
+- Input: application folder.
+- The requirement Type records where a requirement appeared in the JD, not how much it matters. Run `python scripts/dispatch_prompt.py jd-needs-ranker --folder <app_folder>` and dispatch `jd-needs-ranker` with the printed prompt exactly as printed. It groups the requirements into ranked needs.
+- Write its output to a scratch file under `<scratch>`, then run `python scripts/assemble.py needs --folder <app_folder> --needs-file <path>`.
+- Output: `research.md` carries the `## Ranked Needs` table. The user confirms it at Phase 9.
 
 ## Phase 6 - Axis classification
 
@@ -141,7 +151,8 @@ Ask if this session is for a new role or to resume a previous one?
 
 - Input: session log and research file - QC-passed, or with unresolved findings carried over after 3 QC iterations.
 - **Step 9a - unresolved findings, one at a time.** Skip if QC passed. Otherwise present each carried-over finding as its own decision, one per response: what is wrong, the recommended fix, and the before/after text. Wait for the user's decision on it (apply, route back per *Phase routing on failure*, or leave as-is) and act on it before presenting the next. Never fold a finding into the approval block; the block holds a single decision.
-- **Step 9b - approval.** Only after every finding is decided, present the approval block:
+- **Step 9b - confirm the ranked needs.** A wrong ranking steers every later skill, so the user confirms it as its own decision. Present the `## Ranked Needs` table in plain English: each need in rank order, its label, which requirements it groups, why it ranks where it does, and whether it was stated in the JD or derived. Ask the user to confirm, or to reorder, regroup or relabel. Apply any change as a direct edit to `research.md` (renumbering ids to rank order), show it as before/after, re-run Step 8a, and re-present until confirmed.
+- **Step 9c - approval.** Only after every finding is decided and the needs are confirmed, present the approval block:
 
   ```
   Title / Company / Level / Industry: <values>
@@ -155,6 +166,7 @@ Ask if this session is for a new role or to resume a previous one?
              a backstop and must read "none" - if it does not, return to Phase 6)
   Unresolved QC findings: none  (each was decided in Step 9a; this line is a
              backstop and must read "none" - if it does not, return to Step 9a)
+  Ranked needs: confirmed  (Step 9b)
   Session log + Research file: <paths>
 
   Reply with corrections, or "approved" to hand off.
@@ -175,6 +187,7 @@ Consumed by Phase 8 (QC failures) and Phase 9 (approval rejections). Route back,
 |---|---|
 | Title or company wrong | Phase 2 |
 | Level or industry wrong (both are axis-derived, not set at Phase 2) | Phase 6 (re-classify), then 7 |
-| Research incomplete or wrong, or a requirement's quote or modifier fails against the JD | Phase 4 then 5 |
+| Research incomplete or wrong, or a requirement's quote or modifier fails against the JD | Phase 4 then 5, then 5b (re-extracted requirements void the ranking) |
+| Ranked needs fail coverage, ids or quotes, or rank against the JD's signals | Phase 5b, or a direct edit if the user is reordering at Step 9b |
 | Axis classification wrong, or an axis gap reached handoff unresolved | Phase 6 (resolve the gap via the builder before proceeding; gaps must not pass the Phase 6 gate) |
 | Session log field missing | Phase 7 |

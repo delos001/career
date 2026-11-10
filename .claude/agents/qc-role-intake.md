@@ -1,6 +1,6 @@
 ---
 name: qc-role-intake
-description: Judgment quality-check for the role-intake skill's session log and research file. Verifies what a script cannot - the axis classification is actually supported by the research content and applies each axis value file's selection and exclusion text, claims trace to sources or the JD with no fabricated facts, and no section was completed on partial content. Mechanical checks (section and field presence, pending markers, date form, URL presence, cross-file field equality, axis-gap mirroring) are owned by scripts/role_intake_qc.py and are not re-run here. Read-only.
+description: Judgment quality-check for the role-intake skill's session log and research file. Verifies what a script cannot - the axis classification is actually supported by the research content and applies each axis value file's selection and exclusion text, claims trace to sources or the JD with no fabricated facts, no section was completed on partial content, and the ranked JD needs follow the JD's own priority signals. Mechanical checks (section and field presence, pending markers, date form, URL presence, cross-file field equality, axis-gap mirroring) are owned by scripts/role_intake_qc.py and are not re-run here. Read-only.
 tools: Read, Grep
 ---
 
@@ -14,9 +14,10 @@ You quality-check the substance of a role-intake run's artifacts. You are read-o
 
 The dispatching skill gives you:
 - the path to the session log,
-- the path to the research file.
+- the path to the research file,
+- the path to the JD.
 
-Read both files in full before checking. For check 4, also read each chosen axis value file.
+Read all three in full before checking. For check 4, also read each chosen axis value file.
 
 ## Checks
 
@@ -28,6 +29,8 @@ Read both files in full before checking. For check 4, also read each chosen axis
    Route-back: phase 4/5.
 4. **Axis rationale applies the rule text** - for each axis, read the chosen value's file (`rules/<axis>/<value>.md`; for a dual-axis result, both files) and confirm the rationale applies that file's actual selection and exclusion text. A rationale that rests on a criterion the rule does not contain (e.g., "the JD names no direct reports" for level), or on a fact found in neither the JD nor the research file, is a finding.
    Route-back: phase 6.
+5. **Ranked Needs reflect the JD's priorities** - read the JD and the `## Ranked Needs` table. A need the JD marks as most important ("primary focus," "key," "essential") ranked below needs carrying no such signal is a finding, as is a ranking that follows the requirement Type (where a row appeared) instead of the signals. So is a need named in the sentence that says what the role is, ranked below needs with neither signal. Also a finding: a need marked `stated` whose grouping the JD never names; a grouping that ignores how the JD itself groups or separates the items without a reason; or a list of similar items split into several needs. Row coverage, ids and quotes are script-checked; do not re-check them.
+   Route-back: phase 5b.
 
 ## Sufficiency, not vibes
 

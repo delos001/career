@@ -14,7 +14,8 @@ split into its mechanical half, check 5 stays with the agent):
   I1  Research file completeness: H1 + APP-NNN + Research completed lines;
       Company / Role / Industry sections each carrying non-empty Summary,
       Key facts, and Sources (with at least one URL); Critical Requirements
-      with at least one row; Axis Gaps present. No pending markers.
+      with at least one row; Ranked Needs and Axis Gaps present. No pending
+      markers.
   I2  Session log completeness: every Metadata field line present, the
       required ones non-empty, dates well-formed; Axis Classification with
       all five axis lines; Axis Gaps present. No pending markers.
@@ -31,6 +32,9 @@ split into its mechanical half, check 5 stays with the agent):
       and its Text keeps every modifier (config requirement_qualifiers) in the
       JD clause holding that quote. A year count (config requirement_year_count)
       must survive on at least one row quoting that clause.
+  I8  Ranked Needs: ids N-01.. in rank order, Basis stated|derived, Signals
+      from the allowed set, every requirement row in exactly one need, and
+      each need's quote verbatim in jd.md.
 
 Output: one `<ID>  PASS|FAIL  <detail>` line per check, then a RESULT
 line. Exit 0 when all pass, 1 otherwise.
@@ -229,6 +233,8 @@ def check_research(research_text, findings):
     elif not re.search(r'^\|\s*\d+\s*\|', cr_body, re.MULTILINE) \
             and not re.search(r'^- Text:', cr_body, re.MULTILINE):
         problems.append('`## Critical Requirements` carries no requirement rows')
+    if _section_body(research_text, 'Ranked Needs') is None:
+        problems.append('missing `## Ranked Needs` section')
     if _section_body(research_text, 'Axis Gaps') is None:
         problems.append('missing `## Axis Gaps` section')
     if _PENDING_RE.search(research_text):
@@ -414,6 +420,75 @@ def check_requirement_text(research_text, jd_text, qualifiers, year_count, findi
     findings.append(('I7', not problems, '; '.join(problems) or f'{len(rows)} requirement rows keep their JD modifiers'))
 
 
+BASIS_VALUES = {'stated', 'derived'}
+# A Signals cell is a comma-separated list of these; repetition carries a count.
+_SIGNAL_RE = re.compile(r'^(?:priority-words|role-defining|repetition \d+|gating|space)$')
+
+
+def check_ranked_needs(research_text, jd_text, findings):
+    """I8: the Ranked Needs table covers every requirement once (GitHub #89).
+
+    The requirement Type records which JD section a row came from, so APP-028's
+    'primary focus' paragraph ranked last. jd-needs-ranker groups the rows into
+    ranked needs; this check holds the mechanical half: ids N-01.. in sequence,
+    allowed Basis and Signals values, each requirement row in exactly one need,
+    and each quote verbatim in the JD. Whether the ranking is right is
+    qc-role-intake's judgment and the user's confirmation.
+    """
+    body = _section_body(research_text, 'Ranked Needs')
+    if body is None or _PENDING_RE.search(body):
+        findings.append(('I8', False, 'no filled `## Ranked Needs` section (see I1)'))
+        return
+    req_nums = [num for num, _, _ in _requirement_rows(research_text)]
+    if not req_nums:
+        ok = '(none' in body
+        findings.append(('I8', ok, 'no requirements, no needs' if ok
+                         else 'needs listed though no requirement rows exist'))
+        return
+    problems = []
+    seen = {}
+    needs = 0
+    for line in body.split('\n'):
+        cells = [c.strip() for c in line.strip().strip('|').split('|')]
+        if len(cells) < 6 or not re.fullmatch(r'N-\d+', cells[0]):
+            continue
+        needs += 1
+        nid, label, basis, reqs, signals = cells[:5]
+        quote_cell = ' | '.join(cells[5:])
+        if nid != f'N-{needs:02d}':
+            problems.append(f'{nid}: expected N-{needs:02d}; ids run in rank order with no gaps')
+        if not label:
+            problems.append(f'{nid}: empty Label')
+        if basis not in BASIS_VALUES:
+            problems.append(f"{nid}: Basis {basis!r} is not stated or derived")
+        bad = [s for s in (x.strip() for x in signals.split(',')) if not _SIGNAL_RE.match(s)]
+        if not signals or bad:
+            problems.append(f'{nid}: Signals {signals!r} outside priority-words, role-defining, repetition N, gating, space')
+        for token in re.split(r'[,\s]+', reqs.strip()):
+            if not token:
+                continue
+            if not token.isdigit():
+                problems.append(f'{nid}: Requirements entry {token!r} is not a row number')
+                continue
+            seen.setdefault(int(token), []).append(nid)
+        quotes = _QUOTE_RE.findall(quote_cell)
+        if len(quotes) != 1:
+            problems.append(f'{nid}: Quote needs one quoted JD passage, found {len(quotes)}')
+        elif jd_text is not None and _clause_holding(jd_text, quotes[0]) is None:
+            problems.append(f'{nid}: quote not found in the JD: {quotes[0][:60]}')
+    if not needs:
+        problems.append('`## Ranked Needs` carries no need rows')
+    for num in req_nums:
+        if num not in seen:
+            problems.append(f'CR-{num:03d} belongs to no need')
+        elif len(seen[num]) > 1:
+            problems.append(f"CR-{num:03d} appears in {', '.join(seen[num])}")
+    for num in sorted(set(seen) - set(req_nums)):
+        problems.append(f'row {num} is not a requirement row')
+    findings.append(('I8', not problems, '; '.join(problems)
+                     or f'{needs} needs cover all {len(req_nums)} requirement rows once'))
+
+
 def check_gap_mirroring(research_text, log_text, findings):
     """I4: the axes flagged as gaps match between the two files."""
     log_gaps, research_gaps = _gap_axes(log_text), _gap_axes(research_text)
@@ -451,8 +526,10 @@ def cmd_check(args, repo_root, cfg):
     check_gap_mirroring(research_text, log_text, findings)
     check_axis_line_form(log_text, findings)
     check_tier(log_text, leadership_tiers(repo_root, cfg), findings)
-    check_requirement_text(research_text, _read(os.path.join(app_folder, fn['jd_file'])),
+    jd_text = _read(os.path.join(app_folder, fn['jd_file']))
+    check_requirement_text(research_text, jd_text,
                            cfg['requirement_qualifiers'], cfg['requirement_year_count'], findings)
+    check_ranked_needs(research_text, jd_text, findings)
 
     failed = [f for f in findings if not f[1]]
     for check, ok, detail in findings:

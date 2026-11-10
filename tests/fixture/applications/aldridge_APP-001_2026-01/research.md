@@ -28,6 +28,15 @@ outsource data capture to two or three vendors.
 | 5 | Direct experience with a commercial data warehouse platform in production | must-have | Requirements |
 | 6 | Familiarity with regulatory submission data packages | contextual | Nice to have |
 
+## Ranked Needs
+
+| Need | Label | Basis | Requirements | Signals | Quote |
+|---|---|---|---|---|---|
+| N-01 | Operating model for clinical data: standards and governance | stated | 3 | priority-words, role-defining, repetition 2 | About the role "The Director owns the operating model for clinical data across the Aldridge" |
+| N-02 | Vendor oversight across external data providers | stated | 2 | repetition 2 | Requirements "Vendor oversight and contract management across external data providers" |
+| N-03 | Leading a data team | stated | 4 | space | Responsibilities "Lead and develop a data team of five or more" |
+| N-04 | Platform, submission and degree qualifications | derived | 1, 5, 6 | gating | Requirements "Bachelor's degree in a scientific or quantitative discipline" |
+
 ## Axis Gaps
 
 None.

@@ -250,6 +250,7 @@ career/
 │   │   ├── industry-research.md
 │   │   ├── prep-research.md             # research family (interview prep)
 │   │   ├── critical-requirements-extractor.md
+│   │   ├── jd-needs-ranker.md           # ranks the JD's needs (role-intake)
 │   │   ├── axis-classifier.md
 │   │   ├── retrieval-scorer.md
 │   │   ├── gap-detector.md

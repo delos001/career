@@ -97,12 +97,12 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Status**: Designed
 - **Inputs**:
   - Rules: `rules/global-rules.md`. (Axis registries and value files are read by `axis-classifier`, not by the skill directly.)
-  - Agents: `company-research`, `role-research`, `industry-research`, `critical-requirements-extractor`, `axis-classifier`, `qc-role-intake`.
+  - Agents: `company-research`, `role-research`, `industry-research`, `critical-requirements-extractor`, `jd-needs-ranker`, `axis-classifier`, `qc-role-intake`.
   - Scripts: `scripts/display/introduce.py`, `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/company_slug.py`, `scripts/assemble.py`, `scripts/role_intake_qc.py`.
   - Templates: `templates/session_log.md`, `templates/research_file.md`.
   - User input: job description (paste / file / URL), role communications (optional), company slug (reused from the registry or supplied if the company is new), metadata confirmations (title/company) at Phase 2.
 - **Outputs**:
-  - Files: in `personal/applications/<SLUG>_APP-NNN_YYYY-MM/`: `session_log.md`, and `research.md` (with `## Company`, `## Role`, `## Industry`, `## Critical Requirements`, and `## Axis Gaps` sections).
+  - Files: in `personal/applications/<SLUG>_APP-NNN_YYYY-MM/`: `session_log.md`, and `research.md` (with `## Company`, `## Role`, `## Industry`, `## Critical Requirements`, `## Ranked Needs`, and `## Axis Gaps` sections).
   - Skills: hands off to the retrieval skill, then to gap analysis.
   - Side effects: consumes the next APP-NNN.
 - **Triggers**:
@@ -298,7 +298,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 ### Roster
 
 **Built** (detailed entries below):
-- company-research, role-research, industry-research, critical-requirements-extractor, axis-classifier, qc-role-intake
+- company-research, role-research, industry-research, critical-requirements-extractor, jd-needs-ranker, axis-classifier, qc-role-intake
 - retrieval-scorer (retrieval skill family)
 - gap-detector, qc-gap-analysis (gap-analysis skill family)
 - industry-builder-research, level-builder-research, orientation-builder-research, specialty-builder-research, work-state-builder-research (axis-builder research agent family; one per axis)
@@ -350,6 +350,15 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Outputs**: Structured findings block (`## Critical Requirements` — a `| # | Text | Type | Source |` table, one row per requirement; the `#` column indexes CR-NNN) returned to the caller.
 - **Triggers**: Invoked by `role-intake` Phase 4, in parallel with `company-research`, `role-research`, and `industry-research`.
 - **Update Triggers**: When the three-field schema (Text / Type / Source) changes; when downstream consumers add new fields they need from extraction.
+
+#### jd-needs-ranker
+
+- **Purpose**: Group the extracted requirements into a handful of JD needs and rank them by the JD's own priority signals (priority words, repetition across sections, gating minimums, space), since the requirement Type records only where a row appeared (GitHub #89).
+- **Status**: Designed
+- **Inputs**: Skill-passed (by `role-intake`): paths to `jd.md` and `research.md`. Tools: Read.
+- **Outputs**: `## Ranked Needs` — a `| Need | Label | Basis | Requirements | Signals | Quote |` table in rank order, written by `assemble.py needs`; mechanical checks in `role_intake_qc.py` I8.
+- **Triggers**: Invoked by `role-intake` Phase 5b, after the research file is assembled.
+- **Update Triggers**: When the Critical Requirements schema changes; when a downstream skill needs more from the ranking.
 
 #### axis-classifier
 

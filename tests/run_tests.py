@@ -1824,6 +1824,51 @@ def test_split_requirement_keeps_each_year_count():
     assert not result(('Minimum of 8 years in the industry', ten), (five, five))[1], 'a changed count passed'
 
 
+def test_ranked_needs_cover_every_requirement_once():
+    """Built 2026-11-09 (GitHub #89): the requirement Type records which JD
+    section a row came from, so APP-028's 'primary focus' paragraph ranked last
+    of 35. Needs are now ranked, and every requirement belongs to exactly one, so
+    grouping can never silently drop a requirement the CV must answer.
+    """
+    import role_intake_qc as riq
+    research_path = os.path.join(FIXTURE_APP, 'research.md')
+    jd = _util.read(os.path.join(FIXTURE_APP, 'jd.md'))
+    fixture = _util.read(research_path)
+    good = '## Ranked Needs' + fixture.split('## Ranked Needs', 1)[1].split('## Axis Gaps', 1)[0]
+
+    def result(needs_block):
+        text = fixture.replace(good, needs_block.rstrip() + '\n\n')
+        findings = []
+        riq.check_ranked_needs(text, jd, findings)
+        return findings[0]
+
+    assert result(good)[1], result(good)
+    assert not result(good.replace('| 1, 5, 6 |', '| 1, 5 |'))[1], 'a requirement left out of every need passed'
+    assert not result(good.replace('| 1, 5, 6 |', '| 1, 4, 5, 6 |'))[1], 'a requirement in two needs passed'
+    assert not result(good.replace('N-03', 'N-05'))[1], 'a gap in the need ids passed'
+    assert not result(good.replace('| derived |', '| guessed |'))[1], 'an unknown Basis passed'
+    assert not result(good.replace('| space |', '| emphasis |'))[1], 'an unknown signal passed'
+    assert not result(good.replace('"Lead and develop', '"Hire and develop'))[1], 'a quote absent from the JD passed'
+    assert not result('## Ranked Needs\n\n_(pending)_')[1], 'a pending ranking passed'
+
+    # The assembler writes the section once, in place, and a requirements
+    # re-extraction voids the ranking because row numbers may have changed.
+    path = write_block('needs.md', good.replace('Leading a data team', 'Leading a data team of five'))
+    for _ in range(2):
+        code, out = run('assemble.py', 'needs', '--folder', FIXTURE_APP, '--needs-file', path)
+        assert code == 0, out
+    text = _util.read(research_path)
+    assert text.count('## Ranked Needs') == 1 and 'data team of five |' in text, text
+    assert text.index('## Ranked Needs') < text.index('## Axis Gaps'), 'needs landed after Axis Gaps'
+    blocks = {k: write_block(f'{k}.md', f'## {k.capitalize()}\n\nx\n') for k in ('company', 'role', 'industry')}
+    reqs = write_block('reqs.md', '## Critical Requirements' + fixture.split('## Critical Requirements', 1)[1].split('## Ranked Needs', 1)[0])
+    code, out = run('assemble.py', 'research', '--folder', FIXTURE_APP, '--app-id', 'APP-001', '--company', 'Aldridge Pharma',
+                    '--role', 'Director, Clinical Data Strategy', '--date', '2026-01-02', '--company-file', blocks['company'],
+                    '--role-file', blocks['role'], '--industry-file', blocks['industry'], '--critical-requirements-file', reqs)
+    assert code == 0, out
+    assert '## Ranked Needs\n\n_(pending)_' in _util.read(research_path), 'a re-extraction kept a stale ranking'
+
+
 def test_stale_rule_files_are_flagged():
     """Fixed 2026-11-05 (GitHub #47): the 9-month staleness rule lived only in
     prose, the one check that ran used ~12 months, and 23 of 24 stamped rule
@@ -1898,6 +1943,8 @@ def test_dispatch_prompts_are_printed_not_composed():
         assert 'Company: Aldridge Pharma' in text and jd_path in text, text
         assert 'Fixture job description' not in text, 'JD text was pasted into the prompt'
     assert 'actually operates in' in prompt('industry-research')
+    ranker = prompt('jd-needs-ranker')
+    assert jd_path in ranker and os.path.join(FIXTURE_APP, 'research.md') in ranker, ranker
     assert 'Comms' not in prompt('axis-classifier'), 'an absent optional file was listed'
     _util.write(os.path.join(FIXTURE_APP, 'comms.md'), 'A note.')
     assert 'Comms: ' in prompt('axis-classifier')
@@ -1931,7 +1978,7 @@ def test_dispatch_prompts_are_printed_not_composed():
 
     # The skills use it, and no listed step still hands an agent pasted content.
     skills = os.path.join(REPO_ROOT, '.claude', 'skills')
-    for skill, agents in (('role-intake', ['<agent>', 'axis-classifier', 'qc-role-intake']),
+    for skill, agents in (('role-intake', ['<agent>', 'jd-needs-ranker', 'axis-classifier', 'qc-role-intake']),
                           ('cv-targeted', ['<agent>', 'cv-architect']), ('gap-analysis', ['qc-gap-analysis'])):
         text = _util.read(os.path.join(skills, skill, 'SKILL.md'))
         for agent in agents:

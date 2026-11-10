@@ -1447,7 +1447,7 @@ Role-intake gains a critical-requirements extraction step. A new sub-agent `crit
 **Downstream consumption:**
 - Retrieval: critical requirements are the matching target for the LLM-judgment passes (inventory entries, narratives, themes), replacing raw JD text as the matching target.
 - Gap analysis: `Type` drives severity. Unmet `must-have` = high severity; unmet `preferred` = low; unmet `contextual` may not constitute a real gap.
-- CV creation: `must-have` requirements receive explicit CV bullets; `preferred` and `duty-derived` widen the matching surface; `contextual` informs framing/voice rather than bullets.
+- CV creation: `must-have` requirements receive explicit CV bullets; `preferred` and `duty-derived` widen the matching surface; `contextual` informs framing/voice rather than bullets. (Superseded for priority by `role-intake-ranked-needs-2026-11`: Type is where a row appeared, not how much it matters.)
 - Interview prep: requirements inform anticipated panel questions.
 
 **Architecture:**
@@ -1456,6 +1456,15 @@ Role-intake gains a critical-requirements extraction step. A new sub-agent `crit
 - `templates/research_file.md` gains a new `## Critical Requirements` section carrying the per-requirement Text / Type / Source structure, rendered as a `| # | Text | Type | Source |` table (the `#` column indexes CR-NNN). (Extractor output moved from a bullet list to this table 2026-06-04; see `gap-analysis-architecture-2026-05` interface amendments.)
 
 Refs: `retrieval-architecture-2026-05`, `role-intake-architecture`, `role-intake-research-scope`, `role-intake-artifacts`.
+
+#### role-intake-ranked-needs-2026-11
+Role-intake ranks the JD's needs (GitHub #89). On APP-028 the JD's "primary focus of this role" paragraph became requirements 33 and 34 of 35, typed `contextual`, and every downstream step read the flat list in which it sat last. Type records which JD section a row came from; nothing recorded importance.
+
+**Design.** A new agent, `jd-needs-ranker` (Phase 5b, after the research file is assembled), groups every requirement row into one of a handful of needs and ranks them by the JD's own signals: priority words first, then the sentence that says what the role is (said once, so repetition never counted it; APP-028 ranked its roadmap need 7th of 8), then repetition across sections, then gating minimums, with space as a tiebreaker. Each need is `stated` or `derived` (the JD never names the grouping) and carries one verbatim quote. `assemble.py needs` writes `## Ranked Needs` to `research.md`; `role_intake_qc.py` I8 checks ids, Basis and Signals values, that every requirement row sits in exactly one need, and quotes; `qc-role-intake` check 5 judges whether the ranking follows the signals. The user confirms the ranking at Phase 9 Step 9b as its own decision, because a wrong ranking steers every later skill.
+
+**Choices.** A separate agent, not more extractor output: extraction copies the JD's words under a modifier guard, ranking is a judgment, and the ranker reads the final numbered table so its row references are stable. Re-extracting requirements resets the ranking to pending, since row numbers may change. Every row must land in a need so grouping can never drop a requirement. Grouping follows how the JD groups items (shared bullet, heading, or a join in another section), since the layout is the author's view of the work; a single shared bullet with no other link is weak evidence and a need grouped on it is `derived`. Similar-item lists take a parent term to save space. The JD sets the count.
+
+Refs: `role-intake-critical-requirements-extraction-2026-05`, GitHub #88 (CV bullets will be tagged by ranked need).
 
 ### gap-analysis
 
