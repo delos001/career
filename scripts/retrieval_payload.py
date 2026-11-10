@@ -62,6 +62,7 @@ import sys
 
 import _config
 import _util
+import requirement_kinds
 from inventory_model import document, entry_block, pr
 
 
@@ -713,7 +714,12 @@ def extract_section(text, heading):
 
 
 def build_scoring_context(app_folder, cfg, prefix, max_bytes):
-    """Build the scoring context text from research.md and jd.md; raise on gaps."""
+    """Build the scoring context text from research.md and jd.md; raise on gaps.
+
+    Requirement rows on jd_needs.md's Not ranked list (boilerplate, role shape,
+    administrative detail) are left out, so no scorer matches the profile
+    against them.
+    """
     research_path = os.path.join(app_folder, cfg['filenames']['research_file'])
     jd_path = os.path.join(app_folder, cfg['filenames']['jd_file'])
     for path in (research_path, jd_path):
@@ -721,6 +727,8 @@ def build_scoring_context(app_folder, cfg, prefix, max_bytes):
             raise FileNotFoundError(f'scoring context source missing: {path}')
 
     requirements = extract_section(_util.read(research_path), CR_HEADING)
+    if requirements:
+        requirements = requirement_kinds.ranked_section(requirements, app_folder, cfg)
     # A requirements table needs at least one row past its header and divider.
     if not requirements or len([l for l in requirements.split('\n')
                                 if l.startswith('|')]) < 3:

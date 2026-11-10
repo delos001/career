@@ -9,7 +9,7 @@ APP-028 passed every check and reviewer, and the user rewrote it by hand. The dr
 ## Locked decisions
 
 **JD priority (#89, role-intake)**
-1. Requirements are grouped into a handful of ranked JD needs, using priority words, repetition, gating minimums, then space spent. Derived needs are marked derived. The user confirms the ranking at intake.
+1. Each requirement is labeled by kind (`rules/jd-requirement-kinds.md`); requirements are grouped into the functions the role delivers and ranked by the JD's statement of the role, repetition, then space spent. Boilerplate, role shape and administrative detail are not ranked and never reach retrieval or gap analysis. Derived needs are marked derived. The user confirms the ranking in role-classify.
 
 **Writing rules (`rules/cv/cv-structure.md`)**
 2. Summary: at most 5 sentences, plus a line cap reset from the measured Jazz summary. Each sentence maps one of the top JD needs to experience or achievement, rolled up, with no granular detail. Each claim keeps one thing specific to the candidate, not an echo of the JD.

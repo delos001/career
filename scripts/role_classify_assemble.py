@@ -6,8 +6,9 @@ Writes what the role-classify skill adds to an application that role-intake
 has already researched, and prints the skill's approval block, so none of it is
 written or composed by hand. Three subcommands:
 
-  needs     Write the jd-needs-ranker output into research.md's Ranked Needs
-            section.
+  needs     Write the jd-needs-ranker output to jd_needs.md: the job, each need
+            with its requirements (text copied from research.md) and their
+            kinds, then the Qualifications and Not ranked rows.
   finalize  Write the axis-classifier output into the session log (Axis
             Classification, Axis Gaps, and the Role Level and Industry metadata
             lines) and mirror Axis Gaps into research.md.
@@ -33,7 +34,8 @@ import sys
 
 import _config
 import _util
-from assemble import _replace_section, _upsert_section
+import requirement_kinds
+from assemble import _replace_section
 from role_intake_qc import _metadata_fields, _section_body
 
 
@@ -58,13 +60,69 @@ def _paths(folder, cfg):
 # malformed ranking still lands where QC can name what is wrong with it.
 # ---------------------------------------------------------------------------
 
+def _row_kinds(block):
+    """Return {row number: Kind cell} from the ranker's '## Row Kinds' table."""
+    kinds = {}
+    for line in block.split('\n'):
+        cells = [c.strip() for c in line.strip().strip('|').split('|')]
+        if line.strip().startswith('|') and len(cells) >= 2 and cells[0].isdigit():
+            kinds[int(cells[0])] = ' | '.join(cells[1:])
+    return kinds
+
+
+def _line_rows(block, label):
+    """Return the row numbers on a '**<label>:** 3, 7 (kind), ...' line."""
+    m = re.search(rf'(?m)^\*\*{label}:\*\*[ \t]*(.*)$', block)
+    if m is None:
+        raise ValueError(f'ranker output has no "**{label}:**" line')
+    return [int(n) for n in re.findall(r'(?<![\w(-])(\d+)(?![\w)])', m.group(1))]
+
+
 def cmd_needs(args, cfg):
+    """Write jd_needs.md from the ranker's output and research.md's requirements.
+
+    The ranker returns '## Row Kinds' (a row-number/kind table), then
+    '## Ranked Needs' (the job lines, the needs table, and the Qualifications
+    and Not ranked lines). Each requirement's text is copied from research.md
+    here, never from the ranker, so the needs file always quotes the
+    requirements exactly. Coverage and kinds are checked by role_classify_qc.py
+    C6, not here, so a malformed ranking still lands where QC can name what is
+    wrong with it; a row number research.md does not have stops the write.
+    """
     research, _ = _paths(args.folder, cfg)
-    block = _util.read(args.needs_file).strip()
-    if not re.match(r'^## Ranked Needs[ \t]*\n', block):
-        raise ValueError('needs file must open with the "## Ranked Needs" heading')
-    _util.write(research, _upsert_section(_util.read(research), 'Ranked Needs', block))
-    print(research)
+    text = _util.read(args.needs_file).strip()
+    m = re.search(r'(?m)^## Ranked Needs[ \t]*$', text)
+    if not m:
+        raise ValueError('needs file has no "## Ranked Needs" heading')
+    kinds_part, block = text[:m.start()], text[m.start():]
+    research_text = _util.read(research)
+    texts = requirement_kinds.requirement_texts(_section_body(research_text, 'Critical Requirements'))
+    kind_by_row = _row_kinds(kinds_part)
+
+    def rows(nums):
+        unknown = [n for n in nums if n not in texts]
+        if unknown:
+            raise ValueError(f"row(s) {', '.join(map(str, unknown))} are not in research.md")
+        return [(n, texts[n], kind_by_row.get(n, '')) for n in nums]
+
+    job = [line.strip() for line in block.split('\n')
+           if re.match(r'^- (Delivers or owns|Leads, does, or both):', line.strip())]
+    needs = []
+    for line in block.split('\n'):
+        cells = [c.strip() for c in line.strip().strip('|').split('|')]
+        if len(cells) < 6 or not re.fullmatch(r'N-\d+', cells[0]):
+            continue
+        nums = [int(t) for t in re.split(r'[,\s]+', cells[3]) if t.isdigit()]
+        needs.append({'id': cells[0], 'label': cells[1], 'basis': cells[2],
+                      'signals': cells[4], 'quote': ' | '.join(cells[5:]), 'rows': rows(nums)})
+    title_m = re.match(r'# Research: (.*)', research_text)
+    title = title_m.group(1).strip() if title_m else os.path.basename(args.folder)
+    out = requirement_kinds.render_needs(
+        title, job, needs, rows(_line_rows(block, 'Qualifications')),
+        rows(_line_rows(block, 'Not ranked')))
+    path = requirement_kinds.needs_path(args.folder, cfg)
+    _util.write(path, out)
+    print(path)
 
 
 # ---------------------------------------------------------------------------
@@ -154,8 +212,9 @@ def cmd_approval(args, cfg):
     meta = _metadata_fields(log_text) or {}
     axes = _section_body(log_text, 'Axis Classification') or '_(missing)_'
     gaps = _section_body(log_text, 'Axis Gaps') or '_(missing)_'
-    needs = _section_body(_util.read(research), 'Ranked Needs') or ''
-    need_count = len(re.findall(r'(?m)^\|\s*N-\d+\s*\|', needs))
+    needs_file = requirement_kinds.needs_path(args.folder, cfg)
+    needs = _util.read(needs_file) if os.path.isfile(needs_file) else ''
+    need_count = len(requirement_kinds.read_needs(needs)['needs'])
     print('\n'.join([
         f"Role:     {meta.get('Role', '')} at {meta.get('Company', '')}",
         f"Level:    {meta.get('Role Level', '')}",
@@ -168,6 +227,7 @@ def cmd_approval(args, cfg):
         f'Ranked needs: {need_count}',
         f'Files: {log}',
         f'       {research}',
+        f'       {needs_file}',
         '',
         'Reply with corrections, or "approved" to hand off.',
     ]))

@@ -1,56 +1,72 @@
 ---
 name: jd-needs-ranker
-description: Groups a job's extracted critical requirements into a handful of JD needs and ranks them by how much the JD signals each one matters, for the role-classify skill. Reads the JD and the research file's Critical Requirements table. Returns a Ranked Needs table that cv-targeted, gap-analysis and interview prep read in priority order. Read-only.
+description: Labels each of a job's extracted critical requirements by kind, describes the job, groups the requirements into the JD's needs and ranks them, for the role-classify skill. Reads the JD, the research file, and rules/jd-requirement-kinds.md. Returns the row kinds, the job description, and a Ranked Needs table; role_classify_assemble.py writes them to jd_needs.md, which cv-targeted, gap-analysis and interview prep read in priority order. Read-only.
 tools: Read
 ---
 
 # JD needs ranker
 
-Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
-
-The Critical Requirements table records where each requirement appeared in the JD (its Type), not how much it matters. A JD's statement of what matters most can land at the bottom because of the section it sits in. You fix that: group the requirements into the needs a hiring manager actually decides on, and rank them. You are read-only.
+Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output. You are read-only.
 
 ## Inputs
 
-The dispatching skill gives you the path to `jd.md` and to `research.md`. Read the whole JD, then the `## Critical Requirements` table in `research.md`.
+The dispatching skill gives you the paths to `jd.md` and `research.md`. Read the whole JD; any sentence can explain another, wherever it sits. Then read `research.md`'s Company section and its `## Critical Requirements` table, and `rules/jd-requirement-kinds.md`.
 
-## What to do
+## Steps
 
-1. **Understand the job first.** Read the whole JD before grouping anything. Work out what the job is: what the person builds, runs and leads, and why. Any sentence can explain another, whether it's the next sentence, the last line of the paragraph, or a different section. Write 3 to 5 plain sentences describing the job. Then group and rank the requirements by that understanding, not by shared words.
-2. **Group.** Put every requirement row into exactly one need. A need is a capability or qualification the hiring decision turns on. Consider grouping the way the JD groups things, but do not let that be your only guide. Items the JD lists in the same bullet, under the same heading, or joins again in another section are likely one need, named by the JD's own heading or phrase. Items the JD keeps in separate bullets or sections are likely separate needs, unless the JD joins them somewhere else. JD layout can mislead: template bullets and space-saving lists sometimes join unrelated items. When only one shared bullet links items, weigh whether the hiring manager would really see them as one body of work, and mark the need `derived` if you group them. A list of interchangeable items, such as tools, methods or examples given with "e.g.", is one need under a parent term. Leading people is one need however the JD words it (people management, functional leadership, team leadership, operational leadership, line management); never split it by kind of leadership, and a role-defining sentence that names any of them names that need. A row that fits no group is its own need. The JD sets the count; do not split or merge to reach one.
-3. **Name each need** in the JD's own words where the JD names it. A grouped list gets the parent term that covers every item, short enough to fit a summary sentence. When the JD never names the grouping and you had to infer it, mark the need `derived`; otherwise `stated`.
-4. **Rank** by these signals, strongest first:
-   - `priority-words`: the JD says outright that this matters most ("primary focus," "key," "essential," "critical," "most important"). Priority words cover everything the JD ties to that statement, wherever it appears.
-   - `role-defining`: the sentence where the JD says what the role is (what kind of role it is, or what it is responsible for) names this need. That sentence is usually the first of the role description and is said once, so repetition never counts it. Words in it that describe the type or level of role (hands-on, senior, technical, strategic, individual contributor) are not needs on their own; they are an umbrella that tells you how to read the other needs. A requirement row that only says this goes into the need it describes.
-   - `repetition`: the same need is named in several sections. Count the sections.
-   - `gating`: a hard minimum that screens candidates out (years, degree, license).
+1. **Label every row by kind.** Use the kinds, tests and rules in `rules/jd-requirement-kinds.md`. Use the mission and values in the research file's Company section to spot boilerplate; when it has none, judge from the JD's own wording. Give each row one kind. When a row mixes kinds, name each part's kind with the JD words it rests on, e.g. `Function (strategic analyses) + Setting (oncology)`.
+2. **Describe the job.** Answer two questions, each citing the JD lines it rests on:
+   - What does the person deliver or own?
+   - Do they lead the work, do it, or both? If they lead, whom (staff, teams, vendors)? Base this on the Role shape rows.
+3. **Group into needs.** A need is a function the role delivers, taken from the step 2 answers, or the JD's Setting. Means and Working style rows go under the function they serve, found by reading the whole JD; when the JD ties one to no function, put it under the closest function. Working style tied to no function forms one Working style need. Leading people is one need, however worded. Exclusions and describing words go with what they describe (see the rules file).
+4. **Rank the needs,** strongest signal first:
+   - `role-statement`: the JD's statement of what the role is or is responsible for (usually the opening of the role description) names the need.
+   - `repetition`: the need is named in several JD sections; give the count.
    - `space`: the JD spends more words on it. Use only to break ties.
+   - Not a signal: words like "key," "critical" or "important." They stress something within its own topic, not across the role.
+5. **Check the ranking against step 2.** Each function named in the "deliver or own" answer should be among the top needs. If the person leads, leading people should be near the top; if they do the work, the functions they do hands-on should. If not, fix step 3 or step 4. Never edit the description to fit the table.
+6. **Return** the result in the format below.
 
-   Company boilerplate (the employer's standard description of itself) and statements about attitude or values ("passion for our mission," culture fit) rank last, below every other need, whatever words they use: no CV line can prove them. They still take a need, so no requirement is lost.
+## Placement
 
-   A need carrying `priority-words` ranks above one that does not. Next, a `role-defining` need ranks above one without it. Among the rest, more sections outrank fewer, and a gating minimum outranks a need named once. Do not rank by the requirement's Type; Type records the JD section, not importance.
-5. **Quote** one verbatim passage from the JD that shows the need's strongest signal, copied exactly, on one line of the JD.
+Every row lands in exactly one place, set by its kinds:
+- any part Function, Means, Working style or Setting: a need;
+- otherwise any part Qualification: the Qualifications line;
+- otherwise (only Role shape, Administrative detail, Boilerplate or attitude): the Not ranked line.
+
+`scripts/role_classify_qc.py` checks the kinds, the placement, that every row lands once, the ids and signals, and that each quote is in the JD.
 
 ## Rules
 
-- The `**The job:**` description is required. It shows the reader how you understood the JD, so a misreading can be caught.
-- Every requirement row number appears in exactly one need. None dropped, none repeated.
-- Do not invent a need the requirement rows do not carry. Ranking reorders and groups; it adds nothing.
-- `scripts/role_classify_qc.py` checks the row coverage, the ids, the Basis and Signals values, and that each quote is in the JD.
+- Do not invent a need the rows do not carry. Ranking reorders and groups; it adds nothing.
+- Name each need in the JD's own words where the JD names it. Basis records who made the grouping, not where the label's words came from:
+  - `stated`: the JD itself names this need, as a heading or a phrase, and the need's function rows come from under that name. Attaching Means or Working style rows to the function does not change this.
+  - `derived`: you made the grouping. The Working style group for rows tied to no function is always `derived`.
+- Quote one verbatim JD passage per need showing its strongest signal, copied exactly from one line of the JD.
 
 ## Return format
 
-Return exactly this structure, needs in rank order:
+Return exactly this, needs in rank order:
 
 ```
+## Row Kinds
+
+| # | Kind |
+|---|---|
+| 1 | <kind, or kinds joined by + with each part's JD words in parentheses> |
+
 ## Ranked Needs
 
-**The job:** <your 3 to 5 plain sentences from step 1>
+**The job:**
+- Delivers or owns: <answer> (<JD lines>)
+- Leads, does, or both: <answer> (<JD lines>)
 
 | Need | Label | Basis | Requirements | Signals | Quote |
 |---|---|---|---|---|---|
-| N-01 | <need in the JD's words> | <stated \| derived> | <row numbers, e.g. 1, 14, 21> | <one or more of priority-words, role-defining, repetition, gating, space, comma-separated; repetition carries its count, e.g. repetition 5> | <JD section> "<verbatim JD quote>" |
-| N-02 | ... |
+| N-01 | <need in the JD's words> | <stated \| derived> | <row numbers, e.g. 1, 14, 21> | <role-statement, repetition N, space; comma-separated> | <JD section> "<verbatim JD quote>" |
+
+**Qualifications:** <row numbers, or none>
+**Not ranked:** <row number (kind), comma-separated, or none>
 ```
 
 `N-01` is the highest-ranked need; ids run in sequence with no gaps. If the Critical Requirements section has no rows, return:

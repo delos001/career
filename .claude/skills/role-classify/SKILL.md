@@ -1,6 +1,6 @@
 ---
 name: role-classify
-description: Rank what the job description says matters most, and classify the job against the five axes (orientation, industry, specialty, level, work-state). Reads the jd.md and research.md that role-intake wrote and writes the ranked needs and the classification into the application's files for retrieval, gap analysis, CV creation and interview prep. Run after role-intake; it works from files, so a fresh session is fine.
+description: Label each job requirement by kind and rank the job's needs, and classify the job against the five axes (orientation, industry, specialty, level, work-state). Reads the jd.md and research.md that role-intake wrote and writes the ranked needs to jd_needs.md and the classification into the session log for retrieval, gap analysis, CV creation and interview prep. Run after role-intake; it works from files, so a fresh session is fine.
 ---
 
 # role-classify - rank the needs and classify the job
@@ -18,7 +18,7 @@ Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-N
 
 1. Folder missing: the APP-NNN is likely wrong; ask again.
 2. `research.md` missing, or its `## Critical Requirements` table empty: halt and tell the user to finish `/role-intake` first.
-3. `## Ranked Needs` in `research.md` still `_(pending)_`: run `python scripts/display/introduce.py role-classify`, show the output, then go to Phase 1.
+3. No `jd_needs.md` in the folder: run `python scripts/display/introduce.py role-classify`, show the output, then go to Phase 1.
 4. `## Axis Classification` in the session log still `_(pending)_`: Phase 2.
 5. Otherwise: Phase 3.
 
@@ -26,10 +26,10 @@ Say "Starting APP-NNN at Phase N." and proceed.
 
 ## Phase 1 - Rank the needs
 
-**Ranking what the job description says matters most.**
+**Labeling each requirement and ranking the job's needs.**
 
 - Run `python scripts/dispatch_prompt.py jd-needs-ranker --folder <app_folder>` and dispatch `jd-needs-ranker` with the printed prompt exactly as printed.
-- Save its output to a file in `<scratch>`, then run `python scripts/role_classify_assemble.py needs --folder <app_folder> --needs-file <path>`.
+- Save its output to a file in `<scratch>`, then run `python scripts/role_classify_assemble.py needs --folder <app_folder> --needs-file <path>`. It writes `jd_needs.md`.
 
 ## Phase 2 - Classify the axes
 
@@ -56,7 +56,7 @@ Say "Starting APP-NNN at Phase N." and proceed.
 **Reviewing the ranking and the classification with you.**
 
 - **4a. Open findings.** One per message: what is wrong, the recommended fix, and the before/after. Act on the user's decision before showing the next.
-- **4b. Confirm the ranking.** Its own decision, because a wrong ranking steers every later skill. Show the needs in rank order in plain English: the label, which requirements it groups, why it ranks there, and whether the JD stated it or it was derived. The user confirms, or reorders, regroups or relabels. Apply a change as a direct edit to `research.md` (ids renumbered to rank order), show it as before/after, rerun 3a, and show the ranking again until confirmed.
+- **4b. Confirm the ranking.** Its own decision, because a wrong ranking steers every later skill. Show `jd_needs.md` one section at a time, its text exactly as written (never paraphrased): the job, then each need with its requirements and kinds, then Qualifications, then Not ranked (retrieval and gap analysis never see those). The user confirms, or reorders, regroups, relabels or changes a kind. Apply a change as a direct edit to `jd_needs.md` (ids renumbered to rank order), show it as before/after, rerun 3a, and show the changed section again until confirmed.
 - **4c. Approval.** Run `python scripts/role_classify_assemble.py approval --folder <app_folder>` and show its output. On a correction, fix per *Routing on failure*, rerun Phase 3, and return here. On approval, tell the user the application is ready for `/retrieval`.
 
 ## Routing on failure

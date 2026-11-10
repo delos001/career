@@ -14,7 +14,7 @@ tool instead of by hand. Three subcommands, one per write point in the skill:
   research  Phase 5 - write (or, on a re-run, refresh) research.md from the four
             Phase-4 subagent output blocks (company, role, industry, critical
             requirements), and fill the session log's research-completed date.
-            Ranked Needs and Axis Gaps are written pending.
+            Axis Gaps is written pending.
 
 The pending sections are filled by the role-classify skill
 (scripts/role_classify_assemble.py), which imports this file's section helpers.
@@ -113,7 +113,7 @@ def _upsert_section(text, heading, new_section):
     """Replace '## heading' if present; otherwise insert it before '## Axis Gaps'.
 
     Sections added to research.md after a file was first written (Critical
-    Requirements, Ranked Needs) must land on older files too. The insert uses a
+    Requirements) must land on older files too. The insert uses a
     string splice, not re.sub, so verbatim agent output is never read as a regex
     replacement template. With no Axis Gaps section it appends at the end.
     """
@@ -123,12 +123,6 @@ def _upsert_section(text, heading, new_section):
     if m_gaps:
         return text[:m_gaps.start()] + new_section.rstrip() + '\n\n' + text[m_gaps.start():]
     return text.rstrip() + '\n\n' + new_section.rstrip() + '\n'
-
-
-# The Ranked Needs section before jd-needs-ranker has run, and again whenever the
-# requirements are re-extracted (row numbers may change, so a ranking built on the
-# old rows is void). role-classify fills it; role_classify_qc.py C6 fails until then.
-RANKED_NEEDS_PENDING = '## Ranked Needs\n\n_(pending)_'
 
 
 # ---------------------------------------------------------------------------
@@ -374,8 +368,7 @@ def cmd_research(args, repo_root, cfg):
             'role_block': role_block,
             'industry_block': industry_block,
             'critical_requirements_block': critical_requirements_block,
-            # Both filled by the role-classify skill.
-            'ranked_needs': RANKED_NEEDS_PENDING,
+            # Filled by the role-classify skill.
             'axis_gaps': '## Axis Gaps\n\n_(pending)_',
         })
         _util.write(research_file, body)
@@ -394,8 +387,8 @@ def cmd_research(args, repo_root, cfg):
         # role-intake-critical-requirements-extraction-2026-05); insert it on
         # research.md files that pre-date the addition, replace it otherwise.
         text = _upsert_section(text, 'Critical Requirements', critical_requirements_block)
-        # Re-extracted requirements void any ranking built on the old rows.
-        text = _upsert_section(text, 'Ranked Needs', RANKED_NEEDS_PENDING)
+        # A jd_needs.md built on the old rows no longer matches them;
+        # requirement_kinds.py refuses it until role-classify reruns.
         _util.write(research_file, text)
     log_text = re.sub(r'(?m)^- Research Completed Date: .*$',
                       lambda _m: f'- Research Completed Date: {args.date}', _util.read(session_log))

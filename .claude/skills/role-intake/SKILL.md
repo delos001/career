@@ -102,7 +102,7 @@ Ask if this session is for a new role or to resume a previous one?
 
 - Input: four findings blocks.
 - Write each block to its own scratch file under `<scratch>`, then run `python scripts/assemble.py research` with `--folder`, `--app-id`, `--company`, `--role`, `--date`, and the four scratch-file paths (`--company-file`, `--role-file`, `--industry-file`, `--critical-requirements-file`). It section-replaces only role-intake's own sections so nothing else is clobbered.
-- Output: `research.md` written and the session log's research-completed date filled. Ranked Needs, Axis Gaps, and the session log's axis sections stay pending for role-classify.
+- Output: `research.md` written and the session log's research-completed date filled. Axis Gaps and the session log's axis sections stay pending for role-classify, which also writes `jd_needs.md`.
 
 ## Phase 6 - QC
 

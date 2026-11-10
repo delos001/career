@@ -29,6 +29,8 @@ filenames:
   research_file_template: research_file.md      # in the templates/ folder
   introductions: introductions.yaml            # next to scripts/display/introduce.py
   axis_registry: registry.md                   # in each rules/<axis>/ folder
+  requirement_kinds_file: jd-requirement-kinds.md  # in the rules folder; kinds of JD requirement rows, parsed by requirement_kinds.py
+  jd_needs_file: jd_needs.md                   # written into each application folder by role-classify; each requirement's kind and the ranked needs
   build_issues_log: build_issues.md            # in the design/ folder; appended to on provisional builds
   retrieval_manifest: retrieval.md             # written into each application folder by the retrieval skill
   gap_analysis_file: gap_analysis.md           # written into each application folder by the gap-analysis skill

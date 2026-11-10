@@ -15,7 +15,8 @@ Checks (IDs mirror the original qc-gap-analysis check numbering):
   G3  Session log ## Gap Analysis section carries Run date, Gap analysis
       file, Recommendation, QC verdict fields.
   G4  Requirement coverage: every requirement in research.md's
-      ## Critical Requirements appears exactly once as a CR-NNN sub-section.
+      ## Critical Requirements appears exactly once as a CR-NNN sub-section,
+      except rows on jd_needs.md's Not ranked list, which must not appear.
   G5  Status taxonomy: every requirement Status is in the locked set.
   G6  Non-covered Notes present: status outside {covered, language-shift}
       carries a non-empty Notes value. (Whether the Notes content is
@@ -62,6 +63,7 @@ import _config
 import _util
 import gap_assemble
 import profile_update as pu
+import requirement_kinds
 from inventory_model import pr
 
 
@@ -160,37 +162,41 @@ def _parse_requirements(artifact_text):
     return records, duplicates
 
 
-def _parse_research_types(research_text):
-    """Return the ordered requirement-type list from ## Critical Requirements.
+def _parse_research_types(research_text, app_folder, cfg):
+    """Return {CR-NNN: type}, in row order, for the requirements gap analysis covers.
 
     Two formats exist: current research files render a
     `| # | Text | Type | Source |` table; files from before the table
-    convention render `- Text:` blocks with `Type:` continuation lines.
-    CR-NNN derives from the 1-based row/block order in both.
+    convention render `- Text:` blocks with `Type:` continuation lines. CR-NNN
+    is the table's row number, or the 1-based block order. Rows on jd_needs.md's
+    Not ranked list are left out: gap analysis never evaluates them, so they
+    are neither expected nor allowed in the artifact.
     """
     section = _section_text(research_text, 'Critical Requirements')
     if section is None:
         return None
-    types = []
+    types = {}
+    skip = requirement_kinds.not_ranked_rows(app_folder, cfg, section)
     # Table format. Type is the second-to-last cell, anchored on the locked
     # type vocabulary so a pipe inside the Text cell cannot shift the parse.
     row_re = re.compile(
-        r'^\|\s*\d+\s*\|.*\|\s*(must-have|preferred|contextual|duty-derived)\s*\|[^|]*\|\s*$')
+        r'^\|\s*(\d+)\s*\|.*\|\s*(must-have|preferred|contextual|duty-derived)\s*\|[^|]*\|\s*$')
     for line in section.split('\n'):
         m = row_re.match(line)
-        if m:
-            types.append(m.group(1))
-    if types:
+        if m and int(m.group(1)) not in skip:
+            types[f'CR-{int(m.group(1)):03d}'] = m.group(2)
+    if types or skip:
         return types
     # Bullet-block format (pre-table research files).
+    order = []
     for line in section.split('\n'):
         if re.match(r'^- Text:', line):
-            types.append('')
+            order.append('')
             continue
         m = re.match(r'^\s+Type:\s*(\S+)', line)
-        if m and types and types[-1] == '':
-            types[-1] = m.group(1)
-    return types
+        if m and order and order[-1] == '':
+            order[-1] = m.group(1)
+    return {f'CR-{i:03d}': t for i, t in enumerate(order, start=1)}
 
 
 def _parse_staging_items(staging_text):
@@ -303,7 +309,7 @@ def check_coverage(records, duplicates, req_types, findings):
     if req_types is None:
         findings.append(('G4', False, 'research.md has no ## Critical Requirements section'))
         return
-    expected = {f'CR-{i:03d}' for i in range(1, len(req_types) + 1)}
+    expected = set(req_types)
     present = set(records)
     problems = []
     if expected - present:
@@ -357,7 +363,7 @@ def check_staging_anchors(records, staging_items, app_id, findings):
                      '; '.join(problems) or 'staged items anchor to real requirements'))
 
 
-def check_ids(artifact_text, profile_ids, req_count, findings):
+def check_ids(artifact_text, profile_ids, req_ids, findings):
     """G8: every cited ID exists in its source document."""
     problems = []
     if not profile_ids:
@@ -374,10 +380,11 @@ def check_ids(artifact_text, profile_ids, req_count, findings):
                          if t not in profile_ids})
     if fabricated:
         problems.append(f"IDs not in profile documents: {', '.join(fabricated)}")
-    bad_cr = sorted({t for t in re.findall(r'\bCR-(\d+)\b', artifact_text)
-                     if req_count is not None and int(t) > req_count})
+    # A Not ranked row is outside the list too: gap analysis never evaluates it.
+    bad_cr = sorted({f'CR-{int(t):03d}' for t in re.findall(r'\bCR-(\d+)\b', artifact_text)
+                     if req_ids is not None and f'CR-{int(t):03d}' not in req_ids})
     if bad_cr:
-        problems.append(f"CR IDs beyond the requirements list: {', '.join('CR-' + t for t in bad_cr)}")
+        problems.append(f"CR IDs not in the requirements list: {', '.join(bad_cr)}")
     findings.append(('G8', not problems, '; '.join(problems) or 'all cited IDs exist'))
 
 
@@ -397,12 +404,12 @@ def check_coverage_math(artifact_text, header, records, req_types, findings):
     """G10: the coverage table and unmet must-haves recompute from the statuses."""
     # Compare key sets, not lengths: a dropped CR plus an invented one keeps
     # the count equal but would KeyError the lookup below.
-    expected = None if req_types is None else {f'CR-{i:03d}' for i in range(1, len(req_types) + 1)}
+    expected = None if req_types is None else set(req_types)
     if expected is None or set(records) != expected:
         findings.append(('G10', False,
                          'cannot recompute: requirements list and artifact do not align'))
         return
-    pairs = [(rtype, records[f'CR-{i:03d}']['status']) for i, rtype in enumerate(req_types, start=1)]
+    pairs = [(rtype, records[cr]['status']) for cr, rtype in req_types.items()]
     problems = []
     # The same renderer wrote the table, so any difference means the statuses
     # and the picture no longer describe the same run.
@@ -458,8 +465,7 @@ def check_conditions_name_soft_must_haves(artifact_text, records, req_types, fin
     named = set(re.findall(r'CR-\d+', section.partition('**Depends on:**')[2]))
     soft = {'partial-match'} | gap_assemble.UNMET_STATUSES
     missing = []
-    for i, rtype in enumerate(req_types, start=1):
-        cr = f'CR-{i:03d}'
+    for cr, rtype in req_types.items():
         if rtype == 'must-have' and records.get(cr, {}).get('status') in soft and cr not in named:
             missing.append(cr)
     findings.append(('G14', not missing,
@@ -515,7 +521,8 @@ def cmd_check(args, repo_root, cfg):
     staging_items = _parse_staging_items(staging_text)
     header = _header_fields(artifact_text)
     records, duplicates = _parse_requirements(artifact_text)
-    req_types = _parse_research_types(research_text) if research_text is not None else None
+    req_types = (_parse_research_types(research_text, app_folder, cfg)
+                 if research_text is not None else None)
     log_fields = _session_log_section(log_text) if log_text is not None else None
 
     findings = []
@@ -527,7 +534,7 @@ def cmd_check(args, repo_root, cfg):
     check_notes_presence(records, findings)
     check_staging_anchors(records, staging_items, header.get('APP-NNN', ''), findings)
     check_ids(artifact_text, profile_ids,
-              len(req_types) if req_types is not None else None, findings)
+              set(req_types) if req_types is not None else None, findings)
     check_mirroring(header, log_fields, findings)
     check_coverage_math(artifact_text, header, records, req_types, findings)
     check_recommendation(header, findings)

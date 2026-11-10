@@ -1,46 +1,49 @@
 # JD needs ranker: redesign handoff (GitHub #89)
 
-Status 2026-11-09. Pick up here. The plan this belongs to: `design/cv_persuasion_plan.md` (step 1).
+Status 2026-11-10, end of session. The plan this belongs to: `design/cv_persuasion_plan.md` (step 1).
 
 ## Where it stands
 
-- Built and tested: `jd-needs-ranker` agent, now run by the role-classify skill (Phase 1, user confirms at 4b), `role_classify_assemble.py needs`, `role_classify_qc.py` C6. Design entries: `design_decisions.md` `role-intake-ranked-needs-2026-11`, `role-classify-split-2026-11`.
-- The agent's instructions (`.claude/agents/jd-needs-ranker.md`) were patched one example at a time into long paragraphs. The user stopped the session over this. **Rewrite them as the steps below before any more test runs.**
-- Remove the "type or level of role words are an umbrella, not needs" sentence (Rank step, role-defining bullet). It tells the ranker "technical leader" is not about leading. Wrong: leading the build-out is not building it.
-- APP-028 (Jazz) `research.md` has `## Ranked Needs` reset to `_(pending)_`, so `role_classify_qc.py` C6 fails for Jazz until `/role-classify` is run on it.
+- The user approved the ranker's six steps one at a time, and `.claude/agents/jd-needs-ranker.md` is rewritten as those steps. Design entry: `design_decisions.md` `requirement-kinds-2026-11`.
+- Requirement kinds and their tests: `rules/jd-requirement-kinds.md`. Every kind and wording list was approved by the user.
+- role-classify writes its result to `jd_needs.md` in each application folder (the job, each need with its requirements' text and kinds, then Qualifications, then Not ranked). Written by `role_classify_assemble.py needs`; read and filtered by `scripts/requirement_kinds.py`; checked by `role_classify_qc.py` C6. Not ranked rows never reach retrieval or gap analysis. All 73 tests pass; the filter and the text-match check were seen to fail.
+- BeOne APP-027: `jd_needs.md` written and the ranking confirmed by the user. Two instruction faults found and fixed on the way: `stated` was defined by where the label's words came from (now: who made the grouping); step 3 contradicted it.
+- To watch on the next runs: working style the JD ties to a function through other sentences was made its own need (BeOne rows 7, 9); one JD line split across two needs (rows 17, 18); the job description's "Leads, does, or both" line explains its reasoning instead of giving the answer and its sources.
+- Nothing is committed.
 
-## Proposed steps (user had not approved yet; present them first, one short message)
+## Next: move requirement extraction into role-classify
 
-1. **Separate role from boilerplate.** Mark which JD text is about the role and which is the company describing itself (mission, values, benefits, legal).
-2. **Describe the job.** Answer fixed questions, each citing the JD lines it rests on:
-   - What does the person deliver or own?
-   - Do they lead the work, do it, or both? If lead: whom (staff, teams, vendors)?
-   - What level is the role?
-   - What does the JD say matters most?
-3. **Group requirements into needs.** Follow how the JD groups items, read through step 2. Interchangeable lists under one parent term. Leading people is one need. Every requirement in exactly one need.
-4. **Rank.** What the JD says matters most (role text only); then what the opening role sentence names; then repetition across sections; then hard minimums. Boilerplate and attitude statements last.
-5. **Check the ranking against the step 2 description.** If the top needs don't match the job, fix grouping or ranking.
-6. **Return** the description and the table.
+Decided by the user, not yet built. Requirement extraction is the same kind of work as labeling and ranking, so it belongs in role-classify, and the requirements should live in one file.
 
-## Settled by the user this session
+1. role-classify runs the `critical-requirements-extractor` agent, then the ranker. role-intake keeps only the company, role and industry research.
+2. The requirements move out of `research.md` (`## Critical Requirements`) into `jd_needs.md`, so the text exists once. Keep each requirement's Type and Source; gap analysis uses Type, and the extraction check uses Source.
+3. The extraction check (`role_intake_qc.py` I7: requirement text keeps the JD's modifiers) moves to `role_classify_qc.py`.
+4. Readers switch to `jd_needs.md`: `retrieval_payload.py`, `gap_context.py`, `gap_assemble.py`, `gap_qc.py`, `assemble.py research`, and the retrieval, gap-analysis and cv-targeted skills and agents that name Critical Requirements (grep for it).
+5. Existing application folders (about 23 have the table) are converted by a script, not handled by a fallback.
 
-- JD layout is the author's view of the work: group as the JD groups, but layout can mislead (template bullets, space-saving lists).
-- Understand the whole JD: any sentence can explain another (next sentence, end of paragraph, another section). No fixed sentence windows.
-- Leading people is one need however worded (people, functional, operational, team, line). Never argue those distinctions.
-- Leading the build-out of something is not building it.
-- Boilerplate and attitude/values ("passion for fighting cancer") rank last; no CV line can prove them.
-- No examples from one application in the instructions; they must work for any role.
-- Test on JDs the instructions were not tuned on: BeOne APP-027, Otsuka APP-026, Acadia APP-025, plus Jazz.
+Before building: show the user the `jd_needs.md` layout for one requirement and get approval. Then build, test, see each check fail, and present the result in a few lines.
 
-## Test runs 2026-11-09 (instructions before the step rewrite)
+## After that
 
-| Application | Ranker's top needs | Problem the user confirmed or raised |
-|---|---|---|
-| Jazz | 1 monitoring, safety, patient profile tools incl. self-service; 2 leading people; 3 strategy and roadmap; 4 collaboration (10 needs) | Matched his read. Skipped the job description (now required). |
-| Acadia | 1 data integration and automation; 2 R/Python dashboards; 3 "hands-on technical role"; 4 R, Python, SQL, APIs | "Hands-on technical" describes role type and level, not a need. |
-| BeOne | 1 "passionate interest in fighting cancer"; 2 R&D strategy; 3 strategic projects | Company boilerplate ranked first. |
-| Otsuka | 1 technical and cross-functional leadership; 2 architecting AI solutions; 3 feasibility research (23 needs) | Not reviewed: my framing called it an individual contributor role, which he rejected. 23 needs is too many. |
+1. Run `/role-classify` on Otsuka APP-026, Acadia APP-025 and Jazz APP-028. The user reviews each `jd_needs.md` one section at a time, exact text, never paraphrased; "close enough" is the bar.
+2. Close #89.
 
-## How to run it with him
+## BeOne APP-027 classification: fix before its CV
 
-One step or one result per message, a few lines, his words, no coined terms. Rewrite the instructions as steps first; then test all four applications; then confirm Jazz; then close #89.
+The classification was rerun 2026-11-10 (level ic became leadership, function-lead; orientation data-analytics became transformation-strategy primary). The reviewer then found two faults, not yet fixed: the industry rationale uses "small-molecule BRUKINSA", which is in neither the JD nor the research; the orientation rationale picks transformation-strategy with a test the rule files do not contain. Rerun role-classify Phase 2 before BeOne goes to retrieval. Not part of the ranker work; do not raise it during ranker reviews.
+
+## Set aside for a separate fix (requirement extractor)
+
+Each breaks the rule that a requirement carries the JD's wording, nothing added or dropped. A check comparing each requirement's text with the JD sentence it quotes could catch all four.
+
+- WCT APP-007 #21: the middle of the JD sentence was dropped.
+- Genmab APP-018 #41: "recognized" was added.
+- BeOne APP-019 #7: an extraction note was added to the text.
+- Formation Bio APP-010 #17: "Comfort operating in" was added, turning a company description into a requirement.
+
+## How to work with him
+
+- One point and one question per message, a few lines, his words, no coined terms.
+- Show file text exactly as written, never paraphrased or shortened.
+- Stay on the named goal; do not raise findings outside it.
+- When a skill is split or work is moved, list every step doing the same kind of work and ask whether it moves too.

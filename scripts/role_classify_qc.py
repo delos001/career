@@ -3,7 +3,7 @@
 role_classify_qc.py - deterministic QC for the role-classify skill's writes
 
 Owns the mechanical checks on what role-classify adds to an application: the
-Ranked Needs table in research.md, and the axis classification, Level and
+needs file (jd_needs.md), and the axis classification, Level and
 Industry metadata, and Axis Gaps in the session log (mirrored into research.md).
 The qc-role-classify judgment agent keeps what a script cannot verify (whether
 the classification and the ranking are right).
@@ -24,9 +24,11 @@ Checks:
       (`- <Axis>: <values> - <rationale>`, no bold, no bare label).
   C5  A leadership Level carries exactly one `- Tier:` line naming a tier from
       rules/levels/leadership.md's Tiers block; other levels carry none.
-  C6  Ranked Needs: ids N-01.. in rank order, Basis stated|derived, Signals
-      from the allowed set, every requirement row in exactly one need, and
-      each need's quote verbatim in jd.md.
+  C6  jd_needs.md: the job description is present; ids N-01.. in rank
+      order, Basis stated|derived, Signals from the allowed set, each need's
+      quote verbatim in jd.md; every requirement in exactly one of a need,
+      Qualifications or Not ranked, with its research.md text unchanged; and
+      every kind known and placed where its kinds set.
 
 Output: one `<ID>  PASS|FAIL  <detail>` line per check, then a RESULT line.
 Exit 0 when all pass, 1 otherwise.
@@ -45,6 +47,7 @@ import sys
 
 import _config
 import _util
+import requirement_kinds
 from role_intake_qc import (_PENDING_RE, _QUOTE_RE, _clause_holding, _metadata_fields,
                             _read, _requirement_rows, _section_body)
 
@@ -59,7 +62,7 @@ AXES = ['Orientation', 'Industry', 'Specialty', 'Level', 'Work-state']
 # Ranked Needs cell vocabularies. A Signals cell is a comma-separated list of
 # these; repetition carries a count.
 BASIS_VALUES = {'stated', 'derived'}
-_SIGNAL_RE = re.compile(r'^(?:priority-words|role-defining|repetition \d+|gating|space)$')
+_SIGNAL_RE = re.compile(r'^(?:role-statement|repetition \d+|space)$')
 
 
 # ---------------------------------------------------------------------------
@@ -235,68 +238,90 @@ def check_tier(log_text, tiers, findings):
     findings.append(('C5', ok, detail))
 
 
-def check_ranked_needs(research_text, jd_text, findings):
-    """C6: the Ranked Needs table covers every requirement once (GitHub #89).
+def check_ranked_needs(research_text, needs_text, jd_text, kinds, findings):
+    """C6: jd_needs.md places every requirement once, where its kind says.
 
-    The requirement Type records which JD section a row came from, so APP-028's
-    'primary focus' paragraph ranked last. jd-needs-ranker groups the rows into
-    ranked needs; this check holds the mechanical half: ids N-01.. in sequence,
-    allowed Basis and Signals values, each requirement row in exactly one need,
-    and each quote verbatim in the JD. Whether the ranking is right is
+    jd-needs-ranker labels each requirement with a kind from
+    rules/jd-requirement-kinds.md, describes the job, and groups the rows into
+    ranked needs; role_classify_assemble.py writes the result to jd_needs.md
+    with each requirement's text copied from research.md. This check holds the
+    mechanical half: the job description is present; ids N-01.. in sequence;
+    allowed Basis and Signals values; each quote verbatim in the JD; every
+    requirement in exactly one of a need, Qualifications or Not ranked, with
+    its research.md text unchanged (a mismatch means the requirements were
+    re-extracted after the ranking); and every kind known and placed where its
+    kinds set. The Not ranked placement is what keeps boilerplate out of
+    retrieval and gap analysis, so a misplaced row is a failure here, not a
+    style note. Whether the kinds and the ranking are right is
     qc-role-classify's judgment and the user's confirmation.
     """
-    body = _section_body(research_text, 'Ranked Needs')
-    if body is None or _PENDING_RE.search(body):
-        findings.append(('C6', False, 'no filled `## Ranked Needs` section'))
+    req = {num: text for num, text, _ in _requirement_rows(research_text)}
+    if needs_text is None:
+        ok = not req
+        findings.append(('C6', ok, 'no requirements, no needs file' if ok
+                         else 'jd_needs.md not found (role-classify Phase 1 not run)'))
         return
-    req_nums = [num for num, _, _ in _requirement_rows(research_text)]
-    if not req_nums:
-        ok = '(none' in body
-        findings.append(('C6', ok, 'no requirements, no needs' if ok
-                         else 'needs listed though no requirement rows exist'))
-        return
+    parsed = requirement_kinds.read_needs(needs_text)
     problems = []
+    for field in ('Delivers or owns', 'Leads, does, or both'):
+        if not parsed['job'].get(field):
+            problems.append(f'The job: no "{field}" line')
     seen = {}
-    needs = 0
-    for line in body.split('\n'):
-        cells = [c.strip() for c in line.strip().strip('|').split('|')]
-        if len(cells) < 6 or not re.fullmatch(r'N-\d+', cells[0]):
-            continue
-        needs += 1
-        nid, label, basis, reqs, signals = cells[:5]
-        quote_cell = ' | '.join(cells[5:])
-        if nid != f'N-{needs:02d}':
-            problems.append(f'{nid}: expected N-{needs:02d}; ids run in rank order with no gaps')
-        if not label:
-            problems.append(f'{nid}: empty Label')
-        if basis not in BASIS_VALUES:
-            problems.append(f"{nid}: Basis {basis!r} is not stated or derived")
+    for n, need in enumerate(parsed['needs'], start=1):
+        nid = need['id']
+        if nid != f'N-{n:02d}':
+            problems.append(f'{nid}: expected N-{n:02d}; ids run in rank order with no gaps')
+        if not need['label']:
+            problems.append(f'{nid}: empty label')
+        if need.get('Basis') not in BASIS_VALUES:
+            problems.append(f"{nid}: Basis {need.get('Basis')!r} is not stated or derived")
+        signals = need.get('Signals', '')
         bad = [s for s in (x.strip() for x in signals.split(',')) if not _SIGNAL_RE.match(s)]
         if not signals or bad:
-            problems.append(f'{nid}: Signals {signals!r} outside priority-words, role-defining, repetition N, gating, space')
-        for token in re.split(r'[,\s]+', reqs.strip()):
-            if not token:
-                continue
-            if not token.isdigit():
-                problems.append(f'{nid}: Requirements entry {token!r} is not a row number')
-                continue
-            seen.setdefault(int(token), []).append(nid)
-        quotes = _QUOTE_RE.findall(quote_cell)
+            problems.append(f'{nid}: Signals {signals!r} outside role-statement, repetition N, space')
+        quotes = _QUOTE_RE.findall(need.get('Quote', ''))
         if len(quotes) != 1:
             problems.append(f'{nid}: Quote needs one quoted JD passage, found {len(quotes)}')
         elif jd_text is not None and _clause_holding(jd_text, quotes[0]) is None:
             problems.append(f'{nid}: quote not found in the JD: {quotes[0][:60]}')
-    if not needs:
-        problems.append('`## Ranked Needs` carries no need rows')
-    for num in req_nums:
+        if not need['rows']:
+            problems.append(f'{nid}: no requirements')
+        for row in need['rows']:
+            seen.setdefault(row[0], []).append((nid, requirement_kinds.NEED, row))
+    if req and not parsed['needs']:
+        problems.append('no needs')
+    for place, heading in requirement_kinds.SECTION_FOR.items():
+        if heading not in parsed['sections']:
+            problems.append(f'no `## {heading}` section')
+        for row in parsed[heading]:
+            seen.setdefault(row[0], []).append((heading, place, row))
+    for num, text in req.items():
         if num not in seen:
-            problems.append(f'CR-{num:03d} belongs to no need')
-        elif len(seen[num]) > 1:
-            problems.append(f"CR-{num:03d} appears in {', '.join(seen[num])}")
-    for num in sorted(set(seen) - set(req_nums)):
+            problems.append(f'CR-{num:03d} is in no need, Qualifications or Not ranked')
+            continue
+        if len(seen[num]) > 1:
+            problems.append(f"CR-{num:03d} appears in {', '.join(w for w, _, _ in seen[num])}")
+            continue
+        where, place, (_, listed_text, kind) = seen[num][0]
+        if listed_text != text:
+            problems.append(f'CR-{num:03d}: text differs from research.md (requirements '
+                            f're-extracted; rerun Phase 1)')
+        if not kind:
+            problems.append(f'CR-{num:03d} has no Kind')
+            continue
+        names = requirement_kinds.parse_kind_cell(kind)
+        unknown = [k for k in names if k not in kinds]
+        if unknown:
+            problems.append(f"CR-{num:03d}: unknown kind {', '.join(unknown)}")
+        elif requirement_kinds.placement(names, kinds) != place:
+            problems.append(f'CR-{num:03d} is in {where} but its kind places it in '
+                            f'{requirement_kinds.placement(names, kinds)}')
+    for num in sorted(set(seen) - set(req)):
         problems.append(f'row {num} is not a requirement row')
     findings.append(('C6', not problems, '; '.join(problems)
-                     or f'{needs} needs cover all {len(req_nums)} requirement rows once'))
+                     or f"{len(parsed['needs'])} needs; all {len(req)} requirements have a "
+                        f"kind and land once where it places them"))
+
 
 
 # ---------------------------------------------------------------------------
@@ -321,7 +346,8 @@ def cmd_check(args, repo_root, cfg):
     check_gap_mirroring(research_text, log_text, findings)
     check_axis_line_form(log_text, findings)
     check_tier(log_text, leadership_tiers(repo_root, cfg), findings)
-    check_ranked_needs(research_text, jd_text, findings)
+    check_ranked_needs(research_text, _read(requirement_kinds.needs_path(args.folder, cfg)),
+                       jd_text, requirement_kinds.load_kinds(repo_root, cfg), findings)
 
     failed = [f for f in findings if not f[1]]
     for check, ok, detail in findings:

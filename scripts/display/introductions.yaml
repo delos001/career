@@ -31,8 +31,10 @@ role-classify: |
   Runs after role-intake, from the files it wrote, so a fresh session works.
 
   Steps:
-    1. Group the job's requirements into a handful of needs and rank them by
-       how much the job description says each one matters.
+    1. Label each requirement by kind, describe the job, group the
+       requirements into the work the role delivers, and rank those needs.
+       Boilerplate and other rows that are not needs are set aside, so later
+       steps never use them.
     2. Classify the job against the five axes (orientation, industry,
        specialty, level, work-state). Every axis must resolve to a value with a
        rule file; if one is missing, the skill pauses so it can be built.

@@ -8,8 +8,8 @@ form, URL presence in Sources, cross-file field equality, and requirement
 quotes. The judgment agent keeps what a script cannot verify (whether
 claims trace to sources).
 
-The sections role-classify fills (Ranked Needs, Axis Classification, Axis
-Gaps, and the Role Level and Industry metadata) are pending when role-intake
+The sections role-classify fills (Axis Classification, Axis Gaps, and the
+Role Level and Industry metadata; its ranked needs go to jd_needs.md) are pending when role-intake
 hands off, so these checks skip them; scripts/role_classify_qc.py checks
 them. The checks that moved there were I4, I5, I6, I8 and I3's axis half.
 role_classify_qc.py imports this file's parsing helpers.
@@ -70,7 +70,7 @@ DATE_FIELDS = ['Session Start Date', 'Research Completed Date']
 
 # What role-classify fills after role-intake hands off: whole sections, and
 # metadata lines. Their pending markers are not role-intake's to clear.
-CLASSIFY_SECTIONS = ['Ranked Needs', 'Axis Classification', 'Axis Gaps']
+CLASSIFY_SECTIONS = ['Axis Classification', 'Axis Gaps']
 _CLASSIFY_META_RE = re.compile(r'(?m)^- (?:Role Level|Industry):.*$')
 
 # Pending markers and unfilled template tokens.

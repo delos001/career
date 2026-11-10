@@ -138,7 +138,7 @@ flowchart LR
 | # | Stage | Skill | Reads | Writes |
 |---|---|---|---|---|
 | 1 | Role intake | `role-intake` | Job description, web research | `research.md`, `session_log.md` |
-| 2 | Role classify | `role-classify` | `jd.md`, `research.md`, axis registries | ranked needs, axis classification |
+| 2 | Role classify | `role-classify` | `jd.md`, `research.md`, axis registries | `jd_needs.md` (kinds, ranked needs), axis classification |
 | 3 | Retrieval | `retrieval` | `research.md`, profile slices | `retrieval.md` |
 | 4 | Gap analysis | `gap-analysis` | `retrieval.md`, `research.md` | `gap_analysis.md`, staged items |
 | 5 | CV content | `cv-targeted` | `gap_analysis.md`, `retrieval.md`, axis files | `cv_content.md` (cited), `drafting_plan.md` |

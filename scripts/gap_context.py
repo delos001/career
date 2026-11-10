@@ -53,6 +53,7 @@ import sys
 
 import _config
 import _util
+import requirement_kinds
 import retrieval_payload
 from inventory_model import entry_block
 
@@ -134,6 +135,8 @@ def build_context(app_folder, repo_root, cfg, max_bytes):
         research, retrieval_payload.CR_HEADING)
     if not requirements or not requirements.strip():
         raise ValueError(f'{research_path} has no "{retrieval_payload.CR_HEADING}" content')
+    # Rows on jd_needs.md's Not ranked list never reach the detector.
+    requirements = requirement_kinds.ranked_section(requirements, app_folder, cfg)
 
     role_parts = []
     for name in ROLE_CONTEXT_SECTIONS:

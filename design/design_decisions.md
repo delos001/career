@@ -1477,6 +1477,17 @@ Ranking the JD's needs and classifying the five axes moved out of role-intake in
 
 Refs: `role-intake-ranked-needs-2026-11`, GitHub #89.
 
+#### requirement-kinds-2026-11
+The ranker labels every requirement row by kind before grouping, so grouping follows from what each row is instead of shared words. Kinds, their wording lists and the tests that separate them live in `rules/jd-requirement-kinds.md`, built from 741 rows across 23 applications. The wording lists show typical wording and never limit a kind; the definitions decide.
+
+- Eight kinds. Ranked needs: Function (each is a need), Means and Working style (under the function they serve), Setting (its own need). Qualification: one group, not ranked. Not ranked: Role shape (sets the job description's lead-or-do answer), Administrative detail (seniority and reach only), Boilerplate or attitude.
+- role-classify writes its own file, `jd_needs.md`, laid out for reading: the job, each need with its requirements' exact text (copied from `research.md` by the script) and kinds, then Qualifications and Not ranked. `research.md` stays role-intake's. A markdown table of full sentences was unreadable at review, and a second numbered list inside `research.md` was mistaken for the ranking.
+- Not ranked rows never reach retrieval or gap analysis: `requirement_kinds.py` removes them from the scoring and detector context and from gap QC's expected set, in code, so no agent has to remember to ignore them. A needs file whose requirement text no longer matches `research.md` (re-extraction) is refused, since its row numbers may name other requirements.
+- Ranking signals: the JD's statement of what the role is, repetition across sections, then space as a tie-breaker. Importance words ("key," "critical") are not signals: they stress something within their own topic. Hard minimums left ranking for the Qualifications group.
+- Describing words (seniority, amount, "recognized," exclusions, person labels) go with what they describe and never form a need.
+
+Refs: `role-classify-split-2026-11`, GitHub #89.
+
 ### gap-analysis
 
 (The skill formerly referenced as `role_evaluation` in pre-build design notes is named `gap-analysis` as built. The old slug `gap-analysis-cluster-derivation` is retained below as a deferred presentation enhancement; v1 of the built skill renders requirements in CR-NNN order rather than cluster-grouped.)
