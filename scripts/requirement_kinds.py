@@ -33,15 +33,14 @@ jd_needs.md layout (written by render_needs, read by read_needs):
 
     ## The job
 
-    - Role statement: L<n> "<sentence>"; L<n> "<sentence>"
-    - Delivers or owns: ...
+    - Role statement:
+      - <key item, a few words in the JD's terms> (L<n>)
     - Leads, does, or both: ...
 
     ## Needs
 
     ### N-01: <label>
 
-    - Basis: stated | derived
     - Signals: role-statement, repetition N, space N
     - Quote: L<n> <JD heading> "<verbatim JD passage>"
 
@@ -110,7 +109,9 @@ _CELL_SPLIT_RE = re.compile(r'(?<!\\)\|')
 # ('¶4', '#2', 'line 10', 'lines 10-12'), or a leading 'L<n>' already written.
 _LOCATION_RE = re.compile(r'\s*(?:¶\s*\d+|#\s*\d+|\blines?\s+[\d,\s-]+)\s*$', re.I)
 _LINE_REF_RE = re.compile(r'^L\d+\s*')
-_FIELD_RE = re.compile(r'^- (Basis|Signals|Quote|Role statement|Delivers or owns|Leads, does, or both):\s*(.*?)\s*$')
+_FIELD_RE = re.compile(r'^- (Signals|Quote|Role statement|Leads, does, or both):\s*(.*?)\s*$')
+# Regex: a nested item under a job field (the role statement's key items).
+_SUBITEM_RE = re.compile(r'^\s+- (.+?)\s*$')
 
 # Regex: a double-quoted span in a Source cell (straight or curly), with the
 # space before it.
@@ -345,7 +346,7 @@ def render_requirements(title, rows):
 def render_needs(title, job_lines, needs, qualifications, not_ranked, unplaced=()):
     """Return the ranked jd_needs.md text.
 
-    needs: [{'id', 'label', 'basis', 'signals', 'quote', 'rows': [row dict]}];
+    needs: [{'id', 'label', 'signals', 'quote', 'rows': [row dict]}];
     qualifications, not_ranked, unplaced: [row dict]. Unplaced rows (the ranker
     named them nowhere) keep a '## Requirements' section so QC can name them.
     """
@@ -354,7 +355,6 @@ def render_needs(title, job_lines, needs, qualifications, not_ranked, unplaced=(
     out += ['', '## Needs', '']
     for need in needs:
         out += [f"### {need['id']}: {need['label']}", '',
-                f"- Basis: {need['basis']}",
                 f"- Signals: {need['signals']}",
                 f"- Quote: {need['quote']}", '']
         out += _row_table(need['rows'])
@@ -372,7 +372,7 @@ def render_needs(title, job_lines, needs, qualifications, not_ranked, unplaced=(
 def read_needs(text):
     """Parse jd_needs.md into {'title', 'job': {field: value}, 'needs': [...],
     'Qualifications': [...], 'Not ranked': [...], 'Requirements': [...],
-    'sections': [...]}. Need dicts carry id, label, Basis, Signals, Quote, rows;
+    'sections': [...]}. Need dicts carry id, label, Signals, Quote, rows;
     rows are row dicts (num, text, kind, demand, source; a missing field is None).
     Unknown lines are ignored; the QC script reports what is missing."""
     out = {'title': '', 'job': {}, 'needs': [], 'Qualifications': [], 'Not ranked': [],
@@ -380,8 +380,14 @@ def read_needs(text):
     m = re.match(r'# JD needs:\s*(.*)', text)
     if m:
         out['title'] = m.group(1).strip()
-    section, rows = None, None
+    section, rows, job_field = None, None, None
     for line in text.split('\n'):
+        # A nested item under a job field joins that field's value, '; '-separated.
+        sub = _SUBITEM_RE.match(line)
+        if sub and section == 'The job' and job_field:
+            prior = out['job'].get(job_field, '')
+            out['job'][job_field] = f'{prior}; {sub.group(1)}' if prior else sub.group(1)
+            continue
         if line.startswith('## '):
             section = line[3:].strip()
             out['sections'].append(section)
@@ -401,6 +407,7 @@ def read_needs(text):
         if m:
             if section == 'The job':
                 out['job'][m.group(1)] = m.group(2)
+                job_field = m.group(1)
             elif section == 'Needs' and out['needs']:
                 out['needs'][-1][m.group(1)] = m.group(2)
     return out

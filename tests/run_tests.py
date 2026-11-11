@@ -1979,7 +1979,6 @@ def test_ranked_needs_cover_every_requirement_once():
     assert not result(unplaced)[1], 'a requirement left out of every need passed'
     assert not result(good.replace(table_head + '| 1 |', table_head + row6 + '| 1 |'))[1], 'a requirement in two places passed'
     assert not result(good.replace('N-03', 'N-05'))[1], 'a gap in the need ids passed'
-    assert not result(good.replace('- Basis: stated', '- Basis: guessed', 1))[1], 'an unknown Basis passed'
     assert not result(good.replace('- Signals: repetition 1, space 10', '- Signals: emphasis'))[1], 'an unknown signal passed'
     assert not result(good.replace('- Signals: repetition 1, space 10', '- Signals: repetition 1, space'))[1], \
         'a space signal with no count passed'
@@ -1990,20 +1989,26 @@ def test_ranked_needs_cover_every_requirement_once():
     # Every JD reference is a jd.md line number, and it must be the right one.
     assert not result(good.replace('(L17)', '(Responsibilities)'))[1], 'a job line citing no jd.md line passed'
     assert not result(good.replace('(L17)', '(L18)'))[1], 'a job line citing a blank jd.md line passed'
-    # The lead-or-do line states its answer and whom, never an argument.
-    assert not result(good.replace('leads; whom: a data team', 'leads. It is a leadership role over a data team'))[1], \
+    # The lead-or-do line states its answer and what is led, never an argument.
+    assert not result(good.replace('leads; what: a data team', 'leads. It is a leadership role over a data team'))[1], \
         'a lead-or-do line arguing its answer passed'
-    assert result(good.replace('leads; whom:', 'both, mainly doing; whom:'))[1], 'an allowed lead-or-do answer failed'
+    assert result(good.replace('leads; what:', 'both, mainly doing; what:'))[1], 'an allowed lead-or-do answer failed'
+    assert result(good.replace('what: a data team of five or more', 'what: the enterprise rollout of the data platform'))[1], \
+        'a lead-or-do line naming work, not people, failed'
     assert not result(good.replace('Quote: L17', 'Quote: L16'))[1], 'a need Quote on the wrong line passed'
     assert not result(good.replace(row6, row6.replace('L27', 'L26')))[1], 'a row on the wrong line passed'
     assert not result(good.replace(row6, row6.replace('L27 ', '')))[1], 'a row with no line number passed'
-    # The role-statement signal must quote a sentence the ranker named as the role statement.
-    statement = '- Role statement: L8 "The Director owns the operating model for clinical data across the Aldridge"\n'
+    # The role statement is short key items, each ending with its line; the
+    # role-statement signal must quote from a line the role statement cites.
+    statement = '- Role statement:\n  - owns the operating model for clinical data (L8)\n'
     assert statement in good, 'fixture role statement changed shape'
     assert not result(good.replace(statement, ''))[1], 'a job description with no role statement passed'
-    assert not result(good.replace(statement, statement.replace('L8', 'L9')))[1], 'a role statement on the wrong line passed'
-    assert not result(good.replace(statement, statement.replace('owns the operating', 'runs the operating')))[1], \
-        'a role statement absent from the JD passed'
+    assert not result(good.replace(statement, statement.replace('(L8)', '(L18)')))[1], \
+        'a role statement item citing a blank line passed'
+    assert not result(good.replace(statement, statement.replace(' (L8)', '')))[1], \
+        'a role statement item with no line passed'
+    assert not result(good.replace(statement, statement.replace('(L8)', '(L9)')))[1], \
+        'a role-statement need quoting a line the role statement does not cite passed'
     assert not result(good.replace('- Signals: repetition 2', '- Signals: role-statement, repetition 2'))[1], \
         'a role-statement signal on a quote outside the role statement passed'
     assert not result(None)[1], 'a missing needs file passed'
@@ -2042,13 +2047,12 @@ def test_ranked_needs_cover_every_requirement_once():
               + ''.join(f'| {n} | {k} |\n' for n, k in enumerate(
                   ['Qualification', 'Function', 'Function', 'Function', 'Means', 'Boilerplate or attitude'], 1))
               + '\n## Ranked Needs\n\n**The job:**\n'
-              '- Role statement: L8 "The Director owns the operating model for clinical data across the Aldridge"\n'
-              '- Delivers or owns: the operating model (L8)\n'
-              '- Leads, does, or both: leads; whom: a team (L17)\n\n'
-              '| Need | Label | Basis | Requirements | Signals | Quote |\n|---|---|---|---|---|---|\n'
-              '| N-01 | Operating model | stated | 3, 5 | role-statement | About the role "The Director owns the operating model for clinical data across the Aldridge" |\n'
-              '| N-02 | Vendor oversight | stated | 2 | repetition 2 | Requirements "Vendor oversight and contract management across external data providers" |\n'
-              '| N-03 | Leading a data team | stated | 4 | space | Responsibilities "Lead and develop a data team of five or more" |\n')
+              '- Role statement:\n  - owns the operating model for clinical data (L8)\n'
+              '- Leads, does, or both: leads; what: a team (L17)\n\n'
+              '| Need | Label | Requirements | Signals | Quote |\n|---|---|---|---|---|\n'
+              '| N-01 | Operating model | 3, 5 | role-statement | About the role "The Director owns the operating model for clinical data across the Aldridge" |\n'
+              '| N-02 | Vendor oversight | 2 | repetition 2 | Requirements "Vendor oversight and contract management across external data providers" |\n'
+              '| N-03 | Leading a data team | 4 | space | Responsibilities "Lead and develop a data team of five or more" |\n')
     code, out = run('role_classify_assemble.py', 'needs', '--folder', FIXTURE_APP, '--needs-file', write_block('ranker.md', ranker))
     assert code == 0, out
     written = _util.read(needs_path)
@@ -2059,9 +2063,9 @@ def test_ranked_needs_cover_every_requirement_once():
     # orders by role-statement, repetition, space: Vendor oversight's claimed
     # 'repetition 2' (one section) is 1, so the team need's 10 words to its 9
     # put it above, against the ranker's order.
-    assert '### N-01: Operating model\n\n- Basis: stated\n- Signals: role-statement, repetition 2, space 20\n' in written, written
-    assert '### N-02: Leading a data team\n\n- Basis: stated\n- Signals: repetition 1, space 10\n' in written, written
-    assert '### N-03: Vendor oversight\n\n- Basis: stated\n- Signals: repetition 1, space 9\n' in written, written
+    assert '### N-01: Operating model\n\n- Signals: role-statement, repetition 2, space 20\n' in written, written
+    assert '### N-02: Leading a data team\n\n- Signals: repetition 1, space 10\n' in written, written
+    assert '### N-03: Vendor oversight\n\n- Signals: repetition 1, space 9\n' in written, written
     # Rows outside the needs are placed by kind, not by the ranker.
     assert '## Not ranked\n\n' + table_head + boiler_row.rstrip() in written, 'row 6 was not placed in Not ranked by its kind'
     assert '## Qualifications\n\n' + table_head + '| 1 |' in written, 'row 1 was not placed in Qualifications by its kind'

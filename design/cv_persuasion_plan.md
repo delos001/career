@@ -24,6 +24,7 @@ APP-028 passed every check and reviewer, and the user rewrote it by hand. The dr
 9. Remove "do not re-judge relevance"; the architect judges what each entry means for each need.
 10. Two-stage draft: a long, persuasive draft with no length limit, each bullet tagged with its JD need (`<!-- need: N-NN -->`) beside its source citation; then a cut to length by need priority, lowest first.
 11. The drafting plan records claims per need; limits become one column, not the plan.
+11a. Starting point (user, 2026-11-12, from his hand rewrite): the architect starts from the role statement's key items in `jd_needs.md` and, for each, picks the experience showing the candidate has done that core function in some capacity; specifics come second. Tools and methods the JD names are included when the candidate has them, and the closest ones the candidate has otherwise.
 
 **Reviewers**
 12. Inputs:

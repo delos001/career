@@ -32,7 +32,7 @@ Something the person delivers, owns or leads. Leading people is a function. Each
 
 ### 2. Means
 
-A tool, method, skill or body of subject knowledge used to carry out a function. Goes under the function it serves; if the JD ties it to none, under the closest function.
+A tool, method, skill or body of subject knowledge, asked for on its own. Goes under the function it serves; if the JD ties it to none, under the closest function.
 
 - **Programming:** R (Shiny, tidyverse, package development, Quarto); Python (pandas, NumPy); SQL; SAS
 - **Analytics and visualization tools:** Spotfire; Tableau; Power BI; JReview; Smartsheet; risk-based monitoring tools
@@ -110,7 +110,7 @@ A term of the job the candidate accepts or is permitted to meet, never shown by 
 
 - **Function or Working style:** an activity the role performs, usually with an audience or output, is Function ("present to senior leadership"). A quality of how the person does it is Working style ("strong executive presence"). The same topic can be either.
 - **Working style or attitude:** if a CV line can show it through something the person did, Working style. If not, attitude. "Mindset" does not decide it; the word before it does.
-- **Means or Function:** if the JD lists the work as something the role does, Function, and a matching "skills" row joins it. If it appears only as a skill supporting other work, Means.
+- **Means or Function:** a row with a verb for work the role does (optimize, build, apply ... to, lead, present) is Function, and any tool, method or knowledge it names for that work goes with it, not split off. Word order and wording do not change this: "apply Lean to optimize processes" and "optimize processes using Lean" are both Function, as is "experience building dashboards." A row asking only to have a tool, method, skill or knowledge is Means ("strong SQL proficiency," "knowledge of GCP"); "experience with" a thing stays Means even when the thing names an area of work ("experience with platforms and reporting").
 - **Means or Setting:** "knowledge of," "understanding of," "familiarity with" is Means. "Experience in," "background in," "exposure to" a context (industry, therapeutic area, company type) is Setting. "Experience in" an activity is Function.
 - **Setting or Administrative detail:** background the JD asks the candidate to bring is Setting. A description of the hiring company is Administrative detail; the company's industry and operating state are covered by the axis classification.
 - **Qualification or Employment condition:** if a degree, certificate or career record shows it, Qualification. If the candidate meets it by agreeing to or being permitted to (travel, work location, authorization), Employment condition.

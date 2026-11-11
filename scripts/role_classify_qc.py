@@ -30,10 +30,10 @@ Checks:
   C5  A leadership Level carries exactly one `- Tier:` line naming a tier from
       rules/levels/leadership.md's Tiers block; other levels carry none.
   C6  jd_needs.md: the job description is present and cites jd.md lines as
-      L<n>; each Role statement sentence is in the JD on its line, and a need
-      with the role-statement signal quotes from one of them; the lead-or-do
-      line opens with its answer and whom; every need Quote and row JD line opens with its quote's L<n>; ids N-01.. in rank
-      order, Basis stated|derived, Signals from the allowed set, each need's
+      L<n>; each Role statement key item ends with its line, and a need
+      with the role-statement signal quotes from one of those lines; the lead-or-do
+      line opens with its answer and what is led; every need Quote and row JD line opens with its quote's L<n>; ids N-01.. in rank
+      order, Signals from the allowed set, each need's
       quote verbatim in jd.md; every requirement in exactly one of a need,
       Qualifications or Not ranked (none left under Requirements); and every
       kind known and placed where its kinds set.
@@ -77,11 +77,10 @@ AXES = ['Orientation', 'Industry', 'Specialty', 'Level', 'Work-state']
 
 # Ranked Needs cell vocabularies. A Signals cell is a comma-separated list of
 # these; repetition and space carry the counts role_classify_assemble.py writes.
-BASIS_VALUES = {'stated', 'derived'}
 _SIGNAL_RE = re.compile(r'^(?:role-statement|repetition \d+|space \d+)$')
 
-# Regex: the job description's lead-or-do answer, then whom.
-_LEAD_ANSWER_RE = re.compile(r'^(?:leads|does|both(?:, mainly (?:leading|doing))?); whom: \S')
+# Regex: the job description's lead-or-do answer, then what is led (work or people).
+_LEAD_ANSWER_RE = re.compile(r'^(?:leads|does|both(?:, mainly (?:leading|doing))?); what: \S')
 
 # Regex: a double-quoted span in a Source or Quote (straight or curly).
 _QUOTE_RE = re.compile(r'["“]([^"“”]+)["”]')
@@ -310,7 +309,7 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings):
     ranked needs; role_classify_assemble.py rewrites jd_needs.md with each
     requirement's text, Demand and Source carried over from the extracted rows.
     This check holds the mechanical half: the job description is present; ids
-    N-01.. in sequence; allowed Basis and Signals values; each quote verbatim in
+    N-01.. in sequence; allowed Signals values; each quote verbatim in
     the JD; every requirement in exactly one of a need, Qualifications or Not
     ranked, none left under Requirements (the ranker placed it nowhere); and
     every kind known and placed where its kinds set. The Not ranked placement is
@@ -327,15 +326,13 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings):
     for row in parsed[requirement_kinds.UNPLACED]:
         problems.append(f"CR-{row['num']:03d} is in no need, Qualifications or Not ranked")
     jd_lines = (jd_text or '').split('\n')
-    # The role statement: each sentence the ranker picked, quoted with its line.
-    statement = re.findall(r'L(\d+)\s*["“]([^"“”]+)["”]', parsed['job'].get('Role statement') or '')
-    for num, sentence in statement:
-        if jd_text is not None:
-            problems.append(_line_ref_problem(f'Role statement "{sentence[:40]}"', f'L{num}', jd_text, sentence))
-            if requirement_kinds.quote_line(jd_text, sentence) is None:
-                problems.append(f'Role statement: sentence not found in the JD: {sentence[:60]}')
-    statement_text = [_normalize(s) for _, s in statement]
-    for field in ('Role statement', 'Delivers or owns', 'Leads, does, or both'):
+    # The role statement: its key items, a few words each, each citing its line.
+    items = [i.strip() for i in (parsed['job'].get('Role statement') or '').split(';') if i.strip()]
+    for item in items:
+        if not re.search(r'\(L\d+(?:, L\d+)*\)$', item):
+            problems.append(f'Role statement: item {item[:40]!r} must end with its jd.md line, e.g. (L22)')
+    statement_lines = {int(n) for n in re.findall(r'\bL(\d+)\b', parsed['job'].get('Role statement') or '')}
+    for field in ('Role statement', 'Leads, does, or both'):
         value = parsed['job'].get(field)
         if not value:
             problems.append(f'The job: no "{field}" line')
@@ -345,11 +342,11 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings):
         if not refs or bad:
             problems.append(f'The job: "{field}" must cite jd.md lines as L<n>'
                             + (f"; no JD text on L{', L'.join(map(str, bad))}" if bad else ''))
-    # The lead-or-do line states its answer and whom; it never argues it.
+    # The lead-or-do line states its answer and what is led; it never argues it.
     lead = parsed['job'].get('Leads, does, or both') or ''
     if lead and not _LEAD_ANSWER_RE.match(lead):
         problems.append('The job: "Leads, does, or both" must open with leads, does, both, '
-                        'both, mainly leading or both, mainly doing, then "; whom:"')
+                        'both, mainly leading or both, mainly doing, then "; what:"')
     seen = {}
     for n, need in enumerate(parsed['needs'], start=1):
         nid = need['id']
@@ -357,8 +354,6 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings):
             problems.append(f'{nid}: expected N-{n:02d}; ids run in rank order with no gaps')
         if not need['label']:
             problems.append(f'{nid}: empty label')
-        if need.get('Basis') not in BASIS_VALUES:
-            problems.append(f"{nid}: Basis {need.get('Basis')!r} is not stated or derived")
         signals = need.get('Signals', '')
         bad = [s for s in (x.strip() for x in signals.split(',')) if not _SIGNAL_RE.match(s)]
         if not signals or bad:
@@ -370,10 +365,10 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings):
             problems.append(f'{nid}: quote not found in the JD: {quotes[0][:60]}')
         elif jd_text is not None:
             problems.append(_line_ref_problem(nid, need.get('Quote'), jd_text, quotes[0]))
-        # The role-statement signal needs the quote inside a role statement sentence.
-        if 'role-statement' in signals and len(quotes) == 1 \
-                and not any(_normalize(quotes[0]) in s for s in statement_text):
-            problems.append(f'{nid}: role-statement signal, but its quote is in no Role statement sentence')
+        # The role-statement signal needs the quote on a line the role statement cites.
+        if 'role-statement' in signals and len(quotes) == 1 and jd_text is not None \
+                and requirement_kinds.quote_line(jd_text, quotes[0]) not in statement_lines:
+            problems.append(f'{nid}: role-statement signal, but its quote is on no Role statement line')
         if not need['rows']:
             problems.append(f'{nid}: no requirements')
         for row in need['rows']:

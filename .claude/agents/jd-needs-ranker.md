@@ -15,16 +15,15 @@ The dispatching skill gives you the paths to `jd.md`, the company research and `
 ## Steps
 
 1. **Label every row by kind,** written as the return format shows. Use the kinds, tests and rules in `rules/jd-requirement-kinds.md`. Use the mission and values in the company research to spot boilerplate; when it has none, judge from the JD's own wording.
-2. **Describe the job.** Answer three questions, each citing the jd.md lines it rests on as `L<n>`, the line numbers the Read tool shows:
-   - Which sentences state what the role is, what it is for, or what it is responsible for overall? Judge by what each sentence says, never by where it sits; a paragraph can give one sentence, several or none. Quote each sentence with its line.
-   - What does the person deliver or own?
-   - Do they lead the work, do it, or both? If they lead, whom (staff, teams, vendors)? Base this on the Role shape rows.
+2. **Describe the job.** Answer two questions, each citing the jd.md lines it rests on as `L<n>`, the line numbers the Read tool shows:
+   - What does the role statement say the role is, owns and does? The role statement is the sentences that say what the role is, what it is for, or what it is responsible for overall; judge by what each sentence says, never by where it sits. List each key item it names in a few words, in the JD's own terms, with its line. Never copy whole sentences.
+   - Do they lead the work, do it, or both? If they lead, what does the JD say they lead (a team, initiatives, change, a rollout), in its words? Leading work is not managing people; name people only where the JD does. Base this on the Role shape rows.
 3. **Group into needs.** A need is a function the role delivers, taken from the step 2 answers, or the JD's Setting. Means and Working style rows go under the function they serve, found by reading the whole JD; when the JD ties one to no function, put it under the closest function. Working style tied to no function forms one Working style need. Leading people is one need, however worded. Exclusions and describing words go with what they describe (see the rules file).
 4. **Rank the needs,** strongest signal first:
-   - `role-statement`: the need's quote comes from a role statement sentence (step 2) that says the role does or owns this work. A tool or quality the sentence only mentions does not count.
+   - `role-statement`: the need is a key item of the role statement (step 2), and its quote comes from that item's line. A tool or quality the sentence only mentions does not count.
    - `repetition` (how many JD sections the need's rows come from) and `space` (how many words the JD clauses holding them run to): do not write either. The script counts both, adds them, and sorts the needs by role-statement, repetition, then space, keeping your order only where all three tie.
    - Not a signal: words like "key," "critical" or "important." They stress something within its own topic, not across the role.
-5. **Check the ranking against step 2.** Each function named in the "deliver or own" answer should be among the top needs. If the person leads, leading people should be near the top; if they do the work, the functions they do hands-on should. If not, fix step 3 or step 4. Never edit the description to fit the table.
+5. **Check the ranking against step 2.** Each key item of the role statement should be among the top needs. If not, fix step 3 or step 4. The lead-or-do answer never lifts a need: leading people ranks by its signals like any other need. Never edit the description to fit the table.
 6. **Return** the result in the format below.
 
 ## Placement
@@ -34,9 +33,7 @@ Put every row with any part Function, Means, Working style or Setting in exactly
 ## Rules
 
 - Do not invent a need the rows do not carry. Ranking reorders and groups; it adds nothing.
-- Name each need in the JD's own words where the JD names it. Basis records who made the grouping, not where the label's words came from:
-  - `stated`: the JD itself names this need, as a heading or a phrase, and the need's function rows come from under that name. Attaching Means or Working style rows to the function does not change this.
-  - `derived`: you made the grouping. The Working style group for rows tied to no function is always `derived`.
+- Name each need in the JD's own words where the JD names it.
 - Quote one verbatim JD passage per need showing its strongest signal, copied exactly from one line of the JD.
 
 ## Return format
@@ -53,13 +50,14 @@ Return exactly this, needs in rank order:
 ## Ranked Needs
 
 **The job:**
-- Role statement: L<n> "<sentence>"; L<n> "<sentence>"
-- Delivers or owns: <item>; <item>, in the JD's words, no explanation (L<n>, L<n>)
-- Leads, does, or both: <leads | does | both, mainly leading | both, mainly doing>; whom: <staff, teams or vendors led, or none> (L<n>, L<n>)
+- Role statement:
+  - <key item, a few words in the JD's terms> (L<n>)
+  - <key item> (L<n>)
+- Leads, does, or both: <leads | does | both, mainly leading | both, mainly doing>; what: <what they lead, in the JD's words, or none> (L<n>, L<n>)
 
-| Need | Label | Basis | Requirements | Signals | Quote |
-|---|---|---|---|---|---|
-| N-01 | <need in the JD's words> | <stated \| derived> | <row numbers, e.g. 1, 14, 21> | <role-statement, or blank> | <JD section> "<verbatim JD quote>" |
+| Need | Label | Requirements | Signals | Quote |
+|---|---|---|---|---|
+| N-01 | <need in the JD's words> | <row numbers, e.g. 1, 14, 21> | <role-statement, or blank> | <JD section> "<verbatim JD quote>" |
 ```
 
 `N-01` is the highest-ranked need; ids run in sequence with no gaps. If `jd_needs.md` has no requirement rows, return:

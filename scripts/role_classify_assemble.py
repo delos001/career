@@ -182,17 +182,22 @@ def cmd_needs(args, cfg):
         placed.update(nums)
         return [{**by_num[n], 'kind': kind_by_row.get(n, '')} for n in nums]
 
-    job = [line.strip() for line in block.split('\n')
-           if re.match(r'^- (Role statement|Delivers or owns|Leads, does, or both):', line.strip())]
+    # The job lines, with the role statement's nested key items kept in place.
+    job = []
+    for line in block.split('\n'):
+        if re.match(r'^- (Role statement|Leads, does, or both):', line.strip()) and not line.startswith(' '):
+            job.append(line.strip())
+        elif job and re.match(r'^\s+- \S', line):
+            job.append('  - ' + line.strip()[2:])
     needs = []
     for line in block.split('\n'):
         cells = [c.strip() for c in line.strip().strip('|').split('|')]
-        if len(cells) < 6 or not re.fullmatch(r'N-\d+', cells[0]):
+        if len(cells) < 5 or not re.fullmatch(r'N-\d+', cells[0]):
             continue
-        nums = [int(t) for t in re.split(r'[,\s]+', cells[3]) if t.isdigit()]
-        quote = requirement_kinds.jd_ref(jd, '', ' | '.join(cells[5:]))
-        needs.append({'id': cells[0], 'label': cells[1], 'basis': cells[2],
-                      'signals': cells[4], 'quote': quote, 'rows': rows(nums)})
+        nums = [int(t) for t in re.split(r'[,\s]+', cells[2]) if t.isdigit()]
+        quote = requirement_kinds.jd_ref(jd, '', ' | '.join(cells[4:]))
+        needs.append({'id': cells[0], 'label': cells[1],
+                      'signals': cells[3], 'quote': quote, 'rows': rows(nums)})
     needs = _rank(needs, jd)
     # Place every row the needs did not take by its kinds.
     kinds = requirement_kinds.load_kinds(args.repo_root, cfg)

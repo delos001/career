@@ -22,7 +22,7 @@ The dispatching skill gives you the paths to the session log, the research file,
    Route-back: phase 2.
 3. **Row kinds and splits** - read `rules/jd-requirement-kinds.md`, each row's kind, and the JD sentence behind each row. A finding: a kind its definitions and tests do not support; a mixed row given one kind; a row split from a JD sentence that lacks a modifier applying to its own part (the script checks only that the modifier survives on some row).
    Route-back: phase 1.
-4. **Ranked needs reflect the job** - read the JD, the needs file, and the Steps and Rules in `.claude/agents/jd-needs-ranker.md`. A ranking those steps and rules would not produce is a finding. Look first for: a job description that contradicts the JD; a Role statement that names a sentence not stating the role, or leaves one out; a function the job description names ranked below needs it does not name; a ranking that follows words like "key" or "critical"; a tool or skill made its own need; leading people split into several needs; a `stated` Basis on a grouping the JD never names.
+4. **Ranked needs reflect the job** - read the JD, the needs file, and the Steps and Rules in `.claude/agents/jd-needs-ranker.md`. A ranking those steps and rules would not produce is a finding. Look first for: a job description that contradicts the JD; a Role statement key item the role statement does not name, one it names that is left out, or whole sentences copied in place of short items; a function the job description names ranked below needs it does not name; a ranking that follows words like "key" or "critical"; a tool or skill made its own need; leading people split into several needs.
    Route-back: phase 1.
 
 ## Return format

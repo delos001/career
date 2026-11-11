@@ -13,7 +13,7 @@ Work that grows a functioning model to handle larger volume, scope, geographic r
 
 Scale includes complexity: adapting a working process or capability so it holds up under conditions it was not built for, such as new risk, regulation, technology or operating environment. Replacing a working system's platform is scaling when the replacement is what lets it meet those conditions; replacement for its own sake (end of life, cost, vendor change) is mature.
 
-The work-state does not fit when there is no prior working model to scale (greenfield) or when the work is steady-state operation of an already-scaled model (mature).
+The work-state does not fit when there is no prior working version of the deliverable to scale (greenfield) or when the work is steady-state operation of an already-scaled model (mature).
 
 ## Achievement framing
 

@@ -11,7 +11,7 @@ last_researched: 2026-05
 
 Work where no prior structure, capability, or operating model existed. The deliverable is establishing rather than improving. Characteristic contexts: standing up a new function, building a first-of-its-kind capability inside an organization, founding a startup, originating a process, system, or framework where none existed before.
 
-The work-state does not fit when the work is improving or extending something already in place, even if substantially redesigned. Substantial redesign of an existing capability reads as scaling, mature, or pivot depending on context.
+The work-state does not fit when the work is improving or extending a deliverable already in place, even if substantially redesigned; an existing department does not rule it out. Substantial redesign of an existing capability reads as scaling, mature, or pivot depending on context.
 
 ## Achievement framing
 

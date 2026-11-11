@@ -8,6 +8,8 @@ last_researched: 2026-04
 
 Work-state values for axis classification and validation. Per-value framing rules in the same-folder files.
 
+A work-state is the state of what the work delivers: for a job, the role's deliverables, never the department it sits in; for an entry, the work it describes. When neither the JD nor the research says whether a deliverable already exists, the JD's verbs for it decide ("establish," "build," "define" read as new; "enhance," "optimize," "standardize across" read as existing).
+
 - **greenfield** - no prior structure, capability, or operating model existed; establishing rather than improving (standing up a new function, a first-of-its-kind capability, founding). File: `greenfield.md`.
 - **scaling** - growing a functioning model to handle larger volume, scope, reach, or complexity; pilot to enterprise, harmonizing across sites, replicating across regions, adapting a working process to new risk, regulation or environment. File: `scaling.md`.
 - **mature** - steady-state operation of established systems and processes; operational continuity, incremental improvement, governance, risk management within a working model. File: `mature.md`.

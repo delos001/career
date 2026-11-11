@@ -2,15 +2,14 @@
 
 ## The job
 
-- Role statement: L8 "The Director owns the operating model for clinical data across the Aldridge"
-- Delivers or owns: the operating model for clinical data: standards, vendor oversight and portfolio reporting (L8, L9, L10)
-- Leads, does, or both: leads; whom: a data team of five or more (L17)
+- Role statement:
+  - owns the operating model for clinical data (L8)
+- Leads, does, or both: leads; what: a data team of five or more (L17)
 
 ## Needs
 
 ### N-01: Operating model for clinical data: standards and governance
 
-- Basis: stated
 - Signals: role-statement, repetition 2
 - Quote: L8 About the role "The Director owns the operating model for clinical data across the Aldridge"
 
@@ -22,7 +21,6 @@
 
 ### N-02: Vendor oversight across external data providers
 
-- Basis: stated
 - Signals: repetition 2
 - Quote: L22 Requirements "Vendor oversight and contract management across external data providers"
 
@@ -32,7 +30,6 @@
 
 ### N-03: Leading a data team
 
-- Basis: stated
 - Signals: repetition 1, space 10
 - Quote: L17 Responsibilities "Lead and develop a data team of five or more"
 
