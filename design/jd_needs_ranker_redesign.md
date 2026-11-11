@@ -31,7 +31,7 @@ Watch items seen: row 22 split from row 21's JD line into the leading-people nee
 ## Acadia APP-025: Phase 1 run twice, reviewed by qc-role-classify, 2026-11-10
 
 The user confirmed the job description, then had `qc-role-classify` (checks 3 and 4) review the rest instead of walking each section. Three faults fixed for future runs, then Phase 1 rerun (47 rows became 57) and reviewed again:
-- Role statement read as its first sentence only, so Applied AI lost its signal; the ranker's step 4 now defines the statement as the whole opening paragraph. Held on the rerun.
+- Role statement read as its first sentence only, so Applied AI lost its signal; the ranker's step 4 now defines the statement as the whole opening paragraph. Held on the rerun. Replaced 2026-11-11, since Jazz's statement spans two paragraphs and JDs have no standard layout: the ranker names the role statement sentences by what they say (step 2, a `Role statement` line in the job), and C6 checks every `role-statement` quote sits in one of them.
 - The extractor's own generic-skills filter dropped "Balances competing priorities and deadlines"; removed, the ranker alone judges boilerplate (`requirement-kinds-2026-11`). Held.
 - Split sentences lost a half (four clauses); the extractor now makes every part a row. Held.
 

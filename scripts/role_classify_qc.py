@@ -28,14 +28,19 @@ Checks:
       (`- <Axis>: <values> - <rationale>`, no bold, no bare label).
   C5  A leadership Level carries exactly one `- Tier:` line naming a tier from
       rules/levels/leadership.md's Tiers block; other levels carry none.
-  C6  jd_needs.md: the job description is present; ids N-01.. in rank
+  C6  jd_needs.md: the job description is present and cites jd.md lines as
+      L<n>; each Role statement sentence is in the JD on its line, and a need
+      with the role-statement signal quotes from one of them; the lead-or-do
+      line opens with its answer and whom; every need Quote and row JD line opens with its quote's L<n>; ids N-01.. in rank
       order, Basis stated|derived, Signals from the allowed set, each need's
       quote verbatim in jd.md; every requirement in exactly one of a need,
       Qualifications or Not ranked (none left under Requirements); and every
       kind known and placed where its kinds set.
   C7  jd_needs.md holds at least one requirement, numbered 1..N with no gaps
-      or repeats, each with text, a Source, and a Type from the allowed four.
-  C8  Each requirement's Source carries one verbatim quote found in jd.md, and
+      or repeats, each with text, a Source, and a Demand of required or
+      preferred; a row whose text carries an optional word is preferred.
+  C8  Each requirement's quote is found in jd.md (the Source's one quote, or
+      the row text when the writer dropped a quote equal to it), and
       every modifier (config requirement_qualifiers) and year count (config
       requirement_year_count) in the JD clause holding that quote survives on
       at least one row quoting that clause.
@@ -74,6 +79,9 @@ AXES = ['Orientation', 'Industry', 'Specialty', 'Level', 'Work-state']
 BASIS_VALUES = {'stated', 'derived'}
 _SIGNAL_RE = re.compile(r'^(?:role-statement|repetition \d+|space)$')
 
+# Regex: the job description's lead-or-do answer, then whom.
+_LEAD_ANSWER_RE = re.compile(r'^(?:leads|does|both(?:, mainly (?:leading|doing))?); whom: \S')
+
 # Regex: a double-quoted span in a Source or Quote (straight or curly).
 _QUOTE_RE = re.compile(r'["“]([^"“”]+)["”]')
 
@@ -85,11 +93,17 @@ _CLAUSE_END_RE = re.compile(r'[.;!?]\s')
 # Parsing helpers
 # ---------------------------------------------------------------------------
 
-def _normalize(text):
-    """Lowercase, straighten quotes and dashes, drop bold, collapse whitespace."""
-    for fancy, plain in (('’', "'"), ('‘', "'"), ('–', '-'), ('—', '-'), ('*', '')):
-        text = text.replace(fancy, plain)
-    return re.sub(r'\s+', ' ', text).strip().lower()
+_normalize = requirement_kinds.normalize
+
+
+def _line_ref_problem(label, cell, jd_text, quote):
+    """Return a problem string when `cell` does not open with L<n> for `quote`'s
+    jd.md line, else None. Every JD reference is a jd.md line number."""
+    expected = requirement_kinds.quote_line(jd_text, quote)
+    m = re.match(r'L(\d+)\b', cell or '')
+    if expected is not None and (m is None or int(m.group(1)) != expected):
+        return f'{label}: JD line should open with L{expected}'
+    return None
 
 
 def _clause_holding(jd_text, quote):
@@ -285,7 +299,7 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings):
     jd-needs-ranker labels each requirement with a kind from
     rules/jd-requirement-kinds.md, describes the job, and groups the rows into
     ranked needs; role_classify_assemble.py rewrites jd_needs.md with each
-    requirement's text, Type and Source carried over from the extracted rows.
+    requirement's text, Demand and Source carried over from the extracted rows.
     This check holds the mechanical half: the job description is present; ids
     N-01.. in sequence; allowed Basis and Signals values; each quote verbatim in
     the JD; every requirement in exactly one of a need, Qualifications or Not
@@ -303,9 +317,30 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings):
     problems = []
     for row in parsed[requirement_kinds.UNPLACED]:
         problems.append(f"CR-{row['num']:03d} is in no need, Qualifications or Not ranked")
-    for field in ('Delivers or owns', 'Leads, does, or both'):
-        if not parsed['job'].get(field):
+    jd_lines = (jd_text or '').split('\n')
+    # The role statement: each sentence the ranker picked, quoted with its line.
+    statement = re.findall(r'L(\d+)\s*["“]([^"“”]+)["”]', parsed['job'].get('Role statement') or '')
+    for num, sentence in statement:
+        if jd_text is not None:
+            problems.append(_line_ref_problem(f'Role statement "{sentence[:40]}"', f'L{num}', jd_text, sentence))
+            if requirement_kinds.quote_line(jd_text, sentence) is None:
+                problems.append(f'Role statement: sentence not found in the JD: {sentence[:60]}')
+    statement_text = [_normalize(s) for _, s in statement]
+    for field in ('Role statement', 'Delivers or owns', 'Leads, does, or both'):
+        value = parsed['job'].get(field)
+        if not value:
             problems.append(f'The job: no "{field}" line')
+            continue
+        refs = [int(n) for n in re.findall(r'\bL(\d+)\b', value)]
+        bad = [n for n in refs if not (1 <= n <= len(jd_lines) and jd_lines[n - 1].strip())]
+        if not refs or bad:
+            problems.append(f'The job: "{field}" must cite jd.md lines as L<n>'
+                            + (f"; no JD text on L{', L'.join(map(str, bad))}" if bad else ''))
+    # The lead-or-do line states its answer and whom; it never argues it.
+    lead = parsed['job'].get('Leads, does, or both') or ''
+    if lead and not _LEAD_ANSWER_RE.match(lead):
+        problems.append('The job: "Leads, does, or both" must open with leads, does, both, '
+                        'both, mainly leading or both, mainly doing, then "; whom:"')
     seen = {}
     for n, need in enumerate(parsed['needs'], start=1):
         nid = need['id']
@@ -324,10 +359,23 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings):
             problems.append(f'{nid}: Quote needs one quoted JD passage, found {len(quotes)}')
         elif jd_text is not None and _clause_holding(jd_text, quotes[0]) is None:
             problems.append(f'{nid}: quote not found in the JD: {quotes[0][:60]}')
+        elif jd_text is not None:
+            problems.append(_line_ref_problem(nid, need.get('Quote'), jd_text, quotes[0]))
+        # The role-statement signal needs the quote inside a role statement sentence.
+        if 'role-statement' in signals and len(quotes) == 1 \
+                and not any(_normalize(quotes[0]) in s for s in statement_text):
+            problems.append(f'{nid}: role-statement signal, but its quote is in no Role statement sentence')
         if not need['rows']:
             problems.append(f'{nid}: no requirements')
         for row in need['rows']:
             seen.setdefault(row['num'], []).append((nid, requirement_kinds.NEED, row))
+    # Each row's JD line opens with the line of its quote (the text when the
+    # cell carries none); a hand edit at the user's review can break it.
+    if jd_text is not None:
+        for row in requirement_kinds.all_rows(parsed):
+            quotes = _QUOTE_RE.findall(row['source'] or '') or [row['text']]
+            problems.append(_line_ref_problem(f"CR-{row['num']:03d}", row['source'], jd_text, quotes[0]))
+    problems = [p for p in problems if p]
     if req and not parsed['needs']:
         problems.append('no needs')
     for place, heading in requirement_kinds.SECTION_FOR.items():
@@ -356,11 +404,14 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings):
                         f"kind and land once where it places them"))
 
 
-def check_requirements_present(needs_text, findings):
-    """C7: the extracted requirements are on file, numbered, with Type and Source.
+def check_requirements_present(needs_text, optional_words, findings):
+    """C7: the extracted requirements are on file, numbered, with Demand and Source.
 
     Row numbers are the CR-NNN ids every later skill cites, so a gap or a
-    repeat would point a citation at the wrong requirement.
+    repeat would point a citation at the wrong requirement. A row whose own
+    text carries an optional word (config requirement_optional_words) must be
+    'preferred'; the reverse (a row under a preferred heading) is the
+    extractor's judgment, since JD headings have no standard form.
     """
     if needs_text is None:
         findings.append(('C7', False, 'jd_needs.md not found (requirements not extracted)'))
@@ -378,11 +429,14 @@ def check_requirements_present(needs_text, findings):
             problems.append(f'{cr}: no text')
         if not row['source']:
             problems.append(f'{cr}: no Source')
-        if row['type'] not in requirement_kinds.ALLOWED_TYPES:
-            problems.append(f"{cr}: Type {row['type']!r} is not one of "
-                            f"{', '.join(sorted(requirement_kinds.ALLOWED_TYPES))}")
+        if row['demand'] not in requirement_kinds.ALLOWED_DEMANDS:
+            problems.append(f"{cr}: Demand {row['demand']!r} is not one of "
+                            f"{', '.join(sorted(requirement_kinds.ALLOWED_DEMANDS))}")
+        word = requirement_kinds.optional_word(row['text'] or '', optional_words)
+        if word and row['demand'] == 'required':
+            problems.append(f"{cr}: says '{word}', so its Demand is preferred, not required")
     findings.append(('C7', not problems, '; '.join(problems)
-                     or f'{len(rows)} requirements, each with text, Type and Source'))
+                     or f'{len(rows)} requirements, each with text, Demand and Source'))
 
 
 def check_requirement_text(needs_text, jd_text, qualifiers, year_count, findings):
@@ -413,15 +467,28 @@ def check_requirement_text(needs_text, jd_text, qualifiers, year_count, findings
     texts_by_clause = {}
     for row in rows:
         num, text = row['num'], row['text']
-        quotes = _QUOTE_RE.findall(row['source'] or '')
+        # No quote means the writer dropped one equal to the text
+        # (requirement_kinds.jd_ref), so the text is the quote.
+        quotes = _QUOTE_RE.findall(row['source'] or '') or [text]
         if len(quotes) != 1:
-            problems.append(f'CR-{num:03d}: Source needs one quote, found {len(quotes)}')
+            problems.append(f'CR-{num:03d}: Source needs at most one quote, found {len(quotes)}')
             continue
         clause = _clause_holding(jd_text, quotes[0])
         if clause is None:
             problems.append(f'CR-{num:03d}: quote not found in the JD: {quotes[0][:60]}')
             continue
         texts_by_clause.setdefault(clause, []).append((num, _normalize(text)))
+    # Two rows from one clause where one row's text sits whole inside the
+    # other's are the same requirement twice (Medtronic APP-024 rows 40 and 41,
+    # with and without 'including AWS'; Acadia APP-025 rows 37 and 38, the second
+    # repeating the first to add a preferred setting). Rows from different clauses may
+    # overlap: 'Bachelor's degree' required and 'Bachelor's degree in X' preferred.
+    for entries in texts_by_clause.values():
+        for num, norm in entries:
+            for other, other_norm in entries:
+                if num != other and norm in other_norm:
+                    problems.append(f'CR-{num:03d} is wholly inside CR-{other:03d}, from the same JD '
+                                    f'sentence; give the extra words their own row, or write one row')
     # Each modifier or year count in a clause must survive on at least one row
     # quoting that clause. With one row, that row must keep it.
     patterns = list(qualifiers) + [year_count]
@@ -448,7 +515,7 @@ def _needs_and_jd(folder, cfg):
 
 def _requirement_checks(needs_text, jd_text, cfg, findings):
     """C7 and C8: the extraction checks."""
-    check_requirements_present(needs_text, findings)
+    check_requirements_present(needs_text, cfg['requirement_optional_words'], findings)
     check_requirement_text(needs_text, jd_text, cfg['requirement_qualifiers'],
                            cfg['requirement_year_count'], findings)
 

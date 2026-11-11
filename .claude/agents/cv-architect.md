@@ -28,7 +28,7 @@ The dispatching skill gives you the application folder path, the candidate `leve
 
 - **`rules/cv/cv-structure.md`** - the structure and writing rules. Authoritative. Read it in full.
 - **The classified axis files** - the value files for this role's industry / specialty / orientation / level / work-state (e.g. `rules/orientations/<value>.md`). They supply voice, verb vocabulary, summary lead, section emphasis, terminology, and Adjacency. Read each provided file.
-- **`jd_needs.md`** - the job's requirements (text and Type), grouped under its ranked needs. A requirement's row number is its `CR-NNN` id (row 2 is CR-002). Rows under `## Not ranked` are not requirements the CV answers.
+- **`jd_needs.md`** - the job's requirements (text and Demand, required or preferred), grouped under its ranked needs. A requirement's row number is its `CR-NNN` id (row 2 is CR-002). Rows under `## Not ranked` are not requirements the CV answers.
 - **`research.md`** - role/company/industry context.
 - **`retrieval.md`** - the manifest: per-entry employer, semantic score, axis exact-match count, axis adjacency-weighted score. This is your relevance signal. The `Employer` column is the entry's company; place each bullet under that employer rather than inferring it from the entry's content. (Its Reason column refers to requirements by bare position, e.g. "requirement 4"; that position maps 1:1 to the `CR-NNN` ids in `gap_analysis.md`.)
 - **`gap_analysis.md`** - per-requirement coverage status keyed by `CR-NNN` (the authoritative requirement ids for the CV; the same numbers as the rows in `jd_needs.md`).

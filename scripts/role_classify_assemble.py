@@ -7,7 +7,7 @@ has already researched, and prints the skill's approval block, so none of it is
 written or composed by hand. Four subcommands:
 
   requirements  Write the critical-requirements-extractor output to jd_needs.md
-            under '## Requirements' (text, Type, Source). Re-extracting
+            under '## Requirements' (text, Demand, Source). Re-extracting
             replaces the whole file, so a ranking built on old rows never
             survives.
   needs     Rewrite jd_needs.md with the jd-needs-ranker output: the job, each
@@ -60,6 +60,14 @@ def _paths(folder, cfg):
     return research, log
 
 
+def _jd_text(folder, cfg):
+    """Return jd.md's text; every JD reference is a line number in it."""
+    path = os.path.join(folder, cfg['filenames']['jd_file'])
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f'{path} not found (run role-intake first)')
+    return _util.read(path)
+
+
 def _title(research):
     """Return '<Company> | <Role>' from research.md's H1."""
     m = re.match(r'# Research: (.*)', _util.read(research))
@@ -70,7 +78,7 @@ def _title(research):
 
 # ---------------------------------------------------------------------------
 # Subcommand: requirements
-# Type values are held to the allowed four here; wording against the JD is
+# Demand values are held to required or preferred here; wording against the JD is
 # role_classify_qc.py's 'requirements' check, run right after this write.
 # ---------------------------------------------------------------------------
 
@@ -80,6 +88,9 @@ def cmd_requirements(args, cfg):
     rows = requirement_kinds.parse_extractor_table(_util.read(args.requirements_file))
     if not rows:
         raise ValueError('the extractor output holds no requirement rows')
+    jd = _jd_text(args.folder, cfg)
+    for row in rows:
+        row['source'] = requirement_kinds.jd_ref(jd, row['text'], row['source'])
     path = requirement_kinds.needs_path(args.folder, cfg)
     _util.write(path, requirement_kinds.render_requirements(_title(research), rows))
     print(path)
@@ -102,29 +113,25 @@ def _row_kinds(block):
     return kinds
 
 
-def _line_rows(block, label):
-    """Return the row numbers on a '**<label>:** 3, 7 (kind), ...' line."""
-    m = re.search(rf'(?m)^\*\*{label}:\*\*[ \t]*(.*)$', block)
-    if m is None:
-        raise ValueError(f'ranker output has no "**{label}:**" line')
-    return [int(n) for n in re.findall(r'(?<![\w(-])(\d+)(?![\w)])', m.group(1))]
-
-
 def cmd_needs(args, cfg):
     """Rewrite jd_needs.md from the ranker's output and the file's own rows.
 
     The ranker returns '## Row Kinds' (a row-number/kind table), then
-    '## Ranked Needs' (the job lines, the needs table, and the Qualifications
-    and Not ranked lines). Each requirement's text, Type and Source are copied
-    from jd_needs.md's existing rows, never from the ranker, so the requirements
-    are never reworded by ranking. A row number the file does not have stops the
-    write; a row the ranker placed nowhere is kept under '## Requirements'.
+    '## Ranked Needs' (the job lines and the needs table). Rows outside the
+    needs go to Qualifications or Not ranked by their kinds
+    (requirement_kinds.placement), so the ranker never places them. Each
+    requirement's text, Demand and Source are copied from jd_needs.md's existing
+    rows, never from the ranker, so the requirements are never reworded by
+    ranking. A row number the file does not have stops the write; a row whose
+    kinds put it in a need the ranker left it out of, or with no known kind, is
+    kept under '## Requirements' for C6 to report.
     """
     _paths(args.folder, cfg)
     path = requirement_kinds.needs_path(args.folder, cfg)
     if not os.path.isfile(path):
         raise FileNotFoundError(f'{path} not found (extract the requirements first)')
     current = requirement_kinds.read_needs(_util.read(path))
+    jd = _jd_text(args.folder, cfg)
     by_num = {row['num']: row for row in requirement_kinds.all_rows(current)}
     text = _util.read(args.needs_file).strip()
     m = re.search(r'(?m)^## Ranked Needs[ \t]*$', text)
@@ -142,18 +149,28 @@ def cmd_needs(args, cfg):
         return [{**by_num[n], 'kind': kind_by_row.get(n, '')} for n in nums]
 
     job = [line.strip() for line in block.split('\n')
-           if re.match(r'^- (Delivers or owns|Leads, does, or both):', line.strip())]
+           if re.match(r'^- (Role statement|Delivers or owns|Leads, does, or both):', line.strip())]
     needs = []
     for line in block.split('\n'):
         cells = [c.strip() for c in line.strip().strip('|').split('|')]
         if len(cells) < 6 or not re.fullmatch(r'N-\d+', cells[0]):
             continue
         nums = [int(t) for t in re.split(r'[,\s]+', cells[3]) if t.isdigit()]
+        quote = requirement_kinds.jd_ref(jd, '', ' | '.join(cells[5:]))
         needs.append({'id': cells[0], 'label': cells[1], 'basis': cells[2],
-                      'signals': cells[4], 'quote': ' | '.join(cells[5:]), 'rows': rows(nums)})
-    qualifications = rows(_line_rows(block, 'Qualifications'))
-    not_ranked = rows(_line_rows(block, 'Not ranked'))
-    unplaced = [row for num, row in sorted(by_num.items()) if num not in placed]
+                      'signals': cells[4], 'quote': quote, 'rows': rows(nums)})
+    # Place every row the needs did not take by its kinds.
+    kinds = requirement_kinds.load_kinds(args.repo_root, cfg)
+    by_place = {requirement_kinds.QUALIFICATIONS: [], requirement_kinds.NOT_RANKED: []}
+    for num in sorted(set(by_num) - placed):
+        names = requirement_kinds.parse_kind_cell(kind_by_row.get(num, ''))
+        place = requirement_kinds.placement(names, kinds)
+        if names and all(n in kinds for n in names) and place in by_place:
+            by_place[place] += rows([num])
+    qualifications = by_place[requirement_kinds.QUALIFICATIONS]
+    not_ranked = by_place[requirement_kinds.NOT_RANKED]
+    unplaced = [{**row, 'kind': kind_by_row.get(num, '')}
+                for num, row in sorted(by_num.items()) if num not in placed]
     out = requirement_kinds.render_needs(current['title'], job, needs, qualifications,
                                          not_ranked, unplaced)
     _util.write(path, out)
@@ -303,7 +320,7 @@ def main():
     args = parser.parse_args()
     try:
         sys.stdout.reconfigure(encoding='utf-8')
-        _, cfg = _config.load()
+        args.repo_root, cfg = _config.load()
         args.func(args, cfg)
     except Exception as e:
         print(f'Error: {e}', file=sys.stderr)

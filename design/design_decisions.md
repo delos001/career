@@ -1500,9 +1500,22 @@ Requirement extraction moved from role-intake into role-classify, and the requir
 - A row the ranker places nowhere stays under `## Requirements` and C6 fails it. Ranking rewrites the only copy, so a dropped row must stay on file rather than vanish.
 - `requirement_kinds.requirements_table()` is the one reader for retrieval and gap analysis: it builds the same `| # | Text | Type | Source |` table from `jd_needs.md`, without the Not ranked rows, so the scorer and gap-detector instructions did not change. The CV agents (cv-architect, hiring-manager) read `jd_needs.md` directly.
 - role-intake keeps only the company, role and industry research; `research.md` has no requirements section. Existing applications were converted by a one-off script, not handled by a fallback reader.
+- Layout, 2026-11-11: requirements are tables (`| Req | Requirement | Kind | Type | JD line |`) for the user's review. Every JD reference is `L<n>`, the jd.md line, the one scheme: the scripts write it from the quote (`requirement_kinds.jd_ref`), so agents never write locations, and C6 checks each one. A row keeps its quote only when the text was cut from it; an equal quote is dropped, since every later reader would load the text twice (23% of Jazz). The extractor's "also" pointers to other sections are dropped: they could not be traced, and repetition across sections is the ranker's Signals.
 - C8 holds a modifier across the rows split from one JD clause, as it already did year counts: it must survive on at least one row. Whether it carries onto each part is a reading judgment ('familiarity with Python and SQL' carries; Otsuka APP-026 'understanding of data ... to be able to be effectively build AI solutions' does not), so `qc-role-classify` check 3 judges it. A list of phrases that end a thought was rejected: one example, endless equal phrasings. Cost: a dropped modifier on a split clause is caught after ranking, not before.
 
 Refs: `requirement-kinds-2026-11`, `role-intake-critical-requirements-extraction-2026-05`, GitHub #89.
+
+#### ranked-needs-downstream-2026-11
+Retrieval and gap analysis ran on the extractor's Type, a record of which JD section a row came from, so the ranking reached only the CV agents and the job's top need was scored as weak evidence and given no guaranteed CV slot (Jazz N-01). Decided 2026-11-11 in the ranker audit; plan and build order in `design/jd_needs_downstream_plan.md`.
+
+- **Demand replaces Type:** `required` or `preferred`, preferred only when the JD marks a row optional; C7 forces `preferred` on a row whose own text carries an optional word (config `requirement_optional_words`). How much a row matters comes from its need's rank.
+- **Splitting:** "or" / "and/or" alternatives are one row, met by any one; "e.g." / "such as" examples are never a judged part. An "and" list splits only into separate skills, standards, systems or credentials; areas or activities under one duty stay one row. A row never repeats another row's whole text; C8 fails such a pair from one JD sentence.
+- **Ranker:** names the role statement sentences by what they say, never by position, and C6 checks every `role-statement` quote sits in one. The lead-or-do line is an answer plus whom (`leads | does | both[, mainly leading|doing]; whom:`), checked by C6. The script places Qualifications and Not ranked rows by kind. The ranker reads only research.md's Company section (`dispatch_prompt.py` slices it).
+- **Retrieval:** the scorer judges evidence strength only, never sees Demand, and names the rows each entry matches; `retrieval_apply.py` maps them to needs in a Needs column.
+- **Gap analysis:** per-row verdicts, reported in need rank order with a coverage row per need. A **core** row is a required row in a need with the `role-statement` signal, or a Qualification; only unmet core rows count toward the label (Unmet Core Requirements) and must be named in a condition (G14). Other open rows are listed under their need.
+- **CV selection (interim, cv-structure.md):** required core rows each keep one cited entry before any row gets a second; other needs follow by rank. The CV rebuild (`design/cv_persuasion_plan.md`) revisits selection whole.
+
+Refs: `requirements-in-jd-needs-2026-11`, `requirement-kinds-2026-11`, GitHub #89, #88.
 
 ### gap-analysis
 

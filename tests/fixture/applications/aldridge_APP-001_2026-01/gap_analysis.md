@@ -2,21 +2,20 @@
 
 **APP-NNN:** APP-001
 **Date:** 2026-01-12
-**Unmet Must-Haves:** 1
+**Unmet Core Requirements:** 1
 **Recommendation:** Proceed with caution
 
 ## Coverage Picture
 
-| Tier | Covered | Closed | Language-shift | Partial | Interview-deferred | Unresolved |
+| Need | Covered | Closed | Language-shift | Partial | Interview-deferred | Unresolved |
 |---|---|---|---|---|---|---|
-| Must-have (4) | 1 | 1 | 0 | 1 | 1 | 0 |
-| Preferred (1) | 0 | 0 | 1 | 0 | 0 | 0 |
-| Duty-derived (0) | 0 | 0 | 0 | 0 | 0 | 0 |
-| Contextual (1) | 0 | 0 | 0 | 0 | 0 | 1 |
+| N-01 Operating model for clinical data: standards and governance (3, core) | 0 | 0 | 1 | 0 | 1 | 1 |
+| N-02 Vendor oversight across external data providers (1) | 0 | 1 | 0 | 0 | 0 | 0 |
+| N-03 Leading a data team (1) | 0 | 0 | 0 | 1 | 0 | 0 |
+| Qualifications (1, core) | 1 | 0 | 0 | 0 | 0 | 0 |
 
-- **Must-have:** 2 of 4 shown, 1 partly shown, 1 open.
-- **Preferred:** 1 of 1 shown, 0 partly shown, 0 open.
-- **Contextual:** 0 of 1 shown, 0 partly shown, 1 open.
+- **Core, required:** 1 of 2 shown, 0 partly shown, 1 open.
+- **Everything else:** 2 of 4 shown, 1 partly shown, 1 open.
 
 ## Gap Themes
 
@@ -38,7 +37,7 @@
 
 ## Recommendation
 
-**Proceed with caution.** One must-have is unmet: no production experience on a named commercial warehouse platform. The vendor oversight and governance requirements are well covered.
+**Proceed with caution.** One core requirement is unmet: no production experience on a named commercial warehouse platform. The vendor oversight and governance requirements are well covered.
 
 **Depends on:**
 - The warehouse platform requirement describes a capability, not a specific product (CR-005).
@@ -52,32 +51,32 @@
 
 ## Requirements
 
-### CR-001 - Bachelor's degree in a scientific or quantitative discipline (must-have)
+### CR-001 - Bachelor's degree in a scientific or quantitative discipline (Qual, required)
 - **Status:** covered
 - **Evidence:** ED-002
 - **Notes:** _(none)_
 
-### CR-002 - Vendor oversight and contract management across external data providers (must-have)
+### CR-002 - Vendor oversight and contract management across external data providers (N-02, required)
 - **Status:** closed
 - **Evidence:** EX-003
 - **Notes:** Candidate manages two external data vendors at Northwind including scope negotiation and quarterly performance review; does not own the contracts themselves.
 
-### CR-003 - Experience defining data standards and governance for a clinical portfolio (preferred)
+### CR-003 - Experience defining data standards and governance for a clinical portfolio (N-01, preferred)
 - **Status:** language-shift
 - **Evidence:** EX-004
 - **Notes:** _(none)_
 
-### CR-004 - Line management of a data function of five or more (must-have)
+### CR-004 - Line management of a data function of five or more (N-03, required)
 - **Status:** partial-match
 - **Evidence:** EX-004
 - **Notes:** Candidate has led a start-up group through standards adoption and training, which is the operational-leadership element the requirement is reaching for, but that was matrix leadership rather than line management and no headcount figure supports "five or more". CV cites the leadership scope; the line-management gap remains visible at interview.
 
-### CR-005 - Direct experience with a commercial data warehouse platform in production (must-have)
+### CR-005 - Direct experience with a commercial data warehouse platform in production (N-01, required)
 - **Status:** interview-deferred
 - **Evidence:** _(none)_
 - **Notes:** The warehouse build was on an internally modeled schema rather than a named commercial platform; deferred to interview to establish whether the platform itself is the requirement.
 
-### CR-006 - Familiarity with regulatory submission data packages (contextual)
+### CR-006 - Familiarity with regulatory submission data packages (N-01, preferred)
 - **Status:** unresolved
 - **Evidence:** _(none)_
 - **Notes:** Acknowledged gap; no plan to close.

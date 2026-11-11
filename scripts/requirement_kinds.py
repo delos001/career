@@ -7,7 +7,8 @@ jd_needs.md is the one home of a job's requirements. role-classify writes it in
 two steps:
 
   1. Extraction: the critical-requirements-extractor's rows are written under
-     '## Requirements', each with its text, Type and Source.
+     '## Requirements', each with its text, Demand (required or preferred)
+     and Source.
   2. Ranking: jd-needs-ranker labels every row with a kind from
      rules/jd-requirement-kinds.md (Function, Means, Setting, ...) and groups
      the rows into ranked needs. The file is rewritten as the job, one heading
@@ -19,7 +20,7 @@ Rows on the Not ranked list (boilerplate, role shape, administrative detail)
 have done their job by the end of role-classify; retrieval and gap analysis
 must never score or evaluate them. requirements_table() is the one reader
 those skills use, so every reader filters the same way and sees the same
-'| # | Text | Type | Source |' table.
+'| # | Text | Demand | Source |' table.
 
 The kinds and where each one lands are derived from the rules file at run time,
 not held here: a kind is a '### N. <name>' heading under '## Kinds', and its
@@ -32,6 +33,7 @@ jd_needs.md layout (written by render_needs, read by read_needs):
 
     ## The job
 
+    - Role statement: L<n> "<sentence>"; L<n> "<sentence>"
     - Delivers or owns: ...
     - Leads, does, or both: ...
 
@@ -41,23 +43,25 @@ jd_needs.md layout (written by render_needs, read by read_needs):
 
     - Basis: stated | derived
     - Signals: role-statement, repetition N, space
-    - Quote: <JD section> "<verbatim JD passage>"
+    - Quote: L<n> <JD heading> "<verbatim JD passage>"
 
-    - **2.** <requirement text, as extracted>
-      - Kind: <kind, or kinds joined by + with each part's JD words>
-      - Type: must-have | preferred | duty-derived | contextual
-      - Source: <JD section> "<verbatim JD passage>"
+    | Req | Requirement | Kind | Demand | JD line |
+    |---|---|---|---|---|
+    | 2 | <requirement text, as extracted> | <kind, or kinds joined by + with each part's JD words> | required | preferred | L<n> <JD heading> |
 
     ## Qualifications
 
-    - **10.** ...
+    <same table>
 
     ## Not ranked
 
-    - **25.** ...
+    <same table, or None.>
 
-Before ranking the file holds only the H1 and '## Requirements', and rows
-carry no Kind line.
+Every JD reference is L<n>, the line number in jd.md, written by the scripts
+from the quote (jd_ref). A row's JD line cell carries the quote only when the
+text was cut from a longer passage; a quote equal to the text is dropped, so
+later readers do not load each requirement twice. Before ranking the file holds
+only the H1 and '## Requirements', with the Kind cells empty.
 
 Author  : Jason Delosh
 Created : 2026-11-10
@@ -88,16 +92,29 @@ SECTION_FOR = {QUALIFICATIONS: 'Qualifications', NOT_RANKED: 'Not ranked'}
 # The section holding extracted rows not yet placed by the ranker.
 UNPLACED = 'Requirements'
 
-# The only Type values the gap-analysis coverage table counts.
-ALLOWED_TYPES = {'must-have', 'preferred', 'duty-derived', 'contextual'}
+# How strongly the JD demands a row. 'preferred' only when the JD marks it
+# optional; a duty the JD lists is required. How much a row matters comes from
+# its need's rank, never from this value.
+ALLOWED_DEMANDS = {'required', 'preferred'}
 
-TABLE_HEADER = '| # | Text | Type | Source |\n|---|------|------|--------|'
+TABLE_HEADER = '| # | Text | Demand | Source |\n|---|------|------|--------|'
+
+# The requirement table in jd_needs.md.
+ROW_HEADER = '| Req | Requirement | Kind | Demand | JD line |\n|---|---|---|---|---|'
 
 _KIND_HEADING_RE = re.compile(r'^### \d+\.\s+(.+?)\s*$')
 _NEED_HEADING_RE = re.compile(r'^### (N-\d+):\s*(.*?)\s*$')
-_ROW_RE = re.compile(r'^- \*\*(\d+)\.\*\*\s*(.*?)\s*$')
-_ROW_FIELD_RE = re.compile(r'^\s+- (Kind|Type|Source):\s*(.*?)\s*$')
-_FIELD_RE = re.compile(r'^- (Basis|Signals|Quote|Delivers or owns|Leads, does, or both):\s*(.*?)\s*$')
+# Regex: a table cell separator (a pipe not escaped as \|).
+_CELL_SPLIT_RE = re.compile(r'(?<!\\)\|')
+# Regex: a location the extractor or ranker wrote after a JD heading
+# ('¶4', '#2', 'line 10', 'lines 10-12'), or a leading 'L<n>' already written.
+_LOCATION_RE = re.compile(r'\s*(?:¶\s*\d+|#\s*\d+|\blines?\s+[\d,\s-]+)\s*$', re.I)
+_LINE_REF_RE = re.compile(r'^L\d+\s*')
+_FIELD_RE = re.compile(r'^- (Basis|Signals|Quote|Role statement|Delivers or owns|Leads, does, or both):\s*(.*?)\s*$')
+
+# Regex: a double-quoted span in a Source cell (straight or curly), with the
+# space before it.
+_SOURCE_QUOTE_RE = re.compile(r'\s*["“]([^"“”]+)["”]')
 
 
 # ---------------------------------------------------------------------------
@@ -162,35 +179,87 @@ def placement(names, kinds):
 
 # ---------------------------------------------------------------------------
 # The extractor's table
-# The critical-requirements-extractor returns '| # | Text | Type | Source |'.
-# Its Type cell is held to ALLOWED_TYPES here, before anything is written.
+# The critical-requirements-extractor returns '| # | Text | Demand | Source |'.
+# Its Demand cell is held to ALLOWED_DEMANDS here, before anything is written.
 # ---------------------------------------------------------------------------
 
-def _row(num, text, type_, source, kind=None):
-    return {'num': num, 'text': text, 'kind': kind, 'type': type_, 'source': source}
+def _row(num, text, demand, source, kind=None):
+    return {'num': num, 'text': text, 'kind': kind, 'demand': demand, 'source': source}
 
 
-def normalize_type(value):
-    """Return (allowed Type, recovered?) for a Type cell, or (None, False).
+def optional_word(text, patterns):
+    """Return the first optional-demand word (config requirement_optional_words)
+    in `text`, or None. A row whose own text carries one must be 'preferred'."""
+    for pattern in patterns:
+        m = re.search(rf'\b(?:{pattern})\b', normalize(text))
+        if m:
+            return m.group(0)
+    return None
 
-    The extractor is an LLM and drifts from the vocabulary two ways. A category
-    label bolted onto one valid token ('education (must-have)') is recoverable:
-    the token is kept. A cell with no token, or two, is not: severity cannot be
-    inferred without guessing, so the caller fails loudly.
+
+def normalize(text):
+    """Lowercase, straighten quotes and dashes, drop bold, collapse whitespace."""
+    for fancy, plain in (('’', "'"), ('‘', "'"), ('–', '-'), ('—', '-'), ('*', '')):
+        text = text.replace(fancy, plain)
+    return re.sub(r'\s+', ' ', text).strip().lower()
+
+
+def quote_line(jd_text, quote):
+    """Return the 1-based jd.md line holding `quote`, or None."""
+    target = normalize(quote)
+    if not target:
+        return None
+    for n, line in enumerate(jd_text.split('\n'), start=1):
+        if target in normalize(line):
+            return n
+    return None
+
+
+def jd_ref(jd_text, text, source):
+    """Return a JD reference cell as 'L<n> <JD heading>', plus the quote when it
+    differs from `text`.
+
+    `source` is '<JD heading> "<quote>"' as the extractor or ranker wrote it;
+    with no quote, `text` is the quote. Any other location the agent wrote
+    ('¶4', '#2', 'line 10', '; also ...' pointers) is dropped: one scheme, the
+    jd.md line, found from the quote. A requirement row passes its text, so a
+    quote equal to it is dropped and the text is not stored twice; a need's
+    Quote passes '' and keeps its quote. When the quote is not in the JD the
+    cell is returned unchanged, and role_classify_qc.py reports it.
     """
-    if value in ALLOWED_TYPES:
+    quotes = list(_SOURCE_QUOTE_RE.finditer(source))
+    if len(quotes) > 1:
+        return source
+    quote = quotes[0].group(1).strip() if quotes else text.strip()
+    line = quote_line(jd_text, quote)
+    if line is None:
+        return source
+    heading = (source[:quotes[0].start()] if quotes else source).split(';')[0].strip()
+    heading = _LOCATION_RE.sub('', _LINE_REF_RE.sub('', heading)).strip()
+    ref = f'L{line} {heading}'.strip()
+    return ref if quote == text.strip() else f'{ref} "{quote}"'
+
+
+def normalize_demand(value):
+    """Return (allowed Demand, recovered?) for a Demand cell, or (None, False).
+
+    The extractor is an LLM and drifts from the vocabulary. A label bolted onto
+    one valid token ('education (required)') is recoverable: the token is kept.
+    A cell with no token, or both, is not, so the caller fails loudly.
+    """
+    if value in ALLOWED_DEMANDS:
         return value, False
-    # None of the four is a substring of another, so a substring scan is a
+    # Neither value is a substring of the other, so a substring scan is a
     # whole-token test.
-    present = [t for t in sorted(ALLOWED_TYPES) if t in value.lower()]
+    present = [t for t in sorted(ALLOWED_DEMANDS) if t in value.lower()]
     return (present[0], True) if len(present) == 1 else (None, False)
 
 
 def parse_extractor_table(block):
-    """Return [row dict] from the extractor's output, Types normalized.
+    """Return [row dict] from the extractor's output, Demand normalized.
 
-    Raises on an unrecoverable Type cell, listing every offender at once; warns
-    on stderr for each recovered one.
+    Raises on an unrecoverable Demand cell, listing every offender at once;
+    warns on stderr for each recovered one.
     """
     rows, offenders, recovered = [], [], []
     for line in block.split('\n'):
@@ -201,19 +270,19 @@ def parse_extractor_table(block):
         if len(cells) < 4 or not cells[0].isdigit():
             continue
         # Source is the last cell; a pipe inside a quote would add cells, so
-        # everything after Type is joined back into it.
-        num, text, raw_type, source = int(cells[0]), cells[1], cells[2], ' | '.join(cells[3:])
-        type_, was_recovered = normalize_type(raw_type)
-        if type_ is None:
-            offenders.append(f'row {num}: "{raw_type}"')
+        # everything after Demand is joined back into it.
+        num, text, raw, source = int(cells[0]), cells[1], cells[2], ' | '.join(cells[3:])
+        demand, was_recovered = normalize_demand(raw)
+        if demand is None:
+            offenders.append(f'row {num}: "{raw}"')
         elif was_recovered:
-            recovered.append(f'row {num}: "{raw_type}" -> "{type_}"')
-        rows.append(_row(num, text, type_ or raw_type, source))
+            recovered.append(f'row {num}: "{raw}" -> "{demand}"')
+        rows.append(_row(num, text, demand or raw, source))
     if offenders:
-        raise ValueError(f"requirement Type has values outside {', '.join(sorted(ALLOWED_TYPES))} "
+        raise ValueError(f"requirement Demand has values outside {', '.join(sorted(ALLOWED_DEMANDS))} "
                          f"({'; '.join(offenders)}); rerun the extractor")
     if recovered:
-        print(f"WARNING: Type reduced to its allowed value ({'; '.join(recovered)})", file=sys.stderr)
+        print(f"WARNING: Demand reduced to its allowed value ({'; '.join(recovered)})", file=sys.stderr)
     return rows
 
 
@@ -225,18 +294,36 @@ def needs_path(app_folder, cfg):
     return os.path.join(app_folder, cfg['filenames']['jd_needs_file'])
 
 
-def _row_lines(row):
-    lines = [f"- **{row['num']}.** {row['text']}"]
-    if row.get('kind'):
-        lines.append(f"  - Kind: {row['kind']}")
-    lines += [f"  - Type: {row['type']}", f"  - Source: {row['source']}"]
-    return lines
+def _cell(value):
+    """Return a table cell value with any pipe escaped."""
+    return (value or '').replace('|', r'\|')
+
+
+def _row_table(rows):
+    """Return the requirement table lines for rows, or ['None.']."""
+    if not rows:
+        return ['None.']
+    return [ROW_HEADER] + [
+        f"| {row['num']} | {_cell(row['text'])} | {_cell(row.get('kind'))} | "
+        f"{_cell(row['demand'])} | {_cell(row['source'])} |" for row in rows]
+
+
+def _table_row(line):
+    """Return a row dict from a requirement table line, or None for any other line."""
+    body = line.strip()
+    if not (body.startswith('|') and body.endswith('|')):
+        return None
+    cells = [c.strip().replace(r'\|', '|') for c in _CELL_SPLIT_RE.split(body[1:-1])]
+    if len(cells) != 5 or not cells[0].isdigit():
+        return None
+    num, text, kind, demand, source = cells
+    return _row(int(num), text, demand or None, source or None, kind or None)
 
 
 def render_requirements(title, rows):
     """Return jd_needs.md text holding the extracted rows only (before ranking)."""
     out = [f'# JD needs: {title}', '', f'## {UNPLACED}', '']
-    out += [line for row in rows for line in _row_lines(row)] or ['None.']
+    out += _row_table(rows)
     return '\n'.join(out) + '\n'
 
 
@@ -255,15 +342,14 @@ def render_needs(title, job_lines, needs, qualifications, not_ranked, unplaced=(
                 f"- Basis: {need['basis']}",
                 f"- Signals: {need['signals']}",
                 f"- Quote: {need['quote']}", '']
-        for row in need['rows']:
-            out += _row_lines(row)
+        out += _row_table(need['rows'])
         out.append('')
     sections = [('Qualifications', qualifications), ('Not ranked', not_ranked)]
     if unplaced:
         sections.append((UNPLACED, unplaced))
     for heading, rows in sections:
         out += [f'## {heading}', '']
-        out += [line for row in rows for line in _row_lines(row)] or ['None.']
+        out += _row_table(rows)
         out.append('')
     return '\n'.join(out)
 
@@ -272,7 +358,7 @@ def read_needs(text):
     """Parse jd_needs.md into {'title', 'job': {field: value}, 'needs': [...],
     'Qualifications': [...], 'Not ranked': [...], 'Requirements': [...],
     'sections': [...]}. Need dicts carry id, label, Basis, Signals, Quote, rows;
-    rows are row dicts (num, text, kind, type, source; a missing field is None).
+    rows are row dicts (num, text, kind, demand, source; a missing field is None).
     Unknown lines are ignored; the QC script reports what is missing."""
     out = {'title': '', 'job': {}, 'needs': [], 'Qualifications': [], 'Not ranked': [],
            UNPLACED: [], 'sections': []}
@@ -292,13 +378,9 @@ def read_needs(text):
             out['needs'].append(need)
             rows = need['rows']
             continue
-        m = _ROW_RE.match(line)
-        if m and rows is not None:
-            rows.append(_row(int(m.group(1)), m.group(2), None, None))
-            continue
-        m = _ROW_FIELD_RE.match(line)
-        if m and rows:
-            rows[-1][m.group(1).lower()] = m.group(2)
+        row = _table_row(line)
+        if row and rows is not None:
+            rows.append(row)
             continue
         m = _FIELD_RE.match(line)
         if m:
@@ -336,11 +418,63 @@ def ranked_rows(app_folder, cfg):
     return rows
 
 
-def requirements_table(app_folder, cfg):
-    """Return the '| # | Text | Type | Source |' table of ranked_rows().
+def row_places(app_folder, cfg):
+    """Return {row number: need id, or 'Qual'} for the rows later skills read.
 
-    What retrieval scores and gap analysis evaluates.
+    Retrieval uses it to show which needs each scored entry serves, so priority
+    is applied from the ranking by script, never re-judged by the scorer.
     """
-    lines = [f"| {r['num']} | {r['text']} | {r['type']} | {r['source']} |"
-             for r in ranked_rows(app_folder, cfg)]
+    parsed = read_needs(_util.read(needs_path(app_folder, cfg)))
+    places = {row['num']: need['id'] for need in parsed['needs'] for row in need['rows']}
+    places.update({row['num']: 'Qual' for row in parsed['Qualifications']})
+    return places
+
+
+def requirement_info(app_folder, cfg):
+    """Return {CR-NNN: info} for the rows gap analysis judges, in need rank order.
+
+    info: text, demand, place (need id, 'Qual', or '' for a row the ranker has
+    not placed), label (need label, or 'Qualifications'), core. A row is core
+    when it sits in a need carrying the role-statement signal, or in
+    Qualifications: the hard thresholds and the job's central work. Only an
+    unmet required core row moves the gap-analysis label.
+    """
+    parsed = read_needs(_util.read(needs_path(app_folder, cfg)))
+
+    def info(row, place, label, core):
+        return f"CR-{row['num']:03d}", {'text': row['text'], 'demand': row['demand'],
+                                         'place': place, 'label': label, 'core': core}
+
+    out = dict(info(row, need['id'], need['label'], 'role-statement' in need.get('Signals', ''))
+               for need in parsed['needs'] for row in need['rows'])
+    out.update(info(row, 'Qual', 'Qualifications', True) for row in parsed['Qualifications'])
+    out.update(info(row, '', 'Not yet ranked', False)
+               for row in sorted(parsed[UNPLACED], key=lambda r: r['num']))
+    return out
+
+
+def requirements_table(app_folder, cfg, demand=True, by_need=False):
+    """Return the '| # | Text | Demand | Source |' table of ranked_rows().
+
+    What retrieval scores and gap analysis evaluates. With demand=False the
+    Demand column is left out: the retrieval scorer judges evidence strength
+    only, so it never sees how strongly the JD demands a row. With by_need=True
+    the rows come in need rank order with a Need column, which is how gap
+    analysis judges and reports them.
+    """
+    rows = ranked_rows(app_folder, cfg)
+    if by_need:
+        info = requirement_info(app_folder, cfg)
+        order = {cr: i for i, cr in enumerate(info)}
+        lines = []
+        for r in sorted(rows, key=lambda r: order[f"CR-{r['num']:03d}"]):
+            need = info[f"CR-{r['num']:03d}"]
+            name = ' '.join(v for v in (need['place'] if need['place'] != 'Qual' else '', need['label']) if v)
+            lines.append(f"| {r['num']} | {_cell(name)} | {r['text']} | {r['demand']} | {r['source']} |")
+        return ('| # | Need | Text | Demand | Source |\n|---|------|------|------|--------|\n'
+                + '\n'.join(lines))
+    if not demand:
+        return ('| # | Text | Source |\n|---|------|--------|\n'
+                + '\n'.join(f"| {r['num']} | {r['text']} | {r['source']} |" for r in rows))
+    lines = [f"| {r['num']} | {r['text']} | {r['demand']} | {r['source']} |" for r in rows]
     return TABLE_HEADER + '\n' + '\n'.join(lines)

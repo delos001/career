@@ -15,7 +15,7 @@ A **current-state document**: re-running gap-analysis overwrites the file. The s
 
 **APP-NNN:** {{app_id}}
 **Date:** {{date}}
-**Unmet Must-Haves:** {{unmet_must_haves_count}}
+**Unmet Core Requirements:** {{unmet_core_count}}
 **Recommendation:** {{recommendation_label}}
 
 ## Coverage Picture
@@ -57,12 +57,12 @@ A **current-state document**: re-running gap-analysis overwrites the file. The s
 
 ## Field notes
 
-- **{{unmet_must_haves_count}}** - computed by `gap_assemble.py`: integer count of must-have requirements with final status `interview-deferred` or `unresolved`.
+- **{{unmet_core_count}}** - computed by `gap_assemble.py`: integer count of required core requirements with final status `interview-deferred` or `unresolved`. Core means in a need carrying the `role-statement` signal, or in Qualifications.
 - **{{recommendation_label}}** - one of `Proceed`, `Proceed with caution`, `Do not pursue`.
 
 ### Per-section block rendering
 
-- **{{coverage_picture_block}}** - computed by `gap_assemble.py`: a table with one row per requirement type (must-have, preferred, duty-derived, contextual) and one column per status, holding the count of requirements, then one plain line per tier: how many are shown (covered, closed, language-shift), partly shown, and open.
+- **{{coverage_picture_block}}** - computed by `gap_assemble.py`: a table with one row per ranked need in rank order, then Qualifications (core ones marked `core`), and one column per status, holding the count of requirements, then two plain lines, core required rows and everything else: how many are shown (covered, closed, language-shift), partly shown, and open.
 
 - **{{gap_themes_block}}** - one sub-section per theme, grouped per run:
 
@@ -79,13 +79,13 @@ A **current-state document**: re-running gap-analysis overwrites the file. The s
 - **{{requirements_block}}** - one sub-section per requirement:
 
   ```
-  ### {{requirement_id}} - {{requirement_text}} ({{requirement_type}})
+  ### {{requirement_id}} - {{requirement_text}} ({{need_id}}, {{demand}})
   - **Status:** {{status}}
   - **Evidence:** {{evidence_ids_comma_sep_or_none}}
   - **Notes:** {{notes_or_em_dash}}
   ```
 
-  A fact the user surfaced to close a requirement is staged with that requirement as its anchor; a CV that uses it before it reaches the inventory cites `GAP CR-NNN`. Status values: `covered`, `closed`, `language-shift`, `partial-match`, `interview-deferred`, `unresolved`. Always rendered (every requirement appears, regardless of status).
+  Requirements appear in need rank order, then Qualifications. A fact the user surfaced to close a requirement is staged with that requirement as its anchor; a CV that uses it before it reaches the inventory cites `GAP CR-NNN`. Status values: `covered`, `closed`, `language-shift`, `partial-match`, `interview-deferred`, `unresolved`. Always rendered (every requirement appears, regardless of status).
 
 - **{{language_shift_block}}** - one sub-section per case:
 
@@ -111,4 +111,4 @@ A **current-state document**: re-running gap-analysis overwrites the file. The s
 - **{{work_state_coverage_block}}** - one bullet per work-state value the role was classified with, computed by `gap_assemble.py` from the session log and the inventory tags: how many entries match it exactly (with IDs), or that none do, plus the adjacent work-states that carry it and an interview flag. Renders `_(none)_` when the role has no work-state.
 - **{{cv_notes_block}}** - free-text general framing guidance for the CV architect captured during the Phase 4 gap-closure loop (not tied to any specific requirement). Renders `_(none)_` when no general notes were provided. Per-requirement Notes fields live inside `{{requirements_block}}` and are not repeated here.
 
-- **{{recommendation_block}}** - `**<recommendation_label>.** <1-2 sentence rationale>`, then `**Depends on:**` and one bullet per condition the recommendation rests on. Every must-have left `partial-match`, `interview-deferred`, or `unresolved` is named by its CR-NNN in a condition.
+- **{{recommendation_block}}** - `**<recommendation_label>.** <1-2 sentence rationale>`, then `**Depends on:**` and one bullet per condition the recommendation rests on. Every required core requirement left `partial-match`, `interview-deferred`, or `unresolved` is named by its CR-NNN in a condition.

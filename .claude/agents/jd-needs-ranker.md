@@ -1,6 +1,6 @@
 ---
 name: jd-needs-ranker
-description: Labels each of a job's extracted critical requirements by kind, describes the job, groups the requirements into the JD's needs and ranks them, for the role-classify skill. Reads the JD, the research file, the extracted requirements in jd_needs.md, and rules/jd-requirement-kinds.md. Returns the row kinds, the job description, and a Ranked Needs table; role_classify_assemble.py rewrites jd_needs.md with them, which cv-targeted, gap-analysis and interview prep read in priority order. Read-only.
+description: Labels each of a job's extracted critical requirements by kind, describes the job, groups the requirements into the JD's needs and ranks them, for the role-classify skill. Reads the JD, the research file's Company section, the extracted requirements in jd_needs.md, and rules/jd-requirement-kinds.md. Returns the row kinds, the job description, and a Ranked Needs table; role_classify_assemble.py rewrites jd_needs.md with them, which cv-targeted, gap-analysis and interview prep read in priority order. Read-only.
 tools: Read
 ---
 
@@ -10,17 +10,18 @@ Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with P
 
 ## Inputs
 
-The dispatching skill gives you the paths to `jd.md`, `research.md` and `jd_needs.md`. Read the whole JD; any sentence can explain another, wherever it sits. Then read `research.md`'s Company section, the numbered requirements in `jd_needs.md`, and `rules/jd-requirement-kinds.md`.
+The dispatching skill gives you the paths to `jd.md`, the company research and `jd_needs.md`. Read the whole JD; any sentence can explain another, wherever it sits. Then read the company research, the numbered requirements in `jd_needs.md`, and `rules/jd-requirement-kinds.md`.
 
 ## Steps
 
-1. **Label every row by kind.** Use the kinds, tests and rules in `rules/jd-requirement-kinds.md`. Use the mission and values in the research file's Company section to spot boilerplate; when it has none, judge from the JD's own wording. Give each row one kind, written as the kind name alone, e.g. `Means`. When a row mixes kinds, name each part's kind with the JD words it rests on, e.g. `Function (strategic analyses) + Setting (oncology)`; the words show a reviewer the split, and nothing else reads them.
-2. **Describe the job.** Answer two questions, each citing the JD lines it rests on:
+1. **Label every row by kind,** written as the return format shows. Use the kinds, tests and rules in `rules/jd-requirement-kinds.md`. Use the mission and values in the company research to spot boilerplate; when it has none, judge from the JD's own wording.
+2. **Describe the job.** Answer three questions, each citing the jd.md lines it rests on as `L<n>`, the line numbers the Read tool shows:
+   - Which sentences state what the role is, what it is for, or what it is responsible for overall? Judge by what each sentence says, never by where it sits; a paragraph can give one sentence, several or none. Quote each sentence with its line.
    - What does the person deliver or own?
    - Do they lead the work, do it, or both? If they lead, whom (staff, teams, vendors)? Base this on the Role shape rows.
 3. **Group into needs.** A need is a function the role delivers, taken from the step 2 answers, or the JD's Setting. Means and Working style rows go under the function they serve, found by reading the whole JD; when the JD ties one to no function, put it under the closest function. Working style tied to no function forms one Working style need. Leading people is one need, however worded. Exclusions and describing words go with what they describe (see the rules file).
 4. **Rank the needs,** strongest signal first:
-   - `role-statement`: the JD's statement of what the role is or is responsible for (usually the opening of the role description) names the need. The statement is the whole opening paragraph, every sentence, including ones that begin "additionally" or "also". It names a need when it says the role does or owns that work, not when it mentions a tool or quality in passing. A need whose quote comes from the statement carries this signal.
+   - `role-statement`: the need's quote comes from a role statement sentence (step 2) that says the role does or owns this work. A tool or quality the sentence only mentions does not count.
    - `repetition`: the need is named in several JD sections; give the count.
    - `space`: the JD spends more words on it. Use only to break ties.
    - Not a signal: words like "key," "critical" or "important." They stress something within its own topic, not across the role.
@@ -29,12 +30,7 @@ The dispatching skill gives you the paths to `jd.md`, `research.md` and `jd_need
 
 ## Placement
 
-Every row lands in exactly one place, set by its kinds:
-- any part Function, Means, Working style or Setting: a need;
-- otherwise any part Qualification: the Qualifications line;
-- otherwise (only Role shape, Administrative detail, Boilerplate or attitude): the Not ranked line.
-
-`scripts/role_classify_qc.py` checks the kinds, the placement, that every row lands once, the ids and signals, and that each quote is in the JD.
+Put every row with any part Function, Means, Working style or Setting in exactly one need. The script places every other row by its kind.
 
 ## Rules
 
@@ -53,20 +49,18 @@ Return exactly this, needs in rank order:
 
 | # | Kind |
 |---|---|
-| 1 | <kind name alone; or, for a mixed row, kinds joined by + with each part's JD words in parentheses> |
+| 1 | <kind name alone, e.g. Means; or, for a mixed row, kinds joined by + with each part's JD words in parentheses, e.g. Function (strategic analyses) + Setting (oncology)> |
 
 ## Ranked Needs
 
 **The job:**
-- Delivers or owns: <answer> (<JD lines>)
-- Leads, does, or both: <answer> (<JD lines>)
+- Role statement: L<n> "<sentence>"; L<n> "<sentence>"
+- Delivers or owns: <item>; <item>, in the JD's words, no explanation (L<n>, L<n>)
+- Leads, does, or both: <leads | does | both, mainly leading | both, mainly doing>; whom: <staff, teams or vendors led, or none> (L<n>, L<n>)
 
 | Need | Label | Basis | Requirements | Signals | Quote |
 |---|---|---|---|---|---|
 | N-01 | <need in the JD's words> | <stated \| derived> | <row numbers, e.g. 1, 14, 21> | <role-statement, repetition N, space; comma-separated> | <JD section> "<verbatim JD quote>" |
-
-**Qualifications:** <row numbers, or none>
-**Not ranked:** <row number (kind), comma-separated, or none>
 ```
 
 `N-01` is the highest-ranked need; ids run in sequence with no gaps. If `jd_needs.md` has no requirement rows, return:

@@ -11,7 +11,7 @@ Inputs (JSON files written by the dispatching skill):
 
   --requirements-file       per-requirement decisions: requirement_id, status,
                             evidence (flat ID list or {id,...} list), notes,
-                            language_shift. Text and type are resolved from
+                            language_shift. Text, demand and need are resolved from
                             the application's jd_needs.md (via --folder), so
                             the JSON need not duplicate them.
   --eligibility-file        Phase 2 flags + user decisions.
@@ -20,8 +20,9 @@ Inputs (JSON files written by the dispatching skill):
 
 Plus header scalars (--recommendation-label, --recommendation-rationale-file,
 --app-id, --date, --company, --role) and the application folder path (--folder)
-where the artifact is written. The coverage table and the unmet must-have count
-are computed here from the statuses, never passed in.
+where the artifact is written. The coverage table (one row per ranked need)
+and the unmet core count are computed here from the statuses, never passed in.
+Requirements are reported in need rank order.
 
 The script renders the artifact wholesale (it does not section-edit an
 existing file): gap_analysis.md is a current-state document and re-running
@@ -92,14 +93,21 @@ def _fill(skeleton, values):
 # ---------------------------------------------------------------------------
 # Requirements lookup
 # The requirements JSON the skill passes carries only per-run decisions;
-# static fields (text, type) are resolved from jd_needs.md so they are not
-# duplicated. The row number is the CR-NNN id: row 1 -> CR-001.
+# static fields (text, demand, need) are resolved from jd_needs.md so they are
+# not duplicated. The row number is the CR-NNN id: row 1 -> CR-001. The lookup
+# is in need rank order, which is the order the artifact reports in.
 # ---------------------------------------------------------------------------
 
 def _requirements_lookup(app_folder, cfg):
-    """Return {CR-NNN: {text, type}} for the requirements gap analysis covers."""
-    return {f"CR-{row['num']:03d}": {'text': row['text'], 'type': row['type']}
-            for row in requirement_kinds.ranked_rows(app_folder, cfg)}
+    """Return {CR-NNN: info} in need rank order (requirement_kinds.requirement_info)."""
+    requirement_kinds.ranked_rows(app_folder, cfg)  # raises when nothing is on file
+    return requirement_kinds.requirement_info(app_folder, cfg)
+
+
+def _in_need_order(requirements, req_lookup):
+    """Return the per-run decisions sorted by need rank, unknown ids last."""
+    order = {rid: i for i, rid in enumerate(req_lookup)}
+    return sorted(requirements, key=lambda r: order.get(r.get('requirement_id', ''), len(order)))
 
 
 # ---------------------------------------------------------------------------
@@ -150,8 +158,10 @@ def _render_requirements(requirements, req_lookup):
 
     `requirements` is a list of per-run decision dicts: requirement_id, status,
     evidence (flat ID strings or {id,...} dicts - both normalized to IDs here),
-    notes, optional language_shift. Text and type are resolved
-    from req_lookup keyed by requirement_id; inline fields are a fallback only.
+    notes, optional language_shift. Text, need and demand are resolved from
+    req_lookup keyed by requirement_id; inline text is a fallback only. The
+    heading carries the need and demand, e.g. '(N-01, required)', and the
+    caller passes the requirements in need rank order.
     """
     if not requirements:
         return '_(no requirements)_'
@@ -160,7 +170,7 @@ def _render_requirements(requirements, req_lookup):
         rid = req.get('requirement_id', '')
         info = req_lookup.get(rid, {})
         rtext = info.get('text') or req.get('requirement_text', rid)
-        rtype = info.get('type') or req.get('requirement_type', '')
+        rtype = ', '.join(v for v in (info.get('place'), info.get('demand')) if v)
         status = req.get('status', '')
         # Normalize evidence: flat ID strings (compact shape) or {id,...} dicts (full shape).
         raw_evidence = req.get('evidence', []) or []
@@ -352,38 +362,64 @@ def _work_state_inputs(repo_root, cfg, folder):
 # gap_qc.py checks that every soft requirement landed in exactly one theme.
 # ---------------------------------------------------------------------------
 
-_TIERS = ['must-have', 'preferred', 'duty-derived', 'contextual']
 _COVERAGE_COLUMNS = [('covered', 'Covered'), ('closed', 'Closed'),
                      ('language-shift', 'Language-shift'), ('partial-match', 'Partial'),
                      ('interview-deferred', 'Interview-deferred'), ('unresolved', 'Unresolved')]
 
-# Statuses that leave a must-have unmet.
+# Statuses that leave a requirement unmet.
 UNMET_STATUSES = {'interview-deferred', 'unresolved'}
 
 
-def render_coverage_picture(type_status_pairs):
-    """Render the coverage table: one row per requirement type, counted by status."""
-    lines = ['| Tier | ' + ' | '.join(label for _, label in _COVERAGE_COLUMNS) + ' |',
+def coverage_items(req_lookup, status_by_id):
+    """Return [{info..., status}] in need rank order for the requirements judged."""
+    return [{**info, 'id': rid, 'status': status_by_id[rid]}
+            for rid, info in req_lookup.items() if rid in status_by_id]
+
+
+def _summary_line(label, statuses):
+    shown = sum(statuses.count(s) for s in ('covered', 'closed', 'language-shift'))
+    partly = statuses.count('partial-match')
+    return (f'- **{label}:** {shown} of {len(statuses)} shown, {partly} partly shown, '
+            f'{len(statuses) - shown - partly} open.')
+
+
+def render_coverage_picture(items):
+    """Render the coverage table: one row per need in rank order, counted by status.
+
+    Core needs (role-statement signal) and Qualifications are marked core; their
+    required rows are the ones the recommendation counts. The two summary lines
+    split those from everything else.
+    """
+    lines = ['| Need | ' + ' | '.join(label for _, label in _COVERAGE_COLUMNS) + ' |',
              '|---|' + '---|' * len(_COVERAGE_COLUMNS)]
-    for tier in _TIERS:
-        statuses = [status for rtype, status in type_status_pairs if rtype == tier]
+    places = []
+    for item in items:
+        if item['place'] not in places:
+            places.append(item['place'])
+    for place in places:
+        group = [i for i in items if i['place'] == place]
+        statuses = [i['status'] for i in group]
+        name = ' '.join(v for v in (place if place != 'Qual' else '', group[0]['label']) if v)
+        core = ', core' if group[0]['core'] else ''
         counts = [str(statuses.count(status)) for status, _ in _COVERAGE_COLUMNS]
-        lines.append(f'| {tier.capitalize()} ({len(statuses)}) | ' + ' | '.join(counts) + ' |')
+        lines.append(f'| {name} ({len(statuses)}{core}) | ' + ' | '.join(counts) + ' |')
     lines.append('')
-    for tier in _TIERS:
-        statuses = [status for rtype, status in type_status_pairs if rtype == tier]
-        if statuses:
-            shown = sum(statuses.count(s) for s in ('covered', 'closed', 'language-shift'))
-            partly = statuses.count('partial-match')
-            lines.append(f'- **{tier.capitalize()}:** {shown} of {len(statuses)} shown, {partly} partly shown, '
-                         f'{len(statuses) - shown - partly} open.')
+    counted = [i['status'] for i in items if i['core'] and i['demand'] == 'required']
+    other = [i['status'] for i in items if not (i['core'] and i['demand'] == 'required')]
+    lines.append(_summary_line('Core, required', counted))
+    lines.append(_summary_line('Everything else', other))
     return '\n'.join(lines)
 
 
-def count_unmet_must_haves(type_status_pairs):
-    """Return how many must-haves carry a status that leaves them unmet."""
-    return sum(1 for rtype, status in type_status_pairs
-               if rtype == 'must-have' and status in UNMET_STATUSES)
+def count_unmet_core(items):
+    """Return how many required core rows carry a status that leaves them unmet.
+
+    Only these move the recommendation label: a core need's work or a hard
+    qualification the profile does not show. Other unmet rows are listed under
+    their need and do not move it.
+    """
+    return sum(1 for i in items
+               if i['core'] and i['demand'] == 'required' and i['status'] in UNMET_STATUSES)
 
 
 def render_gap_themes(themes):
@@ -433,13 +469,12 @@ def cmd_assemble(args, repo_root, cfg):
     cv_notes_text = _util.read(args.cv_notes_file).strip() if args.cv_notes_file else ''
     req_lookup = _requirements_lookup(args.folder, cfg)
     judgment = _util.load_json(args.themes_file)
-    type_status_pairs = [
-        (req_lookup.get(req.get('requirement_id', ''), {}).get('type') or req.get('requirement_type', ''),
-         req.get('status', ''))
-        for req in requirements]
+    requirements = _in_need_order(requirements, req_lookup)
+    items = coverage_items(req_lookup, {req.get('requirement_id', ''): req.get('status', '')
+                                        for req in requirements})
 
     # Render the per-section blocks.
-    coverage_block = render_coverage_picture(type_status_pairs)
+    coverage_block = render_coverage_picture(items)
     themes_block = render_gap_themes(judgment.get('themes'))
     eligibility_block = _render_eligibility(flags)
     requirements_block = _render_requirements(requirements, req_lookup)
@@ -458,7 +493,7 @@ def cmd_assemble(args, repo_root, cfg):
         'role': args.role,
         'app_id': args.app_id,
         'date': args.date,
-        'unmet_must_haves_count': str(count_unmet_must_haves(type_status_pairs)),
+        'unmet_core_count': str(count_unmet_core(items)),
         'recommendation_label': args.recommendation_label,
         'coverage_picture_block': coverage_block,
         'gap_themes_block': themes_block,

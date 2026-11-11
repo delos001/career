@@ -48,7 +48,7 @@ Ask if this session is for a new CV or to resume a previous one.
 **Loading the upstream artifacts and the CV rules for this application.**
 
 - Input: application folder path (from the resume check), APP-NNN, slug.
-- Read `jd_needs.md` from the application folder: each requirement's text and Type, grouped under the job's ranked needs. Rows under `## Not ranked` are not requirements the CV answers.
+- Read `jd_needs.md` from the application folder: each requirement's text and Demand (required or preferred), grouped under the job's ranked needs. Rows under `## Not ranked` are not requirements the CV answers.
 - Read `research.md` from the application folder. Extract the `## Role`, `## Company`, `## Industry` summary blocks (role context).
 - Read the session log (`session_log.md`) from the application folder. Extract the `## Axis Classification` section (the five axis values, each with primary and optional secondary), and from it the candidate **level** (`ic` or `leadership`, the level axis value) and, for leadership, the **tier** (the `- Tier:` line, e.g. `function-lead`). A leadership log written before 2026-11-05 carries no tier; ask the user which tier fits the role (naming the four from `rules/levels/leadership.md`) rather than guessing.
 - Read `gap_analysis.md`. Extract:

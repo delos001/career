@@ -132,8 +132,8 @@ def build_context(app_folder, repo_root, cfg, max_bytes):
     research = _util.read(research_path)
 
     # Rows on jd_needs.md's Not ranked list never reach the detector; no
-    # requirements at all raises.
-    requirements = requirement_kinds.requirements_table(app_folder, cfg)
+    # requirements at all raises. Rows come in need rank order with their need.
+    requirements = requirement_kinds.requirements_table(app_folder, cfg, by_need=True)
 
     role_parts = []
     for name in ROLE_CONTEXT_SECTIONS:

@@ -719,13 +719,15 @@ def build_scoring_context(app_folder, cfg, prefix, max_bytes):
 
     Requirement rows on jd_needs.md's Not ranked list (boilerplate, role shape,
     administrative detail) are left out, so no scorer matches the profile
-    against them. requirement_kinds raises when there are no requirements.
+    against them. The Demand column is left out: the scorer judges evidence
+    strength only, and priority is applied from the ranking by script.
+    requirement_kinds raises when there are no requirements.
     """
     jd_path = os.path.join(app_folder, cfg['filenames']['jd_file'])
     if not os.path.isfile(jd_path):
         raise FileNotFoundError(f'scoring context source missing: {jd_path}')
 
-    requirements = requirement_kinds.requirements_table(app_folder, cfg)
+    requirements = requirement_kinds.requirements_table(app_folder, cfg, demand=False)
     jd_text = _util.read(jd_path).strip('\n')
     if not jd_text.strip():
         raise ValueError(f'{jd_path} is empty')

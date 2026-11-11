@@ -10,7 +10,7 @@ actually carry valid reasoning).
 
 Checks (IDs mirror the original qc-gap-analysis check numbering):
   G1  Section structure: H1 + the H2 sections present, in order.
-  G2  Header completeness: APP-NNN / Date / Unmet Must-Haves / Recommendation
+  G2  Header completeness: APP-NNN / Date / Unmet Core Requirements / Recommendation
       fields present and non-empty.
   G3  Session log ## Gap Analysis section carries Run date, Gap analysis
       file, Recommendation, QC verdict fields.
@@ -31,14 +31,15 @@ Checks (IDs mirror the original qc-gap-analysis check numbering):
       code change); every CR-NNN is within the requirements range.
   G9  Session log mirroring: session log recommendation matches the artifact
       header recommendation.
-  G10 Arithmetic: the Coverage Picture table and the unmet must-haves count
-      match the statuses.
+  G10 Arithmetic: the Coverage Picture table (one row per need) and the unmet
+      core count match the statuses.
   G11 Recommendation label is exactly one of the three approved labels.
   G12 Gap themes: every language-shift, partial-match, interview-deferred, and
       unresolved requirement sits in exactly one theme; each theme has a known
       kind, real requirements, and a stated meaning.
   G13 The Recommendation states at least one condition it depends on.
-  G14 Every must-have left partial-match, interview-deferred, or unresolved is
+  G14 Every required core requirement (a role-statement need or a
+      Qualification) left partial-match, interview-deferred, or unresolved is
       named by its CR-NNN in a Depends on condition.
   G15 Every Eligibility Flags line ends with one of the allowed endings
       (gap_assemble.ELIGIBILITY_ENDINGS).
@@ -80,7 +81,8 @@ SECTIONS = [
 ]
 
 # Required header fields (bold-label lines under the H1).
-HEADER_FIELDS = ['APP-NNN', 'Date', 'Unmet Must-Haves', 'Recommendation']
+UNMET_FIELD = 'Unmet Core Requirements'
+HEADER_FIELDS = ['APP-NNN', 'Date', UNMET_FIELD, 'Recommendation']
 
 # Required session log ## Gap Analysis fields (label prefixes of `- ` lines).
 SESSION_LOG_FIELDS = ['Run date', 'Gap analysis file', 'Recommendation', 'QC verdict']
@@ -162,18 +164,19 @@ def _parse_requirements(artifact_text):
     return records, duplicates
 
 
-def _requirement_types(app_folder, cfg):
-    """Return {CR-NNN: type}, in row order, for the requirements gap analysis covers.
+def _requirement_info(app_folder, cfg):
+    """Return {CR-NNN: info} in need rank order for the requirements gap analysis
+    covers (requirement_kinds.requirement_info: demand, need, core).
 
     Read from jd_needs.md. Rows on its Not ranked list are left out: gap
     analysis never evaluates them, so they are neither expected nor allowed in
     the artifact. Returns None when the application has no requirements on file.
     """
     try:
-        rows = requirement_kinds.ranked_rows(app_folder, cfg)
+        requirement_kinds.ranked_rows(app_folder, cfg)
     except (FileNotFoundError, ValueError):
         return None
-    return {f"CR-{row['num']:03d}": row['type'] for row in rows}
+    return requirement_kinds.requirement_info(app_folder, cfg)
 
 
 def _parse_staging_items(staging_text):
@@ -281,12 +284,12 @@ def check_session_log(log_fields, findings):
                      else 'session log section complete'))
 
 
-def check_coverage(records, duplicates, req_types, findings):
+def check_coverage(records, duplicates, req_info, findings):
     """G4: CR-001..CR-NNN each appear exactly once; none dropped or invented."""
-    if req_types is None:
+    if req_info is None:
         findings.append(('G4', False, 'jd_needs.md missing or holds no requirements'))
         return
-    expected = set(req_types)
+    expected = set(req_info)
     present = set(records)
     problems = []
     if expected - present:
@@ -377,26 +380,26 @@ def check_mirroring(header, log_fields, findings):
                      else 'recommendation mirrored'))
 
 
-def check_coverage_math(artifact_text, header, records, req_types, findings):
-    """G10: the coverage table and unmet must-haves recompute from the statuses."""
+def check_coverage_math(artifact_text, header, records, req_info, findings):
+    """G10: the coverage table and the unmet core count recompute from the statuses."""
     # Compare key sets, not lengths: a dropped CR plus an invented one keeps
     # the count equal but would KeyError the lookup below.
-    expected = None if req_types is None else set(req_types)
+    expected = None if req_info is None else set(req_info)
     if expected is None or set(records) != expected:
         findings.append(('G10', False,
                          'cannot recompute: requirements list and artifact do not align'))
         return
-    pairs = [(rtype, records[cr]['status']) for cr, rtype in req_types.items()]
+    items = gap_assemble.coverage_items(req_info, {cr: rec['status'] for cr, rec in records.items()})
     problems = []
     # The same renderer wrote the table, so any difference means the statuses
     # and the picture no longer describe the same run.
     table = (_section_text(artifact_text, 'Coverage Picture') or '').strip()
-    if table != gap_assemble.render_coverage_picture(pairs):
+    if table != gap_assemble.render_coverage_picture(items):
         problems.append('the Coverage Picture table does not match the requirement statuses')
-    unmet = gap_assemble.count_unmet_must_haves(pairs)
-    stated_unmet = header.get('Unmet Must-Haves', '')
+    unmet = gap_assemble.count_unmet_core(items)
+    stated_unmet = header.get(UNMET_FIELD, '')
     if not stated_unmet.isdigit() or int(stated_unmet) != unmet:
-        problems.append(f"unmet must-haves is {stated_unmet!r}, statuses give {unmet}")
+        problems.append(f"unmet core requirements is {stated_unmet!r}, statuses give {unmet}")
     findings.append(('G10', not problems, '; '.join(problems) or 'coverage arithmetic verified'))
 
 
@@ -433,21 +436,23 @@ def check_depends_on(artifact_text, findings):
                      else 'recommendation states no condition it depends on'))
 
 
-def check_conditions_name_soft_must_haves(artifact_text, records, req_types, findings):
-    """G14: a must-have that is not fully met is tested by a stated condition."""
-    if req_types is None:
+def check_conditions_name_soft_core(artifact_text, records, req_info, findings):
+    """G14: a required core requirement that is not fully met is tested by a
+    stated condition. Core rows are the ones the label counts."""
+    if req_info is None:
         findings.append(('G14', False, 'jd_needs.md missing or holds no requirements'))
         return
     section = _section_text(artifact_text, 'Recommendation') or ''
     named = set(re.findall(r'CR-\d+', section.partition('**Depends on:**')[2]))
     soft = {'partial-match'} | gap_assemble.UNMET_STATUSES
     missing = []
-    for cr, rtype in req_types.items():
-        if rtype == 'must-have' and records.get(cr, {}).get('status') in soft and cr not in named:
+    for cr, info in req_info.items():
+        if (info['core'] and info['demand'] == 'required'
+                and records.get(cr, {}).get('status') in soft and cr not in named):
             missing.append(cr)
     findings.append(('G14', not missing,
-                     f"must-haves no condition names: {', '.join(missing)}" if missing
-                     else 'every soft must-have is named in a condition'))
+                     f"core requirements no condition names: {', '.join(missing)}" if missing
+                     else 'every soft core requirement is named in a condition'))
 
 
 def check_eligibility_endings(artifact_text, findings):
@@ -497,25 +502,25 @@ def cmd_check(args, repo_root, cfg):
     staging_items = _parse_staging_items(staging_text)
     header = _header_fields(artifact_text)
     records, duplicates = _parse_requirements(artifact_text)
-    req_types = _requirement_types(app_folder, cfg)
+    req_info = _requirement_info(app_folder, cfg)
     log_fields = _session_log_section(log_text) if log_text is not None else None
 
     findings = []
     check_structure(artifact_text, findings)
     check_header(header, findings)
     check_session_log(log_fields, findings)
-    check_coverage(records, duplicates, req_types, findings)
+    check_coverage(records, duplicates, req_info, findings)
     check_taxonomy(records, findings)
     check_notes_presence(records, findings)
     check_staging_anchors(records, staging_items, header.get('APP-NNN', ''), findings)
     check_ids(artifact_text, profile_ids,
-              set(req_types) if req_types is not None else None, findings)
+              set(req_info) if req_info is not None else None, findings)
     check_mirroring(header, log_fields, findings)
-    check_coverage_math(artifact_text, header, records, req_types, findings)
+    check_coverage_math(artifact_text, header, records, req_info, findings)
     check_recommendation(header, findings)
     check_themes(artifact_text, records, findings)
     check_depends_on(artifact_text, findings)
-    check_conditions_name_soft_must_haves(artifact_text, records, req_types, findings)
+    check_conditions_name_soft_core(artifact_text, records, req_info, findings)
     check_eligibility_endings(artifact_text, findings)
 
     failed = [f for f in findings if not f[1]]

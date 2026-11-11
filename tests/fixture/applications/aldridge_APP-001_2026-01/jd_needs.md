@@ -2,8 +2,9 @@
 
 ## The job
 
-- Delivers or owns: the operating model for clinical data: standards, vendor oversight and portfolio reporting (About the role)
-- Leads, does, or both: leads a data team of five or more (Responsibilities)
+- Role statement: L8 "The Director owns the operating model for clinical data across the Aldridge"
+- Delivers or owns: the operating model for clinical data: standards, vendor oversight and portfolio reporting (L8, L9, L10)
+- Leads, does, or both: leads; whom: a data team of five or more (L17)
 
 ## Needs
 
@@ -11,49 +12,39 @@
 
 - Basis: stated
 - Signals: role-statement, repetition 2
-- Quote: About the role "The Director owns the operating model for clinical data across the Aldridge"
+- Quote: L8 About the role "The Director owns the operating model for clinical data across the Aldridge"
 
-- **3.** Experience defining data standards and governance for a clinical portfolio
-  - Kind: Function
-  - Type: preferred
-  - Source: Responsibilities "Define and maintain data standards and governance"
-- **5.** Direct experience with a commercial data warehouse platform in production
-  - Kind: Means
-  - Type: must-have
-  - Source: Requirements "Direct experience with a commercial data warehouse platform in production"
-- **6.** Familiarity with regulatory submission data packages
-  - Kind: Means
-  - Type: contextual
-  - Source: Nice to have "Familiarity with regulatory submission data packages"
+| Req | Requirement | Kind | Demand | JD line |
+|---|---|---|---|---|
+| 3 | Experience defining data standards and governance for a clinical portfolio | Function | preferred | L15 Responsibilities "Define and maintain data standards and governance" |
+| 5 | Direct experience with a commercial data warehouse platform in production | Means | required | L23 Requirements |
+| 6 | Familiarity with regulatory submission data packages | Means | preferred | L27 Nice to have |
 
 ### N-02: Vendor oversight across external data providers
 
 - Basis: stated
-- Signals: role-statement, repetition 2
-- Quote: Requirements "Vendor oversight and contract management across external data providers"
+- Signals: repetition 2
+- Quote: L22 Requirements "Vendor oversight and contract management across external data providers"
 
-- **2.** Vendor oversight and contract management across external data providers
-  - Kind: Function
-  - Type: must-have
-  - Source: Requirements "Vendor oversight and contract management across external data providers"
+| Req | Requirement | Kind | Demand | JD line |
+|---|---|---|---|---|
+| 2 | Vendor oversight and contract management across external data providers | Function | required | L22 Requirements |
 
 ### N-03: Leading a data team
 
 - Basis: stated
 - Signals: space
-- Quote: Responsibilities "Lead and develop a data team of five or more"
+- Quote: L17 Responsibilities "Lead and develop a data team of five or more"
 
-- **4.** Line management of a data function of five or more
-  - Kind: Function
-  - Type: must-have
-  - Source: Responsibilities "Lead and develop a data team of five or more"
+| Req | Requirement | Kind | Demand | JD line |
+|---|---|---|---|---|
+| 4 | Line management of a data function of five or more | Function | required | L17 Responsibilities "Lead and develop a data team of five or more" |
 
 ## Qualifications
 
-- **1.** Bachelor's degree in a scientific or quantitative discipline
-  - Kind: Qualification
-  - Type: must-have
-  - Source: Requirements "Bachelor's degree in a scientific or quantitative discipline"
+| Req | Requirement | Kind | Demand | JD line |
+|---|---|---|---|---|
+| 1 | Bachelor's degree in a scientific or quantitative discipline | Qualification | required | L21 Requirements |
 
 ## Not ranked
 

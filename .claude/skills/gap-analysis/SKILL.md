@@ -132,13 +132,13 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - `reader-independent` - genuinely absent whoever reads it; prepare regardless.
   - `structural` - a fact preparation cannot change.
   - `strong-ground` - the same work in different vocabulary; any reader accepts it.
-- **Step 5b - Recommendation.** Generate one of three labels in main skill, with a 1-2 sentence rationale and the conditions it depends on:
-  - **`Proceed`** - zero unmet must-haves, no overriding eligibility flag, and no must-have resting on a `reader-dependent` theme this company is likely to read strictly.
-  - **`Proceed with caution`** - 1-2 unmet must-haves, an overridden eligibility flag, or must-haves resting on a `reader-dependent` theme.
-  - **`Do not pursue`** - multiple unmet must-haves, or `reader-independent` or `structural` themes at the core of the role.
+- **Step 5b - Recommendation.** Generate one of three labels in main skill, with a 1-2 sentence rationale and the conditions it depends on. A **core requirement** is a `required` row in a need with the `role-statement` signal, or in Qualifications (the Coverage Picture marks these needs `core`). Only core requirements move the label; every other open row is listed under its need and does not.
+  - **`Proceed`** - zero unmet core requirements, no overriding eligibility flag, and no core requirement resting on a `reader-dependent` theme this company is likely to read strictly.
+  - **`Proceed with caution`** - 1-2 unmet core requirements, an overridden eligibility flag, or core requirements resting on a `reader-dependent` theme.
+  - **`Do not pursue`** - several unmet core requirements, or `reader-independent` or `structural` themes on core requirements.
   - These are guides for consistency, not thresholds. Adapt to role context, and state the role-specific reason in the rationale.
   - **Do not read partials as a shortfall.** Job descriptions list far more than any one candidate holds, so partly-shown requirements are normal. Never weigh them by count. Judge whether what is open is something this role turns on or a line it could do without, and say which in the rationale.
-  - **Depends on:** at least one condition, each specific enough to confirm or rule out at a screen (e.g. "They screen for transferable capability; the buyer-side work is the hinge (CR-004)"). Every must-have left `partial-match`, `interview-deferred`, or `unresolved` is named by its CR-NNN in a condition. A `Do not pursue` states what would change it.
+  - **Depends on:** at least one condition, each specific enough to confirm or rule out at a screen (e.g. "They screen for transferable capability; the buyer-side work is the hinge (CR-004)"). Every core requirement left `partial-match`, `interview-deferred`, or `unresolved` is named by its CR-NNN in a condition. A `Do not pursue` states what would change it.
   **Write both files to disk immediately:** `<scratch>/gap_rationale.txt` (the rationale) and `<scratch>/gap_themes.json`: `{"themes": [{"name": "...", "kind": "...", "requirements": ["CR-NNN"], "meaning": "..."}], "depends_on": ["..."]}`.
 - Output: `gap_rationale.txt` and `gap_themes.json` written to `<scratch>`.
 
@@ -148,7 +148,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 
 - Input: scratch file paths from Phase 4 (`gap_requirements.json`, `gap_eligibility.json`, `gap_cv_notes.txt`) and Phase 5 (`gap_rationale.txt`, `gap_themes.json`); Phase 4 queued staging captures; Phase 5 recommendation label; APP-NNN, slug, company, role.
 - **Step 6a - Stage the captures.** For each queued capture, run the command in `rules/profile/staging-writing.md`, anchored to its `CR-NNN`. The script refuses a capture with a field missing; when it does, ask the user for the missing fact rather than filling it in.
-- **Step 6b - Write gap_analysis.md.** Run `python scripts/gap_assemble.py assemble --folder <app_folder> --app-id APP-NNN --date YYYY-MM-DD --company <company> --role <role> --recommendation-label <label> --recommendation-rationale-file <scratch>/gap_rationale.txt --requirements-file <scratch>/gap_requirements.json --eligibility-file <scratch>/gap_eligibility.json --themes-file <scratch>/gap_themes.json --cv-notes-file <scratch>/gap_cv_notes.txt`. Renders `templates/gap_analysis.md` with substituted blocks; the script computes the coverage table and the unmet must-have count from the statuses. Capture the printed path. Non-zero exit = halt per global rules.
+- **Step 6b - Write gap_analysis.md.** Run `python scripts/gap_assemble.py assemble --folder <app_folder> --app-id APP-NNN --date YYYY-MM-DD --company <company> --role <role> --recommendation-label <label> --recommendation-rationale-file <scratch>/gap_rationale.txt --requirements-file <scratch>/gap_requirements.json --eligibility-file <scratch>/gap_eligibility.json --themes-file <scratch>/gap_themes.json --cv-notes-file <scratch>/gap_cv_notes.txt`. Renders `templates/gap_analysis.md` with substituted blocks; the script computes the coverage table (one row per need) and the unmet core count from the statuses, and reports requirements in need rank order. Capture the printed path. Non-zero exit = halt per global rules.
 - **Step 6c - Write session log section.** Build the `## Gap Analysis` section body in a scratch file (`<scratch>/...`) with: Run date, Gap analysis file path, Recommendation (the label alone), QC verdict (filled after Phase 7). Run `python scripts/session_log.py append-section --folder <app_folder> --heading "Gap Analysis" --body-file <path>`. Script replaces the section on re-runs and appends it on first runs. Detail (requirements, language-shift cases, eligibility flags, recommendation rationale) lives in `gap_analysis.md`; the session log section is a pointer + headline.
 - Output: gap_analysis.md written; staging items appended; session log section written.
 
@@ -177,8 +177,9 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   Recommendation: <label>
   Depends on: <the conditions, one per line>
   Eligibility flags: <listed in plain English, or "none">
-  Key gaps: <must-haves with status interview-deferred or unresolved; or "none">
-  Partial matches: <must-haves with status partial-match (transferable but not a full match); or "none">
+  Key gaps: <core requirements with status interview-deferred or unresolved, each with its need; or "none">
+  Partial matches: <core requirements with status partial-match (transferable but not a full match); or "none">
+  Other open rows: <non-core rows left open, grouped under their need; or "none">
   Unresolved QC findings: none  (each was decided in Step 8a; this line is a backstop and must read "none" - if it does not, return to Step 8a)
   Gap analysis: <path>
 
@@ -203,7 +204,7 @@ Consumed by Phase 7 (QC failures). Route back, fix, re-run forward (Phase 7 alwa
 | Staged item anchored to a requirement not in the artifact | Phase 6 |
 | Fabricated profile ID in Requirements evidence | Phase 3 |
 | Session log mirroring divergence | Phase 6 |
-| Coverage table or unmet-must-haves count does not match the statuses | Phase 6 |
-| Recommendation label off-set, no condition stated, or a soft must-have no condition names | Phase 5 |
+| Coverage table or unmet core count does not match the statuses | Phase 6 |
+| Recommendation label off-set, no condition stated, or a soft core requirement no condition names | Phase 5 |
 | Eligibility line with an off-list ending | Phase 6 |
 | Requirement missing from the gap themes, or a theme malformed | Phase 5 |

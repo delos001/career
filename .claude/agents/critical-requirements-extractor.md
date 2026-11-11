@@ -1,6 +1,6 @@
 ---
 name: critical-requirements-extractor
-description: Extracts a structured list of critical requirements from a job description for the role-classify skill. Comprehensive scan across all JD sections (not just labeled "Requirements"). Returns each requirement with Text / Type / Source for use by retrieval, gap analysis, CV creation, and interview prep. Read-only.
+description: Extracts a structured list of critical requirements from a job description for the role-classify skill. Comprehensive scan across all JD sections (not just labeled "Requirements"). Returns each requirement with Text / Demand / Source for use by retrieval, gap analysis, CV creation, and interview prep. Read-only.
 tools: Read
 ---
 
@@ -18,12 +18,7 @@ The dispatching skill gives you the JD text (or a path to `jd.md`, your choice t
 
 A flat list of critical requirements. Each item is a concrete competency or qualification the hiring panel will use to evaluate candidates.
 
-**Comprehensive JD scan.** Read the entire JD, not just sections labeled "Requirements" or "Qualifications." Pull requirements from:
-
-- Explicit Requirements / Qualifications sections (gives Type `must-have` or `preferred`).
-- Day-to-day Responsibilities / Duties / What you'll do sections (gives Type `duty-derived`).
-- About the Role / About the Team / About Us paragraphs (gives Type `contextual`).
-- Any other section that names a competency, tool, methodology, or context the candidate will need.
+**Comprehensive JD scan.** Read the entire JD, not just sections labeled "Requirements" or "Qualifications": duties, role and team descriptions, and any other section that names a competency, tool, method, or context the candidate will need.
 
 Do not invent. If the JD does not name a requirement, do not surface one. Do not leave a line out for being generic ("strong communication skills," "balances competing priorities," a company competencies list): extract it like any other. The ranker decides what is boilerplate and sets it aside.
 
@@ -31,21 +26,15 @@ Do not invent. If the JD does not name a requirement, do not surface one. Do not
 
 Every requirement has exactly three fields:
 
-- **Text:** the requirement in the JD's own words and the JD's order. You may cut words to isolate one requirement. When you split a JD line, every part that asks something of the role becomes a row; cut only joining words. Do not add, replace, or rearrange any, and keep every modifier that sets the bar (familiarity with, exposure to, understanding of, ability to, might, a plus, preferred, N years), so the requirement demands exactly what the JD says.
-- **Type:** one of:
-  - `must-have`: explicit hard requirement (the JD uses language like "required", "must have", "minimum X years").
-  - `preferred`: explicit nice-to-have (the JD uses language like "preferred", "a plus", "bonus", "ideally").
-  - `duty-derived`: implied by duties or responsibilities (the JD describes work the role does that requires this competency).
-  - `contextual`: implied by company, role, or team context (the JD describes a setting that calls for this competency).
-
-  The Type cell is **exactly one** of those four tokens and nothing else. Do not prefix, suffix, or annotate it. There is no field for the *kind* of requirement (education, experience, skill, knowledge, competency, credential, behavior, logistical), so do not record one - not as a compound like `education (must-have)` and not as a substitute like `Competency`. If the JD groups a requirement under a heading like "Education & Experience", that heading is context for the Source cell, never part of the Type cell. When a requirement is a hard educational or experiential qualification, its Type is simply `must-have` (or `preferred` if the JD marks it optional).
-- **Source:** the JD section, then exactly one verbatim quote in double quotes, copied from the single place Text comes from. Other JD locations naming the same competency follow as section pointers, unquoted: name the section and its number or heading, and never quote the heading text, since any second quote mark fails the row. Examples: `Qualifications #2 "Familiarity with regulatory submission data packages"`, `Qualifications #4 "Exceptional analytical capabilities"; also Day-to-day Responsibilities #3`. `scripts/role_classify_qc.py` fails a row whose quote is not in the JD, and a JD clause whose wording modifier or year count survives on no row quoting it. When you split a clause, each row still keeps the modifiers that apply to its own part.
+- **Text:** the requirement in the JD's own words and the JD's order. You may cut words to isolate one requirement. Every part of a JD line that asks something of the role appears on some row; when you split a line, cut only joining words. Do not add, replace, or rearrange any, and keep every modifier that sets the bar (familiarity with, exposure to, understanding of, ability to, might, a plus, preferred, N years), so the requirement demands exactly what the JD says.
+- **Demand:** exactly `required` or `preferred`, nothing else. `preferred` when the JD marks the requirement optional ("preferred", "a plus", "ideally", "highly desirable", "nice to have", or listed under a preferred or nice-to-have heading). Everything else, duties included, is `required`.
+- **Source:** the JD section heading, then exactly one verbatim quote in double quotes, copied from the single place Text comes from, e.g. `Qualifications "Familiarity with regulatory submission data packages"`. The script replaces this with the quote's jd.md line number. `scripts/role_classify_qc.py` fails a row whose quote is not in the JD, and a JD clause whose wording modifier or year count survives on no row quoting it. When you split a clause, each row still keeps the modifiers that apply to its own part.
 
 ## Rules
 
 - Do not fabricate. Every requirement must trace to specific JD language, shown by the quote in its Source field.
-- One requirement per item. If the JD bundles two competencies in one bullet (e.g. "experience with Python and SQL"), split them into two items when they would be evaluated independently; keep them as one when they always travel together as a single qualification (e.g. "Lean Six Sigma Black Belt certification"). Two year counts testing different things are two items, each keeping its own count ("10 years in the industry, with at least 5 years in people management").
-- Use `Type: must-have` only when the JD's language is explicit. Otherwise downgrade to `preferred`, `duty-derived`, or `contextual`.
+- One requirement per row. Split an "and" list only when each item is a separate skill, standard, system or credential a candidate could hold without the others ("Python and SQL"; "SDTM, ADaM, and USDM"). A list of areas or activities under one duty stays one row ("Establish standards for data governance, quality, and traceability"). Never write a row that repeats another row's whole text: when the extra words carry their own Demand ("..., preferably in a pharmaceutical or biotech environment"), they are a row of their own; otherwise write one row. Two year counts testing different things are two items, each keeping its own count ("10 years in the industry, with at least 5 years in people management").
+- Never split alternatives. Items joined by "or" or "and/or" ("R, SAS, Python, or SQL") are one requirement, met by any one, so they stay in one row. Examples after "e.g." or "such as" stay in the row's text; they illustrate the requirement and are not requirements themselves.
 - Stop once the JD is exhausted. Do not pad. Empty extraction is acceptable if the JD has no substantive content.
 
 ## Return format
@@ -55,10 +44,10 @@ Return exactly this structure:
 ```
 ## Critical Requirements
 
-| # | Text | Type | Source |
+| # | Text | Demand | Source |
 |---|------|------|--------|
-| 1 | <requirement in the JD's words> | <must-have \| preferred \| duty-derived \| contextual> | <JD section> "<verbatim JD quote>" |
-| 2 | <next requirement> | <type> | <source> |
+| 1 | <requirement in the JD's words> | <required \| preferred> | <JD section> "<verbatim JD quote>" |
+| 2 | <next requirement> | <demand> | <source> |
 ...
 ```
 

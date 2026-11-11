@@ -60,8 +60,8 @@ from inventory_model import pr
 # The three manifest tables with their expected column headers, in order.
 TABLES = {
     'Inventory candidates': ['ID', 'Employer', 'Semantic', 'Axis exact', 'Axis adj',
-                             'Source', 'Axis matches', 'Reason'],
-    'Narratives': ['ID', 'Semantic', 'Linked from', 'Reason'],
+                             'Source', 'Axis matches', 'Needs', 'Reason'],
+    'Narratives': ['ID', 'Semantic', 'Linked from', 'Needs', 'Reason'],
     'Triggered themes': ['ID', 'Semantic', 'Title', 'Reason'],
 }
 
@@ -246,7 +246,7 @@ def check_columns(inv_rows, findings):
     """R4: every inventory row fully populated per the column rules."""
     problems = []
     for row in inv_rows or []:
-        rid, employer, semantic, ax_exact, ax_adj, source, matches, reason = row
+        rid, employer, semantic, ax_exact, ax_adj, source, matches, needs, reason = row
         row_problems = []
         if employer == '' or (employer == '-' and not rid.startswith(('PB-', 'PS-'))):
             row_problems.append('Employer')
@@ -256,7 +256,8 @@ def check_columns(inv_rows, findings):
             row_problems.append('Axis exact')
         if not re.fullmatch(r'\d+(\.\d+)?', ax_adj):
             row_problems.append('Axis adj')
-        for label, value in (('Source', source), ('Axis matches', matches), ('Reason', reason)):
+        for label, value in (('Source', source), ('Axis matches', matches), ('Needs', needs),
+                             ('Reason', reason)):
             if not value:
                 row_problems.append(label)
         if row_problems:
@@ -271,7 +272,7 @@ def check_narrative_links(narr_rows, inv_rows, findings):
     inv_ids = {row[0] for row in inv_rows or []}
     problems = []
     for row in narr_rows or []:
-        nid, _, linked, _ = row
+        nid, _, linked, _, _ = row
         if linked in ('', '-'):
             continue
         missing = [i.strip() for i in linked.split(',')

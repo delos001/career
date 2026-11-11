@@ -11,8 +11,9 @@ scorers, gap-detector, and qc-profile-update have their own scripts for the same
 pattern.
 
 Content the orchestrator itself produces during a run (stakeholder contributions,
-QC findings, dispositions) goes in a file passed with --input-file. CV Notes are
-copied byte for byte from gap_analysis.md into the scratch folder.
+QC findings, dispositions) goes in a file passed with --input-file. CV Notes, and
+research.md's Company section for the ranker, are copied byte for byte into the
+scratch folder.
 
 Author    : Jason Delosh
 Created   : 2026-11-05
@@ -52,7 +53,7 @@ AGENTS = {
     'role-research': {'facts': ['company', 'role'], 'files': ['jd']},
     'industry-research': {'facts': ['company', 'role'], 'files': ['jd'], 'note': _INDUSTRY_NOTE},
     'critical-requirements-extractor': {'facts': ['company', 'role'], 'files': ['jd']},
-    'jd-needs-ranker': {'files': ['jd', 'research', 'jd_needs']},
+    'jd-needs-ranker': {'files': ['jd', 'company_research', 'jd_needs']},
     'axis-classifier': {'files': ['jd', 'comms?', 'research']},
     'qc-role-intake': {'files': ['session_log', 'research', 'jd']},
     'qc-role-classify': {'files': ['session_log', 'research', 'jd_needs', 'jd']},
@@ -107,6 +108,7 @@ class _Sources:
             'cv_content': os.path.join(self.folder, fn['cv_content_file']),
             'drafting_plan': os.path.join(self.folder, fn['drafting_plan_file']),
             'cv_notes': os.path.join(self.folder, fn['scratch_subdir'], 'cv_notes.md'),
+            'company_research': os.path.join(self.folder, fn['scratch_subdir'], 'company.md'),
             'inventory': os.path.join(profile, fn['inventory_file']),
             'narratives': os.path.join(profile, fn['narratives_file']),
             'user_info': os.path.join(profile, fn['user_info_file']),
@@ -165,6 +167,22 @@ class _Sources:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         _util.write(path, notes)
 
+    def write_company_research(self):
+        """Copy research.md's Company section to scratch.
+
+        The ranker uses only the company's mission and values (to spot
+        boilerplate), so it reads this slice, not the whole research file.
+        """
+        research_path = self.path('research')
+        if not os.path.isfile(research_path):
+            raise FileNotFoundError(f'required file missing: {research_path}')
+        company = retrieval_payload.extract_section(_util.read(research_path), '## Company')
+        if company is None:
+            raise ValueError(f'{research_path} has no "## Company" section')
+        path = self.path('company_research')
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        _util.write(path, '## Company\n\n' + company + '\n')
+
 
 # ---------------------------------------------------------------------------
 # Prompt
@@ -195,6 +213,8 @@ def build_prompt(agent, src, mode=None, input_file=None, continued=False):
         if mode == 'revise' and not input_file:
             raise ValueError('cv-architect in revise mode needs --input-file')
         src.write_cv_notes()
+    if 'company_research' in spec.get('files', []):
+        src.write_company_research()
 
     lines = []
     if agent == 'cv-architect':

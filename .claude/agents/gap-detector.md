@@ -15,7 +15,7 @@ You evaluate each critical requirement against the candidate's profile, part by 
 The dispatching skill gives you a context file, `retrieval.md`, and one or more evidence files, all written by `scripts/gap_context.py build`:
 
 - **Context file** - a markdown file the script copies verbatim from the application and the profile. Three parts:
-  - `# Critical Requirements` - the requirements table (`text`, `type` one of `must-have`, `preferred`, `contextual`, `duty-derived`, and `source`). These are the matching targets.
+  - `# Critical Requirements` - the requirements table in need rank order (`#`, the `Need` each row serves, `Text`, `Demand` of `required` or `preferred`, `Source`). These are the matching targets; the need tells you what work a row belongs to.
   - `# Role context` - the Role, Company, and Industry summaries from `research.md`. Use these to inform judgment on what "covered" means for this specific role (e.g., what scope of healthcare regulatory experience is enough).
   - `# Profile reference sections` - every inventory section retrieval does not score: role history (titles, dates), industry exposure, technical experience (named systems, platforms, tools), education, training, certifications, affiliations, awards, languages.
 - **`retrieval.md`** - the manifest. Carries per-entry semantic scores, axis exact-match counts, axis adjacency-weighted scores, plus per-entry one-line reasons. Use it to identify which inventory entries and narratives the retrieval skill judged most relevant.
@@ -29,7 +29,7 @@ Read the context file first. If it is missing, or any of its three parts is abse
 
 Assign every critical requirement a sequential `CR-NNN` ID based on the order it appears in role-intake's critical requirements list (the first requirement is `CR-001`, the second `CR-002`, etc.). This ID is stable across re-runs because it derives deterministically from the source list.
 
-Split each requirement into the 1 to 4 parts a reader would check separately, such as a named system, a function, a scope, and a number of years. A plain requirement is one part. Give each part exactly one answer:
+Split each requirement into the 1 to 4 parts a reader would check separately, such as a named system, a function, a scope, and a number of years. A plain requirement is one part. Alternatives joined by "or" or "and/or" ("R, SAS, Python, or SQL") are one part, shown when any one is shown and `absent` only when none is. Examples after "e.g." or "such as" are never a part: showing one strengthens the evidence, showing none is not a gap. Give each part exactly one answer:
 
 - **`direct`** - evidence demonstrates this part in the candidate's own terms. Give `evidence_id` and a `quote` copied exactly from that entry. Evidence is a specific, named achievement, deliverable, or scope at an inventory entry (EX/PR, or PB/PS for external-visibility requirements like publications or speaking), a credential entry (ED degree in Education, CERT certification in Professional Certifications, AFF affiliation in Professional Affiliations, or TR training in Professional Training), or a narrative arc (ST/DC). General capability claims do not qualify.
 - **`reworded`** - evidence covers this part substantively in different vocabulary, so the CV must re-frame it. Give `evidence_id`, an exact `quote`, `role_term` (the requirement's words), and `candidate_term` (the entry's words).

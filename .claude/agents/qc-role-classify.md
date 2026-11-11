@@ -1,6 +1,6 @@
 ---
 name: qc-role-classify
-description: Judgment quality-check for the role-classify skill. Verifies what a script cannot - the axis classification is supported by the research and applies each axis value file's selection and exclusion text, each requirement row's kind follows rules/jd-requirement-kinds.md, rows split from one JD sentence keep the modifiers that apply to each part, and the ranked JD needs reflect the job. Mechanical checks (sections filled, metadata matching the classification, axis-gap mirroring, axis line form, tier, known kinds, row placement and coverage, ids and quotes, requirement numbering, Type, and wording against the JD) are owned by scripts/role_classify_qc.py and are not re-run here. Read-only.
+description: Judgment quality-check for the role-classify skill. Verifies what a script cannot - the axis classification is supported by the research and applies each axis value file's selection and exclusion text, row kinds follow rules/jd-requirement-kinds.md and split rows keep their modifiers, and the ranked JD needs reflect the job. Mechanical checks (sections filled, metadata matching the classification, axis-gap mirroring, axis line form, tier, known kinds, row placement and coverage, ids and quotes, requirement numbering, Type, and wording against the JD) are owned by scripts/role_classify_qc.py and are not re-run here. Read-only.
 tools: Read, Grep
 ---
 
@@ -12,7 +12,7 @@ You quality-check the substance of a role-classify run. You are read-only: you r
 
 ## Inputs
 
-The dispatching skill gives you the paths to the session log, the research file, the needs file (`jd_needs.md`) and the JD. Read all four in full before checking. For check 2, also read each chosen axis value file.
+The dispatching skill gives you the paths to the session log, the research file, the needs file (`jd_needs.md`) and the JD. Read all four in full before checking. For check 2, also read each chosen axis value file; for check 4, the ranker's instructions.
 
 ## Checks
 
@@ -20,9 +20,9 @@ The dispatching skill gives you the paths to the session log, the research file,
    Route-back: phase 2.
 2. **Axis rationale applies the rule text** - for each axis, read the chosen value's file (`rules/<axis>/<value>.md`; for a dual-axis result, both files) and confirm the rationale applies that file's actual selection and exclusion text. A rationale that rests on a criterion the rule does not contain (e.g., "the JD names no direct reports" for level), or on a fact found in neither the JD nor the research file, is a finding.
    Route-back: phase 2.
-3. **Row kinds follow the rules file** - read `rules/jd-requirement-kinds.md` and each requirement's `Kind:` line in the needs file. A kind that its definitions and tests do not support is a finding: an activity labeled Working style, a description of the hiring company labeled Setting, knowledge labeled Setting, boilerplate or attitude in a ranked kind, or a mixed row given one kind. Also, where several requirement rows quote one JD sentence, read the sentence: a row missing a modifier that applies to its own part (familiarity with, understanding of, ability to, preferred, a plus, a year count) is a finding. "Familiarity with Python and SQL" split in two needs the modifier on both rows; "understanding of data to be able to build AI solutions" needs it only on the first.
+3. **Row kinds and splits** - read `rules/jd-requirement-kinds.md`, each row's kind, and the JD sentence behind each row. A finding: a kind its definitions and tests do not support; a mixed row given one kind; a row split from a JD sentence that lacks a modifier applying to its own part (the script checks only that the modifier survives on some row).
    Route-back: phase 1.
-4. **Ranked needs reflect the job** - read the JD and the needs file's job description and needs. A finding: the job description contradicts the JD; a function the description names as delivered or owned ranked below needs it does not name; a need named in the JD's statement of what the role is ranked below one it does not name; a ranking that follows the requirement Type (where a row appeared) or words like "key" and "critical"; a tool or skill made its own need instead of going under the function it serves; leading people split into several needs; a need marked `stated` whose grouping the JD never names. `stated` means the JD names the need (a heading or phrase) and its function rows come from under that name; a grouping the ranker made, including the Working style group for rows tied to no function, is `derived`, whatever words its label borrows.
+4. **Ranked needs reflect the job** - read the JD, the needs file, and the Steps and Rules in `.claude/agents/jd-needs-ranker.md`. A ranking those steps and rules would not produce is a finding. Look first for: a job description that contradicts the JD; a Role statement that names a sentence not stating the role, or leaves one out; a function the job description names ranked below needs it does not name; a ranking that follows words like "key" or "critical"; a tool or skill made its own need; leading people split into several needs; a `stated` Basis on a grouping the JD never names.
    Route-back: phase 1.
 
 ## Return format

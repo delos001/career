@@ -108,6 +108,19 @@ requirement_qualifiers:
   - preferably
   - ideally
 
+# Words that mark a requirement optional (scripts/role_classify_qc.py C7). One
+# case-insensitive regex each; a row whose own text carries one must have
+# Demand 'preferred'.
+requirement_optional_words:
+  - a plus
+  - bonus
+  - nice to have
+  - preferred
+  - preferably
+  - ideally
+  - (?:highly )?desirable
+  - advantageous
+
 # A year count sets a bar too, but a clause can hold one count per requirement
 # ('10 years..., with at least 5 years...'), so it must survive on at least one
 # row quoting that clause rather than on every row.

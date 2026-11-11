@@ -24,6 +24,10 @@ an inventory entry already in the manifest).
 
 For themes, use the LLM-judgment scores directly.
 
+Each scored inventory entry and narrative also gets a Needs cell: the scorer
+names the requirement rows it matches, and this script maps them to the ranked
+needs in jd_needs.md, so priority comes from the ranking, not the scorer.
+
 Writes a Markdown manifest at <folder>/<retrieval_manifest> per
 config.yaml. The manifest exposes raw signals; downstream consumers derive
 their own tiers locally (gap analysis: strong/moderate/weak;
@@ -47,7 +51,30 @@ import sys
 
 import _config
 import _util
+import requirement_kinds
 import retrieval_payload
+
+
+# ---------------------------------------------------------------------------
+# Needs served
+# The scorer names the requirement rows an entry matches; the script maps them
+# to the ranked needs, so priority comes from the ranking, never from the
+# scorer. Cell form: 'N-01: 3, 12; N-04: 15; Qual: 35', or '-' for none.
+# ---------------------------------------------------------------------------
+
+def _needs_cell(score_row, places):
+    """Return the Needs cell for one scored entry; raise on an unknown row."""
+    nums = score_row.get('rows') or []
+    unknown = [n for n in nums if n not in places]
+    if unknown:
+        raise ValueError(f"{score_row.get('id')}: scorer named row(s) "
+                         f"{', '.join(map(str, unknown))}, which are not ranked requirements")
+    groups = {}
+    for n in sorted(set(nums)):
+        groups.setdefault(places[n], []).append(str(n))
+    # Needs in rank order, then Qualifications.
+    order = sorted(groups, key=lambda p: (p == 'Qual', p))
+    return '; '.join(f"{p}: {', '.join(groups[p])}" for p in order) or '-'
 
 
 # ---------------------------------------------------------------------------
@@ -218,7 +245,7 @@ def _compute_entry_axis_signals(repo_root, jd_axes, entry):
 # ---------------------------------------------------------------------------
 
 def _build_inventory_rows(repo_root, jd_axes, inventory_entries, semantic_scores,
-                          role_companies):
+                          role_companies, places):
     """Build the inventory rows; returns list of dicts ready for table render.
 
     Each row carries: id, employer, semantic, exact_count, adjacency_score,
@@ -264,6 +291,7 @@ def _build_inventory_rows(repo_root, jd_axes, inventory_entries, semantic_scores
             'in_semantic': True,
             'in_tag_pull': exact >= 1 or weighted >= _ADJACENCY_WEIGHT,
             'axis_summary': _axis_summary(detail),
+            'needs': _needs_cell(semantic_by_id[eid], places),
             'reason': semantic_by_id[eid].get('reason', ''),
         })
     # Second pass: tag-pull entries that the semantic pass missed.
@@ -285,6 +313,7 @@ def _build_inventory_rows(repo_root, jd_axes, inventory_entries, semantic_scores
                 'in_semantic': False,
                 'in_tag_pull': True,
                 'axis_summary': _axis_summary(detail),
+                'needs': '-',
                 'reason': 'tag-pull only',
             })
     # Sort: primary by semantic score desc (None last), secondary by axis
@@ -309,7 +338,7 @@ def _axis_summary(detail):
     return ', '.join(parts) if parts else 'none'
 
 
-def _build_narrative_rows(narratives, narrative_scores, inventory_ids_in_manifest):
+def _build_narrative_rows(narratives, narrative_scores, inventory_ids_in_manifest, places):
     """Build narrative rows; union semantic-scored set with Linked-Inventory walk."""
     by_id = {n['id']: n for n in narratives}
     semantic_by_id = {row['id']: row for row in narrative_scores}
@@ -329,6 +358,7 @@ def _build_narrative_rows(narratives, narrative_scores, inventory_ids_in_manifes
             'semantic': semantic_by_id[nid].get('score'),
             'linked_from': triggered_by,
             'has_linkage': bool(triggered_by),
+            'needs': _needs_cell(semantic_by_id[nid], places),
             'reason': semantic_by_id[nid].get('reason', ''),
         })
     # Linked-inventory walk: narratives whose Linked Inventory points to any
@@ -345,6 +375,7 @@ def _build_narrative_rows(narratives, narrative_scores, inventory_ids_in_manifes
                 'semantic': None,
                 'linked_from': triggered_by,
                 'has_linkage': True,
+                'needs': '-',
                 'reason': 'linkage-only',
             })
     # Sort: by semantic desc (None last), then by linkage count desc.
@@ -398,8 +429,8 @@ def _render_inventory_table(rows):
     if not rows:
         return '_(no inventory entries surfaced)_'
     lines = [
-        '| ID | Employer | Semantic | Axis exact | Axis adj | Source | Axis matches | Reason |',
-        '|----|----------|----------|-----------|----------|--------|---------------|--------|',
+        '| ID | Employer | Semantic | Axis exact | Axis adj | Source | Axis matches | Needs | Reason |',
+        '|----|----------|----------|-----------|----------|--------|---------------|-------|--------|',
     ]
     for r in rows:
         sources = []
@@ -411,7 +442,7 @@ def _render_inventory_table(rows):
             f"| {r['id']} | {_escape_pipe(r.get('employer', ''))} | "
             f"{_fmt_score(r['semantic'])} | {r['exact_count']} | "
             f"{r['adjacency_score']:.2f} | {'+'.join(sources)} | "
-            f"{r['axis_summary']} | {_escape_pipe(r['reason'])} |"
+            f"{r['axis_summary']} | {r['needs']} | {_escape_pipe(r['reason'])} |"
         )
     return '\n'.join(lines)
 
@@ -420,14 +451,14 @@ def _render_narrative_table(rows):
     if not rows:
         return '_(no narratives surfaced)_'
     lines = [
-        '| ID | Semantic | Linked from | Reason |',
-        '|----|----------|-------------|--------|',
+        '| ID | Semantic | Linked from | Needs | Reason |',
+        '|----|----------|-------------|-------|--------|',
     ]
     for r in rows:
         linked = ', '.join(r['linked_from']) if r['linked_from'] else '-'
         lines.append(
             f"| {r['id']} | {_fmt_score(r['semantic'])} | "
-            f"{linked} | {_escape_pipe(r['reason'])} |"
+            f"{linked} | {r['needs']} | {_escape_pipe(r['reason'])} |"
         )
     return '\n'.join(lines)
 
@@ -567,12 +598,13 @@ def cmd_assemble(args, repo_root, cfg):
     narratives = retrieval_payload.parse_narratives(narratives_text)
     themes = retrieval_payload.parse_themes(positioning_text)
 
+    places = requirement_kinds.row_places(args.folder, cfg)
     inventory_rows = _build_inventory_rows(
-        repo_root, jd_axes, inventory_entries, inv_scores, role_companies
+        repo_root, jd_axes, inventory_entries, inv_scores, role_companies, places
     )
     inv_ids_in_manifest = [r['id'] for r in inventory_rows]
     narrative_rows = _build_narrative_rows(
-        narratives, nar_scores, inv_ids_in_manifest
+        narratives, nar_scores, inv_ids_in_manifest, places
     )
     theme_rows = _build_theme_rows(themes, th_scores)
 

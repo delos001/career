@@ -362,7 +362,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Purpose**: Extract a structured list of competency requirements from a JD for the role-classify skill. Comprehensive scan across all JD sections (not just labeled "Requirements"); each requirement carries Text / Type / Source for downstream use by retrieval, gap analysis, CV creation, and interview prep.
 - **Status**: Designed
 - **Inputs**: Skill-passed (by `role-classify`): JD path, role title and company name. Tools: Read.
-- **Outputs**: A `| # | Text | Type | Source |` table, one row per requirement (the `#` column is the CR-NNN id), returned to the caller; `role_classify_assemble.py requirements` writes it to `jd_needs.md`, and `role_classify_qc.py requirements` (C7, C8) checks it against the JD.
+- **Outputs**: A `| # | Text | Demand | Source |` table, one row per requirement (the `#` column is the CR-NNN id), returned to the caller; `role_classify_assemble.py requirements` writes it to `jd_needs.md`, and `role_classify_qc.py requirements` (C7, C8) checks it against the JD.
 - **Triggers**: Invoked by `role-classify` Phase 1a.
 - **Update Triggers**: When the three-field schema (Text / Type / Source) changes; when downstream consumers add new fields they need from extraction.
 
@@ -370,8 +370,8 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 - **Purpose**: Label each extracted requirement by kind (`rules/jd-requirement-kinds.md`), describe the job, group the requirements into the functions the role delivers, and rank them by the JD's statement of the role, repetition across sections, then space (GitHub #89).
 - **Status**: Designed
-- **Inputs**: Skill-passed (by `role-classify`): paths to `jd.md`, `research.md` and `jd_needs.md` (the extracted requirements). Reads `rules/jd-requirement-kinds.md`. Tools: Read.
-- **Outputs**: Row kinds, the job description, a needs table in rank order, and the Qualifications and Not ranked lines. `role_classify_assemble.py needs` rewrites `jd_needs.md` with them, carrying each requirement's text, Type and Source over from the file; mechanical checks in `role_classify_qc.py` C6. Not ranked rows are filtered out of retrieval and gap analysis by `requirement_kinds.py`.
+- **Inputs**: Skill-passed (by `role-classify`): paths to `jd.md`, `scratch/company.md` (research.md's Company section, cut by `dispatch_prompt.py`) and `jd_needs.md` (the extracted requirements). Reads `rules/jd-requirement-kinds.md`. Tools: Read.
+- **Outputs**: Row kinds, the job description, and a needs table in rank order. `role_classify_assemble.py needs` rewrites `jd_needs.md` with them, placing the rows outside the needs into Qualifications or Not ranked by kind and carrying each requirement's text, Type and Source over from the file; mechanical checks in `role_classify_qc.py` C6. Not ranked rows are filtered out of retrieval and gap analysis by `requirement_kinds.py`.
 - **Triggers**: Invoked by `role-classify` Phase 1c.
 - **Update Triggers**: When the requirement schema changes; when a downstream skill needs more from the ranking.
 
@@ -658,7 +658,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/gap_assemble.py
 
-- **Purpose**: Render the gap analysis artifact from collected signals — the deterministic portion of the gap-analysis Phase 6. Reads structured JSON inputs the dispatching skill prepares (per-requirement records, eligibility flags, gap themes and conditions, recommendation rationale), computes the coverage table and unmet must-have count from the statuses, substitutes tokens into `templates/gap_analysis.md`, writes the wholesale artifact to the application folder.
+- **Purpose**: Render the gap analysis artifact from collected signals — the deterministic portion of the gap-analysis Phase 6. Reads structured JSON inputs the dispatching skill prepares (per-requirement records, eligibility flags, gap themes and conditions, recommendation rationale), computes the coverage table (one row per ranked need) and the unmet core count from the statuses, orders requirements by need rank, substitutes tokens into `templates/gap_analysis.md`, writes the wholesale artifact to the application folder.
 - **Status**: Designed
 - **Inputs**: Subcommand args (`--folder`, `--slug`, `--app-id`, `--date`, `--company`, `--role`, `--recommendation-label`, `--recommendation-rationale-file`, `--requirements-file`, `--eligibility-file`, `--themes-file`, `--cv-notes-file`). Config: `config.yaml` (templates path, gap_analysis filename, gap_analysis_template name) via `scripts/_config.py`. Filesystem: the template under `templates/`; requirement text and Type from `jd_needs.md` in `--folder`.
 - **Outputs**: `<folder>/gap_analysis.md` and its path printed to stdout. Errors to stderr with exit 1.

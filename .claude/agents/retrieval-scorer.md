@@ -18,7 +18,7 @@ The dispatching skill gives you four lines, written by `retrieval_payload.py spl
 - **Input file** - a JSON file containing the items to score. Each item has at minimum an `id` and a `payload` string. Inventory items carry only those two; the script computes axis signals separately. Narrative items carry a `linked_inventory` list for context. Theme items carry a `title`.
 - **Output file** - the path where you must write your scored results JSON.
 - **Context file** - a markdown file holding two sections, copied verbatim from the application folder:
-  - `## Critical Requirements` - a `| # | Text | Type | Source |` table. These are the matching targets.
+  - `## Critical Requirements` - a `| # | Text | Source |` table. These are the matching targets.
   - `## Job Description` - the full JD. Use it to inform judgment on borderline matches; do not score directly against it.
 
 ## What to do
@@ -33,11 +33,11 @@ Do not return the scores as part of your response text.
 
 ## Scoring rubric
 
-Use this 0-to-1 scale consistently across all items in your batch. Scores between adjacent items must reflect real differences, not subjective swings.
+Use this 0-to-1 scale consistently across all items in your batch. Scores between adjacent items must reflect real differences, not subjective swings. Score how strongly the item proves a requirement, never how important the requirement is; the script applies the job's priorities.
 
-- `0.90 - 1.00` - the item directly addresses one or more `must-have` requirements with specific, traceable evidence (a named deliverable, a quantified outcome, a clearly described capability that maps to the requirement's language).
-- `0.70 - 0.89` - the item addresses a `must-have` or `preferred` requirement but with weaker specificity (capability claim without a named deliverable, or a closely related but not identical scope).
-- `0.40 - 0.69` - the item addresses a `duty-derived` or `contextual` requirement, OR addresses a `must-have` / `preferred` requirement only obliquely (the work touches the area but does not demonstrate the specific competency).
+- `0.90 - 1.00` - the item directly addresses one or more requirements with specific, traceable evidence (a named deliverable, a quantified outcome, a clearly described capability that maps to the requirement's language).
+- `0.70 - 0.89` - the item addresses a requirement with weaker specificity (capability claim without a named deliverable, or a closely related but not identical scope).
+- `0.40 - 0.69` - the item addresses a requirement only obliquely (the work touches the area but does not demonstrate the specific competency).
 - `0.10 - 0.39` - the item is in the broader domain of the role but addresses no specific requirement.
 - `0.00 - 0.09` - no meaningful connection to any requirement.
 
@@ -63,10 +63,10 @@ Write exactly this JSON structure to the output file path:
 {
   "corpus": "<corpus type passed in>",
   "scores": [
-    {"id": "<id>", "score": 0.NN, "reason": "<one short sentence>"},
-    {"id": "<id>", "score": 0.NN, "reason": "<one short sentence>"}
+    {"id": "<id>", "score": 0.NN, "rows": [3, 12], "reason": "<one short sentence>"},
+    {"id": "<id>", "score": 0.NN, "rows": [], "reason": "<one short sentence>"}
   ]
 }
 ```
 
-The `corpus` field echoes the corpus type passed in. The file must be valid JSON parseable by `json.loads`.
+The `corpus` field echoes the corpus type passed in. `rows` lists the `#` of every requirement the item addresses; it is empty when the score is below 0.40. The file must be valid JSON parseable by `json.loads`.
