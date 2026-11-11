@@ -14,13 +14,13 @@ The dispatching skill gives you the paths to `jd.md`, `research.md` and `jd_need
 
 ## Steps
 
-1. **Label every row by kind.** Use the kinds, tests and rules in `rules/jd-requirement-kinds.md`. Use the mission and values in the research file's Company section to spot boilerplate; when it has none, judge from the JD's own wording. Give each row one kind. When a row mixes kinds, name each part's kind with the JD words it rests on, e.g. `Function (strategic analyses) + Setting (oncology)`.
+1. **Label every row by kind.** Use the kinds, tests and rules in `rules/jd-requirement-kinds.md`. Use the mission and values in the research file's Company section to spot boilerplate; when it has none, judge from the JD's own wording. Give each row one kind, written as the kind name alone, e.g. `Means`. When a row mixes kinds, name each part's kind with the JD words it rests on, e.g. `Function (strategic analyses) + Setting (oncology)`; the words show a reviewer the split, and nothing else reads them.
 2. **Describe the job.** Answer two questions, each citing the JD lines it rests on:
    - What does the person deliver or own?
    - Do they lead the work, do it, or both? If they lead, whom (staff, teams, vendors)? Base this on the Role shape rows.
 3. **Group into needs.** A need is a function the role delivers, taken from the step 2 answers, or the JD's Setting. Means and Working style rows go under the function they serve, found by reading the whole JD; when the JD ties one to no function, put it under the closest function. Working style tied to no function forms one Working style need. Leading people is one need, however worded. Exclusions and describing words go with what they describe (see the rules file).
 4. **Rank the needs,** strongest signal first:
-   - `role-statement`: the JD's statement of what the role is or is responsible for (usually the opening of the role description) names the need.
+   - `role-statement`: the JD's statement of what the role is or is responsible for (usually the opening of the role description) names the need. The statement is the whole opening paragraph, every sentence, including ones that begin "additionally" or "also". It names a need when it says the role does or owns that work, not when it mentions a tool or quality in passing. A need whose quote comes from the statement carries this signal.
    - `repetition`: the need is named in several JD sections; give the count.
    - `space`: the JD spends more words on it. Use only to break ties.
    - Not a signal: words like "key," "critical" or "important." They stress something within its own topic, not across the role.
@@ -53,7 +53,7 @@ Return exactly this, needs in rank order:
 
 | # | Kind |
 |---|---|
-| 1 | <kind, or kinds joined by + with each part's JD words in parentheses> |
+| 1 | <kind name alone; or, for a mixed row, kinds joined by + with each part's JD words in parentheses> |
 
 ## Ranked Needs
 

@@ -25,13 +25,13 @@ A flat list of critical requirements. Each item is a concrete competency or qual
 - About the Role / About the Team / About Us paragraphs (gives Type `contextual`).
 - Any other section that names a competency, tool, methodology, or context the candidate will need.
 
-Do not invent. If the JD does not name a requirement, do not surface one. Generic boilerplate ("strong communication skills") only surfaces if the JD names role-specific context that distinguishes it from a description of any other corporate role.
+Do not invent. If the JD does not name a requirement, do not surface one. Do not leave a line out for being generic ("strong communication skills," "balances competing priorities," a company competencies list): extract it like any other. The ranker decides what is boilerplate and sets it aside.
 
 ## Three-field schema per requirement
 
 Every requirement has exactly three fields:
 
-- **Text:** the requirement in the JD's own words and the JD's order. You may cut words to isolate one requirement, but do not add, replace, or rearrange any, and keep every modifier that sets the bar (familiarity with, exposure to, understanding of, ability to, might, a plus, preferred, N years), so the requirement demands exactly what the JD says.
+- **Text:** the requirement in the JD's own words and the JD's order. You may cut words to isolate one requirement. When you split a JD line, every part that asks something of the role becomes a row; cut only joining words. Do not add, replace, or rearrange any, and keep every modifier that sets the bar (familiarity with, exposure to, understanding of, ability to, might, a plus, preferred, N years), so the requirement demands exactly what the JD says.
 - **Type:** one of:
   - `must-have`: explicit hard requirement (the JD uses language like "required", "must have", "minimum X years").
   - `preferred`: explicit nice-to-have (the JD uses language like "preferred", "a plus", "bonus", "ideally").
@@ -39,14 +39,13 @@ Every requirement has exactly three fields:
   - `contextual`: implied by company, role, or team context (the JD describes a setting that calls for this competency).
 
   The Type cell is **exactly one** of those four tokens and nothing else. Do not prefix, suffix, or annotate it. There is no field for the *kind* of requirement (education, experience, skill, knowledge, competency, credential, behavior, logistical), so do not record one - not as a compound like `education (must-have)` and not as a substitute like `Competency`. If the JD groups a requirement under a heading like "Education & Experience", that heading is context for the Source cell, never part of the Type cell. When a requirement is a hard educational or experiential qualification, its Type is simply `must-have` (or `preferred` if the JD marks it optional).
-- **Source:** the JD section, then exactly one verbatim quote in double quotes, copied from the single place Text comes from. Other JD locations naming the same competency follow as section pointers, unquoted. Examples: `Qualifications #2 "Familiarity with regulatory submission data packages"`, `Qualifications #4 "Exceptional analytical capabilities"; also Day-to-day Responsibilities #3`. `scripts/role_classify_qc.py` fails a row whose quote is not in the JD, or whose Text lacks a wording modifier from the JD clause holding the quote. A year count must survive on at least one row quoting that clause.
+- **Source:** the JD section, then exactly one verbatim quote in double quotes, copied from the single place Text comes from. Other JD locations naming the same competency follow as section pointers, unquoted: name the section and its number or heading, and never quote the heading text, since any second quote mark fails the row. Examples: `Qualifications #2 "Familiarity with regulatory submission data packages"`, `Qualifications #4 "Exceptional analytical capabilities"; also Day-to-day Responsibilities #3`. `scripts/role_classify_qc.py` fails a row whose quote is not in the JD, and a JD clause whose wording modifier or year count survives on no row quoting it. When you split a clause, each row still keeps the modifiers that apply to its own part.
 
 ## Rules
 
 - Do not fabricate. Every requirement must trace to specific JD language, shown by the quote in its Source field.
 - One requirement per item. If the JD bundles two competencies in one bullet (e.g. "experience with Python and SQL"), split them into two items when they would be evaluated independently; keep them as one when they always travel together as a single qualification (e.g. "Lean Six Sigma Black Belt certification"). Two year counts testing different things are two items, each keeping its own count ("10 years in the industry, with at least 5 years in people management").
 - Use `Type: must-have` only when the JD's language is explicit. Otherwise downgrade to `preferred`, `duty-derived`, or `contextual`.
-- Do not over-classify generic professional skills. A requirement appears only when the JD names it specifically; "strong leadership" surfaces if the JD names what kind of leadership (cross-functional, matrix-based, hands-on, etc.).
 - Stop once the JD is exhausted. Do not pad. Empty extraction is acceptable if the JD has no substantive content.
 
 ## Return format

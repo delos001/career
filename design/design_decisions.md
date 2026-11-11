@@ -1487,6 +1487,7 @@ The ranker labels every requirement row by kind before grouping, so grouping fol
 - Not ranked rows never reach retrieval or gap analysis: `requirement_kinds.py` removes them from the scoring and detector context and from gap QC's expected set, in code, so no agent has to remember to ignore them. A needs file whose requirement text no longer matches `research.md` (re-extraction) is refused, since its row numbers may name other requirements.
 - Ranking signals: the JD's statement of what the role is, repetition across sections, then space as a tie-breaker. Importance words ("key," "critical") are not signals: they stress something within their own topic. Hard minimums left ranking for the Qualifications group.
 - Describing words (seniority, amount, "recognized," exclusions, person labels) go with what they describe and never form a need.
+- Only the ranker judges boilerplate (2026-11-10). The extractor's older filter for generic professional skills was removed: it dropped Acadia APP-025's "Balances competing priorities and deadlines," which the kinds file ranks as Working style, before the ranker could see it.
 
 Refs: `role-classify-split-2026-11`, GitHub #89.
 
@@ -1499,6 +1500,7 @@ Requirement extraction moved from role-intake into role-classify, and the requir
 - A row the ranker places nowhere stays under `## Requirements` and C6 fails it. Ranking rewrites the only copy, so a dropped row must stay on file rather than vanish.
 - `requirement_kinds.requirements_table()` is the one reader for retrieval and gap analysis: it builds the same `| # | Text | Type | Source |` table from `jd_needs.md`, without the Not ranked rows, so the scorer and gap-detector instructions did not change. The CV agents (cv-architect, hiring-manager) read `jd_needs.md` directly.
 - role-intake keeps only the company, role and industry research; `research.md` has no requirements section. Existing applications were converted by a one-off script, not handled by a fallback reader.
+- C8 holds a modifier across the rows split from one JD clause, as it already did year counts: it must survive on at least one row. Whether it carries onto each part is a reading judgment ('familiarity with Python and SQL' carries; Otsuka APP-026 'understanding of data ... to be able to be effectively build AI solutions' does not), so `qc-role-classify` check 3 judges it. A list of phrases that end a thought was rejected: one example, endless equal phrasings. Cost: a dropped modifier on a split clause is caught after ranking, not before.
 
 Refs: `requirement-kinds-2026-11`, `role-intake-critical-requirements-extraction-2026-05`, GitHub #89.
 

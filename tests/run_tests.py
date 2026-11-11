@@ -1823,6 +1823,33 @@ def test_split_requirement_keeps_each_year_count():
     assert not result(('Minimum of 8 years in the industry', ten), (five, five))[1], 'a changed count passed'
 
 
+def test_split_requirement_keeps_modifier_on_some_row():
+    """Otsuka APP-026, 2026-11-10: 'understanding of data ... to be able to be
+    effectively build AI solutions' split correctly into two rows, and C8 failed
+    the second for lacking 'understanding of', which belongs only to the first.
+    A script cannot read whether a modifier carries onto each half, so it needs
+    the modifier on some row from the clause (qc-role-classify judges the rest);
+    a modifier lost from every row still fails.
+    """
+    import role_classify_qc as rcq
+    _, cfg = _config.load()
+    jd = ('Possess a deep understanding of clinical trial data to be able to build '
+          'AI solutions that conform to regulatory compliance.\n')
+
+    def result(*rows):
+        findings = []
+        rcq.check_requirement_text(needs_file(*((text, f'Skills "{quote}"') for text, quote in rows)),
+                                   jd, cfg['requirement_qualifiers'], cfg['requirement_year_count'], findings)
+        return findings[0]
+
+    first = 'Possess a deep understanding of clinical trial data'
+    second = 'build AI solutions that conform to regulatory compliance'
+    split = result((first, first), (second, second))
+    assert split[1], f'a correct split failed: {split}'
+    lost = result(('Possess clinical trial data', first), (second, second))
+    assert not lost[1] and 'understanding of' in lost[2], f'a modifier lost from every row passed: {lost}'
+
+
 def test_ranked_needs_cover_every_requirement_once():
     """Built 2026-11-09 (GitHub #89): the requirement Type records which JD
     section a row came from, so APP-028's 'primary focus' paragraph ranked last

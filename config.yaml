@@ -93,8 +93,8 @@ retrieval_calibration:
 
 # Modifiers that set a requirement's bar (scripts/role_classify_qc.py C8). One
 # case-insensitive regex each; whatever one matches in the JD clause holding a
-# requirement's quote must also appear in that requirement's Text. Add a word
-# here when a run shows it being dropped.
+# requirement's quote must also appear in the Text of at least one row quoting
+# that clause. Add a word here when a run shows it being dropped.
 requirement_qualifiers:
   - familiar(?:ity)? with
   - exposure to

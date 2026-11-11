@@ -36,9 +36,9 @@ Checks:
   C7  jd_needs.md holds at least one requirement, numbered 1..N with no gaps
       or repeats, each with text, a Source, and a Type from the allowed four.
   C8  Each requirement's Source carries one verbatim quote found in jd.md, and
-      its text keeps every modifier (config requirement_qualifiers) in the JD
-      clause holding that quote. A year count (config requirement_year_count)
-      must survive on at least one row quoting that clause.
+      every modifier (config requirement_qualifiers) and year count (config
+      requirement_year_count) in the JD clause holding that quote survives on
+      at least one row quoting that clause.
 
 Output: one `<ID>  PASS|FAIL  <detail>` line per check, then a RESULT line.
 Exit 0 when all pass, 1 otherwise.
@@ -394,10 +394,13 @@ def check_requirement_text(needs_text, jd_text, qualifiers, year_count, findings
     narrow one would otherwise step around the check. A row that keeps every
     modifier but rewords the rest passes; this check guards the bar, not style.
 
-    A year count is held across the rows sharing a clause rather than on each
-    row: in '10 years in the industry, with at least 5 years in people management'
-    each count belongs to one of two requirements, so it needs only to survive on
-    some row from that clause. Wording modifiers stay per row.
+    Modifiers and year counts are held across the rows sharing a clause rather
+    than on each row: in '10 years in the industry, with at least 5 years in
+    people management' each count belongs to one of two requirements, and in
+    'understanding of data ... to be able to be effectively build AI solutions'
+    (Otsuka APP-026) the modifier belongs only to the first half. Whether a
+    modifier carries onto each part of a split clause is a reading judgment,
+    left to qc-role-classify; this check needs it to survive on some row.
     """
     if needs_text is None:
         findings.append(('C8', False, 'jd_needs.md not found (requirements not extracted)'))
@@ -418,18 +421,17 @@ def check_requirement_text(needs_text, jd_text, qualifiers, year_count, findings
         if clause is None:
             problems.append(f'CR-{num:03d}: quote not found in the JD: {quotes[0][:60]}')
             continue
-        norm_text = _normalize(text)
-        for pattern in qualifiers:
-            for match in re.finditer(rf'\b(?:{pattern})\b', clause):
-                if not re.search(rf'\b{re.escape(match.group(0))}\b', norm_text):
-                    problems.append(f"CR-{num:03d}: Text drops '{match.group(0)}' from the JD clause: {clause[:80]}")
-        texts_by_clause.setdefault(clause, []).append((num, norm_text))
+        texts_by_clause.setdefault(clause, []).append((num, _normalize(text)))
+    # Each modifier or year count in a clause must survive on at least one row
+    # quoting that clause. With one row, that row must keep it.
+    patterns = list(qualifiers) + [year_count]
     for clause, entries in texts_by_clause.items():
-        for match in re.finditer(rf'\b(?:{year_count})\b', clause):
-            count = rf'\b{re.escape(match.group(0))}\b'
-            if not any(re.search(count, norm_text) for _, norm_text in entries):
-                ids = ', '.join(f'CR-{num:03d}' for num, _ in entries)
-                problems.append(f"{ids}: no row keeps '{match.group(0)}' from the JD clause: {clause[:80]}")
+        for pattern in patterns:
+            for match in re.finditer(rf'\b(?:{pattern})\b', clause):
+                word = rf'\b{re.escape(match.group(0))}\b'
+                if not any(re.search(word, norm_text) for _, norm_text in entries):
+                    ids = ', '.join(f'CR-{num:03d}' for num, _ in entries)
+                    problems.append(f"{ids}: no row keeps '{match.group(0)}' from the JD clause: {clause[:80]}")
     findings.append(('C8', not problems, '; '.join(problems) or f'{len(rows)} requirement rows keep their JD modifiers'))
 
 

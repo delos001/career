@@ -19,10 +19,31 @@ Existing folders, decided by the user: only open applications were converted. Me
 - BeOne rows 11 and 24 had dropped "preferred" and "might"; both fixed by hand.
 - C8 catches only the softening words listed in `config.yaml` `requirement_qualifiers`. Add a word when a run shows one getting through.
 
+## Otsuka APP-026: Phase 1 run and confirmed, 2026-11-10
+
+Run through Phase 1 only (the user's choice: Phase 2 would overwrite the classification the submitted CV was built from, so C5 fails on the missing tier). `jd_needs.md` holds 16 needs, every section confirmed by the user. Fixed on the way:
+- The extractor quoted heading names in its "also" pointers; line 42 now forbids it.
+- C8 failed a correct split of one JD sentence; a modifier now must survive on some row of the clause, and `qc-role-classify` check 3 judges carry-over (`requirements-in-jd-needs-2026-11`).
+- The ranker wrote the JD words in parentheses on every Kind line; single-kind rows now carry the kind name alone (step 1). Otsuka's file predates this.
+
+Watch items seen: row 22 split from row 21's JD line into the leading-people need, on purpose. The job description's lead-or-do line now gives the answer and its sources. The extractor carried a shared word across a split on rows 37, 50 and 56, which C8 does not check for.
+
+## Acadia APP-025: Phase 1 run twice, reviewed by qc-role-classify, 2026-11-10
+
+The user confirmed the job description, then had `qc-role-classify` (checks 3 and 4) review the rest instead of walking each section. Three faults fixed for future runs, then Phase 1 rerun (47 rows became 57) and reviewed again:
+- Role statement read as its first sentence only, so Applied AI lost its signal; the ranker's step 4 now defines the statement as the whole opening paragraph. Held on the rerun.
+- The extractor's own generic-skills filter dropped "Balances competing priorities and deadlines"; removed, the ranker alone judges boilerplate (`requirement-kinds-2026-11`). Held.
+- Split sentences lost a half (four clauses); the extractor now makes every part a row. Held.
+
+Second review: rows 47 and 48 labeled Means where the kinds test says Function; left, since placement and downstream are unaffected. Row 38 lost "10 years" in a split; hand-edited to the whole sentence, as the reviewer is the designed backstop for carry-over.
+
+## Jazz APP-028: Phase 1 run, reviewed by qc-role-classify, 2026-11-10
+
+Extraction passed first time (41 rows); all 8 checks pass. The "primary focus" paragraph that ranked last on the old ranker is now N-01. One review finding: row 6 labeled Working style where the test says Function; left, same class as Acadia rows 47 and 48. Watch: if a kind slip ever moves a row into another need or forms its own need, fix the ranker then.
+
 ## Next
 
-1. Start a new session. Run `/role-classify` on Otsuka APP-026, Acadia APP-025 and Jazz APP-028. The user reviews each `jd_needs.md` one section at a time, exact text, never paraphrased; "close enough" is the bar.
-2. Close #89.
+#89 closed 2026-11-10. Next is `design/cv_persuasion_plan.md` steps 2 to 7 (#88).
 
 ## BeOne APP-027 classification: fix before its CV
 
