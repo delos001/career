@@ -11,6 +11,8 @@ last_researched: 2026-05
 
 Work that grows a functioning model to handle larger volume, scope, geographic reach, or complexity. The deliverable is taking something that works at one scale and making it work at a larger scale. Characteristic contexts: expanding a pilot to enterprise, harmonizing across previously-fragmented sites or functions, replicating a working model across regions, multiplying throughput of an existing operation.
 
+Scale includes complexity: adapting a working process or capability so it holds up under conditions it was not built for, such as new risk, regulation, technology or operating environment. Replacing a working system's platform is scaling when the replacement is what lets it meet those conditions; replacement for its own sake (end of life, cost, vendor change) is mature.
+
 The work-state does not fit when there is no prior working model to scale (greenfield) or when the work is steady-state operation of an already-scaled model (mature).
 
 ## Achievement framing

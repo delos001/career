@@ -9,9 +9,9 @@ last_researched: 2026-05
 
 ## Identity
 
-Steady-state operation of established systems and processes. The deliverable is operational continuity, incremental improvement, governance, and risk management within a working operating model. Characteristic contexts: ongoing operation of an established function, optimization of well-understood processes, governance of stable platforms, risk management within established operations.
+Steady-state operation of established systems and processes. The deliverable is operational continuity, incremental improvement, governance, and risk management within a working operating model. Characteristic contexts: ongoing operation of an established function, optimization of well-understood processes, governance of stable platforms, risk management within established operations, like-for-like platform replacement (end of life, cost, vendor change).
 
-The work-state does not fit when the work is establishing new capability (greenfield), expanding scope (scaling), recovering from underperformance (turnaround), or merging/separating organizations (post-merger integration, divestiture).
+The work-state does not fit when the work is establishing new capability (greenfield), expanding scope or adapting the model to hold up under conditions it was not built for (scaling), recovering from underperformance (turnaround), or merging/separating organizations (post-merger integration, divestiture).
 
 ## Achievement framing
 
