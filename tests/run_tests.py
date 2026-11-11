@@ -1975,8 +1975,10 @@ def test_ranked_needs_cover_every_requirement_once():
     assert not result(good.replace(table_head + '| 1 |', table_head + row6 + '| 1 |'))[1], 'a requirement in two places passed'
     assert not result(good.replace('N-03', 'N-05'))[1], 'a gap in the need ids passed'
     assert not result(good.replace('- Basis: stated', '- Basis: guessed', 1))[1], 'an unknown Basis passed'
-    assert not result(good.replace('- Signals: space', '- Signals: emphasis'))[1], 'an unknown signal passed'
-    assert not result(good.replace('- Signals: space', '- Signals: priority-words'))[1], 'a retired signal passed'
+    assert not result(good.replace('- Signals: repetition 1, space 10', '- Signals: emphasis'))[1], 'an unknown signal passed'
+    assert not result(good.replace('- Signals: repetition 1, space 10', '- Signals: repetition 1, space'))[1], \
+        'a space signal with no count passed'
+    assert not result(good.replace('- Signals: repetition 1, space 10', '- Signals: priority-words'))[1], 'a retired signal passed'
     assert not result(good.replace('"Lead and develop a data team of five or more"\n\n',
                                    '"Hire and develop a data team of five or more"\n\n'))[1], 'a quote absent from the JD passed'
     assert not result(good.replace('- Leads, does, or both:', '- Leads:'))[1], 'a ranking without the job description passed'
@@ -2047,13 +2049,14 @@ def test_ranked_needs_cover_every_requirement_once():
     written = _util.read(needs_path)
     assert result(written)[1], result(written)
     assert '### N-01: Operating model' in written, written
-    # The script sets repetition from the distinct JD sections of each need's
-    # rows (N-01: Responsibilities and Requirements; the ranker wrote none) and
+    # The script sets repetition (distinct JD sections of the need's rows) and
+    # space (words in their distinct JD clauses), whatever the ranker wrote, and
     # orders by role-statement, repetition, space: Vendor oversight's claimed
-    # 'repetition 2' (one section) is 1, so space puts the team need above it.
-    assert '### N-01: Operating model\n\n- Basis: stated\n- Signals: role-statement, repetition 2\n' in written, written
-    assert '### N-02: Leading a data team\n\n- Basis: stated\n- Signals: repetition 1, space\n' in written, written
-    assert '### N-03: Vendor oversight\n\n- Basis: stated\n- Signals: repetition 1\n' in written, written
+    # 'repetition 2' (one section) is 1, so the team need's 10 words to its 9
+    # put it above, against the ranker's order.
+    assert '### N-01: Operating model\n\n- Basis: stated\n- Signals: role-statement, repetition 2, space 20\n' in written, written
+    assert '### N-02: Leading a data team\n\n- Basis: stated\n- Signals: repetition 1, space 10\n' in written, written
+    assert '### N-03: Vendor oversight\n\n- Basis: stated\n- Signals: repetition 1, space 9\n' in written, written
     # Rows outside the needs are placed by kind, not by the ranker.
     assert '## Not ranked\n\n' + table_head + boiler_row.rstrip() in written, 'row 6 was not placed in Not ranked by its kind'
     assert '## Qualifications\n\n' + table_head + '| 1 |' in written, 'row 1 was not placed in Qualifications by its kind'

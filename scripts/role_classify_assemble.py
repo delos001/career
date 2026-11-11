@@ -44,6 +44,7 @@ import _config
 import _util
 import requirement_kinds
 from assemble import _replace_section
+from role_classify_qc import _clause_holding
 from role_intake_qc import _metadata_fields, _section_body
 
 
@@ -116,21 +117,31 @@ def _row_kinds(block):
 
 
 # The ranking is not left to the ranker's arithmetic or ordering. It judges
-# which needs carry role-statement and space; the script counts repetition from
-# the distinct JD sections of each need's rows (the ranker once wrote 4 for a
-# need whose rows sat in 3 sections, and ranked it first on that count), then
-# sorts by role-statement, repetition, space, and the ranker's order last.
+# only which needs carry role-statement. The script counts the rest from the
+# need's rows (the ranker once wrote 4 sections for rows in 3, and once judged
+# space on a need whose lead came from one clause split into three rows):
+#   repetition N  distinct JD sections the rows come from
+#   space N       words in the distinct JD clauses holding the rows, so rows
+#                 split from one clause count it once
+# and sorts by role-statement, repetition, space, the ranker's order last.
 
-def _rank(needs):
+def _space(rows, jd_text):
+    """Return the word count of the distinct JD clauses holding `rows`."""
+    clauses = {_clause_holding(jd_text, requirement_kinds.row_quote(r)) for r in rows} - {None}
+    # Word tokens only, so a bullet's leading '-' or a stray '&' is not a word.
+    return sum(len(re.findall(r"[\w']+", c)) for c in clauses)
+
+
+def _rank(needs, jd_text):
     """Return needs re-signalled and sorted, ids renumbered N-01.. in rank order."""
     keyed = []
     for pos, need in enumerate(needs):
-        tokens = {t.strip() for t in need['signals'].split(',')}
-        statement, space = 'role-statement' in tokens, 'space' in tokens
+        statement = 'role-statement' in {t.strip() for t in need['signals'].split(',')}
         sections = {requirement_kinds.jd_heading(r['source']) for r in need['rows']} - {''}
-        signals = (['role-statement'] if statement else []) + [f'repetition {len(sections)}'] \
-            + (['space'] if space else [])
-        keyed.append(((not statement, -len(sections), not space, pos),
+        space = _space(need['rows'], jd_text)
+        signals = (['role-statement'] if statement else []) \
+            + [f'repetition {len(sections)}', f'space {space}']
+        keyed.append(((not statement, -len(sections), -space, pos),
                       {**need, 'signals': ', '.join(signals)}))
     ranked = [need for _, need in sorted(keyed, key=lambda k: k[0])]
     return [{**need, 'id': f'N-{n:02d}'} for n, need in enumerate(ranked, start=1)]
@@ -182,7 +193,7 @@ def cmd_needs(args, cfg):
         quote = requirement_kinds.jd_ref(jd, '', ' | '.join(cells[5:]))
         needs.append({'id': cells[0], 'label': cells[1], 'basis': cells[2],
                       'signals': cells[4], 'quote': quote, 'rows': rows(nums)})
-    needs = _rank(needs)
+    needs = _rank(needs, jd)
     # Place every row the needs did not take by its kinds.
     kinds = requirement_kinds.load_kinds(args.repo_root, cfg)
     by_place = {requirement_kinds.QUALIFICATIONS: [], requirement_kinds.NOT_RANKED: []}

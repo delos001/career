@@ -75,9 +75,9 @@ from role_intake_qc import _PENDING_RE, _metadata_fields, _read, _section_body
 AXES = ['Orientation', 'Industry', 'Specialty', 'Level', 'Work-state']
 
 # Ranked Needs cell vocabularies. A Signals cell is a comma-separated list of
-# these; repetition carries a count.
+# these; repetition and space carry the counts role_classify_assemble.py writes.
 BASIS_VALUES = {'stated', 'derived'}
-_SIGNAL_RE = re.compile(r'^(?:role-statement|repetition \d+|space)$')
+_SIGNAL_RE = re.compile(r'^(?:role-statement|repetition \d+|space \d+)$')
 
 # Regex: the job description's lead-or-do answer, then whom.
 _LEAD_ANSWER_RE = re.compile(r'^(?:leads|does|both(?:, mainly (?:leading|doing))?); whom: \S')
@@ -353,7 +353,7 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings):
         signals = need.get('Signals', '')
         bad = [s for s in (x.strip() for x in signals.split(',')) if not _SIGNAL_RE.match(s)]
         if not signals or bad:
-            problems.append(f'{nid}: Signals {signals!r} outside role-statement, repetition N, space')
+            problems.append(f'{nid}: Signals {signals!r} outside role-statement, repetition N, space N')
         quotes = _QUOTE_RE.findall(need.get('Quote', ''))
         if len(quotes) != 1:
             problems.append(f'{nid}: Quote needs one quoted JD passage, found {len(quotes)}')

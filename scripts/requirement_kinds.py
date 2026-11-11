@@ -42,7 +42,7 @@ jd_needs.md layout (written by render_needs, read by read_needs):
     ### N-01: <label>
 
     - Basis: stated | derived
-    - Signals: role-statement, repetition N, space
+    - Signals: role-statement, repetition N, space N
     - Quote: L<n> <JD heading> "<verbatim JD passage>"
 
     | Req | Requirement | Kind | Demand | JD line |
@@ -238,6 +238,13 @@ def jd_ref(jd_text, text, source):
     heading = _LOCATION_RE.sub('', _LINE_REF_RE.sub('', heading)).strip()
     ref = f'L{line} {heading}'.strip()
     return ref if quote == text.strip() else f'{ref} "{quote}"'
+
+
+def row_quote(row):
+    """Return the JD words a row rests on: its Source quote, or its text when
+    the writer dropped a quote equal to it (see jd_ref)."""
+    quote = _SOURCE_QUOTE_RE.search(row.get('source') or '')
+    return quote.group(1).strip() if quote else (row.get('text') or '').strip()
 
 
 def jd_heading(source):

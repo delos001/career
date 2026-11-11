@@ -33,7 +33,7 @@
 ### N-03: Leading a data team
 
 - Basis: stated
-- Signals: space
+- Signals: repetition 1, space 10
 - Quote: L17 Responsibilities "Lead and develop a data team of five or more"
 
 | Req | Requirement | Kind | Demand | JD line |
