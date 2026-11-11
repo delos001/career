@@ -1,6 +1,6 @@
 ---
 name: role-classify
-description: Label each job requirement by kind and rank the job's needs, and classify the job against the five axes (orientation, industry, specialty, level, work-state). Reads the jd.md and research.md that role-intake wrote and writes the ranked needs to jd_needs.md and the classification into the session log for retrieval, gap analysis, CV creation and interview prep. Run after role-intake; it works from files, so a fresh session is fine.
+description: Extract the job's requirements, label each by kind and rank the job's needs, and classify the job against the five axes (orientation, industry, specialty, level, work-state). Reads the jd.md and research.md that role-intake wrote and writes the requirements and ranked needs to jd_needs.md and the classification into the session log for retrieval, gap analysis, CV creation and interview prep. Run after role-intake; it works from files, so a fresh session is fine.
 ---
 
 # role-classify - rank the needs and classify the job
@@ -17,19 +17,21 @@ description: Label each job requirement by kind and rank the job's needs, and cl
 Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-NNN>`. Land on the first match:
 
 1. Folder missing: the APP-NNN is likely wrong; ask again.
-2. `research.md` missing, or its `## Critical Requirements` table empty: halt and tell the user to finish `/role-intake` first.
+2. `research.md` missing: halt and tell the user to finish `/role-intake` first.
 3. No `jd_needs.md` in the folder: run `python scripts/display/introduce.py role-classify`, show the output, then go to Phase 1.
-4. `## Axis Classification` in the session log still `_(pending)_`: Phase 2.
-5. Otherwise: Phase 3.
+4. `jd_needs.md` has no `## Needs` section: Phase 1, step 1b.
+5. `## Axis Classification` in the session log still `_(pending)_`: Phase 2.
+6. Otherwise: Phase 3.
 
 Say "Starting APP-NNN at Phase N." and proceed.
 
-## Phase 1 - Rank the needs
+## Phase 1 - Extract the requirements and rank the needs
 
-**Labeling each requirement and ranking the job's needs.**
+**Extracting the job's requirements, then labeling each one and ranking the job's needs.**
 
-- Run `python scripts/dispatch_prompt.py jd-needs-ranker --folder <app_folder>` and dispatch `jd-needs-ranker` with the printed prompt exactly as printed.
-- Save its output to a file in `<scratch>`, then run `python scripts/role_classify_assemble.py needs --folder <app_folder> --needs-file <path>`. It writes `jd_needs.md`.
+- **1a. Extract.** Run `python scripts/dispatch_prompt.py critical-requirements-extractor --folder <app_folder>` and dispatch `critical-requirements-extractor` with the printed prompt exactly as printed. Save its output to a file in `<scratch>`, then run `python scripts/role_classify_assemble.py requirements --folder <app_folder> --requirements-file <path>`. It writes `jd_needs.md` holding the requirements; re-extracting replaces any earlier ranking.
+- **1b. Check the extraction.** Run `python scripts/role_classify_qc.py requirements --folder <app_folder>`. On a failure, tell the user in plain English which requirement does not match the JD, and redo 1a. Do not rank until it passes.
+- **1c. Rank.** Run `python scripts/dispatch_prompt.py jd-needs-ranker --folder <app_folder>` and dispatch `jd-needs-ranker` with the printed prompt exactly as printed. Save its output to a file in `<scratch>`, then run `python scripts/role_classify_assemble.py needs --folder <app_folder> --needs-file <path>`. It rewrites `jd_needs.md` with every requirement under its need.
 
 ## Phase 2 - Classify the axes
 
@@ -63,6 +65,7 @@ Say "Starting APP-NNN at Phase N." and proceed.
 
 | Problem | Go back to |
 |---|---|
-| Ranking fails its checks or misreads the JD | Phase 1, or a direct edit when the user reorders at 4b |
+| A requirement wrong, missing, or reworded from the JD | Phase 1a (the ranking is redone from 1c) |
+| Ranking fails its checks or misreads the JD | Phase 1c, or a direct edit when the user reorders at 4b |
 | Classification wrong, or an axis gap got past Phase 2 | Phase 2 |
-| Research or requirements wrong | Halt; rerun `/role-intake` from its research phase, then this skill from Phase 1 |
+| Company, role or industry research wrong | Halt; rerun `/role-intake` from its research phase, then this skill from Phase 2 |

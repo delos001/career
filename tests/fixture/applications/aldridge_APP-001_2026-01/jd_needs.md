@@ -15,10 +15,16 @@
 
 - **3.** Experience defining data standards and governance for a clinical portfolio
   - Kind: Function
+  - Type: preferred
+  - Source: Responsibilities "Define and maintain data standards and governance"
 - **5.** Direct experience with a commercial data warehouse platform in production
   - Kind: Means
+  - Type: must-have
+  - Source: Requirements "Direct experience with a commercial data warehouse platform in production"
 - **6.** Familiarity with regulatory submission data packages
   - Kind: Means
+  - Type: contextual
+  - Source: Nice to have "Familiarity with regulatory submission data packages"
 
 ### N-02: Vendor oversight across external data providers
 
@@ -28,6 +34,8 @@
 
 - **2.** Vendor oversight and contract management across external data providers
   - Kind: Function
+  - Type: must-have
+  - Source: Requirements "Vendor oversight and contract management across external data providers"
 
 ### N-03: Leading a data team
 
@@ -37,11 +45,15 @@
 
 - **4.** Line management of a data function of five or more
   - Kind: Function
+  - Type: must-have
+  - Source: Responsibilities "Lead and develop a data team of five or more"
 
 ## Qualifications
 
 - **1.** Bachelor's degree in a scientific or quantitative discipline
   - Kind: Qualification
+  - Type: must-have
+  - Source: Requirements "Bachelor's degree in a scientific or quantitative discipline"
 
 ## Not ranked
 

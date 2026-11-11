@@ -1,6 +1,6 @@
 ---
 name: qc-role-classify
-description: Judgment quality-check for the role-classify skill. Verifies what a script cannot - the axis classification is supported by the research and applies each axis value file's selection and exclusion text, each requirement row's kind follows rules/jd-requirement-kinds.md, and the ranked JD needs reflect the job. Mechanical checks (sections filled, metadata matching the classification, axis-gap mirroring, axis line form, tier, known kinds, row placement and coverage, ids and quotes) are owned by scripts/role_classify_qc.py and are not re-run here. Read-only.
+description: Judgment quality-check for the role-classify skill. Verifies what a script cannot - the axis classification is supported by the research and applies each axis value file's selection and exclusion text, each requirement row's kind follows rules/jd-requirement-kinds.md, and the ranked JD needs reflect the job. Mechanical checks (sections filled, metadata matching the classification, axis-gap mirroring, axis line form, tier, known kinds, row placement and coverage, ids and quotes, requirement numbering, Type, and wording against the JD) are owned by scripts/role_classify_qc.py and are not re-run here. Read-only.
 tools: Read, Grep
 ---
 

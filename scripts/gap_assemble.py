@@ -9,13 +9,11 @@ user-loop results. Writes the artifact to the application folder.
 
 Inputs (JSON files written by the dispatching skill):
 
-  --research-file           research.md for this application; provides
-                            requirement text and type keyed by CR-NNN so the
-                            requirements JSON need not duplicate that data.
   --requirements-file       per-requirement decisions: requirement_id, status,
                             evidence (flat ID list or {id,...} list), notes,
-                            language_shift. Text and type are
-                            resolved from --research-file.
+                            language_shift. Text and type are resolved from
+                            the application's jd_needs.md (via --folder), so
+                            the JSON need not duplicate them.
   --eligibility-file        Phase 2 flags + user decisions.
   --themes-file             Phase 5 judgment: {themes: [{name, kind, requirements,
                             meaning}], depends_on: [condition, ...]}.
@@ -40,7 +38,7 @@ Usage     : python scripts/gap_assemble.py assemble \\
                 --folder ... --app-id ... --date ... \\
                 --company ... --role ... \\
                 --recommendation-label ... --recommendation-rationale-file ... \\
-                --research-file ... --requirements-file ... \\
+                --requirements-file ... \\
                 --eligibility-file ... --themes-file ...
 Depends   : pyyaml (via _config)
 """
@@ -52,6 +50,7 @@ import sys
 
 import _config
 import _util
+import requirement_kinds
 
 
 # ---------------------------------------------------------------------------
@@ -91,74 +90,16 @@ def _fill(skeleton, values):
 
 
 # ---------------------------------------------------------------------------
-# Research.md parser
-# Reads the ## Critical Requirements table to get {CR-NNN: {text, type}}.
+# Requirements lookup
 # The requirements JSON the skill passes carries only per-run decisions;
-# static fields (text, type) are resolved here so they are not duplicated.
+# static fields (text, type) are resolved from jd_needs.md so they are not
+# duplicated. The row number is the CR-NNN id: row 1 -> CR-001.
 # ---------------------------------------------------------------------------
 
-def _parse_requirements_from_research(research_path):
-    """Return {CR-NNN: {text, type}} parsed from the ## Critical Requirements section.
-
-    Row position determines the CR-NNN key: row 1 -> CR-001, row 2 -> CR-002,
-    matching the gap-detector's positional ID assignment.
-
-    Handles two formats produced by different role-intake versions:
-    - Table format:  | # | Text | Type | Source |  (newer)
-    - Bullet format: - Text: ...\n  Type: ...      (older)
-    """
-    text = _util.read(research_path)
-    # Capture the ## Critical Requirements section up to the next ## heading or EOF.
-    section_match = re.search(
-        r'## Critical Requirements\n(.*?)(?=\n## |\Z)', text, re.DOTALL
-    )
-    if not section_match:
-        raise ValueError('## Critical Requirements section not found in research file')
-    section = section_match.group(1)
-
-    # --- Table format ---
-    lookup = {}
-    for line in section.splitlines():
-        line = line.strip()
-        if not line.startswith('|') or not line.endswith('|'):
-            continue
-        cells = [c.strip() for c in line.strip('|').split('|')]
-        if len(cells) < 3:
-            continue
-        # Skip header row ('#') and separator rows ('---').
-        if cells[0] == '#' or cells[0].startswith('---'):
-            continue
-        try:
-            num = int(cells[0])
-        except ValueError:
-            continue
-        cr_id = f'CR-{num:03d}'
-        lookup[cr_id] = {'text': cells[1], 'type': cells[2]}
-    if lookup:
-        return lookup
-
-    # --- Bullet-list format ---
-    # Each entry: "- Text: <text>" followed by "  Type: <type>" (then "  Source: ...").
-    # A new "- Text:" line flushes the previous entry.
-    current = {}
-    num = 0
-    for line in section.splitlines():
-        stripped = line.strip()
-        if stripped.startswith('- Text:'):
-            if current.get('text') and current.get('type'):
-                num += 1
-                lookup[f'CR-{num:03d}'] = {'text': current['text'], 'type': current['type']}
-            current = {'text': stripped[len('- Text:'):].strip()}
-        elif stripped.startswith('Type:') and 'text' in current:
-            current['type'] = stripped[len('Type:'):].strip()
-    # Flush the last entry.
-    if current.get('text') and current.get('type'):
-        num += 1
-        lookup[f'CR-{num:03d}'] = {'text': current['text'], 'type': current['type']}
-
-    if not lookup:
-        raise ValueError('no requirement rows parsed from ## Critical Requirements section')
-    return lookup
+def _requirements_lookup(app_folder, cfg):
+    """Return {CR-NNN: {text, type}} for the requirements gap analysis covers."""
+    return {f"CR-{row['num']:03d}": {'text': row['text'], 'type': row['type']}
+            for row in requirement_kinds.ranked_rows(app_folder, cfg)}
 
 
 # ---------------------------------------------------------------------------
@@ -490,7 +431,7 @@ def cmd_assemble(args, repo_root, cfg):
 
     rationale = _util.read(args.recommendation_rationale_file).strip()
     cv_notes_text = _util.read(args.cv_notes_file).strip() if args.cv_notes_file else ''
-    req_lookup = _parse_requirements_from_research(args.research_file)
+    req_lookup = _requirements_lookup(args.folder, cfg)
     judgment = _util.load_json(args.themes_file)
     type_status_pairs = [
         (req_lookup.get(req.get('requirement_id', ''), {}).get('type') or req.get('requirement_type', ''),
@@ -560,8 +501,6 @@ def main():
                        help='path to a file holding the 1-2 sentence rationale text')
     p_asm.add_argument('--cv-notes-file', required=False, default=None,
                        help='path to a file holding general CV framing notes (optional; renders _(none)_ if absent)')
-    p_asm.add_argument('--research-file', required=True,
-                       help='path to research.md; provides requirement text and type keyed by CR-NNN')
     p_asm.add_argument('--requirements-file', required=True,
                        help='JSON: per-requirement decisions (status, evidence IDs, notes, language_shift)')
     p_asm.add_argument('--eligibility-file', required=True,

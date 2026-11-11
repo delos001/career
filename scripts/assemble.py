@@ -11,10 +11,11 @@ tool instead of by hand. Three subcommands, one per write point in the skill:
             log is written.
   init      Phase 3b - write the initial session log (metadata filled in, axis
             sections marked pending) into the folder created by ingest.
-  research  Phase 5 - write (or, on a re-run, refresh) research.md from the four
-            Phase-4 subagent output blocks (company, role, industry, critical
-            requirements), and fill the session log's research-completed date.
-            Axis Gaps is written pending.
+  research  Phase 5 - write (or, on a re-run, refresh) research.md from the three
+            Phase-4 subagent output blocks (company, role, industry), and fill
+            the session log's research-completed date. Axis Gaps is written
+            pending. The requirements are extracted by role-classify into
+            jd_needs.md (scripts/role_classify_assemble.py requirements).
 
 The pending sections are filled by the role-classify skill
 (scripts/role_classify_assemble.py), which imports this file's section helpers.
@@ -30,7 +31,7 @@ Created   : 2026-05-14
 Project   : career
 Usage     : python scripts/assemble.py ingest   --slug ... --app-id ... --ym ... --jd-text-file ... [--comms-text-file ...]
             python scripts/assemble.py init     --slug ... --app-id ... --ym ... --company ... --role ... [--level ...] [--industry ...] --start-date ... --jd-source ... [--comms-source ...]
-            python scripts/assemble.py research --folder ... --app-id ... --company ... --role ... --date ... --company-file ... --role-file ... --industry-file ... --critical-requirements-file ...
+            python scripts/assemble.py research --folder ... --app-id ... --company ... --role ... --date ... --company-file ... --role-file ... --industry-file ...
 Depends   : pyyaml (via _config)
 """
 
@@ -107,129 +108,6 @@ def _replace_section(text, heading, new_section):
     # is not read as a regex replacement template.
     replacement = new_section.rstrip() + '\n\n'
     return pattern.sub(lambda _m: replacement, text)
-
-
-def _upsert_section(text, heading, new_section):
-    """Replace '## heading' if present; otherwise insert it before '## Axis Gaps'.
-
-    Sections added to research.md after a file was first written (Critical
-    Requirements) must land on older files too. The insert uses a
-    string splice, not re.sub, so verbatim agent output is never read as a regex
-    replacement template. With no Axis Gaps section it appends at the end.
-    """
-    if re.search(r'(?m)^## ' + re.escape(heading) + r'\b', text):
-        return _replace_section(text, heading, new_section)
-    m_gaps = re.search(r'(?m)^## Axis Gaps\b', text)
-    if m_gaps:
-        return text[:m_gaps.start()] + new_section.rstrip() + '\n\n' + text[m_gaps.start():]
-    return text.rstrip() + '\n\n' + new_section.rstrip() + '\n'
-
-
-# ---------------------------------------------------------------------------
-# Critical-requirements Type normalization + validation
-# The critical-requirements-extractor agent must tag each requirement's Type
-# with one of four controlled values (see the agent spec and design decision
-# role-intake-critical-requirements-extraction-2026-05). The agent is an LLM and
-# deviates from that vocabulary in two distinct ways:
-#
-#   - Compound (recoverable): a category label is bolted onto a valid severity
-#     token, e.g. "education (must-have)". The severity is unambiguous; the
-#     decoration has no meaning in the gap-analysis coverage table and has no
-#     schema field, so it is stripped and the bare token kept. A warning is
-#     emitted so the deviation stays visible without halting the pipeline.
-#   - Substitution / ambiguous (unrecoverable): the cell carries a "kind of
-#     requirement" word with no severity token (Competency / Knowledge /
-#     Experience / Credential / Behavior), or two-plus severity tokens. Severity
-#     cannot be inferred without guessing, which would silently corrupt scoring,
-#     so the write still fails loudly - the deviation is caught at generation
-#     time instead of reaching gap-analysis unnoticed.
-# ---------------------------------------------------------------------------
-
-# The only Type values the downstream gap-analysis coverage table counts.
-ALLOWED_REQUIREMENT_TYPES = {'must-have', 'preferred', 'duty-derived', 'contextual'}
-
-
-def _normalize_requirement_types(block):
-    """Normalize recoverable off-spec Type cells; raise on unrecoverable ones.
-
-    'block' is the critical-requirements-extractor output: a Markdown table
-    '| # | Text | Type | Source |', or the '(none extracted...)' sentinel when
-    the JD is too thin (no rows, nothing to normalize). Returns the block with
-    each requirement row's Type cell reduced to one of ALLOWED_REQUIREMENT_TYPES.
-
-    Per row Type cell (see the module-level comment for the two deviation modes):
-      - already valid                 -> left untouched.
-      - exactly one allowed token
-        present plus decoration       -> rewritten to the bare token (recovered);
-                                         the change is collected for a warning.
-      - zero or two-plus allowed
-        tokens present                -> collected as an offender.
-
-    All offenders are gathered before raising so the error lists them at once
-    rather than failing on the first.
-    """
-    out_lines = []
-    offenders = []
-    changes = []
-    for line in block.splitlines():
-        stripped = line.strip()
-        # Data rows are pipe-delimited; pass anything else through unchanged.
-        if not stripped.startswith('|') or not stripped.endswith('|'):
-            out_lines.append(line)
-            continue
-        cells = [c.strip() for c in stripped.strip('|').split('|')]
-        # Need at least #, Text, Type. Structural malformation is the downstream
-        # parser's concern; this guard only touches the Type cell.
-        if len(cells) < 3:
-            out_lines.append(line)
-            continue
-        # Pass through the header row ('#') and the '|---|---|' separator row.
-        if cells[0] == '#' or cells[0].startswith('---'):
-            out_lines.append(line)
-            continue
-        # A real requirement row has an integer in the '#' cell.
-        try:
-            int(cells[0])
-        except ValueError:
-            out_lines.append(line)
-            continue
-        type_value = cells[2]
-        if type_value in ALLOWED_REQUIREMENT_TYPES:
-            out_lines.append(line)
-            continue
-        # Off-spec cell. Recover only when exactly one severity token is present
-        # (none of the four is a substring of another, so a substring scan is a
-        # safe whole-token test). Zero present = substitution; two-plus = ambiguous.
-        present = [tok for tok in sorted(ALLOWED_REQUIREMENT_TYPES)
-                   if tok in type_value.lower()]
-        if len(present) == 1:
-            normalized = present[0]
-            changes.append((cells[0], type_value, normalized))
-            cells[2] = normalized
-            out_lines.append('| ' + ' | '.join(cells) + ' |')
-        else:
-            offenders.append((cells[0], type_value))
-            out_lines.append(line)
-    if offenders:
-        listed = ', '.join(f'row {n}: "{t}"' for n, t in offenders)
-        allowed = ', '.join(sorted(ALLOWED_REQUIREMENT_TYPES))
-        raise ValueError(
-            f'critical-requirements Type column has unrecoverable off-spec values '
-            f'({listed}); allowed: {allowed}. No single severity token could be '
-            'recovered from these cells (substitution or ambiguous), so the severity '
-            'cannot be inferred without corrupting the coverage table. Re-run the extractor '
-            'or correct the Type cells before assembling research.md.'
-        )
-    if changes:
-        listed = '; '.join(f'row {n}: "{orig}" -> "{norm}"' for n, orig, norm in changes)
-        print(
-            f'WARNING: normalized {len(changes)} compound critical-requirements Type '
-            f'value(s) to the controlled vocabulary ({listed}). The extractor bolted a '
-            'category label onto a valid severity token; the token was kept and the '
-            'decoration stripped.',
-            file=sys.stderr,
-        )
-    return '\n'.join(out_lines)
 
 
 # ---------------------------------------------------------------------------
@@ -334,8 +212,8 @@ def cmd_init(args, repo_root, cfg):
 
 # ---------------------------------------------------------------------------
 # Subcommand: research  (role-intake Phase 5)
-# Writes research.md from the four Phase 4 subagent output blocks: company,
-# role, industry, and critical requirements. On a re-run it replaces only
+# Writes research.md from the three Phase 4 subagent output blocks: company,
+# role, and industry. On a re-run it replaces only
 # role-intake's own sections, leaving anything else. Also fills the session
 # log's research-completed date, the last field role-intake owns there.
 # ---------------------------------------------------------------------------
@@ -348,12 +226,6 @@ def cmd_research(args, repo_root, cfg):
     company_block = _util.read(args.company_file).strip()
     role_block = _util.read(args.role_file).strip()
     industry_block = _util.read(args.industry_file).strip()
-    critical_requirements_block = _util.read(args.critical_requirements_file).strip()
-    # Guard: normalize recoverable off-spec Type values (compound cells like
-    # "education (must-have)") and reject unrecoverable ones before they reach
-    # research.md and silently corrupt gap-analysis scoring. Unrecoverable cases
-    # fail loudly (non-zero exit) so the role-intake skill halts per global-rules.md.
-    critical_requirements_block = _normalize_requirement_types(critical_requirements_block)
 
     if not os.path.exists(research_file):
         # First write: render the whole file from the template.
@@ -367,7 +239,6 @@ def cmd_research(args, repo_root, cfg):
             'company_block': company_block,
             'role_block': role_block,
             'industry_block': industry_block,
-            'critical_requirements_block': critical_requirements_block,
             # Filled by the role-classify skill.
             'axis_gaps': '## Axis Gaps\n\n_(pending)_',
         })
@@ -383,12 +254,6 @@ def cmd_research(args, repo_root, cfg):
         text = _replace_section(text, 'Company', company_block)
         text = _replace_section(text, 'Role', role_block)
         text = _replace_section(text, 'Industry', industry_block)
-        # Critical Requirements is a newer section (added per
-        # role-intake-critical-requirements-extraction-2026-05); insert it on
-        # research.md files that pre-date the addition, replace it otherwise.
-        text = _upsert_section(text, 'Critical Requirements', critical_requirements_block)
-        # A jd_needs.md built on the old rows no longer matches them;
-        # requirement_kinds.py refuses it until role-classify reruns.
         _util.write(research_file, text)
     log_text = re.sub(r'(?m)^- Research Completed Date: .*$',
                       lambda _m: f'- Research Completed Date: {args.date}', _util.read(session_log))
@@ -447,8 +312,6 @@ def main():
     p_res.add_argument('--company-file', required=True)
     p_res.add_argument('--role-file', required=True)
     p_res.add_argument('--industry-file', required=True)
-    p_res.add_argument('--critical-requirements-file', required=True,
-                       help='path to a file holding the critical-requirements-extractor output block')
     p_res.set_defaults(func=cmd_research)
 
     args = parser.parse_args()

@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
 """
-requirement_kinds.py - the role-classify needs file (jd_needs.md): its layout,
-the kinds it uses, and the rows later skills must not read
+requirement_kinds.py - the requirements file (jd_needs.md): its layout, the
+kinds it uses, and the rows later skills read
 
-role-classify labels every row of research.md's Critical Requirements table
-with a kind from rules/jd-requirement-kinds.md (Function, Means, Setting, ...),
-groups the rows into ranked needs, and writes the result to jd_needs.md in the
-application folder, laid out for reading: one heading per need with each
-requirement's exact text and kind under it, then the Qualifications and Not
-ranked rows. research.md stays role-intake's file.
+jd_needs.md is the one home of a job's requirements. role-classify writes it in
+two steps:
+
+  1. Extraction: the critical-requirements-extractor's rows are written under
+     '## Requirements', each with its text, Type and Source.
+  2. Ranking: jd-needs-ranker labels every row with a kind from
+     rules/jd-requirement-kinds.md (Function, Means, Setting, ...) and groups
+     the rows into ranked needs. The file is rewritten as the job, one heading
+     per need with its rows under it, then the Qualifications and Not ranked
+     rows. A row the ranker placed nowhere stays under '## Requirements', where
+     role_classify_qc.py C6 reports it, so no requirement is lost on rewrite.
 
 Rows on the Not ranked list (boilerplate, role shape, administrative detail)
 have done their job by the end of role-classify; retrieval and gap analysis
-must never score or evaluate them. This module is the one place that reads
-that list, so every reader filters the same way. A needs file whose rows no
-longer match research.md (the requirements were re-extracted) is refused,
-because its row numbers may now point at different requirements.
+must never score or evaluate them. requirements_table() is the one reader
+those skills use, so every reader filters the same way and sees the same
+'| # | Text | Type | Source |' table.
 
 The kinds and where each one lands are derived from the rules file at run time,
 not held here: a kind is a '### N. <name>' heading under '## Kinds', and its
@@ -39,18 +43,21 @@ jd_needs.md layout (written by render_needs, read by read_needs):
     - Signals: role-statement, repetition N, space
     - Quote: <JD section> "<verbatim JD passage>"
 
-    - **2.** <requirement text, exactly as in research.md>
+    - **2.** <requirement text, as extracted>
       - Kind: <kind, or kinds joined by + with each part's JD words>
+      - Type: must-have | preferred | duty-derived | contextual
+      - Source: <JD section> "<verbatim JD passage>"
 
     ## Qualifications
 
     - **10.** ...
-      - Kind: Qualification
 
     ## Not ranked
 
     - **25.** ...
-      - Kind: Administrative detail
+
+Before ranking the file holds only the H1 and '## Requirements', and rows
+carry no Kind line.
 
 Author  : Jason Delosh
 Created : 2026-11-10
@@ -61,6 +68,7 @@ Depends : pyyaml (via _config)
 
 import os
 import re
+import sys
 
 import _util
 
@@ -77,10 +85,18 @@ NEED, QUALIFICATIONS, NOT_RANKED = 'need', 'qualifications', 'not ranked'
 # The needs file's section headings for the two non-need places.
 SECTION_FOR = {QUALIFICATIONS: 'Qualifications', NOT_RANKED: 'Not ranked'}
 
+# The section holding extracted rows not yet placed by the ranker.
+UNPLACED = 'Requirements'
+
+# The only Type values the gap-analysis coverage table counts.
+ALLOWED_TYPES = {'must-have', 'preferred', 'duty-derived', 'contextual'}
+
+TABLE_HEADER = '| # | Text | Type | Source |\n|---|------|------|--------|'
+
 _KIND_HEADING_RE = re.compile(r'^### \d+\.\s+(.+?)\s*$')
 _NEED_HEADING_RE = re.compile(r'^### (N-\d+):\s*(.*?)\s*$')
 _ROW_RE = re.compile(r'^- \*\*(\d+)\.\*\*\s*(.*?)\s*$')
-_KIND_LINE_RE = re.compile(r'^\s+- Kind:\s*(.*?)\s*$')
+_ROW_FIELD_RE = re.compile(r'^\s+- (Kind|Type|Source):\s*(.*?)\s*$')
 _FIELD_RE = re.compile(r'^- (Basis|Signals|Quote|Delivers or owns|Leads, does, or both):\s*(.*?)\s*$')
 
 
@@ -145,30 +161,60 @@ def placement(names, kinds):
 
 
 # ---------------------------------------------------------------------------
-# research.md's Critical Requirements table
+# The extractor's table
+# The critical-requirements-extractor returns '| # | Text | Type | Source |'.
+# Its Type cell is held to ALLOWED_TYPES here, before anything is written.
 # ---------------------------------------------------------------------------
 
-def requirement_texts(section):
-    """Return {row number: Text} from a Critical Requirements body (table form)."""
-    texts = {}
-    for line in (section or '').split('\n'):
-        cells = [c.strip() for c in line.strip().strip('|').split('|')]
-        if line.strip().startswith('|') and len(cells) >= 4 and cells[0].isdigit():
-            texts[int(cells[0])] = cells[1]
-    return texts
+def _row(num, text, type_, source, kind=None):
+    return {'num': num, 'text': text, 'kind': kind, 'type': type_, 'source': source}
 
 
-def without_rows(section, nums):
-    """Return a Critical Requirements body with the given rows removed."""
-    if not nums:
-        return section
-    out = []
-    for line in section.split('\n'):
-        cells = [c.strip() for c in line.strip().strip('|').split('|')]
-        if line.strip().startswith('|') and cells[0].isdigit() and int(cells[0]) in nums:
+def normalize_type(value):
+    """Return (allowed Type, recovered?) for a Type cell, or (None, False).
+
+    The extractor is an LLM and drifts from the vocabulary two ways. A category
+    label bolted onto one valid token ('education (must-have)') is recoverable:
+    the token is kept. A cell with no token, or two, is not: severity cannot be
+    inferred without guessing, so the caller fails loudly.
+    """
+    if value in ALLOWED_TYPES:
+        return value, False
+    # None of the four is a substring of another, so a substring scan is a
+    # whole-token test.
+    present = [t for t in sorted(ALLOWED_TYPES) if t in value.lower()]
+    return (present[0], True) if len(present) == 1 else (None, False)
+
+
+def parse_extractor_table(block):
+    """Return [row dict] from the extractor's output, Types normalized.
+
+    Raises on an unrecoverable Type cell, listing every offender at once; warns
+    on stderr for each recovered one.
+    """
+    rows, offenders, recovered = [], [], []
+    for line in block.split('\n'):
+        stripped = line.strip()
+        if not stripped.startswith('|'):
             continue
-        out.append(line)
-    return '\n'.join(out)
+        cells = [c.strip() for c in stripped.strip('|').split('|')]
+        if len(cells) < 4 or not cells[0].isdigit():
+            continue
+        # Source is the last cell; a pipe inside a quote would add cells, so
+        # everything after Type is joined back into it.
+        num, text, raw_type, source = int(cells[0]), cells[1], cells[2], ' | '.join(cells[3:])
+        type_, was_recovered = normalize_type(raw_type)
+        if type_ is None:
+            offenders.append(f'row {num}: "{raw_type}"')
+        elif was_recovered:
+            recovered.append(f'row {num}: "{raw_type}" -> "{type_}"')
+        rows.append(_row(num, text, type_ or raw_type, source))
+    if offenders:
+        raise ValueError(f"requirement Type has values outside {', '.join(sorted(ALLOWED_TYPES))} "
+                         f"({'; '.join(offenders)}); rerun the extractor")
+    if recovered:
+        print(f"WARNING: Type reduced to its allowed value ({'; '.join(recovered)})", file=sys.stderr)
+    return rows
 
 
 # ---------------------------------------------------------------------------
@@ -179,15 +225,27 @@ def needs_path(app_folder, cfg):
     return os.path.join(app_folder, cfg['filenames']['jd_needs_file'])
 
 
-def _row_lines(num, text, kind):
-    return [f'- **{num}.** {text}', f'  - Kind: {kind}']
+def _row_lines(row):
+    lines = [f"- **{row['num']}.** {row['text']}"]
+    if row.get('kind'):
+        lines.append(f"  - Kind: {row['kind']}")
+    lines += [f"  - Type: {row['type']}", f"  - Source: {row['source']}"]
+    return lines
 
 
-def render_needs(title, job_lines, needs, qualifications, not_ranked):
-    """Return jd_needs.md text.
+def render_requirements(title, rows):
+    """Return jd_needs.md text holding the extracted rows only (before ranking)."""
+    out = [f'# JD needs: {title}', '', f'## {UNPLACED}', '']
+    out += [line for row in rows for line in _row_lines(row)] or ['None.']
+    return '\n'.join(out) + '\n'
 
-    needs: [{'id', 'label', 'basis', 'signals', 'quote', 'rows': [(num, text, kind)]}];
-    qualifications, not_ranked: [(num, text, kind)].
+
+def render_needs(title, job_lines, needs, qualifications, not_ranked, unplaced=()):
+    """Return the ranked jd_needs.md text.
+
+    needs: [{'id', 'label', 'basis', 'signals', 'quote', 'rows': [row dict]}];
+    qualifications, not_ranked, unplaced: [row dict]. Unplaced rows (the ranker
+    named them nowhere) keep a '## Requirements' section so QC can name them.
     """
     out = [f'# JD needs: {title}', '', '## The job', '']
     out += job_lines
@@ -198,27 +256,35 @@ def render_needs(title, job_lines, needs, qualifications, not_ranked):
                 f"- Signals: {need['signals']}",
                 f"- Quote: {need['quote']}", '']
         for row in need['rows']:
-            out += _row_lines(*row)
+            out += _row_lines(row)
         out.append('')
-    for heading, rows in (('Qualifications', qualifications), ('Not ranked', not_ranked)):
+    sections = [('Qualifications', qualifications), ('Not ranked', not_ranked)]
+    if unplaced:
+        sections.append((UNPLACED, unplaced))
+    for heading, rows in sections:
         out += [f'## {heading}', '']
-        out += [line for row in rows for line in _row_lines(*row)] or ['None.']
+        out += [line for row in rows for line in _row_lines(row)] or ['None.']
         out.append('')
     return '\n'.join(out)
 
 
 def read_needs(text):
-    """Parse jd_needs.md into {'job': {field: value}, 'needs': [...], 'Qualifications': [...],
-    'Not ranked': [...]}. Need dicts carry id, label, Basis, Signals, Quote, rows;
-    rows are [(num, text, kind or None)]. Unknown lines are ignored; the QC
-    script reports what is missing."""
-    out = {'job': {}, 'needs': [], 'Qualifications': [], 'Not ranked': [], 'sections': []}
+    """Parse jd_needs.md into {'title', 'job': {field: value}, 'needs': [...],
+    'Qualifications': [...], 'Not ranked': [...], 'Requirements': [...],
+    'sections': [...]}. Need dicts carry id, label, Basis, Signals, Quote, rows;
+    rows are row dicts (num, text, kind, type, source; a missing field is None).
+    Unknown lines are ignored; the QC script reports what is missing."""
+    out = {'title': '', 'job': {}, 'needs': [], 'Qualifications': [], 'Not ranked': [],
+           UNPLACED: [], 'sections': []}
+    m = re.match(r'# JD needs:\s*(.*)', text)
+    if m:
+        out['title'] = m.group(1).strip()
     section, rows = None, None
     for line in text.split('\n'):
         if line.startswith('## '):
             section = line[3:].strip()
             out['sections'].append(section)
-            rows = out.get(section) if section in ('Qualifications', 'Not ranked') else None
+            rows = out.get(section) if section in ('Qualifications', 'Not ranked', UNPLACED) else None
             continue
         m = _NEED_HEADING_RE.match(line)
         if m and section == 'Needs':
@@ -228,11 +294,11 @@ def read_needs(text):
             continue
         m = _ROW_RE.match(line)
         if m and rows is not None:
-            rows.append([int(m.group(1)), m.group(2), None])
+            rows.append(_row(int(m.group(1)), m.group(2), None, None))
             continue
-        m = _KIND_LINE_RE.match(line)
+        m = _ROW_FIELD_RE.match(line)
         if m and rows:
-            rows[-1][2] = m.group(1)
+            rows[-1][m.group(1).lower()] = m.group(2)
             continue
         m = _FIELD_RE.match(line)
         if m:
@@ -243,35 +309,38 @@ def read_needs(text):
     return out
 
 
+def all_rows(parsed):
+    """Return every row in a parsed needs file, in file order."""
+    return ([row for need in parsed['needs'] for row in need['rows']]
+            + parsed['Qualifications'] + parsed['Not ranked'] + parsed[UNPLACED])
+
+
 # ---------------------------------------------------------------------------
-# The filter retrieval and gap analysis apply
+# The reader retrieval and gap analysis use
 # ---------------------------------------------------------------------------
 
-def not_ranked_rows(app_folder, cfg, section):
-    """Return the row numbers on jd_needs.md's Not ranked list.
+def ranked_rows(app_folder, cfg):
+    """Return the rows later skills read: every row except Not ranked, by number.
 
-    Returns the empty set when the application has no jd_needs.md (role-classify
-    predates it). Raises when the needs file's rows do not match the
-    requirements in research.md, since its row numbers may then name different
-    requirements than the ones it was built on.
+    Raises when the application has no jd_needs.md or it holds no rows, so a
+    skill run before role-classify halts instead of working from nothing.
     """
     path = needs_path(app_folder, cfg)
     if not os.path.isfile(path):
-        return set()
+        raise FileNotFoundError(f'{path} not found; run /role-classify first')
     parsed = read_needs(_util.read(path))
-    listed = {num: text for rows in ([n['rows'] for n in parsed['needs']]
-                                     + [parsed['Qualifications'], parsed['Not ranked']])
-              for num, text, _ in rows}
-    current = requirement_texts(section)
-    if listed != current:
-        raise ValueError(f'{path} does not match the requirements in research.md '
-                         f'(they were re-extracted); rerun /role-classify')
-    return {num for num, _, _ in parsed['Not ranked']}
+    skip = {row['num'] for row in parsed['Not ranked']}
+    rows = sorted((r for r in all_rows(parsed) if r['num'] not in skip), key=lambda r: r['num'])
+    if not rows:
+        raise ValueError(f'{path} holds no requirements; run /role-classify first')
+    return rows
 
 
-def ranked_section(section, app_folder, cfg):
-    """Return a Critical Requirements body without its Not ranked rows.
+def requirements_table(app_folder, cfg):
+    """Return the '| # | Text | Type | Source |' table of ranked_rows().
 
     What retrieval scores and gap analysis evaluates.
     """
-    return without_rows(section, not_ranked_rows(app_folder, cfg, section))
+    lines = [f"| {r['num']} | {r['text']} | {r['type']} | {r['source']} |"
+             for r in ranked_rows(app_folder, cfg)]
+    return TABLE_HEADER + '\n' + '\n'.join(lines)

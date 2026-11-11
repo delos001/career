@@ -3,14 +3,18 @@
 role_classify_qc.py - deterministic QC for the role-classify skill's writes
 
 Owns the mechanical checks on what role-classify adds to an application: the
-needs file (jd_needs.md), and the axis classification, Level and
-Industry metadata, and Axis Gaps in the session log (mirrored into research.md).
-The qc-role-classify judgment agent keeps what a script cannot verify (whether
-the classification and the ranking are right).
+requirements and needs file (jd_needs.md), and the axis classification, Level
+and Industry metadata, and Axis Gaps in the session log (mirrored into
+research.md). The qc-role-classify judgment agent keeps what a script cannot
+verify (whether the classification and the ranking are right).
 
-These checks lived in role_intake_qc.py (as I3's axis half, I4, I5, I6, I8)
-until role-classify was split out of role-intake; the parsing helpers they
-share with role-intake's checks stay in role_intake_qc.py.
+C1 to C6 lived in role_intake_qc.py (as I3's axis half, I4, I5, I6, I8) until
+role-classify was split out of role-intake; C7 and C8 (as I1's requirements
+half and I7) until requirement extraction moved here too. The metadata parsing
+helpers stay in role_intake_qc.py.
+
+Two commands. 'requirements' runs C7 and C8 alone, right after extraction, so a
+bad extraction is caught before ranking is spent on it. 'check' runs them all.
 
 Checks:
   C1  Completeness: the session log's Role Level and Industry metadata are
@@ -27,8 +31,14 @@ Checks:
   C6  jd_needs.md: the job description is present; ids N-01.. in rank
       order, Basis stated|derived, Signals from the allowed set, each need's
       quote verbatim in jd.md; every requirement in exactly one of a need,
-      Qualifications or Not ranked, with its research.md text unchanged; and
-      every kind known and placed where its kinds set.
+      Qualifications or Not ranked (none left under Requirements); and every
+      kind known and placed where its kinds set.
+  C7  jd_needs.md holds at least one requirement, numbered 1..N with no gaps
+      or repeats, each with text, a Source, and a Type from the allowed four.
+  C8  Each requirement's Source carries one verbatim quote found in jd.md, and
+      its text keeps every modifier (config requirement_qualifiers) in the JD
+      clause holding that quote. A year count (config requirement_year_count)
+      must survive on at least one row quoting that clause.
 
 Output: one `<ID>  PASS|FAIL  <detail>` line per check, then a RESULT line.
 Exit 0 when all pass, 1 otherwise.
@@ -36,7 +46,8 @@ Exit 0 when all pass, 1 otherwise.
 Author  : Jason Delosh
 Created : 2026-11-09
 Project : career
-Usage   : python scripts/role_classify_qc.py check --folder <app_folder>
+Usage   : python scripts/role_classify_qc.py requirements --folder <app_folder>
+          python scripts/role_classify_qc.py check --folder <app_folder>
 Depends : pyyaml (via _config)
 """
 
@@ -48,8 +59,7 @@ import sys
 import _config
 import _util
 import requirement_kinds
-from role_intake_qc import (_PENDING_RE, _QUOTE_RE, _clause_holding, _metadata_fields,
-                            _read, _requirement_rows, _section_body)
+from role_intake_qc import _PENDING_RE, _metadata_fields, _read, _section_body
 
 
 # ---------------------------------------------------------------------------
@@ -64,10 +74,41 @@ AXES = ['Orientation', 'Industry', 'Specialty', 'Level', 'Work-state']
 BASIS_VALUES = {'stated', 'derived'}
 _SIGNAL_RE = re.compile(r'^(?:role-statement|repetition \d+|space)$')
 
+# Regex: a double-quoted span in a Source or Quote (straight or curly).
+_QUOTE_RE = re.compile(r'["“]([^"“”]+)["”]')
+
+# Regex: where a JD clause ends (see _clause_holding).
+_CLAUSE_END_RE = re.compile(r'[.;!?]\s')
+
 
 # ---------------------------------------------------------------------------
 # Parsing helpers
 # ---------------------------------------------------------------------------
+
+def _normalize(text):
+    """Lowercase, straighten quotes and dashes, drop bold, collapse whitespace."""
+    for fancy, plain in (('’', "'"), ('‘', "'"), ('–', '-'), ('—', '-'), ('*', '')):
+        text = text.replace(fancy, plain)
+    return re.sub(r'\s+', ' ', text).strip().lower()
+
+
+def _clause_holding(jd_text, quote):
+    """Return the normalized JD clause holding `quote`, or None if not found.
+
+    A clause runs between sentence ends and semicolons within one JD line, so
+    in 'Bachelor's degree required; advanced degree preferred.' the 'preferred'
+    never binds the Bachelor's row. A quote must sit on one line of the JD.
+    """
+    target = _normalize(quote)
+    for raw_line in jd_text.split('\n'):
+        line = _normalize(raw_line)
+        pos = line.find(target)
+        if pos < 0:
+            continue
+        start = max((m.end() for m in _CLAUSE_END_RE.finditer(line, 0, pos)), default=0)
+        end_match = _CLAUSE_END_RE.search(line, pos + len(target))
+        return line[start:end_match.start() + 1] if end_match else line[start:]
+    return None
 
 def _axis_values(log_text):
     """Return {axis: value part} from ## Axis Classification lines.
@@ -238,31 +279,30 @@ def check_tier(log_text, tiers, findings):
     findings.append(('C5', ok, detail))
 
 
-def check_ranked_needs(research_text, needs_text, jd_text, kinds, findings):
+def check_ranked_needs(needs_text, jd_text, kinds, findings):
     """C6: jd_needs.md places every requirement once, where its kind says.
 
     jd-needs-ranker labels each requirement with a kind from
     rules/jd-requirement-kinds.md, describes the job, and groups the rows into
-    ranked needs; role_classify_assemble.py writes the result to jd_needs.md
-    with each requirement's text copied from research.md. This check holds the
-    mechanical half: the job description is present; ids N-01.. in sequence;
-    allowed Basis and Signals values; each quote verbatim in the JD; every
-    requirement in exactly one of a need, Qualifications or Not ranked, with
-    its research.md text unchanged (a mismatch means the requirements were
-    re-extracted after the ranking); and every kind known and placed where its
-    kinds set. The Not ranked placement is what keeps boilerplate out of
-    retrieval and gap analysis, so a misplaced row is a failure here, not a
-    style note. Whether the kinds and the ranking are right is
-    qc-role-classify's judgment and the user's confirmation.
+    ranked needs; role_classify_assemble.py rewrites jd_needs.md with each
+    requirement's text, Type and Source carried over from the extracted rows.
+    This check holds the mechanical half: the job description is present; ids
+    N-01.. in sequence; allowed Basis and Signals values; each quote verbatim in
+    the JD; every requirement in exactly one of a need, Qualifications or Not
+    ranked, none left under Requirements (the ranker placed it nowhere); and
+    every kind known and placed where its kinds set. The Not ranked placement is
+    what keeps boilerplate out of retrieval and gap analysis, so a misplaced row
+    is a failure here, not a style note. Whether the kinds and the ranking are
+    right is qc-role-classify's judgment and the user's confirmation.
     """
-    req = {num: text for num, text, _ in _requirement_rows(research_text)}
     if needs_text is None:
-        ok = not req
-        findings.append(('C6', ok, 'no requirements, no needs file' if ok
-                         else 'jd_needs.md not found (role-classify Phase 1 not run)'))
+        findings.append(('C6', False, 'jd_needs.md not found (requirements not extracted)'))
         return
     parsed = requirement_kinds.read_needs(needs_text)
+    req = {row['num'] for row in requirement_kinds.all_rows(parsed)}
     problems = []
+    for row in parsed[requirement_kinds.UNPLACED]:
+        problems.append(f"CR-{row['num']:03d} is in no need, Qualifications or Not ranked")
     for field in ('Delivers or owns', 'Leads, does, or both'):
         if not parsed['job'].get(field):
             problems.append(f'The job: no "{field}" line')
@@ -287,25 +327,20 @@ def check_ranked_needs(research_text, needs_text, jd_text, kinds, findings):
         if not need['rows']:
             problems.append(f'{nid}: no requirements')
         for row in need['rows']:
-            seen.setdefault(row[0], []).append((nid, requirement_kinds.NEED, row))
+            seen.setdefault(row['num'], []).append((nid, requirement_kinds.NEED, row))
     if req and not parsed['needs']:
         problems.append('no needs')
     for place, heading in requirement_kinds.SECTION_FOR.items():
         if heading not in parsed['sections']:
             problems.append(f'no `## {heading}` section')
         for row in parsed[heading]:
-            seen.setdefault(row[0], []).append((heading, place, row))
-    for num, text in req.items():
-        if num not in seen:
-            problems.append(f'CR-{num:03d} is in no need, Qualifications or Not ranked')
-            continue
+            seen.setdefault(row['num'], []).append((heading, place, row))
+    for num in sorted(seen):
         if len(seen[num]) > 1:
             problems.append(f"CR-{num:03d} appears in {', '.join(w for w, _, _ in seen[num])}")
             continue
-        where, place, (_, listed_text, kind) = seen[num][0]
-        if listed_text != text:
-            problems.append(f'CR-{num:03d}: text differs from research.md (requirements '
-                            f're-extracted; rerun Phase 1)')
+        where, place, row = seen[num][0]
+        kind = row['kind']
         if not kind:
             problems.append(f'CR-{num:03d} has no Kind')
             continue
@@ -316,17 +351,112 @@ def check_ranked_needs(research_text, needs_text, jd_text, kinds, findings):
         elif requirement_kinds.placement(names, kinds) != place:
             problems.append(f'CR-{num:03d} is in {where} but its kind places it in '
                             f'{requirement_kinds.placement(names, kinds)}')
-    for num in sorted(set(seen) - set(req)):
-        problems.append(f'row {num} is not a requirement row')
     findings.append(('C6', not problems, '; '.join(problems)
                      or f"{len(parsed['needs'])} needs; all {len(req)} requirements have a "
                         f"kind and land once where it places them"))
+
+
+def check_requirements_present(needs_text, findings):
+    """C7: the extracted requirements are on file, numbered, with Type and Source.
+
+    Row numbers are the CR-NNN ids every later skill cites, so a gap or a
+    repeat would point a citation at the wrong requirement.
+    """
+    if needs_text is None:
+        findings.append(('C7', False, 'jd_needs.md not found (requirements not extracted)'))
+        return
+    rows = requirement_kinds.all_rows(requirement_kinds.read_needs(needs_text))
+    problems = []
+    nums = sorted(row['num'] for row in rows)
+    if not rows:
+        problems.append('no requirement rows')
+    elif nums != list(range(1, len(nums) + 1)):
+        problems.append(f"row numbers are not 1..{len(nums)} with no gaps or repeats: {nums}")
+    for row in rows:
+        cr = f"CR-{row['num']:03d}"
+        if not row['text']:
+            problems.append(f'{cr}: no text')
+        if not row['source']:
+            problems.append(f'{cr}: no Source')
+        if row['type'] not in requirement_kinds.ALLOWED_TYPES:
+            problems.append(f"{cr}: Type {row['type']!r} is not one of "
+                            f"{', '.join(sorted(requirement_kinds.ALLOWED_TYPES))}")
+    findings.append(('C7', not problems, '; '.join(problems)
+                     or f'{len(rows)} requirements, each with text, Type and Source'))
+
+
+def check_requirement_text(needs_text, jd_text, qualifiers, year_count, findings):
+    """C8: requirement text keeps the modifiers that set the JD's bar (GitHub #83).
+
+    The extractor once dropped 'familiarity with' from a must-have, and the
+    stricter text reached the gap walk. Modifiers are read from the whole JD
+    clause rather than the quote alone: the extractor chooses the quote, so a
+    narrow one would otherwise step around the check. A row that keeps every
+    modifier but rewords the rest passes; this check guards the bar, not style.
+
+    A year count is held across the rows sharing a clause rather than on each
+    row: in '10 years in the industry, with at least 5 years in people management'
+    each count belongs to one of two requirements, so it needs only to survive on
+    some row from that clause. Wording modifiers stay per row.
+    """
+    if needs_text is None:
+        findings.append(('C8', False, 'jd_needs.md not found (requirements not extracted)'))
+        return
+    if jd_text is None:
+        findings.append(('C8', False, 'jd.md not found, so requirement quotes cannot be checked'))
+        return
+    rows = requirement_kinds.all_rows(requirement_kinds.read_needs(needs_text))
+    problems = []
+    texts_by_clause = {}
+    for row in rows:
+        num, text = row['num'], row['text']
+        quotes = _QUOTE_RE.findall(row['source'] or '')
+        if len(quotes) != 1:
+            problems.append(f'CR-{num:03d}: Source needs one quote, found {len(quotes)}')
+            continue
+        clause = _clause_holding(jd_text, quotes[0])
+        if clause is None:
+            problems.append(f'CR-{num:03d}: quote not found in the JD: {quotes[0][:60]}')
+            continue
+        norm_text = _normalize(text)
+        for pattern in qualifiers:
+            for match in re.finditer(rf'\b(?:{pattern})\b', clause):
+                if not re.search(rf'\b{re.escape(match.group(0))}\b', norm_text):
+                    problems.append(f"CR-{num:03d}: Text drops '{match.group(0)}' from the JD clause: {clause[:80]}")
+        texts_by_clause.setdefault(clause, []).append((num, norm_text))
+    for clause, entries in texts_by_clause.items():
+        for match in re.finditer(rf'\b(?:{year_count})\b', clause):
+            count = rf'\b{re.escape(match.group(0))}\b'
+            if not any(re.search(count, norm_text) for _, norm_text in entries):
+                ids = ', '.join(f'CR-{num:03d}' for num, _ in entries)
+                problems.append(f"{ids}: no row keeps '{match.group(0)}' from the JD clause: {clause[:80]}")
+    findings.append(('C8', not problems, '; '.join(problems) or f'{len(rows)} requirement rows keep their JD modifiers'))
 
 
 
 # ---------------------------------------------------------------------------
 # Command: check
 # ---------------------------------------------------------------------------
+
+def _needs_and_jd(folder, cfg):
+    """Return (jd_needs.md text, jd.md text), each None when absent."""
+    return (_read(requirement_kinds.needs_path(folder, cfg)),
+            _read(os.path.join(folder, cfg['filenames']['jd_file'])))
+
+
+def _requirement_checks(needs_text, jd_text, cfg, findings):
+    """C7 and C8: the extraction checks."""
+    check_requirements_present(needs_text, findings)
+    check_requirement_text(needs_text, jd_text, cfg['requirement_qualifiers'],
+                           cfg['requirement_year_count'], findings)
+
+
+def cmd_requirements(args, repo_root, cfg):
+    """Run the extraction checks only (C7, C8); return exit code."""
+    findings = []
+    _requirement_checks(*_needs_and_jd(args.folder, cfg), cfg, findings)
+    return _report(findings)
+
 
 def cmd_check(args, repo_root, cfg):
     """Run all checks against one application folder; print report; return exit code."""
@@ -337,7 +467,6 @@ def cmd_check(args, repo_root, cfg):
         missing = fn['research_file'] if research_text is None else fn['session_log_file']
         print(f'FATAL  {missing} not found in {args.folder}')
         return 1
-    jd_text = _read(os.path.join(args.folder, fn['jd_file']))
     meta = _metadata_fields(log_text)
 
     findings = []
@@ -346,9 +475,14 @@ def cmd_check(args, repo_root, cfg):
     check_gap_mirroring(research_text, log_text, findings)
     check_axis_line_form(log_text, findings)
     check_tier(log_text, leadership_tiers(repo_root, cfg), findings)
-    check_ranked_needs(research_text, _read(requirement_kinds.needs_path(args.folder, cfg)),
-                       jd_text, requirement_kinds.load_kinds(repo_root, cfg), findings)
+    needs_text, jd_text = _needs_and_jd(args.folder, cfg)
+    check_ranked_needs(needs_text, jd_text, requirement_kinds.load_kinds(repo_root, cfg), findings)
+    _requirement_checks(needs_text, jd_text, cfg, findings)
+    return _report(findings)
 
+
+def _report(findings):
+    """Print one line per check and a RESULT line; return the exit code."""
     failed = [f for f in findings if not f[1]]
     for check, ok, detail in findings:
         print(f"{check}  {'PASS' if ok else 'FAIL'}  {detail}")
@@ -364,15 +498,17 @@ def cmd_check(args, repo_root, cfg):
 def main():
     parser = argparse.ArgumentParser(description='Deterministic QC for role-classify writes.')
     sub = parser.add_subparsers(dest='command', required=True)
-    p_check = sub.add_parser('check', help='validate one application folder')
-    p_check.add_argument('--folder', required=True,
-                         help='absolute path to the application folder')
+    commands = {'requirements': ('check the extracted requirements only', cmd_requirements),
+                'check': ('validate one application folder', cmd_check)}
+    for name, (help_text, _) in commands.items():
+        p = sub.add_parser(name, help=help_text)
+        p.add_argument('--folder', required=True,
+                       help='absolute path to the application folder')
     args = parser.parse_args()
 
     sys.stdout.reconfigure(encoding='utf-8')
     repo_root, cfg = _config.load()
-    if args.command == 'check':
-        sys.exit(cmd_check(args, repo_root, cfg))
+    sys.exit(commands[args.command][1](args, repo_root, cfg))
 
 
 if __name__ == '__main__':

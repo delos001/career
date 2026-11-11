@@ -45,16 +45,15 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 **Loading the role-intake and retrieval artifacts for this application.**
 
 - Input: application folder path (from the resume check), APP-NNN, slug.
-- Read `research.md` from the application folder. Extract:
-  - `## Critical Requirements` section (what each piece of evidence is assessed against).
-  - `## Role`, `## Company`, `## Industry` summary blocks (role context for downstream judgment).
+- Read `jd_needs.md` from the application folder: the requirements each piece of evidence is assessed against. Rows under `## Not ranked` are never evaluated.
+- Read `research.md` from the application folder. Extract the `## Role`, `## Company`, `## Industry` summary blocks (role context for downstream judgment).
 - Read `user-info.md` from the profile folder. Extract the eligibility / fit-signal sections:
   - `## Work Authorization` (Status, Sponsorship Required).
   - `## Geographic Preferences` (Modality, Willing to Relocate, Travel).
   - `## Availability` (Start).
   - `## Exclusions` (Industries / Company Types).
 - Do not load `retrieval.md`, `inventory.md`, or `narratives.md` here; Phase 3's script hands what the detector needs to it directly.
-- Output: critical-requirements block, role/company/industry summary, user-info eligibility sections.
+- Output: the requirements, role/company/industry summary, user-info eligibility sections.
 
 ## Phase 2 - Eligibility / fit-signal check
 
@@ -149,7 +148,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 
 - Input: scratch file paths from Phase 4 (`gap_requirements.json`, `gap_eligibility.json`, `gap_cv_notes.txt`) and Phase 5 (`gap_rationale.txt`, `gap_themes.json`); Phase 4 queued staging captures; Phase 5 recommendation label; APP-NNN, slug, company, role.
 - **Step 6a - Stage the captures.** For each queued capture, run the command in `rules/profile/staging-writing.md`, anchored to its `CR-NNN`. The script refuses a capture with a field missing; when it does, ask the user for the missing fact rather than filling it in.
-- **Step 6b - Write gap_analysis.md.** Run `python scripts/gap_assemble.py assemble --folder <app_folder> --app-id APP-NNN --date YYYY-MM-DD --company <company> --role <role> --recommendation-label <label> --recommendation-rationale-file <scratch>/gap_rationale.txt --research-file <app_folder/research.md> --requirements-file <scratch>/gap_requirements.json --eligibility-file <scratch>/gap_eligibility.json --themes-file <scratch>/gap_themes.json --cv-notes-file <scratch>/gap_cv_notes.txt`. Renders `templates/gap_analysis.md` with substituted blocks; the script computes the coverage table and the unmet must-have count from the statuses. Capture the printed path. Non-zero exit = halt per global rules.
+- **Step 6b - Write gap_analysis.md.** Run `python scripts/gap_assemble.py assemble --folder <app_folder> --app-id APP-NNN --date YYYY-MM-DD --company <company> --role <role> --recommendation-label <label> --recommendation-rationale-file <scratch>/gap_rationale.txt --requirements-file <scratch>/gap_requirements.json --eligibility-file <scratch>/gap_eligibility.json --themes-file <scratch>/gap_themes.json --cv-notes-file <scratch>/gap_cv_notes.txt`. Renders `templates/gap_analysis.md` with substituted blocks; the script computes the coverage table and the unmet must-have count from the statuses. Capture the printed path. Non-zero exit = halt per global rules.
 - **Step 6c - Write session log section.** Build the `## Gap Analysis` section body in a scratch file (`<scratch>/...`) with: Run date, Gap analysis file path, Recommendation (the label alone), QC verdict (filled after Phase 7). Run `python scripts/session_log.py append-section --folder <app_folder> --heading "Gap Analysis" --body-file <path>`. Script replaces the section on re-runs and appends it on first runs. Detail (requirements, language-shift cases, eligibility flags, recommendation rationale) lives in `gap_analysis.md`; the session log section is a pointer + headline.
 - Output: gap_analysis.md written; staging items appended; session log section written.
 

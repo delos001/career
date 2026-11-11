@@ -994,11 +994,12 @@ def test_scorer_context_is_copied_verbatim():
     context_path = os.path.join(scratch, f'{FIXTURE_PREFIX}_scoring_context.md')
     context = _util.read(context_path)
 
-    research = _util.read(os.path.join(FIXTURE_APP, 'research.md'))
-    requirements = research.split('## Critical Requirements\n', 1)[1] \
-                           .split('\n## ', 1)[0].strip('\n')
+    import requirement_kinds
+    _, cfg = _config.load()
+    requirements = requirement_kinds.requirements_table(FIXTURE_APP, cfg)
     jd = _util.read(os.path.join(FIXTURE_APP, 'jd.md')).strip('\n')
-    assert requirements in context, 'Critical Requirements not copied verbatim'
+    assert requirements in context, 'the requirements table is not in the context'
+    assert '| 6 | Familiarity with regulatory submission data packages | contextual |' in context, context
     assert jd in context, 'JD not copied verbatim'
     assert context.index(requirements) < context.index('## Job Description'), \
         'the JD must follow the requirements so its headings cannot cut them'
@@ -1087,13 +1088,10 @@ def test_inventory_merge_refuses_a_duplicate_or_missing_score():
 def test_split_refuses_without_requirements():
     """A context file with no requirements would score every entry against
     nothing; split must stop instead of writing one."""
-    path = os.path.join(FIXTURE_APP, 'research.md')
-    research = _util.read(path)
-    _util.write(path, research.split('## Critical Requirements', 1)[0]
-                + '## Axis Gaps\n\nNone.\n')
+    os.remove(os.path.join(FIXTURE_APP, 'jd_needs.md'))
     code, out, _ = split_fixture_payloads()
     assert code != 0, f'split wrote a context with no requirements:\n{out}'
-    assert 'Critical Requirements' in out, out
+    assert 'jd_needs.md' in out, out
 
 
 # ---------------------------------------------------------------------------
@@ -1376,8 +1374,10 @@ def test_detector_context_carries_unscored_profile_sections():
     context_path = os.path.join(scratch, 'gap_detector_context.md')
     context = _util.read(context_path)
 
+    import requirement_kinds
     research = h2_bodies(_util.read(os.path.join(FIXTURE_APP, 'research.md')))
-    assert research['Critical Requirements'] in context, 'requirements not copied verbatim'
+    assert requirement_kinds.requirements_table(FIXTURE_APP, _config.load()[1]) in context, \
+        'the requirements table is not in the context'
     for name in ('Role', 'Company', 'Industry'):
         assert research[name] in context, f'{name} context not copied verbatim'
 
@@ -1396,13 +1396,10 @@ def test_detector_context_carries_unscored_profile_sections():
 
 def test_detector_context_refuses_without_requirements():
     """No requirements means nothing to judge against; build must stop."""
-    path = os.path.join(FIXTURE_APP, 'research.md')
-    research = _util.read(path)
-    _util.write(path, research.split('## Critical Requirements', 1)[0]
-                + '## Axis Gaps\n\nNone.\n')
+    os.remove(os.path.join(FIXTURE_APP, 'jd_needs.md'))
     code, out, _ = build_detector_context()
     assert code != 0, f'build wrote a context with no requirements:\n{out}'
-    assert 'Critical Requirements' in out, out
+    assert 'jd_needs.md' in out, out
 
 
 def test_detector_evidence_carries_every_manifest_entry_once():
@@ -1661,7 +1658,6 @@ def test_gap_analysis_leads_with_the_picture_not_a_score():
                     '--date', '2026-01-12', '--company', 'Aldridge Pharma', '--role', 'Director',
                     '--recommendation-label', 'Proceed with caution',
                     '--recommendation-rationale-file', write_block('why.txt', 'Mixed.'),
-                    '--research-file', os.path.join(FIXTURE_APP, 'research.md'),
                     '--requirements-file', inputs['requirements'],
                     '--eligibility-file', inputs['eligibility'], '--themes-file', inputs['themes'])
     assert code == 0, out
@@ -1762,23 +1758,29 @@ def test_leadership_classification_carries_a_valid_tier():
     assert not result('ic', '- Tier: function-lead - r\n')[1], 'ic with a tier passed'
 
 
+def needs_file(*rows, type_='must-have'):
+    """Return a jd_needs.md text holding (text, source) rows before ranking."""
+    body = ''.join(f'- **{i}.** {text}\n  - Type: {type_}\n  - Source: {source}\n'
+                   for i, (text, source) in enumerate(rows, 1))
+    return f'# JD needs: X | Y\n\n## Requirements\n\n{body}'
+
+
 def test_requirement_text_keeps_jd_modifiers():
     """Fixed 2026-11-05 (GitHub #83): the extractor dropped 'familiarity with'
     from a must-have and nothing compared requirement text with the JD. Modifiers
     are read from the JD clause holding the quote, so a narrow quote cannot step
     around the check.
     """
-    import role_intake_qc as riq
+    import role_classify_qc as rcq
     _, cfg = _config.load()
     jd = ('Strong knowledge of the industry, including familiarity with drug discovery.\n'
           "Bachelor's degree required; advanced degree preferred.\n"
           'Master’s degree with 6 years of experience.\n')
 
     def result(text, source):
-        research = ('## Critical Requirements\n\n| # | Text | Type | Source |\n|---|---|---|---|\n'
-                    f'| 1 | {text} | must-have | {source} |\n\n## Axis Gaps\n')
         findings = []
-        riq.check_requirement_text(research, jd, cfg['requirement_qualifiers'], cfg['requirement_year_count'], findings)
+        rcq.check_requirement_text(needs_file((text, source)), jd, cfg['requirement_qualifiers'],
+                                   cfg['requirement_year_count'], findings)
         return findings[0]
 
     whole ='Knowledge of the industry, including familiarity with drug discovery'
@@ -1801,17 +1803,14 @@ def test_split_requirement_keeps_each_year_count():
     which left two tests sharing one gap verdict. Each count now needs to survive
     on some row from the clause, and a count lost from all of them still fails.
     """
-    import role_intake_qc as riq
+    import role_classify_qc as rcq
     _, cfg = _config.load()
     jd = 'Minimum of 10 years in the industry, with at least 5 years in people management.\n'
 
     def result(*rows):
-        body = ''.join(f'| {i} | {text} | must-have | Quals #1 "{quote}" |\n'
-                       for i, (text, quote) in enumerate(rows, 1))
-        research = ('## Critical Requirements\n\n| # | Text | Type | Source |\n|---|---|---|---|\n'
-                    f'{body}\n## Axis Gaps\n')
         findings = []
-        riq.check_requirement_text(research, jd, cfg['requirement_qualifiers'], cfg['requirement_year_count'], findings)
+        rcq.check_requirement_text(needs_file(*((text, f'Quals #1 "{quote}"') for text, quote in rows)),
+                                   jd, cfg['requirement_qualifiers'], cfg['requirement_year_count'], findings)
         return findings[0]
 
     ten = 'Minimum of 10 years in the industry'
@@ -1832,6 +1831,8 @@ def test_ranked_needs_cover_every_requirement_once():
     Redesigned 2026-11-10: every requirement carries a kind, the result lives in
     its own readable file (jd_needs.md), and Not ranked rows (boilerplate, role
     shape, administrative detail) never reach retrieval or gap analysis.
+    Moved 2026-11-10: jd_needs.md is the requirements' only home, so ranking
+    rewrites the file from its own rows and a row the ranker drops stays on file.
     """
     import requirement_kinds
     import role_classify_qc as rcq
@@ -1842,64 +1843,58 @@ def test_ranked_needs_cover_every_requirement_once():
     jd = _util.read(os.path.join(FIXTURE_APP, 'jd.md'))
     research = _util.read(research_path)
     good = _util.read(needs_path)
-    row6 = '- **6.** Familiarity with regulatory submission data packages\n  - Kind: Means\n'
+    row6 = ('- **6.** Familiarity with regulatory submission data packages\n  - Kind: Means\n'
+            '  - Type: contextual\n  - Source: Nice to have "Familiarity with regulatory submission data packages"\n')
+    assert row6 in good, 'fixture row 6 changed shape'
 
-    def result(needs_text, research_text=research):
+    def result(needs_text):
         findings = []
-        rcq.check_ranked_needs(research_text, needs_text, jd, kinds, findings)
+        rcq.check_ranked_needs(needs_text, jd, kinds, findings)
         return findings[0]
 
     assert result(good)[1], result(good)
-    assert not result(good.replace(row6, ''))[1], 'a requirement left out of every need passed'
+    unplaced = good.replace(row6, '') + '\n## Requirements\n\n' + row6
+    assert not result(unplaced)[1], 'a requirement left out of every need passed'
     assert not result(good.replace('## Qualifications\n', '## Qualifications\n\n' + row6))[1], 'a requirement in two places passed'
     assert not result(good.replace('N-03', 'N-05'))[1], 'a gap in the need ids passed'
     assert not result(good.replace('- Basis: stated', '- Basis: guessed', 1))[1], 'an unknown Basis passed'
     assert not result(good.replace('- Signals: space', '- Signals: emphasis'))[1], 'an unknown signal passed'
     assert not result(good.replace('- Signals: space', '- Signals: priority-words'))[1], 'a retired signal passed'
-    assert not result(good.replace('"Lead and develop', '"Hire and develop'))[1], 'a quote absent from the JD passed'
+    assert not result(good.replace('"Lead and develop a data team of five or more"\n\n',
+                                   '"Hire and develop a data team of five or more"\n\n'))[1], 'a quote absent from the JD passed'
     assert not result(good.replace('- Leads, does, or both:', '- Leads:'))[1], 'a ranking without the job description passed'
     assert not result(None)[1], 'a missing needs file passed'
-    assert not result(good.replace('data packages\n  - Kind', 'data package\n  - Kind'))[1], 'a requirement text that differs from research.md passed'
 
     # Kinds: every row has a known kind, and lands where its kinds put it.
     # Boilerplate in a need is how it reached the CV before.
-    assert not result(good.replace(row6, row6.replace('Means', 'Vibes')))[1], 'an unknown kind passed'
+    assert not result(good.replace(row6, row6.replace('Kind: Means', 'Kind: Vibes')))[1], 'an unknown kind passed'
     assert not result(good.replace(row6, row6.replace('  - Kind: Means\n', '')))[1], 'a row with no kind passed'
-    boiler_row = row6.replace('Means', 'Boilerplate or attitude')
+    boiler_row = row6.replace('Kind: Means', 'Kind: Boilerplate or attitude')
     assert not result(good.replace(row6, boiler_row))[1], 'a Not ranked row inside a need passed'
     moved = good.replace(row6, '').replace('## Not ranked\n\nNone.', '## Not ranked\n\n' + boiler_row.rstrip())
     assert result(moved)[1], result(moved)
     assert not result(moved.replace('Boilerplate or attitude', 'Means'))[1], 'a Means row on the Not ranked list passed'
-    mixed = good.replace(row6, row6.replace('Means', 'Boilerplate or attitude (passion) + Means (submission data)'))
+    mixed = good.replace(row6, row6.replace('Kind: Means', 'Kind: Boilerplate or attitude (passion) + Means (submission data)'))
     assert result(mixed)[1], 'a row with a ranked part was refused a need'
 
-    # Retrieval and gap analysis never see a Not ranked row; a needs file that
-    # no longer matches research.md is refused, not trusted.
+    # Retrieval and gap analysis never see a Not ranked row.
     import gap_context
     import gap_qc
     import retrieval_payload
-    from role_intake_qc import _section_body
-    section = _section_body(research, 'Critical Requirements')
     _util.write(needs_path, moved)
     try:
-        assert requirement_kinds.not_ranked_rows(FIXTURE_APP, cfg, section) == {6}
         scoring = retrieval_payload.build_scoring_context(FIXTURE_APP, cfg, 'x', 10 ** 7)
         detector, _ = gap_context.build_context(FIXTURE_APP, repo_root, cfg, 10 ** 7)
-        types = gap_qc._parse_research_types(research, FIXTURE_APP, cfg)
-        stale = section.replace('regulatory submission data packages', 'submission packages')
-        try:
-            requirement_kinds.not_ranked_rows(FIXTURE_APP, cfg, stale)
-            raise AssertionError('a needs file built on other requirements was trusted')
-        except ValueError:
-            pass
+        types = gap_qc._requirement_types(FIXTURE_APP, cfg)
     finally:
         _util.write(needs_path, good)
     assert '| 5 |' in scoring and '| 6 |' not in scoring, 'retrieval scored a Not ranked row'
     assert '| 5 |' in detector and '| 6 |' not in detector, 'gap analysis was handed a Not ranked row'
-    assert 'CR-006' not in types and 'CR-005' in types, 'gap QC expected a Not ranked row'
+    assert 'CR-006' not in types and types.get('CR-005') == 'must-have', 'gap QC expected a Not ranked row'
 
-    # The assembler writes jd_needs.md from the ranker's output, copying each
-    # requirement's text from research.md, and leaves research.md alone.
+    # The assembler rewrites jd_needs.md from the ranker's output, carrying each
+    # requirement's text, Type and Source over from the file, and leaves
+    # research.md alone.
     ranker = ('## Row Kinds\n\n| # | Kind |\n|---|---|\n'
               + ''.join(f'| {n} | {k} |\n' for n, k in enumerate(
                   ['Qualification', 'Function', 'Function', 'Function', 'Means', 'Boilerplate or attitude'], 1))
@@ -1914,12 +1909,67 @@ def test_ranked_needs_cover_every_requirement_once():
     assert code == 0, out
     written = _util.read(needs_path)
     assert result(written)[1], result(written)
-    assert '### N-01: Operating model' in written and '- **6.** Familiarity with regulatory submission data packages' in written, written
+    assert '### N-01: Operating model' in written, written
+    assert boiler_row.rstrip() in written, 'row 6 lost its text, Type or Source on rewrite'
     assert _util.read(research_path) == research, 'the needs step changed research.md'
     bad = write_block('ranker_bad.md', ranker.replace('| 3, 5 |', '| 3, 5, 9 |'))
     code, out = run('role_classify_assemble.py', 'needs', '--folder', FIXTURE_APP, '--needs-file', bad)
-    assert code != 0 and 'not in research.md' in out, 'a row research.md does not have was written'
+    assert code != 0 and 'not in' in out, 'a row the file does not have was written'
+    dropped = write_block('ranker_dropped.md', ranker.replace('| 3, 5 |', '| 3 |'))
+    code, out = run('role_classify_assemble.py', 'needs', '--folder', FIXTURE_APP, '--needs-file', dropped)
+    assert code == 0, out
+    kept = _util.read(needs_path)
+    assert '## Requirements\n\n- **5.** Direct experience' in kept, 'a row the ranker dropped was lost on rewrite'
+    assert not result(kept)[1], 'a row the ranker dropped passed'
     _util.write(needs_path, good)
+
+
+def test_requirements_are_extracted_into_jd_needs():
+    """Moved 2026-11-10 (GitHub #89): requirement extraction moved from
+    role-intake into role-classify, and the requirements from research.md into
+    jd_needs.md, so the text exists once. The extractor's table is written before
+    ranking, its Type held to the four allowed values, and its rows checked
+    before any ranking is spent on them.
+    """
+    import requirement_kinds
+    import role_classify_qc as rcq
+    _, cfg = _config.load()
+    needs_path = os.path.join(FIXTURE_APP, 'jd_needs.md')
+    research = _util.read(os.path.join(FIXTURE_APP, 'research.md'))
+    assert 'Critical Requirements' not in research, 'research.md still holds requirements'
+    table = ('## Critical Requirements\n\n| # | Text | Type | Source |\n|------|------|------|------|\n'
+             '| 1 | Bachelor\'s degree in a scientific or quantitative discipline | education (must-have) | '
+             'Requirements "Bachelor\'s degree in a scientific or quantitative discipline" |\n'
+             '| 2 | Familiarity with regulatory submission data packages | preferred | '
+             'Nice to have "Familiarity with regulatory submission data packages" |\n')
+    code, out = run('role_classify_assemble.py', 'requirements', '--folder', FIXTURE_APP,
+                    '--requirements-file', write_block('reqs.md', table))
+    assert code == 0, out
+    written = _util.read(needs_path)
+    assert written.startswith('# JD needs: Aldridge Pharma | Director, Clinical Data Strategy\n\n## Requirements\n'), written
+    assert "- **1.** Bachelor's degree in a scientific or quantitative discipline\n  - Type: must-have\n" in written, \
+        'a recoverable Type was not reduced to its allowed value'
+    assert '## Needs' not in written, 're-extraction kept an old ranking'
+    code, out = run('role_classify_qc.py', 'requirements', '--folder', FIXTURE_APP)
+    assert code == 0, out
+
+    code, out = run('role_classify_assemble.py', 'requirements', '--folder', FIXTURE_APP,
+                    '--requirements-file', write_block('bad.md', table.replace('| preferred |', '| Knowledge |')))
+    assert code != 0 and 'Knowledge' in out, 'a Type with no allowed value was written'
+
+    def present(text):
+        findings = []
+        rcq.check_requirements_present(text, findings)
+        return findings[0]
+
+    ok = needs_file(('A', 'S "a"'), ('B', 'S "b"'))
+    assert present(ok)[1], present(ok)
+    assert not present(ok.replace('**2.**', '**3.**'))[1], 'a gap in the row numbers passed'
+    assert not present(ok.replace('**2.**', '**1.**'))[1], 'a repeated row number passed'
+    assert not present(ok.replace('Type: must-have', 'Type: Knowledge', 1))[1], 'an unknown Type passed'
+    assert not present(ok.replace('  - Source: S "b"\n', ''))[1], 'a row with no Source passed'
+    assert not present('# JD needs: X | Y\n\n## Requirements\n\nNone.\n')[1], 'an empty extraction passed'
+    assert not present(None)[1], 'a missing jd_needs.md passed'
 
 
 def test_role_intake_hands_classification_to_role_classify():
@@ -1960,11 +2010,11 @@ def test_role_intake_hands_classification_to_role_classify():
     # The research step fills the date; finalize fills Level, Industry and the axes.
     _util.write(log_path, handed_log)
     blocks = {k: write_block(f'{k}.md', f'## {k.capitalize()}\n\nx\n') for k in ('company', 'role', 'industry')}
-    reqs = write_block('reqs.md', '## Critical Requirements' + research.split('## Critical Requirements', 1)[1].split('## Axis Gaps', 1)[0])
     code, out = run('assemble.py', 'research', '--folder', FIXTURE_APP, '--app-id', 'APP-001', '--company', 'Aldridge Pharma',
                     '--role', 'Director, Clinical Data Strategy', '--date', '2026-01-11', '--company-file', blocks['company'],
-                    '--role-file', blocks['role'], '--industry-file', blocks['industry'], '--critical-requirements-file', reqs)
+                    '--role-file', blocks['role'], '--industry-file', blocks['industry'])
     assert code == 0, out
+    assert 'Critical Requirements' not in _util.read(research_path), 'the research step wrote requirements'
     assert '- Research Completed Date: 2026-01-11' in _util.read(log_path), 'the research step left the date pending'
     code, out = run('role_classify_assemble.py', 'finalize', '--folder', FIXTURE_APP,
                     '--axis-file', write_block('axes.md', f'## Axis Classification\n\n{axes}\n\n## Axis Gaps\n\nNone'))
@@ -2053,6 +2103,7 @@ def test_dispatch_prompts_are_printed_not_composed():
     assert 'actually operates in' in prompt('industry-research')
     ranker = prompt('jd-needs-ranker')
     assert jd_path in ranker and os.path.join(FIXTURE_APP, 'research.md') in ranker, ranker
+    assert os.path.join(FIXTURE_APP, 'jd_needs.md') in ranker, 'the ranker was not given the requirements'
     assert 'Comms' not in prompt('axis-classifier'), 'an absent optional file was listed'
     _util.write(os.path.join(FIXTURE_APP, 'comms.md'), 'A note.')
     assert 'Comms: ' in prompt('axis-classifier')

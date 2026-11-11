@@ -1,6 +1,6 @@
 ---
 name: role-intake
-description: Understand a job opportunity - ingest a job description, research the company/role/industry, extract the critical requirements, and produce a session log plus a research file. Run this first when evaluating a new role; role-classify runs next.
+description: Understand a job opportunity - ingest a job description, research the company/role/industry, and produce a session log plus a research file. Run this first when evaluating a new role; role-classify runs next and extracts the requirements.
 ---
 
 # role-intake - understand the job
@@ -84,32 +84,30 @@ Ask if this session is for a new role or to resume a previous one?
 
 ## Phase 4 - Research
 
-**Researching the company, role, industry, and critical requirements in parallel.**
+**Researching the company, role, and industry in parallel.**
 
 - Input: JD text, company, role.
-- Dispatch four subagents **in parallel** - `company-research`, `role-research`, `industry-research`, and `critical-requirements-extractor`. For each, run `python scripts/dispatch_prompt.py <agent> --folder <app_folder>` and send the prompt between `=== PROMPT ===` and `=== END ===` **exactly as printed**. Non-zero exit = halt per global rules; never supply a missing input by hand.
-- `critical-requirements-extractor` scans every JD section (not just labeled "Requirements") and emits a `| # | Text | Type | Source |` table of competency requirements; the `#` column is a 1-based sequential index that maps to each requirement's downstream `CR-NNN` id.
-- Each returns a fixed block:
+- Dispatch three subagents **in parallel** - `company-research`, `role-research`, and `industry-research`. For each, run `python scripts/dispatch_prompt.py <agent> --folder <app_folder>` and send the prompt between `=== PROMPT ===` and `=== END ===` **exactly as printed**. Non-zero exit = halt per global rules; never supply a missing input by hand.
+- Each returns a fixed block, scoped to what later skills need to classify and characterize the role, not exhaustive dossiers:
   - `company-research` -> `## Company` with Summary / Key facts / Sources.
   - `role-research` -> `## Role` with Summary / Key facts / Sources.
   - `industry-research` -> `## Industry` with Summary / Key facts / Sources.
-  - `critical-requirements-extractor` -> `## Critical Requirements` as a `| # | Text | Type | Source |` table. Scoped to what this skill needs to classify and characterize, not exhaustive dossiers.
-- Output: four structured findings blocks.
+- Output: three structured findings blocks.
 
 ## Phase 5 - Research file assembly
 
 **Assembling the research findings into the research file.**
 
-- Input: four findings blocks.
-- Write each block to its own scratch file under `<scratch>`, then run `python scripts/assemble.py research` with `--folder`, `--app-id`, `--company`, `--role`, `--date`, and the four scratch-file paths (`--company-file`, `--role-file`, `--industry-file`, `--critical-requirements-file`). It section-replaces only role-intake's own sections so nothing else is clobbered.
-- Output: `research.md` written and the session log's research-completed date filled. Axis Gaps and the session log's axis sections stay pending for role-classify, which also writes `jd_needs.md`.
+- Input: three findings blocks.
+- Write each block to its own scratch file under `<scratch>`, then run `python scripts/assemble.py research` with `--folder`, `--app-id`, `--company`, `--role`, `--date`, and the three scratch-file paths (`--company-file`, `--role-file`, `--industry-file`). It section-replaces only role-intake's own sections so nothing else is clobbered.
+- Output: `research.md` written and the session log's research-completed date filled. Axis Gaps and the session log's axis sections stay pending for role-classify, which also extracts the requirements into `jd_needs.md`.
 
 ## Phase 6 - QC
 
 **Running QC on the session log and research file.**
 
 - Input: session log path, research file path.
-- **Step 6a - Mechanical checks (script).** Run `python scripts/role_intake_qc.py check --folder <app_folder>`. The script owns section and field presence, pending markers, date form, URL presence, cross-file field equality, and requirement quotes and modifiers against the JD. On FAIL: translate the failed checks to plain English for the user, apply each per *Phase routing on failure* (or as a direct session-log edit for a one-field correction), re-run forward, and return to Step 6a.
+- **Step 6a - Mechanical checks (script).** Run `python scripts/role_intake_qc.py check --folder <app_folder>`. The script owns section and field presence, pending markers, date form, URL presence, and cross-file field equality. On FAIL: translate the failed checks to plain English for the user, apply each per *Phase routing on failure* (or as a direct session-log edit for a one-field correction), re-run forward, and return to Step 6a.
 - **Step 6b - Judgment checks (subagent).** Only after Step 6a passes, run `python scripts/dispatch_prompt.py qc-role-intake --folder <app_folder>` and dispatch `qc-role-intake` with the printed prompt exactly as printed. It verifies substance only (claims trace to sources, no section completed on partial content). **Loops on FINDINGS:** translate to plain English, apply per *Phase routing on failure*, re-run forward (Step 6a re-runs after any fix), and return to Phase 6.
 - **Show every content edit as before/after.** Whenever a fix changes the wording or substance of the session log or research file, present a before/after table (one row per changed passage: location, before, after) before re-running QC. Skip the table only for purely mechanical fixes that have no meaningful "before" (filling a blank required field, a date, a path).
 - Cap the loop at **3 iterations**. Exit earlier on **PASS**. If findings remain after the third iteration, carry them to Phase 7 Step 7a.
@@ -130,4 +128,4 @@ Consumed by Phase 6 (QC failures) and Phase 7 (corrections). Route back, fix, re
 | Finding type | Route back to |
 |---|---|
 | Title or company wrong | Phase 2 |
-| Research incomplete or wrong, or a requirement's quote or modifier fails against the JD | Phase 4 then 5 (re-extracted requirements void any ranking, so role-classify reruns) |
+| Research incomplete or wrong | Phase 4 then 5 |

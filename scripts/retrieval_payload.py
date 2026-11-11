@@ -26,8 +26,8 @@ subagent consumes alongside the critical requirements list. Three subcommands:
               ignore everything else; chunking mitigates attention
               degradation when the LLM ranks long lists), write the scoring
               context file
-              (the application's Critical Requirements section and jd.md,
-              copied verbatim), and print a plain-English summary plus the
+              (the ranked requirements from jd_needs.md as a table, and
+              jd.md copied verbatim), and print a plain-English summary plus the
               complete prompt for every scorer dispatch. The skill sends those
               prompts exactly as printed, so no scorer input is ever composed
               by hand. A corpus needing several chunks gets a seed chunk 0
@@ -686,9 +686,10 @@ def cmd_split_anchored(args, repo_root, cfg):
 
 # ---------------------------------------------------------------------------
 # Scoring context and scorer prompts
-# The scorer's matching targets (Critical Requirements) and supporting context
-# (the JD) are copied byte for byte from the application folder into one file.
-# The section and the JD must both be present and non-empty, and the file must
+# The scorer's matching targets (the requirements in jd_needs.md, as a table
+# under a Critical Requirements heading) and supporting context (the JD, byte
+# for byte) go into one file.
+# The requirements and the JD must both be present and non-empty, and the file must
 # fit under a byte budget so a scorer's single read is never truncated (the
 # APP-006 failure); any shortfall raises so the skill halts.
 # ---------------------------------------------------------------------------
@@ -714,25 +715,17 @@ def extract_section(text, heading):
 
 
 def build_scoring_context(app_folder, cfg, prefix, max_bytes):
-    """Build the scoring context text from research.md and jd.md; raise on gaps.
+    """Build the scoring context text from jd_needs.md and jd.md; raise on gaps.
 
     Requirement rows on jd_needs.md's Not ranked list (boilerplate, role shape,
     administrative detail) are left out, so no scorer matches the profile
-    against them.
+    against them. requirement_kinds raises when there are no requirements.
     """
-    research_path = os.path.join(app_folder, cfg['filenames']['research_file'])
     jd_path = os.path.join(app_folder, cfg['filenames']['jd_file'])
-    for path in (research_path, jd_path):
-        if not os.path.isfile(path):
-            raise FileNotFoundError(f'scoring context source missing: {path}')
+    if not os.path.isfile(jd_path):
+        raise FileNotFoundError(f'scoring context source missing: {jd_path}')
 
-    requirements = extract_section(_util.read(research_path), CR_HEADING)
-    if requirements:
-        requirements = requirement_kinds.ranked_section(requirements, app_folder, cfg)
-    # A requirements table needs at least one row past its header and divider.
-    if not requirements or len([l for l in requirements.split('\n')
-                                if l.startswith('|')]) < 3:
-        raise ValueError(f'{research_path} has no populated "{CR_HEADING}" table')
+    requirements = requirement_kinds.requirements_table(app_folder, cfg)
     jd_text = _util.read(jd_path).strip('\n')
     if not jd_text.strip():
         raise ValueError(f'{jd_path} is empty')

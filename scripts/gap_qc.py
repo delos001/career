@@ -14,9 +14,9 @@ Checks (IDs mirror the original qc-gap-analysis check numbering):
       fields present and non-empty.
   G3  Session log ## Gap Analysis section carries Run date, Gap analysis
       file, Recommendation, QC verdict fields.
-  G4  Requirement coverage: every requirement in research.md's
-      ## Critical Requirements appears exactly once as a CR-NNN sub-section,
-      except rows on jd_needs.md's Not ranked list, which must not appear.
+  G4  Requirement coverage: every requirement in jd_needs.md appears exactly
+      once as a CR-NNN sub-section, except rows on its Not ranked list, which
+      must not appear.
   G5  Status taxonomy: every requirement Status is in the locked set.
   G6  Non-covered Notes present: status outside {covered, language-shift}
       carries a non-empty Notes value. (Whether the Notes content is
@@ -162,41 +162,18 @@ def _parse_requirements(artifact_text):
     return records, duplicates
 
 
-def _parse_research_types(research_text, app_folder, cfg):
+def _requirement_types(app_folder, cfg):
     """Return {CR-NNN: type}, in row order, for the requirements gap analysis covers.
 
-    Two formats exist: current research files render a
-    `| # | Text | Type | Source |` table; files from before the table
-    convention render `- Text:` blocks with `Type:` continuation lines. CR-NNN
-    is the table's row number, or the 1-based block order. Rows on jd_needs.md's
-    Not ranked list are left out: gap analysis never evaluates them, so they
-    are neither expected nor allowed in the artifact.
+    Read from jd_needs.md. Rows on its Not ranked list are left out: gap
+    analysis never evaluates them, so they are neither expected nor allowed in
+    the artifact. Returns None when the application has no requirements on file.
     """
-    section = _section_text(research_text, 'Critical Requirements')
-    if section is None:
+    try:
+        rows = requirement_kinds.ranked_rows(app_folder, cfg)
+    except (FileNotFoundError, ValueError):
         return None
-    types = {}
-    skip = requirement_kinds.not_ranked_rows(app_folder, cfg, section)
-    # Table format. Type is the second-to-last cell, anchored on the locked
-    # type vocabulary so a pipe inside the Text cell cannot shift the parse.
-    row_re = re.compile(
-        r'^\|\s*(\d+)\s*\|.*\|\s*(must-have|preferred|contextual|duty-derived)\s*\|[^|]*\|\s*$')
-    for line in section.split('\n'):
-        m = row_re.match(line)
-        if m and int(m.group(1)) not in skip:
-            types[f'CR-{int(m.group(1)):03d}'] = m.group(2)
-    if types or skip:
-        return types
-    # Bullet-block format (pre-table research files).
-    order = []
-    for line in section.split('\n'):
-        if re.match(r'^- Text:', line):
-            order.append('')
-            continue
-        m = re.match(r'^\s+Type:\s*(\S+)', line)
-        if m and order and order[-1] == '':
-            order[-1] = m.group(1)
-    return {f'CR-{i:03d}': t for i, t in enumerate(order, start=1)}
+    return {f"CR-{row['num']:03d}": row['type'] for row in rows}
 
 
 def _parse_staging_items(staging_text):
@@ -307,7 +284,7 @@ def check_session_log(log_fields, findings):
 def check_coverage(records, duplicates, req_types, findings):
     """G4: CR-001..CR-NNN each appear exactly once; none dropped or invented."""
     if req_types is None:
-        findings.append(('G4', False, 'research.md has no ## Critical Requirements section'))
+        findings.append(('G4', False, 'jd_needs.md missing or holds no requirements'))
         return
     expected = set(req_types)
     present = set(records)
@@ -315,7 +292,7 @@ def check_coverage(records, duplicates, req_types, findings):
     if expected - present:
         problems.append(f"dropped: {', '.join(sorted(expected - present))}")
     if present - expected:
-        problems.append(f"not in research.md: {', '.join(sorted(present - expected))}")
+        problems.append(f"not in jd_needs.md: {', '.join(sorted(present - expected))}")
     if duplicates:
         problems.append(f"duplicated: {', '.join(sorted(set(duplicates)))}")
     findings.append(('G4', not problems,
@@ -459,7 +436,7 @@ def check_depends_on(artifact_text, findings):
 def check_conditions_name_soft_must_haves(artifact_text, records, req_types, findings):
     """G14: a must-have that is not fully met is tested by a stated condition."""
     if req_types is None:
-        findings.append(('G14', False, 'research.md has no ## Critical Requirements section'))
+        findings.append(('G14', False, 'jd_needs.md missing or holds no requirements'))
         return
     section = _section_text(artifact_text, 'Recommendation') or ''
     named = set(re.findall(r'CR-\d+', section.partition('**Depends on:**')[2]))
@@ -509,7 +486,6 @@ def cmd_check(args, repo_root, cfg):
         print(f"FATAL  {fn['gap_analysis_file']} not found in {app_folder}")
         return 1
 
-    research_text = _read(os.path.join(app_folder, fn['research_file']))
     log_text = _read(os.path.join(app_folder, fn['session_log_file']))
     staging_text = _read(os.path.join(profile_dir, fn['staging_file'])) or ''
     inventory_text = _read(os.path.join(profile_dir, fn['inventory_file'])) or ''
@@ -521,8 +497,7 @@ def cmd_check(args, repo_root, cfg):
     staging_items = _parse_staging_items(staging_text)
     header = _header_fields(artifact_text)
     records, duplicates = _parse_requirements(artifact_text)
-    req_types = (_parse_research_types(research_text, app_folder, cfg)
-                 if research_text is not None else None)
+    req_types = _requirement_types(app_folder, cfg)
     log_fields = _session_log_section(log_text) if log_text is not None else None
 
     findings = []

@@ -1,6 +1,6 @@
 ---
 name: jd-needs-ranker
-description: Labels each of a job's extracted critical requirements by kind, describes the job, groups the requirements into the JD's needs and ranks them, for the role-classify skill. Reads the JD, the research file, and rules/jd-requirement-kinds.md. Returns the row kinds, the job description, and a Ranked Needs table; role_classify_assemble.py writes them to jd_needs.md, which cv-targeted, gap-analysis and interview prep read in priority order. Read-only.
+description: Labels each of a job's extracted critical requirements by kind, describes the job, groups the requirements into the JD's needs and ranks them, for the role-classify skill. Reads the JD, the research file, the extracted requirements in jd_needs.md, and rules/jd-requirement-kinds.md. Returns the row kinds, the job description, and a Ranked Needs table; role_classify_assemble.py rewrites jd_needs.md with them, which cv-targeted, gap-analysis and interview prep read in priority order. Read-only.
 tools: Read
 ---
 
@@ -10,7 +10,7 @@ Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with P
 
 ## Inputs
 
-The dispatching skill gives you the paths to `jd.md` and `research.md`. Read the whole JD; any sentence can explain another, wherever it sits. Then read `research.md`'s Company section and its `## Critical Requirements` table, and `rules/jd-requirement-kinds.md`.
+The dispatching skill gives you the paths to `jd.md`, `research.md` and `jd_needs.md`. Read the whole JD; any sentence can explain another, wherever it sits. Then read `research.md`'s Company section, the numbered requirements in `jd_needs.md`, and `rules/jd-requirement-kinds.md`.
 
 ## Steps
 
@@ -69,7 +69,7 @@ Return exactly this, needs in rank order:
 **Not ranked:** <row number (kind), comma-separated, or none>
 ```
 
-`N-01` is the highest-ranked need; ids run in sequence with no gaps. If the Critical Requirements section has no rows, return:
+`N-01` is the highest-ranked need; ids run in sequence with no gaps. If `jd_needs.md` has no requirement rows, return:
 
 ```
 ## Ranked Needs

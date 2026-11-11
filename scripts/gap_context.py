@@ -9,8 +9,8 @@ printed, so no detector input is composed by hand.
 
 The context file carries three parts:
 
-  Critical Requirements      the ## Critical Requirements section of the
-                             application's research.md.
+  Critical Requirements      the application's requirements from jd_needs.md,
+                             as a table, without the Not ranked rows.
   Role context               the ## Role, ## Company, ## Industry sections of
                              research.md (their ### Summary sub-block when one
                              exists, else the whole section body).
@@ -131,12 +131,9 @@ def build_context(app_folder, repo_root, cfg, max_bytes):
             raise FileNotFoundError(f'detector context source missing: {path}')
     research = _util.read(research_path)
 
-    requirements = retrieval_payload.extract_section(
-        research, retrieval_payload.CR_HEADING)
-    if not requirements or not requirements.strip():
-        raise ValueError(f'{research_path} has no "{retrieval_payload.CR_HEADING}" content')
-    # Rows on jd_needs.md's Not ranked list never reach the detector.
-    requirements = requirement_kinds.ranked_section(requirements, app_folder, cfg)
+    # Rows on jd_needs.md's Not ranked list never reach the detector; no
+    # requirements at all raises.
+    requirements = requirement_kinds.requirements_table(app_folder, cfg)
 
     role_parts = []
     for name in ROLE_CONTEXT_SECTIONS:

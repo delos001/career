@@ -94,16 +94,16 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### role-intake
 
-- **Purpose**: Understand a job opportunity — ingest a JD, research company/role/industry, extract the critical requirements, and produce a session log plus a research file. Ranking and axis classification are role-classify's.
+- **Purpose**: Understand a job opportunity — ingest a JD, research company/role/industry, and produce a session log plus a research file. Requirement extraction, ranking and axis classification are role-classify's.
 - **Status**: Designed
 - **Inputs**:
   - Rules: `rules/global-rules.md`.
-  - Agents: `company-research`, `role-research`, `industry-research`, `critical-requirements-extractor`, `qc-role-intake`.
+  - Agents: `company-research`, `role-research`, `industry-research`, `qc-role-intake`.
   - Scripts: `scripts/display/introduce.py`, `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/company_slug.py`, `scripts/assemble.py`, `scripts/role_intake_qc.py`.
   - Templates: `templates/session_log.md`, `templates/research_file.md`.
   - User input: job description (paste / file / URL), role communications (optional), company slug (reused from the registry or supplied if the company is new), metadata confirmations (title/company) at Phase 2.
 - **Outputs**:
-  - Files: in `personal/applications/<SLUG>_APP-NNN_YYYY-MM/`: `session_log.md`, and `research.md` (with `## Company`, `## Role`, `## Industry`, `## Critical Requirements`, and a pending `## Axis Gaps` section).
+  - Files: in `personal/applications/<SLUG>_APP-NNN_YYYY-MM/`: `session_log.md`, and `research.md` (with `## Company`, `## Role`, `## Industry`, and a pending `## Axis Gaps` section).
   - Skills: hands off to role-classify.
   - Side effects: consumes the next APP-NNN.
 - **Triggers**:
@@ -115,28 +115,28 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### role-classify
 
-- **Purpose**: Rank the JD's needs and classify the job against the five axes, from the files role-intake wrote, so it runs in a fresh session. Split out of role-intake 2026-11-09 (`role-classify-split-2026-11`).
+- **Purpose**: Extract the JD's requirements, rank its needs, and classify the job against the five axes, from the files role-intake wrote, so it runs in a fresh session. Split out of role-intake 2026-11-09 (`role-classify-split-2026-11`); extraction moved in 2026-11-10 (`requirements-in-jd-needs-2026-11`).
 - **Status**: Designed
 - **Inputs**:
   - Rules: `rules/global-rules.md`. (Axis registries and value files are read by `axis-classifier`, not by the skill directly.)
-  - Agents: `jd-needs-ranker`, `axis-classifier`, `qc-role-classify`.
+  - Agents: `critical-requirements-extractor`, `jd-needs-ranker`, `axis-classifier`, `qc-role-classify`.
   - Scripts: `scripts/display/introduce.py`, `scripts/role_classify_assemble.py`, `scripts/role_classify_qc.py`, `scripts/dispatch_prompt.py`.
   - Files: `jd.md`, `comms.md` (optional), `research.md`, `session_log.md`; `rules/jd-requirement-kinds.md` (read by the ranker and the checks).
   - User input: APP-NNN; confirmation of the ranking; approval.
-- **Outputs**: `jd_needs.md` (the job, each ranked need with its requirements' exact text and kinds, then Qualifications and Not ranked); `## Axis Gaps` in `research.md`; `## Axis Classification`, `## Axis Gaps`, and the Role Level and Industry metadata in `session_log.md`. Hands off to retrieval.
+- **Outputs**: `jd_needs.md`, the one home of the requirements (the job, each ranked need with its requirements' text, kind, Type and Source, then Qualifications and Not ranked); `## Axis Gaps` in `research.md`; `## Axis Classification`, `## Axis Gaps`, and the Role Level and Industry metadata in `session_log.md`. Hands off to retrieval.
 - **Triggers**: User invocation `/role-classify` after role-intake.
 - **Update Triggers**: When the five-axis rule files or their registries change; when the kinds file or the `jd_needs.md` layout changes; when its agents or scripts change.
 
 #### retrieval
 
-- **Purpose**: Surface the relevant profile content for a role. Reads role-intake's outputs (axis classification + critical requirements + JD), scores inventory entries, narratives, and Signature Themes against the critical requirements, and writes a retrieval manifest that downstream skills (gap analysis, CV creation, interview prep, career brief) consume. Per `retrieval-architecture-2026-05`.
+- **Purpose**: Surface the relevant profile content for a role. Reads role-intake's and role-classify's outputs (axis classification + critical requirements + JD), scores inventory entries, narratives, and Signature Themes against the critical requirements, and writes a retrieval manifest that downstream skills (gap analysis, CV creation, interview prep, career brief) consume. Per `retrieval-architecture-2026-05`.
 - **Status**: Designed
 - **Inputs**:
   - Rules: `rules/global-rules.md`; `rules/<axis>/<value>.md` Adjacency sections (read by `scripts/retrieval_apply.py` for adjacency-aware axis scoring).
   - Agents: `retrieval-scorer`.
   - Scripts: `scripts/display/introduce.py`, `scripts/retrieval_payload.py`, `scripts/retrieval_score_merge.py`, `scripts/retrieval_apply.py`, `scripts/retrieval_qc.py`.
   - Profile docs: `personal/profile/inventory.md`, `personal/profile/narratives.md`, `personal/profile/positioning.md` (read indirectly via the scripts above).
-  - Application artifacts: `personal/applications/<SLUG>/session_log.md` (axis classification), `personal/applications/<SLUG>/research.md` (critical requirements), `personal/applications/<SLUG>/jd.md`.
+  - Application artifacts: `personal/applications/<SLUG>/session_log.md` (axis classification), `personal/applications/<SLUG>/jd_needs.md` (critical requirements), `personal/applications/<SLUG>/jd.md`.
   - User input: APP-NNN (resume) or implicit (new run; folder must exist with role-intake output already in place).
 - **Outputs**:
   - Files: `personal/applications/<SLUG>_APP-NNN_YYYY-MM/retrieval.md` (the manifest).
@@ -160,7 +160,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - Scripts: `scripts/display/introduce.py`, `scripts/gap_context.py`, `scripts/gap_assemble.py`, `scripts/staging_append.py`, `scripts/session_log.py`, `scripts/gap_qc.py`.
   - Templates: `templates/gap_analysis.md`, `templates/profile_updates_pending.md`.
   - Profile docs: `personal/profile/inventory.md`, `personal/profile/narratives.md`, `personal/profile/user-info.md` (eligibility sections).
-  - Application artifacts: `personal/applications/<SLUG>/research.md` (critical requirements + role/company/industry blocks), `personal/applications/<SLUG>/retrieval.md`.
+  - Application artifacts: `personal/applications/<SLUG>/jd_needs.md` (critical requirements), `personal/applications/<SLUG>/research.md` (role/company/industry blocks), `personal/applications/<SLUG>/retrieval.md`.
   - User input: APP-NNN (resume) or implicit (new run; folder must exist with research.md and retrieval.md). Phase 2 eligibility-flag decisions, Phase 4 gap-closure inputs, Phase 8 pursue / don't-pursue decision.
 - **Outputs**:
   - Files: `personal/applications/<SLUG>_APP-NNN_YYYY-MM/gap_analysis.md` (the artifact); appended entries in `personal/profile/profile_updates_pending.md` (cross-application staging); `## Gap Analysis` section in the session log.
@@ -312,8 +312,8 @@ Schema discipline and reconciliation script details live in `design/design_decis
 ### Roster
 
 **Built** (detailed entries below):
-- company-research, role-research, industry-research, critical-requirements-extractor, qc-role-intake (role-intake skill family)
-- jd-needs-ranker, axis-classifier, qc-role-classify (role-classify skill family)
+- company-research, role-research, industry-research, qc-role-intake (role-intake skill family)
+- critical-requirements-extractor, jd-needs-ranker, axis-classifier, qc-role-classify (role-classify skill family)
 - retrieval-scorer (retrieval skill family)
 - gap-detector, qc-gap-analysis (gap-analysis skill family)
 - industry-builder-research, level-builder-research, orientation-builder-research, specialty-builder-research, work-state-builder-research (axis-builder research agent family; one per axis)
@@ -359,21 +359,21 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### critical-requirements-extractor
 
-- **Purpose**: Extract a structured list of competency requirements from a JD for the role-intake skill. Comprehensive scan across all JD sections (not just labeled "Requirements"); each requirement carries Text / Type / Source for downstream use by retrieval, gap analysis, CV creation, and interview prep.
+- **Purpose**: Extract a structured list of competency requirements from a JD for the role-classify skill. Comprehensive scan across all JD sections (not just labeled "Requirements"); each requirement carries Text / Type / Source for downstream use by retrieval, gap analysis, CV creation, and interview prep.
 - **Status**: Designed
-- **Inputs**: Skill-passed (by `role-intake`): JD text; optionally role title and company name for context. Tools: Read.
-- **Outputs**: Structured findings block (`## Critical Requirements` — a `| # | Text | Type | Source |` table, one row per requirement; the `#` column indexes CR-NNN) returned to the caller.
-- **Triggers**: Invoked by `role-intake` Phase 4, in parallel with `company-research`, `role-research`, and `industry-research`.
+- **Inputs**: Skill-passed (by `role-classify`): JD path, role title and company name. Tools: Read.
+- **Outputs**: A `| # | Text | Type | Source |` table, one row per requirement (the `#` column is the CR-NNN id), returned to the caller; `role_classify_assemble.py requirements` writes it to `jd_needs.md`, and `role_classify_qc.py requirements` (C7, C8) checks it against the JD.
+- **Triggers**: Invoked by `role-classify` Phase 1a.
 - **Update Triggers**: When the three-field schema (Text / Type / Source) changes; when downstream consumers add new fields they need from extraction.
 
 #### jd-needs-ranker
 
 - **Purpose**: Label each extracted requirement by kind (`rules/jd-requirement-kinds.md`), describe the job, group the requirements into the functions the role delivers, and rank them by the JD's statement of the role, repetition across sections, then space (GitHub #89).
 - **Status**: Designed
-- **Inputs**: Skill-passed (by `role-classify`): paths to `jd.md` and `research.md`. Reads `rules/jd-requirement-kinds.md`. Tools: Read.
-- **Outputs**: Row kinds, the job description, a needs table in rank order, and the Qualifications and Not ranked lines. `role_classify_assemble.py needs` turns them into `jd_needs.md`, copying each requirement's text from `research.md`; mechanical checks in `role_classify_qc.py` C6. Not ranked rows are filtered out of retrieval and gap analysis by `requirement_kinds.py`.
-- **Triggers**: Invoked by `role-classify` Phase 1.
-- **Update Triggers**: When the Critical Requirements schema changes; when a downstream skill needs more from the ranking.
+- **Inputs**: Skill-passed (by `role-classify`): paths to `jd.md`, `research.md` and `jd_needs.md` (the extracted requirements). Reads `rules/jd-requirement-kinds.md`. Tools: Read.
+- **Outputs**: Row kinds, the job description, a needs table in rank order, and the Qualifications and Not ranked lines. `role_classify_assemble.py needs` rewrites `jd_needs.md` with them, carrying each requirement's text, Type and Source over from the file; mechanical checks in `role_classify_qc.py` C6. Not ranked rows are filtered out of retrieval and gap analysis by `requirement_kinds.py`.
+- **Triggers**: Invoked by `role-classify` Phase 1c.
+- **Update Triggers**: When the requirement schema changes; when a downstream skill needs more from the ranking.
 
 #### axis-classifier
 
@@ -397,14 +397,14 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 - **Purpose**: Judgment quality-check for role-classify - verifies the axis classification is supported by the research and applies each value file's selection and exclusion text, each requirement's kind follows `rules/jd-requirement-kinds.md`, and the ranked needs reflect the job. Mechanical checks are owned by `scripts/role_classify_qc.py`.
 - **Status**: Designed
-- **Inputs**: Skill-passed (by `role-classify`): session log, research file, and JD paths; the chosen axis value files. Tools: Read, Grep.
+- **Inputs**: Skill-passed (by `role-classify`): session log, research file, `jd_needs.md`, and JD paths; the chosen axis value files. Tools: Read, Grep.
 - **Outputs**: QC verdict (PASS / FINDINGS) with a route-back phase per finding.
 - **Triggers**: Invoked by `role-classify` Phase 3 Step 3b, after `role_classify_qc.py` passes.
 - **Update Triggers**: When the `jd_needs.md` layout, the kinds file or the axis model changes; when the skill's phase structure changes.
 
 #### scripts/role_intake_qc.py
 
-- **Purpose**: Deterministic QC for role-intake artifacts (I1, I2, I3, I7): research file structure and block subsections (with URL presence in Sources), session log metadata (with date form and pending-marker detection outside role-classify's sections), cross-file field equality (company / role / APP-NNN), and requirement quotes and modifiers against `jd.md`. Holds the parsing helpers `role_classify_qc.py` imports.
+- **Purpose**: Deterministic QC for role-intake artifacts (I1, I2, I3): research file structure and block subsections (with URL presence in Sources), session log metadata (with date form and pending-marker detection outside role-classify's sections), and cross-file field equality (company / role / APP-NNN). Holds the parsing helpers `role_classify_qc.py` imports.
 - **Status**: Designed
 - **Inputs**: Args (`check --folder <app_folder>`). Config: `config.yaml` (filenames) via `scripts/_config.py`. Filesystem: research.md and session_log.md in the folder.
 - **Outputs**: Per-check `PASS`/`FAIL` lines and a `RESULT` line to stdout; exit 0 when all pass, 1 otherwise.
@@ -413,18 +413,18 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/role_classify_qc.py
 
-- **Purpose**: Deterministic QC for role-classify's writes (C1-C6): classification sections and Level/Industry metadata filled, metadata matching the axis values, axis-gap mirroring between the two files, axis line form, leadership tier, and `jd_needs.md`: every requirement's kind known and placed where its kind sets (a need, Qualifications, Not ranked), its text matching `research.md`, the job description present, ids, values and quotes.
+- **Purpose**: Deterministic QC for role-classify's writes (C1-C8): classification sections and Level/Industry metadata filled, metadata matching the axis values, axis-gap mirroring between the two files, axis line form, leadership tier, and `jd_needs.md`: every requirement's kind known and placed where its kind sets (a need, Qualifications, Not ranked), none left unplaced, the job description present, ids, values and quotes (C6); requirements numbered 1..N with text, an allowed Type and a Source (C7); each requirement's quote found in `jd.md` and its text keeping the JD clause's modifiers (C8).
 - **Status**: Designed
-- **Inputs**: Args (`check --folder <app_folder>`). Config via `scripts/_config.py`. Filesystem: research.md, session_log.md, jd.md; `rules/levels/leadership.md` for the tiers; `rules/jd-requirement-kinds.md` for the kinds.
+- **Inputs**: Args (`requirements --folder <app_folder>` runs C7 and C8; `check --folder <app_folder>` runs all). Config via `scripts/_config.py`. Filesystem: research.md, session_log.md, jd.md, jd_needs.md; `rules/levels/leadership.md` for the tiers; `rules/jd-requirement-kinds.md` for the kinds.
 - **Outputs**: Per-check `PASS`/`FAIL` lines and a `RESULT` line; exit 0 when all pass, 1 otherwise.
-- **Triggers**: Invoked by `role-classify` Phase 3 Step 3a.
+- **Triggers**: `requirements` by `role-classify` Phase 1b; `check` by Phase 3 Step 3a.
 - **Update Triggers**: When the axis-line label convention, the tier list, or the `jd_needs.md` layout changes.
 
 #### retrieval-scorer
 
 - **Purpose**: Score a list of inventory entries, narratives, or Signature Themes against the critical requirements list for the retrieval skill. Corpus-agnostic LLM-judgment ranker; uses a consistent 0-1 rubric. Returns JSON with {id, score, reason} per item.
 - **Status**: Designed
-- **Inputs**: A four-line prompt written by `retrieval_payload.py split` and dispatched verbatim: corpus type (`inventory` | `narratives` | `themes`), input file (one chunk at a time for inventory and narratives; full set for themes), output file, and the scoring context file (the Critical Requirements section and the JD, copied verbatim by the script). Halts unscored if the context file lacks either section. Tools: Read, Write.
+- **Inputs**: A four-line prompt written by `retrieval_payload.py split` and dispatched verbatim: corpus type (`inventory` | `narratives` | `themes`), input file (one chunk at a time for inventory and narratives; full set for themes), output file, and the scoring context file (the requirements from `jd_needs.md` as a table under a Critical Requirements heading, without Not ranked rows, and the JD copied verbatim, both written by the script). Halts unscored if the context file lacks either section. Tools: Read, Write.
 - **Outputs**: JSON `{corpus, scores: [{id, score, reason}, ...]}` returned to the caller.
 - **Triggers**: Invoked by `retrieval` Phase 3, once per inventory chunk, once per narrative chunk, and once for themes (all in parallel).
 - **Update Triggers**: When the scoring rubric changes; when the JSON return contract changes; when the supported corpora change.
@@ -527,8 +527,8 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 **Built** (detailed entries below unless noted):
 - `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/display/introduce.py`, `scripts/assemble.py`
-- `scripts/role_classify_assemble.py` (role-classify skill: `needs` and `finalize` write the ranker's and classifier's output; `approval` prints the approval block from the files; roster entry only)
-- `scripts/requirement_kinds.py` (imported module: reads the kinds from `rules/jd-requirement-kinds.md`, renders and reads `jd_needs.md`, and filters its Not ranked rows out of what retrieval scores and gap analysis evaluates, refusing a needs file that no longer matches `research.md`; roster entry only)
+- `scripts/role_classify_assemble.py` (role-classify skill: `requirements`, `needs` and `finalize` write the extractor's, ranker's and classifier's output; `approval` prints the approval block from the files; roster entry only)
+- `scripts/requirement_kinds.py` (imported module: reads the kinds from `rules/jd-requirement-kinds.md`, parses the extractor's table, renders and reads `jd_needs.md`, and gives retrieval and gap analysis the requirements table without its Not ranked rows; roster entry only)
 - `scripts/session_log.py` (shared section-append for all skills that write to a session log; `interview` creates or updates one `## Interview: <stage>` section field by field, with the field set read from `templates/session_log.md`, used by preparation-screen, preparation-interview, followup and close-application)
 - `scripts/profile_slice.py` (consumed by retrieval and downstream skills)
 - `scripts/retrieval_payload.py`, `scripts/retrieval_score_merge.py`, `scripts/retrieval_apply.py` (retrieval concern family)
@@ -595,7 +595,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/assemble.py
 
-- **Purpose**: Write role-intake's two artifacts (session log, research file) deterministically by rendering the templates, rather than having the skill hand-write files. Subcommands: `ingest` (Phase 3a), `init` (Phase 3b), `research` (Phase 5; writes all four research-block sections including Critical Requirements, and the session log's research-completed date). Every write is section-scoped; `role_classify_assemble.py` imports its section helpers.
+- **Purpose**: Write role-intake's two artifacts (session log, research file) deterministically by rendering the templates, rather than having the skill hand-write files. Subcommands: `ingest` (Phase 3a), `init` (Phase 3b), `research` (Phase 5; writes the Company, Role and Industry sections and the session log's research-completed date). Every write is section-scoped; `role_classify_assemble.py` imports its section helpers.
 - **Status**: Designed
 - **Inputs**: Skill-passed args (slug, APP-NNN, company, role, dates, paths) and, for `research`, scratch files holding subagent output. Config: `config.yaml` (paths, filenames, naming patterns) via `scripts/_config.py`. Templates: `session_log.md`, `research_file.md` (read as the structure source).
 - **Outputs**: the `personal/applications/<SLUG>_APP-NNN_YYYY-MM/` folder and, inside it, `session_log.md` and `research.md`. Paths echoed to stdout.
@@ -622,10 +622,10 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/retrieval_payload.py
 
-- **Purpose**: Build LLM-consumable payloads for the retrieval skill. Subcommands: `inventory` (parse the retrievable entries of inventory.md — EX/PR/PB/PS, read through `scripts/inventory_model/`; emit JSON listing every item, each carrying ID, axis tags, and payload text: Description+Impact for EX/PB/PS, and for a PR one Objective item plus one item per element, each led by the project name), `narratives` (parse narratives.md; emit JSON with each narrative's ID, title, Linked Inventory, body), `themes` (parse positioning.md; emit JSON with each Signature Theme's Core message + Proof point + Use when concatenated as payload), `split` (read the three payload files from the scratch dir; write one JSON file per byte-budgeted inventory chunk (ID and payload only, the scorer's whole view) and one per byte-budgeted narrative chunk; write the scoring context file, copying the application's Critical Requirements section and jd.md verbatim; print a plain-English summary and one complete scorer prompt per dispatch).
+- **Purpose**: Build LLM-consumable payloads for the retrieval skill. Subcommands: `inventory` (parse the retrievable entries of inventory.md — EX/PR/PB/PS, read through `scripts/inventory_model/`; emit JSON listing every item, each carrying ID, axis tags, and payload text: Description+Impact for EX/PB/PS, and for a PR one Objective item plus one item per element, each led by the project name), `narratives` (parse narratives.md; emit JSON with each narrative's ID, title, Linked Inventory, body), `themes` (parse positioning.md; emit JSON with each Signature Theme's Core message + Proof point + Use when concatenated as payload), `split` (read the three payload files from the scratch dir; write one JSON file per byte-budgeted inventory chunk (ID and payload only, the scorer's whole view) and one per byte-budgeted narrative chunk; write the scoring context file, holding the requirements table from `jd_needs.md` (Not ranked rows left out) and jd.md verbatim; print a plain-English summary and one complete scorer prompt per dispatch).
 - **Status**: Designed
 - **Inputs**: Subcommand args (split: `--slug`, `--app-id`, `--folder`, `--temp-dir`, `--inv-chunk-bytes`, `--narr-chunk-bytes`, `--context-max-bytes`). Config: `config.yaml` (profile path + per-file filenames) via `scripts/_config.py`. Filesystem: inventory.md, narratives.md, positioning.md; split reads the payload files from the temp dir and research.md + jd.md from the application folder.
-- **Outputs**: JSON to stdout per the per-subcommand schema; split writes per-chunk JSON files and the scoring context file to the temp dir and prints the scorer prompts. Errors to stderr with exit 1, including a missing or empty Critical Requirements section or JD, or a context file over the byte budget.
+- **Outputs**: JSON to stdout per the per-subcommand schema; split writes per-chunk JSON files and the scoring context file to the temp dir and prints the scorer prompts. Errors to stderr with exit 1, including a missing or empty `jd_needs.md` or JD, or a context file over the byte budget.
 - **Triggers**: Invoked by `retrieval` Phase 2.
 - **Update Triggers**: When the inventory entry schema, narrative schema, or theme schema changes; when the chunking strategy changes.
 
@@ -649,7 +649,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/gap_context.py
 
-- **Purpose**: Build the gap-detector's input file and dispatch prompt. Subcommand: `build`. Copies the application's Critical Requirements section, the Role / Company / Industry summaries, and every inventory section holding no retrievable-entry ID (role history, industry exposure, technical experience, credentials) verbatim into one context file, copies every inventory entry and narrative in the manifest's candidate tables whole into byte-budgeted evidence files (refusing a manifest ID with no entry, or a manifest with no candidates), then prints the detector prompt. The reference-section set is derived from the inventory, using `retrieval_payload._ENTRY_RE` as the definition of what retrieval scores.
+- **Purpose**: Build the gap-detector's input file and dispatch prompt. Subcommand: `build`. Writes the requirements table from `jd_needs.md` (Not ranked rows left out) and copies the Role / Company / Industry summaries and every inventory section holding no retrievable-entry ID (role history, industry exposure, technical experience, credentials) verbatim into one context file, copies every inventory entry and narrative in the manifest's candidate tables whole into byte-budgeted evidence files (refusing a manifest ID with no entry, or a manifest with no candidates), then prints the detector prompt. The reference-section set is derived from the inventory, using `retrieval_payload._ENTRY_RE` as the definition of what retrieval scores.
 - **Status**: Designed
 - **Inputs**: Args (`--folder`, `--temp-dir`, `--max-bytes`, `--evidence-bytes`). Config: `config.yaml` (profile path, research, inventory, narratives, retrieval_manifest filenames) via `scripts/_config.py`. Imports `retrieval_payload.extract_section`, `CR_HEADING`, `_ENTRY_RE`. Filesystem: research.md and retrieval.md in the application folder, inventory.md in the profile folder.
 - **Outputs**: `<temp-dir>/gap_detector_context.md`; the included section list and the dispatch prompt to stdout. Errors to stderr with exit 1, including a missing or empty requirements, role, company, or industry section, no reference sections, a missing manifest, or a context over the byte budget.
@@ -660,7 +660,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 - **Purpose**: Render the gap analysis artifact from collected signals — the deterministic portion of the gap-analysis Phase 6. Reads structured JSON inputs the dispatching skill prepares (per-requirement records, eligibility flags, gap themes and conditions, recommendation rationale), computes the coverage table and unmet must-have count from the statuses, substitutes tokens into `templates/gap_analysis.md`, writes the wholesale artifact to the application folder.
 - **Status**: Designed
-- **Inputs**: Subcommand args (`--folder`, `--slug`, `--app-id`, `--date`, `--company`, `--role`, `--recommendation-label`, `--recommendation-rationale-file`, `--research-file`, `--requirements-file`, `--eligibility-file`, `--themes-file`, `--cv-notes-file`). Config: `config.yaml` (templates path, gap_analysis filename, gap_analysis_template name) via `scripts/_config.py`. Filesystem: the template under `templates/`.
+- **Inputs**: Subcommand args (`--folder`, `--slug`, `--app-id`, `--date`, `--company`, `--role`, `--recommendation-label`, `--recommendation-rationale-file`, `--requirements-file`, `--eligibility-file`, `--themes-file`, `--cv-notes-file`). Config: `config.yaml` (templates path, gap_analysis filename, gap_analysis_template name) via `scripts/_config.py`. Filesystem: the template under `templates/`; requirement text and Type from `jd_needs.md` in `--folder`.
 - **Outputs**: `<folder>/gap_analysis.md` and its path printed to stdout. Errors to stderr with exit 1.
 - **Triggers**: Invoked by `gap-analysis` Phase 6 (Step 6a).
 - **Update Triggers**: When the gap_analysis.md template schema changes; when the per-section block rendering shapes change; when the recommendation-label set changes.

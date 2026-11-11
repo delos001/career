@@ -15,10 +15,11 @@ role-intake: |
        same folder as the JD and they are read in too.
     3. Confirm role title and company (you are prompted if absent from the JD).
     4. Research the company, role, and industry - scoped to what the skill needs,
-       not exhaustive dossiers - and pull out the job's critical requirements.
+       not exhaustive dossiers.
     5. Write the session log and research file, then QC them.
 
-  Next: role-classify ranks the job's needs and classifies it.
+  Next: role-classify pulls out the job's requirements, ranks its needs and
+  classifies it.
 
   Have ready: the job description, and any recruiter / hiring-manager messages.
 
@@ -31,14 +32,16 @@ role-classify: |
   Runs after role-intake, from the files it wrote, so a fresh session works.
 
   Steps:
-    1. Label each requirement by kind, describe the job, group the
+    1. Pull out the job's requirements in the JD's own words, and check each
+       one against the JD before going on.
+    2. Label each requirement by kind, describe the job, group the
        requirements into the work the role delivers, and rank those needs.
        Boilerplate and other rows that are not needs are set aside, so later
        steps never use them.
-    2. Classify the job against the five axes (orientation, industry,
+    3. Classify the job against the five axes (orientation, industry,
        specialty, level, work-state). Every axis must resolve to a value with a
        rule file; if one is missing, the skill pauses so it can be built.
-    3. Check both, then you confirm the ranking and approve.
+    4. Check both, then you confirm the ranking and approve.
 
   Have ready: the APP-NNN of a role that has finished role-intake.
 
@@ -58,7 +61,7 @@ retrieval: |
   Steps:
     1. Locate the application folder (new application or resume by APP-NNN).
     2. Read the role-intake and role-classify outputs - session_log.md (axis classification),
-       research.md (critical requirements), and jd.md.
+       jd_needs.md (the requirements), and jd.md.
     3. Build per-corpus payloads from inventory, narratives, and positioning.
     4. Score each corpus against the critical requirements list (inventory
        and narratives are chunked; a seed chunk is scored first so shared

@@ -48,12 +48,11 @@ Ask if this session is for a new CV or to resume a previous one.
 **Loading the upstream artifacts and the CV rules for this application.**
 
 - Input: application folder path (from the resume check), APP-NNN, slug.
-- Read `research.md` from the application folder. Extract:
-  - the `## Critical Requirements` section (each requirement's text and type),
-  - the `## Role`, `## Company`, `## Industry` summary blocks (role context).
+- Read `jd_needs.md` from the application folder: each requirement's text and Type, grouped under the job's ranked needs. Rows under `## Not ranked` are not requirements the CV answers.
+- Read `research.md` from the application folder. Extract the `## Role`, `## Company`, `## Industry` summary blocks (role context).
 - Read the session log (`session_log.md`) from the application folder. Extract the `## Axis Classification` section (the five axis values, each with primary and optional secondary), and from it the candidate **level** (`ic` or `leadership`, the level axis value) and, for leadership, the **tier** (the `- Tier:` line, e.g. `function-lead`). A leadership log written before 2026-11-05 carries no tier; ask the user which tier fits the role (naming the four from `rules/levels/leadership.md`) rather than guessing.
 - Read `gap_analysis.md`. Extract:
-  - The per-requirement coverage statuses keyed by `CR-NNN`. The `CR-NNN` ids are gap-analysis's id space and are the authoritative requirement ids for the CV; each maps positionally (same order) to a `research.md` requirement, and to the bare "requirement N" references in `retrieval.md`.
+  - The per-requirement coverage statuses keyed by `CR-NNN`. The `CR-NNN` ids are gap-analysis's id space and are the authoritative requirement ids for the CV; `CR-NNN` is the requirement's row number in `jd_needs.md` (row 2 is CR-002), and the bare "requirement N" references in `retrieval.md` use the same number.
   - The `## CV Notes` section. This is general framing guidance from the gap-closure session that applies across the CV rather than to a single requirement. Surface it as a named input alongside the requirement statuses; the cv-architect must review and apply it before drafting begins.
 - Read `user-info.md` from the profile folder (`python scripts/paths.py profile`). Extract the contact block (name, location, contact line, profile links) for the CV header.
 - **Resolve the axis value files.** For each classified axis value, resolve its rule file path `rules/<axis>/<value>.md`. Pass the files that exist to the sub-agents; for any axis marked "File deferred" in the classification, note it (the architect proceeds without that axis's voice file and the gap is surfaced at handoff).

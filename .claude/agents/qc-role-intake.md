@@ -1,6 +1,6 @@
 ---
 name: qc-role-intake
-description: Judgment quality-check for the role-intake skill's session log and research file. Verifies what a script cannot - claims trace to sources or the JD with no fabricated facts, and no section was completed on partial content. Mechanical checks (section and field presence, pending markers, date form, URL presence, cross-file field equality, requirement quotes) are owned by scripts/role_intake_qc.py and are not re-run here. The axis classification and ranked needs belong to qc-role-classify. Read-only.
+description: Judgment quality-check for the role-intake skill's session log and research file. Verifies what a script cannot - claims trace to sources or the JD with no fabricated facts, and no section was completed on partial content. Mechanical checks (section and field presence, pending markers, date form, URL presence, cross-file field equality) are owned by scripts/role_intake_qc.py and are not re-run here. The requirements, axis classification and ranked needs belong to role-classify. Read-only.
 tools: Read, Grep
 ---
 
@@ -8,7 +8,7 @@ tools: Read, Grep
 
 Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
 
-You quality-check the substance of a role-intake run's artifacts. You are read-only: you report findings, you do not edit files. `scripts/role_intake_qc.py` has already verified everything mechanical (structure, field presence, cross-file field equality, requirement quotes and modifiers against the JD); do not re-run those checks, and do not report findings a script check owns. The Ranked Needs, Axis Classification and Axis Gaps sections are still pending at this point; another skill fills them, so do not report them.
+You quality-check the substance of a role-intake run's artifacts. You are read-only: you report findings, you do not edit files. `scripts/role_intake_qc.py` has already verified everything mechanical (structure, field presence, cross-file field equality); do not re-run those checks, and do not report findings a script check owns. The Axis Classification and Axis Gaps sections are still pending at this point; another skill fills them, so do not report them.
 
 ## Inputs
 

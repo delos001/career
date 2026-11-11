@@ -253,7 +253,7 @@ Refs: `preparation-screen-architecture-2026-06` (superseded structure; migrated 
 Retrieval is a standalone skill that runs after role-intake and serves multiple downstream consumers (gap analysis, CV creation, interview prep, career brief). It produces a single manifest at `personal/applications/<SLUG>_APP-NNN_YYYY-MM/retrieval.md` containing scored references to inventory entries, narratives, and triggered themes. Manifests do not embed full content; downstream consumers fetch entry bodies via `scripts/profile_slice.py` on demand.
 
 **Inputs (read from role-intake outputs):**
-- Critical requirements list (from `research.md`; see `role-intake-critical-requirements-extraction-2026-05`).
+- Critical requirements list (from `jd_needs.md` since `requirements-in-jd-needs-2026-11`; see `role-intake-critical-requirements-extraction-2026-05`).
 - Axis classification (from the session log).
 - JD text (from `jd.md`).
 
@@ -1457,6 +1457,8 @@ Role-intake gains a critical-requirements extraction step. A new sub-agent `crit
 
 Refs: `retrieval-architecture-2026-05`, `role-intake-architecture`, `role-intake-research-scope`, `role-intake-artifacts`.
 
+(Amended by `requirements-in-jd-needs-2026-11`: extraction runs in role-classify and writes to `jd_needs.md`; the Type guard is in `requirement_kinds.py` and the modifier guard is `role_classify_qc.py` C8.)
+
 #### role-intake-ranked-needs-2026-11
 Role-intake ranks the JD's needs (GitHub #89; moved to role-classify, see the amendment below). On APP-028 the JD's "primary focus of this role" paragraph became requirements 33 and 34 of 35, typed `contextual`, and every downstream step read the flat list in which it sat last. Type records which JD section a row came from; nothing recorded importance.
 
@@ -1487,6 +1489,18 @@ The ranker labels every requirement row by kind before grouping, so grouping fol
 - Describing words (seniority, amount, "recognized," exclusions, person labels) go with what they describe and never form a need.
 
 Refs: `role-classify-split-2026-11`, GitHub #89.
+
+(Amended by `requirements-in-jd-needs-2026-11`: the requirements now live only in `jd_needs.md`, so the copy from `research.md` and the mismatch refusal are gone.)
+
+#### requirements-in-jd-needs-2026-11
+Requirement extraction moved from role-intake into role-classify, and the requirements from `research.md` into `jd_needs.md`, so their text exists once. Extraction is the same kind of work as labeling and ranking (reading the JD for what the job asks), and two copies of the text needed a check that they still matched.
+
+- role-classify Phase 1: 1a extract (`role_classify_assemble.py requirements` writes the rows under `## Requirements`, each with text, Type and Source; re-extracting replaces the file, so no ranking built on old rows survives); 1b check the extraction before ranking (`role_classify_qc.py requirements`: C7 numbering 1..N, allowed Type, Source present; C8 the modifier guard, formerly `role_intake_qc.py` I7); 1c rank (`needs` rewrites the file, carrying each row's text, Type and Source over).
+- A row the ranker places nowhere stays under `## Requirements` and C6 fails it. Ranking rewrites the only copy, so a dropped row must stay on file rather than vanish.
+- `requirement_kinds.requirements_table()` is the one reader for retrieval and gap analysis: it builds the same `| # | Text | Type | Source |` table from `jd_needs.md`, without the Not ranked rows, so the scorer and gap-detector instructions did not change. The CV agents (cv-architect, hiring-manager) read `jd_needs.md` directly.
+- role-intake keeps only the company, role and industry research; `research.md` has no requirements section. Existing applications were converted by a one-off script, not handled by a fallback reader.
+
+Refs: `requirement-kinds-2026-11`, `role-intake-critical-requirements-extraction-2026-05`, GitHub #89.
 
 ### gap-analysis
 

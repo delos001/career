@@ -4,24 +4,30 @@ role_classify_assemble.py - role-classify artifact writer
 
 Writes what the role-classify skill adds to an application that role-intake
 has already researched, and prints the skill's approval block, so none of it is
-written or composed by hand. Three subcommands:
+written or composed by hand. Four subcommands:
 
-  needs     Write the jd-needs-ranker output to jd_needs.md: the job, each need
-            with its requirements (text copied from research.md) and their
-            kinds, then the Qualifications and Not ranked rows.
+  requirements  Write the critical-requirements-extractor output to jd_needs.md
+            under '## Requirements' (text, Type, Source). Re-extracting
+            replaces the whole file, so a ranking built on old rows never
+            survives.
+  needs     Rewrite jd_needs.md with the jd-needs-ranker output: the job, each
+            need with its requirements (copied from the file's own rows) and
+            their kinds, then the Qualifications and Not ranked rows.
   finalize  Write the axis-classifier output into the session log (Axis
             Classification, Axis Gaps, and the Role Level and Industry metadata
             lines) and mirror Axis Gaps into research.md.
   approval  Print the approval block from the files on disk.
 
 needs and finalize moved here from assemble.py when role-classify was split out
-of role-intake. Every write is section-scoped, so sections other skills own are
+of role-intake; requirements moved here from assemble.py research when
+extraction moved into role-classify (2026-11-10). Every write is section-scoped, so sections other skills own are
 left in place.
 
 Author    : Jason Delosh
 Created   : 2026-11-09
 Project   : career
-Usage     : python scripts/role_classify_assemble.py needs     --folder ... --needs-file ...
+Usage     : python scripts/role_classify_assemble.py requirements --folder ... --requirements-file ...
+            python scripts/role_classify_assemble.py needs     --folder ... --needs-file ...
             python scripts/role_classify_assemble.py finalize  --folder ... --axis-file ...
             python scripts/role_classify_assemble.py approval  --folder ...
 Depends   : pyyaml (via _config)
@@ -54,10 +60,36 @@ def _paths(folder, cfg):
     return research, log
 
 
+def _title(research):
+    """Return '<Company> | <Role>' from research.md's H1."""
+    m = re.match(r'# Research: (.*)', _util.read(research))
+    if not m:
+        raise ValueError(f'{research} has no "# Research: <company> | <role>" heading')
+    return m.group(1).strip()
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: requirements
+# Type values are held to the allowed four here; wording against the JD is
+# role_classify_qc.py's 'requirements' check, run right after this write.
+# ---------------------------------------------------------------------------
+
+def cmd_requirements(args, cfg):
+    """Write the extractor's rows to jd_needs.md, replacing any earlier file."""
+    research, _ = _paths(args.folder, cfg)
+    rows = requirement_kinds.parse_extractor_table(_util.read(args.requirements_file))
+    if not rows:
+        raise ValueError('the extractor output holds no requirement rows')
+    path = requirement_kinds.needs_path(args.folder, cfg)
+    _util.write(path, requirement_kinds.render_requirements(_title(research), rows))
+    print(path)
+
+
 # ---------------------------------------------------------------------------
 # Subcommand: needs
 # Structure and coverage are checked by role_classify_qc.py C6, not here, so a
-# malformed ranking still lands where QC can name what is wrong with it.
+# malformed ranking still lands where QC can name what is wrong with it. A row
+# the ranker placed nowhere stays under '## Requirements' for C6 to report.
 # ---------------------------------------------------------------------------
 
 def _row_kinds(block):
@@ -79,31 +111,35 @@ def _line_rows(block, label):
 
 
 def cmd_needs(args, cfg):
-    """Write jd_needs.md from the ranker's output and research.md's requirements.
+    """Rewrite jd_needs.md from the ranker's output and the file's own rows.
 
     The ranker returns '## Row Kinds' (a row-number/kind table), then
     '## Ranked Needs' (the job lines, the needs table, and the Qualifications
-    and Not ranked lines). Each requirement's text is copied from research.md
-    here, never from the ranker, so the needs file always quotes the
-    requirements exactly. Coverage and kinds are checked by role_classify_qc.py
-    C6, not here, so a malformed ranking still lands where QC can name what is
-    wrong with it; a row number research.md does not have stops the write.
+    and Not ranked lines). Each requirement's text, Type and Source are copied
+    from jd_needs.md's existing rows, never from the ranker, so the requirements
+    are never reworded by ranking. A row number the file does not have stops the
+    write; a row the ranker placed nowhere is kept under '## Requirements'.
     """
-    research, _ = _paths(args.folder, cfg)
+    _paths(args.folder, cfg)
+    path = requirement_kinds.needs_path(args.folder, cfg)
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f'{path} not found (extract the requirements first)')
+    current = requirement_kinds.read_needs(_util.read(path))
+    by_num = {row['num']: row for row in requirement_kinds.all_rows(current)}
     text = _util.read(args.needs_file).strip()
     m = re.search(r'(?m)^## Ranked Needs[ \t]*$', text)
     if not m:
         raise ValueError('needs file has no "## Ranked Needs" heading')
     kinds_part, block = text[:m.start()], text[m.start():]
-    research_text = _util.read(research)
-    texts = requirement_kinds.requirement_texts(_section_body(research_text, 'Critical Requirements'))
     kind_by_row = _row_kinds(kinds_part)
+    placed = set()
 
     def rows(nums):
-        unknown = [n for n in nums if n not in texts]
+        unknown = [n for n in nums if n not in by_num]
         if unknown:
-            raise ValueError(f"row(s) {', '.join(map(str, unknown))} are not in research.md")
-        return [(n, texts[n], kind_by_row.get(n, '')) for n in nums]
+            raise ValueError(f"row(s) {', '.join(map(str, unknown))} are not in {path}")
+        placed.update(nums)
+        return [{**by_num[n], 'kind': kind_by_row.get(n, '')} for n in nums]
 
     job = [line.strip() for line in block.split('\n')
            if re.match(r'^- (Delivers or owns|Leads, does, or both):', line.strip())]
@@ -115,12 +151,11 @@ def cmd_needs(args, cfg):
         nums = [int(t) for t in re.split(r'[,\s]+', cells[3]) if t.isdigit()]
         needs.append({'id': cells[0], 'label': cells[1], 'basis': cells[2],
                       'signals': cells[4], 'quote': ' | '.join(cells[5:]), 'rows': rows(nums)})
-    title_m = re.match(r'# Research: (.*)', research_text)
-    title = title_m.group(1).strip() if title_m else os.path.basename(args.folder)
-    out = requirement_kinds.render_needs(
-        title, job, needs, rows(_line_rows(block, 'Qualifications')),
-        rows(_line_rows(block, 'Not ranked')))
-    path = requirement_kinds.needs_path(args.folder, cfg)
+    qualifications = rows(_line_rows(block, 'Qualifications'))
+    not_ranked = rows(_line_rows(block, 'Not ranked'))
+    unplaced = [row for num, row in sorted(by_num.items()) if num not in placed]
+    out = requirement_kinds.render_needs(current['title'], job, needs, qualifications,
+                                         not_ranked, unplaced)
     _util.write(path, out)
     print(path)
 
@@ -243,7 +278,13 @@ def main():
     parser = argparse.ArgumentParser(description='role-classify artifact writer')
     sub = parser.add_subparsers(dest='command', required=True)
 
-    p_needs = sub.add_parser('needs', help="write the ranker's output into research.md")
+    p_req = sub.add_parser('requirements', help="write the extractor's rows to jd_needs.md")
+    p_req.add_argument('--folder', required=True, help='the application folder')
+    p_req.add_argument('--requirements-file', required=True,
+                       help='path to a file holding the critical-requirements-extractor output table')
+    p_req.set_defaults(func=cmd_requirements)
+
+    p_needs = sub.add_parser('needs', help="rewrite jd_needs.md with the ranker's output")
     p_needs.add_argument('--folder', required=True, help='the application folder')
     p_needs.add_argument('--needs-file', required=True,
                          help='path to a file holding the jd-needs-ranker output block')
