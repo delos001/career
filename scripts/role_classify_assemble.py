@@ -12,7 +12,9 @@ written or composed by hand. Four subcommands:
             survives.
   needs     Rewrite jd_needs.md with the jd-needs-ranker output: the job, each
             need with its requirements (copied from the file's own rows) and
-            their kinds, then the Qualifications and Not ranked rows.
+            their kinds, then the Qualifications and Not ranked rows. The
+            repetition count and the order of the needs are set here, not
+            by the ranker.
   finalize  Write the axis-classifier output into the session log (Axis
             Classification, Axis Gaps, and the Role Level and Industry metadata
             lines) and mirror Axis Gaps into research.md.
@@ -113,6 +115,27 @@ def _row_kinds(block):
     return kinds
 
 
+# The ranking is not left to the ranker's arithmetic or ordering. It judges
+# which needs carry role-statement and space; the script counts repetition from
+# the distinct JD sections of each need's rows (the ranker once wrote 4 for a
+# need whose rows sat in 3 sections, and ranked it first on that count), then
+# sorts by role-statement, repetition, space, and the ranker's order last.
+
+def _rank(needs):
+    """Return needs re-signalled and sorted, ids renumbered N-01.. in rank order."""
+    keyed = []
+    for pos, need in enumerate(needs):
+        tokens = {t.strip() for t in need['signals'].split(',')}
+        statement, space = 'role-statement' in tokens, 'space' in tokens
+        sections = {requirement_kinds.jd_heading(r['source']) for r in need['rows']} - {''}
+        signals = (['role-statement'] if statement else []) + [f'repetition {len(sections)}'] \
+            + (['space'] if space else [])
+        keyed.append(((not statement, -len(sections), not space, pos),
+                      {**need, 'signals': ', '.join(signals)}))
+    ranked = [need for _, need in sorted(keyed, key=lambda k: k[0])]
+    return [{**need, 'id': f'N-{n:02d}'} for n, need in enumerate(ranked, start=1)]
+
+
 def cmd_needs(args, cfg):
     """Rewrite jd_needs.md from the ranker's output and the file's own rows.
 
@@ -159,6 +182,7 @@ def cmd_needs(args, cfg):
         quote = requirement_kinds.jd_ref(jd, '', ' | '.join(cells[5:]))
         needs.append({'id': cells[0], 'label': cells[1], 'basis': cells[2],
                       'signals': cells[4], 'quote': quote, 'rows': rows(nums)})
+    needs = _rank(needs)
     # Place every row the needs did not take by its kinds.
     kinds = requirement_kinds.load_kinds(args.repo_root, cfg)
     by_place = {requirement_kinds.QUALIFICATIONS: [], requirement_kinds.NOT_RANKED: []}

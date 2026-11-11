@@ -2047,6 +2047,13 @@ def test_ranked_needs_cover_every_requirement_once():
     written = _util.read(needs_path)
     assert result(written)[1], result(written)
     assert '### N-01: Operating model' in written, written
+    # The script sets repetition from the distinct JD sections of each need's
+    # rows (N-01: Responsibilities and Requirements; the ranker wrote none) and
+    # orders by role-statement, repetition, space: Vendor oversight's claimed
+    # 'repetition 2' (one section) is 1, so space puts the team need above it.
+    assert '### N-01: Operating model\n\n- Basis: stated\n- Signals: role-statement, repetition 2\n' in written, written
+    assert '### N-02: Leading a data team\n\n- Basis: stated\n- Signals: repetition 1, space\n' in written, written
+    assert '### N-03: Vendor oversight\n\n- Basis: stated\n- Signals: repetition 1\n' in written, written
     # Rows outside the needs are placed by kind, not by the ranker.
     assert '## Not ranked\n\n' + table_head + boiler_row.rstrip() in written, 'row 6 was not placed in Not ranked by its kind'
     assert '## Qualifications\n\n' + table_head + '| 1 |' in written, 'row 1 was not placed in Qualifications by its kind'

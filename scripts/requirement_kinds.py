@@ -240,6 +240,14 @@ def jd_ref(jd_text, text, source):
     return ref if quote == text.strip() else f'{ref} "{quote}"'
 
 
+def jd_heading(source):
+    """Return the JD section heading of a JD reference cell ('L<n> <heading>',
+    optionally followed by a quote), or '' when the cell names none."""
+    quote = _SOURCE_QUOTE_RE.search(source or '')
+    head = (source or '')[:quote.start()] if quote else (source or '')
+    return normalize(_LINE_REF_RE.sub('', head.split(';')[0].strip()))
+
+
 def normalize_demand(value):
     """Return (allowed Demand, recovered?) for a Demand cell, or (None, False).
 

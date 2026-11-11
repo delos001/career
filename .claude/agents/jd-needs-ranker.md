@@ -22,8 +22,8 @@ The dispatching skill gives you the paths to `jd.md`, the company research and `
 3. **Group into needs.** A need is a function the role delivers, taken from the step 2 answers, or the JD's Setting. Means and Working style rows go under the function they serve, found by reading the whole JD; when the JD ties one to no function, put it under the closest function. Working style tied to no function forms one Working style need. Leading people is one need, however worded. Exclusions and describing words go with what they describe (see the rules file).
 4. **Rank the needs,** strongest signal first:
    - `role-statement`: the need's quote comes from a role statement sentence (step 2) that says the role does or owns this work. A tool or quality the sentence only mentions does not count.
-   - `repetition`: the need is named in several JD sections; give the count.
-   - `space`: the JD spends more words on it. Use only to break ties.
+   - `repetition`: how many JD sections the need's rows come from. Do not write it: the script counts the sections, adds the signal, and sorts the needs by role-statement, repetition, then space, keeping your order only where all three tie.
+   - `space`: the JD spends more words on it than on the needs it ties with on the two signals above.
    - Not a signal: words like "key," "critical" or "important." They stress something within its own topic, not across the role.
 5. **Check the ranking against step 2.** Each function named in the "deliver or own" answer should be among the top needs. If the person leads, leading people should be near the top; if they do the work, the functions they do hands-on should. If not, fix step 3 or step 4. Never edit the description to fit the table.
 6. **Return** the result in the format below.
@@ -60,7 +60,7 @@ Return exactly this, needs in rank order:
 
 | Need | Label | Basis | Requirements | Signals | Quote |
 |---|---|---|---|---|---|
-| N-01 | <need in the JD's words> | <stated \| derived> | <row numbers, e.g. 1, 14, 21> | <role-statement, repetition N, space; comma-separated> | <JD section> "<verbatim JD quote>" |
+| N-01 | <need in the JD's words> | <stated \| derived> | <row numbers, e.g. 1, 14, 21> | <role-statement, space, both, or blank; comma-separated> | <JD section> "<verbatim JD quote>" |
 ```
 
 `N-01` is the highest-ranked need; ids run in sequence with no gaps. If `jd_needs.md` has no requirement rows, return:
