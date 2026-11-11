@@ -39,7 +39,7 @@ For each of the five axes:
    - **Not confirmed** → return to step 2, pick a different candidate, and repeat.
    - **No registry value confirms** (all candidates exhausted across step 3 and step 4 with no confirmation) → record an axis gap: name the axis and describe, in one line, what the job needs that no existing value covers. Do not block and do not invent a value - just flag it.
 
-For a dual-axis result, confirm both the primary and the secondary.
+For a dual-axis result, confirm both the primary and the secondary. An exclusion that names the headline deliverable and routes to the value you chose as primary ("use data-analytics" when data-analytics is primary) bars that value as primary only; it does not bar it as the secondary. Every other exclusion binds the secondary too.
 
 **An axis gap has exactly two legitimate causes, and no others:**
 1. **No registry value confirms** - the job's value for that axis is not in the registry at all (step 4, all candidates exhausted).

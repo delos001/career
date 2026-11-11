@@ -52,6 +52,7 @@ Industry/Specialty split replaces prior Domain axis. Axes are independent files.
 
 #### dual-orientation-asymmetric-authority
 A role may map to two orientations. Primary governs most surfaces; secondary gets bounded explicitly-scoped slots. They do not compete over the same surface.
+- Confirming a secondary (2026-11-11): an exclusion naming the headline deliverable and routing to the chosen primary bars that value as primary only, never as secondary; read literally it would block every adjacent dual orientation. Other exclusions bind both. Raised by qc-role-classify on Medtronic APP-024 (data-analytics + platform-technology).
 - CV: secondary in 2-3 achievements and 1-2 Core Competencies items. Summary primary-only.
 - Other deliverables: per-deliverable composition rule as needed. Existing CV dual-orientation rule transfers to `rules/orientations/cv_dual_orientation_composition.md`.
 
