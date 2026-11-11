@@ -45,7 +45,7 @@ For a dual-axis result, confirm both the primary and the secondary. An exclusion
 1. **No registry value confirms** - the job's value for that axis is not in the registry at all (step 4, all candidates exhausted).
 2. **File deferred** - a value confirms but its rule file is not yet authored (the `File deferred` branch of step 3).
 
-Anything else is a classification you owe, not a gap. In particular, having two or more *confirming* candidates is never a gap - resolve it to primary + secondary, or to a single dominant primary. "The JD is ambiguous" or "I am not fully certain" is never a gap either: make the best-supported call and put the uncertainty in the rationale (e.g. "moderate confidence; X over Y because ..."), not in the gap list. Reserve the gap list strictly for the two causes above, where the registry or the rule files - not your judgment - are genuinely missing something.
+Anything else is a classification you owe, not a gap. In particular, having two or more *confirming* candidates is never a gap - resolve it to primary + secondary, or to a single dominant primary. "The JD is ambiguous" or "I am not fully certain" is never a gap either: make the best-supported call and mark the uncertainty in the rationale ("moderate confidence;"), not in the gap list. Reserve the gap list strictly for the two causes above, where the registry or the rule files - not your judgment - are genuinely missing something.
 
 ## Rules
 
@@ -70,7 +70,7 @@ Return exactly this structure:
 (or: None)
 ```
 
-The rationale is one sentence per axis explaining why the value was selected and why the main alternative(s) were not. Use a plain hyphen separator, not an em dash.
+The rationale is one sentence of at most 30 words, for a reviewer: the deciding criterion quoted from the value file, then the JD line it rests on as `L<n>` with a short quote (e.g. `selection "organizational scope"; L10 "strategic leadership ... across the clinical research ecosystem"`). Prefix `moderate confidence;` when the call is close. Do not list rejected values, research caveats or a second piece of evidence; a script fails a rationale over 30 words. Use a plain hyphen separator, not an em dash.
 
 Every axis line begins with `- ` and carries a bare label: `- Industry:`, never `- **Industry:**` and never `**Industry:**`. Add no sub-bullets and no fields the block above does not list.
 

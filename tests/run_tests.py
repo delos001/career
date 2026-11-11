@@ -1955,6 +1955,11 @@ def test_ranked_needs_cover_every_requirement_once():
     import role_classify_qc as rcq
     repo_root, cfg = _config.load()
     kinds = requirement_kinds.load_kinds(repo_root, cfg)
+    # Employment conditions (travel, location, authorization) are checked by
+    # gap analysis's eligibility phase, so they are never a Qualification row
+    # that counts toward go / no-go or claims a CV slot (2026-11-11).
+    assert kinds.get('Employment condition') == requirement_kinds.NOT_RANKED, kinds
+    assert kinds.get('Qualification') == requirement_kinds.QUALIFICATIONS, kinds
     research_path = os.path.join(FIXTURE_APP, 'research.md')
     needs_path = os.path.join(FIXTURE_APP, 'jd_needs.md')
     jd = _util.read(os.path.join(FIXTURE_APP, 'jd.md'))
@@ -2195,7 +2200,16 @@ def test_role_intake_hands_classification_to_role_classify():
     complete = detail(rcq.check_complete, filled_research, filled_log, riq._metadata_fields(filled_log))
     assert complete[1], complete
     code, out = run('role_classify_assemble.py', 'approval', '--folder', FIXTURE_APP)
-    assert code == 0 and 'Level:    leadership' in out, out
+    # The approval block shows values only; rationales stay in the session log
+    # (2026-11-11: the block had grown past 400 words).
+    assert code == 0 and 'Level:        leadership' in out, out
+    assert 'Orientation:  process-operations\n' in out and 'Work-state:   mature\n' in out, out
+    assert 'the deliverables are' not in out and 'established function' not in out, out
+    # C4 caps each rationale at config axis_rationale_max_words.
+    cap = _config.load()[1]['axis_rationale_max_words']
+    assert detail(rcq.check_axis_line_form, filled_log, cap)[1], detail(rcq.check_axis_line_form, filled_log, cap)
+    long_log = filled_log.replace('- Work-state: mature - ', '- Work-state: mature - ' + 'word ' * cap)
+    assert not detail(rcq.check_axis_line_form, long_log, cap)[1], 'a rationale over the word cap passed'
 
 
 def test_stale_rule_files_are_flagged():

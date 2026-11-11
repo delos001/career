@@ -293,28 +293,44 @@ def cmd_finalize(args, cfg):
 # what is on disk; the skill decides QC findings and the ranking first.
 # ---------------------------------------------------------------------------
 
+def _axis_value_lines(axes_body):
+    """Return {label: values} from Axis Classification lines, rationale dropped.
+
+    The values part runs up to the first ' - '; '(primary)' and '(secondary)'
+    markers are dropped, since order already says which is which.
+    """
+    out = {}
+    for line in axes_body.split('\n'):
+        m = re.match(r'^- (Orientation|Industry|Specialty|Level|Tier|Work-state):\s*(.+)$', line.strip())
+        if m:
+            values = m.group(2).split(' - ')[0]
+            out[m.group(1)] = re.sub(r'\s*\((?:primary|secondary)\)', '', values).strip()
+    return out
+
+
 def cmd_approval(args, cfg):
-    research, log = _paths(args.folder, cfg)
+    """Print the approval block: the values only. The rationales stay in the
+    session log for the reviewer; the block once ran past 400 words."""
+    _, log = _paths(args.folder, cfg)
     log_text = _util.read(log)
     meta = _metadata_fields(log_text) or {}
-    axes = _section_body(log_text, 'Axis Classification') or '_(missing)_'
-    gaps = _section_body(log_text, 'Axis Gaps') or '_(missing)_'
+    axes = _axis_value_lines(_section_body(log_text, 'Axis Classification') or '')
+    gaps = (_section_body(log_text, 'Axis Gaps') or '_(missing)_').strip()
     needs_file = requirement_kinds.needs_path(args.folder, cfg)
     needs = _util.read(needs_file) if os.path.isfile(needs_file) else ''
     need_count = len(requirement_kinds.read_needs(needs)['needs'])
+    level = meta.get('Role Level', '')
+    if axes.get('Tier'):
+        level = f"{level}, {axes['Tier']}"
     print('\n'.join([
-        f"Role:     {meta.get('Role', '')} at {meta.get('Company', '')}",
-        f"Level:    {meta.get('Role Level', '')}",
-        f"Industry: {meta.get('Industry', '')}",
-        '',
-        'Axis classification:',
-        axes,
-        '',
-        f'Axis gaps: {gaps}',
+        f"Role:         {meta.get('Role', '')} at {meta.get('Company', '')}",
+        f'Level:        {level}',
+        f"Industry:     {meta.get('Industry', '')}",
+        f"Orientation:  {axes.get('Orientation', '_(missing)_')}",
+        f"Specialty:    {axes.get('Specialty', '_(missing)_')}",
+        f"Work-state:   {axes.get('Work-state', '_(missing)_')}",
+        f'Axis gaps:    {gaps}',
         f'Ranked needs: {need_count}',
-        f'Files: {log}',
-        f'       {research}',
-        f'       {needs_file}',
         '',
         'Reply with corrections, or "approved" to hand off.',
     ]))

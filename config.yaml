@@ -126,6 +126,11 @@ requirement_optional_words:
 # row quoting that clause rather than on every row.
 requirement_year_count: \d+(?:-\d+)?\+? years
 
+# Longest axis-classification rationale, in words (scripts/role_classify_qc.py
+# C4). The rationale is reviewer context: the deciding rule criterion and the
+# JD line it rests on. Downstream skills read only the values.
+axis_rationale_max_words: 30
+
 # Profile-update related-entry pull (scripts/profile_slice.py related).
 related_pull:
   max_chars: 50000          # a pull larger than this splits into parts, read one --part at a time

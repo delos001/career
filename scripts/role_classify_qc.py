@@ -25,7 +25,8 @@ Checks:
   C3  Axis gaps recorded in both: the set of axes flagged in the session log's
       Axis Gaps matches the set flagged in the research file's.
   C4  Axis lines match the axis-classifier's declared return format
-      (`- <Axis>: <values> - <rationale>`, no bold, no bare label).
+      (`- <Axis>: <values> - <rationale>`, no bold, no bare label), and no
+      rationale runs past config axis_rationale_max_words.
   C5  A leadership Level carries exactly one `- Tier:` line naming a tier from
       rules/levels/leadership.md's Tiers block; other levels carry none.
   C6  jd_needs.md: the job description is present and cites jd.md lines as
@@ -237,8 +238,10 @@ def check_gap_mirroring(research_text, log_text, findings):
                      if not ok else 'axis gaps mirrored'))
 
 
-def check_axis_line_form(log_text, findings):
-    """C4: axis lines match the axis-classifier's declared return format.
+def check_axis_line_form(log_text, max_words, findings):
+    """C4: axis lines match the axis-classifier's declared return format, and
+    each axis or Tier rationale runs to at most `max_words` words (config
+    axis_rationale_max_words; rationales had grown past 120 words).
 
     The classifier's return-format spec (`.claude/agents/axis-classifier.md`)
     emits `- <Axis>: <values> - <rationale>` with no bold markers, and
@@ -259,11 +262,17 @@ def check_axis_line_form(log_text, findings):
                if re.search(r'\b(?:Orientation|Industry|Specialty|Level|'
                             r'Work-state):', line)
                and not conforming.match(line)]
+    problems = [f'axis line does not match the classifier return format: {line[:60]}'
+                for line in drifted]
+    # The rationale follows the first ' - ' (kebab-case values hold no spaced hyphen).
+    for line in body.split('\n'):
+        m = re.match(r'^- (Orientation|Industry|Specialty|Level|Tier|Work-state): .*? - (.+)$', line)
+        if m and len(m.group(2).split()) > max_words:
+            problems.append(f'{m.group(1)} rationale is {len(m.group(2).split())} words '
+                            f'(limit {max_words})')
     findings.append((
-        'C4', not drifted,
-        '; '.join(f'axis line does not match the classifier return format: '
-                  f'{line[:60]}' for line in drifted)
-        or 'axis lines match the classifier return format'))
+        'C4', not problems,
+        '; '.join(problems) or 'axis lines match the classifier return format'))
 
 
 def check_tier(log_text, tiers, findings):
@@ -542,7 +551,7 @@ def cmd_check(args, repo_root, cfg):
     check_complete(research_text, log_text, meta, findings)
     check_level_industry(log_text, meta, findings)
     check_gap_mirroring(research_text, log_text, findings)
-    check_axis_line_form(log_text, findings)
+    check_axis_line_form(log_text, cfg['axis_rationale_max_words'], findings)
     check_tier(log_text, leadership_tiers(repo_root, cfg), findings)
     needs_text, jd_text = _needs_and_jd(args.folder, cfg)
     check_ranked_needs(needs_text, jd_text, requirement_kinds.load_kinds(repo_root, cfg), findings)

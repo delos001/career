@@ -49,12 +49,11 @@ A tool, method, skill or body of subject knowledge used to carry out a function.
 
 ### 3. Qualification
 
-A fixed threshold the candidate meets or does not. All go into one Qualifications group after the functions, not ranked.
+A fixed threshold the candidate holds or does not, shown by a credential or a career record. All go into one Qualifications group after the functions, not ranked.
 
 - **Education:** bachelor's, master's, PhD, MBA, PharmD, named fields; equivalent experience accepted
 - **Certification or license:** PMP; Lean Six Sigma; agile; change management certification; professional licenses
 - **Years of experience:** total, industry, or naming a function ("8 years leading analytics teams"); a row that names a function records which one
-- **Employment conditions:** work authorization; location or on-site; travel percentage; background check; drug screen; security clearance; vaccination; physical requirements
 
 ### 4. Working style
 
@@ -101,6 +100,12 @@ Mission or values wording, generic company self-promotion, benefits, legal text,
 - **Benefits and terms:** pay, benefits, perks, relocation, team events
 - **Legal text:** equal opportunity; accommodation; data privacy notices
 
+### 9. Employment condition
+
+A term of the job the candidate accepts or is permitted to meet, never shown by a CV line. Gap analysis checks each against the candidate's eligibility details (its Phase 2), so it goes on the Not ranked list.
+
+- work authorization or sponsorship; remote, hybrid, on-site or location; travel percentage; background check; drug screen; security clearance; vaccination; physical requirements; start date
+
 ## Tests
 
 - **Function or Working style:** an activity the role performs, usually with an audience or output, is Function ("present to senior leadership"). A quality of how the person does it is Working style ("strong executive presence"). The same topic can be either.
@@ -108,6 +113,7 @@ Mission or values wording, generic company self-promotion, benefits, legal text,
 - **Means or Function:** if the JD lists the work as something the role does, Function, and a matching "skills" row joins it. If it appears only as a skill supporting other work, Means.
 - **Means or Setting:** "knowledge of," "understanding of," "familiarity with" is Means. "Experience in," "background in," "exposure to" a context (industry, therapeutic area, company type) is Setting. "Experience in" an activity is Function.
 - **Setting or Administrative detail:** background the JD asks the candidate to bring is Setting. A description of the hiring company is Administrative detail; the company's industry and operating state are covered by the axis classification.
+- **Qualification or Employment condition:** if a degree, certificate or career record shows it, Qualification. If the candidate meets it by agreeing to or being permitted to (travel, work location, authorization), Employment condition.
 - **Administrative detail or Boilerplate:** if the text would read the same in any JD this company posts, Boilerplate. If it is specific to this role's setup, Administrative detail.
 
 ## Words that go with what they describe
