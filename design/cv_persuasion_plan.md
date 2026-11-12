@@ -42,13 +42,16 @@ APP-028 passed every check and reviewer, and the user rewrote it by hand. The dr
 **QC**
 16. `qc-cv-targeted` sorts each claim: same work in other words (pass), roll-up (pass if backed), overstatement (fix), arguable (flag to the user at handoff, never rewritten down).
 17. `cv_qc.py` adds a check: every need tagged in the summary appears on at least one bullet.
+    - 17a. `cv_qc.py` adds a check: every inventory role inside the `cv-structure.md` Professional Experience window (ended within 10 years, or newer than any role kept there) appears in Professional Experience; a dropped role fails the run (user, 2026-11-12, Genmab: the draft dropped eClinical, opening a timeline gap readers do not close from Earlier Professional Roles). Built in steps 3 and 4 with the other `cv_qc.py` changes.
 
 ## Build sequence
+
+Before step 3: work through `cv_rebuild_inventory.md` (architect workload first, then the conflicts, constraints and retire candidates).
 
 Reordered 2026-11-09: test whether the writing changes fix the CV before touching reviewers. No change is tuned or judged on one application.
 
 1. #89 ranker: rewrite its instructions as steps, run on Jazz, BeOne APP-027, Otsuka APP-026, Acadia APP-025; the user reviews once. Close enough is the bar, since the user confirms the ranking at intake.
-2. Check decisions 2 to 8 (drawn from Jazz only) against the user's edits on about 5 other applications, varied by role type and level, excluding Jazz and the test set. Recurring edits confirm, change or add a rule. The user reviews each pattern one at a time.
+2. Check decisions 2 to 8 (drawn from Jazz only) against the user's edits on Jazz (the reference: his edits there read the JD the way the ranker now does; it shows a principle but cannot confirm its own rules) and 5 others varied by orientation (Summit APP-023, WCT APP-022, Vertex APP-021, Faro APP-020, Genmab APP-018), excluding the test set. Each edit the user made is evidence; an edit recurring across CVs is stronger evidence. A place where an edit would apply but was not made is not evidence against it, since the user edited as time allowed, and the drafts were not good writing where left unedited. His edits depend on context (the JD, how his experience reads, neighboring bullets), so each pattern becomes a judgment principle stating its intent and when it applies, rarely a mechanical rule. The user confirms each principle one at a time.
 3. `cv-structure.md` rule changes (decisions 2 to 8, as revised by step 2).
 4. `cv-architect.md` (9 to 11) and the `cv-targeted/SKILL.md` long draft and cut (10).
 5. `qc-cv-targeted.md` (16): test on combined claims from several applications. Accurate rewrites from sent CVs pass; deliberately overstated versions fail, seen to fail.
