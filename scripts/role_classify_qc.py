@@ -326,11 +326,17 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings):
     for row in parsed[requirement_kinds.UNPLACED]:
         problems.append(f"CR-{row['num']:03d} is in no need, Qualifications or Not ranked")
     jd_lines = (jd_text or '').split('\n')
-    # The role statement: its key items, a few words each, each citing its line.
-    items = [i.strip() for i in parsed['job_items'].get('Role statement', []) if i.strip()]
-    for item in items:
-        if not re.search(r'\(L\d+(?:, L\d+)*\)$', item):
-            problems.append(f'Role statement: item {item[:40]!r} must end with its jd.md line, e.g. (L22)')
+    # The role statement and outcomes: items a few words each, each citing its line.
+    # Outcomes is optional (older files predate it, and 'none' is allowed).
+    for field in ('Role statement', 'Outcomes'):
+        for item in (i.strip() for i in parsed['job_items'].get(field, []) if i.strip()):
+            if not re.search(r'\(L\d+(?:, L\d+)*\)$', item):
+                problems.append(f'{field}: item {item[:40]!r} must end with its jd.md line, e.g. (L22)')
+    if parsed['job_items'].get('Outcomes'):
+        refs = [int(n) for n in re.findall(r'\bL(\d+)\b', parsed['job'].get('Outcomes') or '')]
+        bad = [n for n in refs if not (1 <= n <= len(jd_lines) and jd_lines[n - 1].strip())]
+        if bad:
+            problems.append(f"The job: Outcomes cite no JD text on L{', L'.join(map(str, bad))}")
     statement_lines = {int(n) for n in re.findall(r'\bL(\d+)\b', parsed['job'].get('Role statement') or '')}
     for field in ('Role statement', 'Leads, does, or both'):
         value = parsed['job'].get(field)

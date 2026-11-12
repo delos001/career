@@ -182,10 +182,10 @@ def cmd_needs(args, cfg):
         placed.update(nums)
         return [{**by_num[n], 'kind': kind_by_row.get(n, '')} for n in nums]
 
-    # The job lines, with the role statement's nested key items kept in place.
+    # The job lines, with the role statement's and outcomes' nested items kept in place.
     job = []
     for line in block.split('\n'):
-        if re.match(r'^- (Role statement|Leads, does, or both):', line.strip()) and not line.startswith(' '):
+        if re.match(r'^- (Role statement|Outcomes|Leads, does, or both):', line.strip()) and not line.startswith(' '):
             job.append(line.strip())
         elif job and re.match(r'^\s+- \S', line):
             job.append('  - ' + line.strip()[2:])

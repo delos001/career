@@ -35,6 +35,8 @@ jd_needs.md layout (written by render_needs, read by read_needs):
 
     - Role statement:
       - <key item, a few words in the JD's terms> (L<n>)
+    - Outcomes:
+      - <what one deliverable achieves, in the JD's terms> (L<n>)
     - Leads, does, or both: ...
 
     ## Needs
@@ -109,7 +111,7 @@ _CELL_SPLIT_RE = re.compile(r'(?<!\\)\|')
 # ('¶4', '#2', 'line 10', 'lines 10-12'), or a leading 'L<n>' already written.
 _LOCATION_RE = re.compile(r'\s*(?:¶\s*\d+|#\s*\d+|\blines?\s+[\d,\s-]+)\s*$', re.I)
 _LINE_REF_RE = re.compile(r'^L\d+\s*')
-_FIELD_RE = re.compile(r'^- (Signals|Quote|Role statement|Leads, does, or both):\s*(.*?)\s*$')
+_FIELD_RE = re.compile(r'^- (Signals|Quote|Role statement|Outcomes|Leads, does, or both):\s*(.*?)\s*$')
 # Regex: a nested item under a job field (the role statement's key items).
 _SUBITEM_RE = re.compile(r'^\s+- (.+?)\s*$')
 

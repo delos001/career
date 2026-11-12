@@ -2007,6 +2007,13 @@ def test_ranked_needs_cover_every_requirement_once():
         'a role statement item citing a blank line passed'
     assert not result(good.replace(statement, statement.replace(' (L8)', '')))[1], \
         'a role statement item with no line passed'
+    # Outcomes the role's work achieves sit on their own job line, each citing its line.
+    outcomes = statement + '- Outcomes:\n  - enable faster study decisions (L8)\n'
+    assert result(good.replace(statement, outcomes))[1], result(good.replace(statement, outcomes))
+    assert not result(good.replace(statement, outcomes.replace(' decisions (L8)', ' decisions')))[1], \
+        'an outcome with no line passed'
+    assert not result(good.replace(statement, outcomes.replace('decisions (L8)', 'decisions (L18)')))[1], \
+        'an outcome citing a blank line passed'
     # An item may hold its own semicolon (a restatement merged into it).
     assert result(good.replace(statement, statement.replace('clinical data (L8)', 'clinical data; runs it (L8)')))[1], \
         'a role statement item holding a semicolon failed'
@@ -2054,6 +2061,7 @@ def test_ranked_needs_cover_every_requirement_once():
                   ['Qualification', 'Function', 'Function', 'Function', 'Means', 'Boilerplate or attitude'], 1))
               + '\n## Ranked Needs\n\n**The job:**\n'
               '- Role statement:\n  - owns the operating model for clinical data (L8)\n'
+              '- Outcomes:\n  - enable faster study decisions (L8)\n'
               '- Leads, does, or both: leads; what: a team (L17)\n\n'
               '| Need | Label | Requirements | Signals | Quote |\n|---|---|---|---|---|\n'
               '| N-01 | Operating model | 3, 5 | role-statement | About the role "The Director owns the operating model for clinical data across the Aldridge" |\n'
@@ -2064,6 +2072,7 @@ def test_ranked_needs_cover_every_requirement_once():
     written = _util.read(needs_path)
     assert result(written)[1], result(written)
     assert '### N-01: Operating model' in written, written
+    assert '- Outcomes:\n  - enable faster study decisions (L8)' in written, 'the assembler dropped the Outcomes line'
     # The script sets repetition (distinct JD sections of the need's rows) and
     # space (words in their distinct JD clauses), whatever the ranker wrote, and
     # orders by role-statement, repetition, space: Vendor oversight's claimed
