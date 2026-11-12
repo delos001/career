@@ -135,7 +135,13 @@ def build_context(app_folder, repo_root, cfg, max_bytes):
     # requirements at all raises. Rows come in need rank order with their need.
     requirements = requirement_kinds.requirements_table(app_folder, cfg, by_need=True)
 
-    role_parts = []
+    # The job section (role statement, lead-or-do line) leads the role context:
+    # it is what this posting says the role does; research adds market context.
+    job = retrieval_payload.extract_section(
+        _util.read(requirement_kinds.needs_path(app_folder, cfg)), '## The job')
+    if not job or not job.strip():
+        raise ValueError(f'{requirement_kinds.needs_path(app_folder, cfg)} has no "## The job" content')
+    role_parts = [f'## The job\n\n{job.strip()}']
     for name in ROLE_CONTEXT_SECTIONS:
         body = retrieval_payload.extract_section(research, f'## {name}')
         if not body or not body.strip():

@@ -370,23 +370,26 @@ def render_needs(title, job_lines, needs, qualifications, not_ranked, unplaced=(
 
 
 def read_needs(text):
-    """Parse jd_needs.md into {'title', 'job': {field: value}, 'needs': [...],
+    """Parse jd_needs.md into {'title', 'job': {field: value}, 'job_items':
+    {field: [nested items]}, 'needs': [...],
     'Qualifications': [...], 'Not ranked': [...], 'Requirements': [...],
     'sections': [...]}. Need dicts carry id, label, Signals, Quote, rows;
     rows are row dicts (num, text, kind, demand, source; a missing field is None).
     Unknown lines are ignored; the QC script reports what is missing."""
-    out = {'title': '', 'job': {}, 'needs': [], 'Qualifications': [], 'Not ranked': [],
+    out = {'title': '', 'job': {}, 'job_items': {}, 'needs': [], 'Qualifications': [], 'Not ranked': [],
            UNPLACED: [], 'sections': []}
     m = re.match(r'# JD needs:\s*(.*)', text)
     if m:
         out['title'] = m.group(1).strip()
     section, rows, job_field = None, None, None
     for line in text.split('\n'):
-        # A nested item under a job field joins that field's value, '; '-separated.
+        # A nested item under a job field joins that field's value, '; '-separated,
+        # and is also kept whole in job_items, since an item may hold its own ';'.
         sub = _SUBITEM_RE.match(line)
         if sub and section == 'The job' and job_field:
             prior = out['job'].get(job_field, '')
             out['job'][job_field] = f'{prior}; {sub.group(1)}' if prior else sub.group(1)
+            out['job_items'].setdefault(job_field, []).append(sub.group(1))
             continue
         if line.startswith('## '):
             section = line[3:].strip()

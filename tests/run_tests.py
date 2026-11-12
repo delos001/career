@@ -2007,6 +2007,9 @@ def test_ranked_needs_cover_every_requirement_once():
         'a role statement item citing a blank line passed'
     assert not result(good.replace(statement, statement.replace(' (L8)', '')))[1], \
         'a role statement item with no line passed'
+    # An item may hold its own semicolon (a restatement merged into it).
+    assert result(good.replace(statement, statement.replace('clinical data (L8)', 'clinical data; runs it (L8)')))[1], \
+        'a role statement item holding a semicolon failed'
     assert not result(good.replace(statement, statement.replace('(L8)', '(L9)')))[1], \
         'a role-statement need quoting a line the role statement does not cite passed'
     assert not result(good.replace('- Signals: repetition 2', '- Signals: role-statement, repetition 2'))[1], \
@@ -2038,6 +2041,9 @@ def test_ranked_needs_cover_every_requirement_once():
         _util.write(needs_path, good)
     assert '| 5 |' in scoring and '| 6 |' not in scoring, 'retrieval scored a Not ranked row'
     assert '| 5 |' in detector and '| 6 |' not in detector, 'gap analysis was handed a Not ranked row'
+    # The detector judges scope from the job section, not the title's market read.
+    assert 'owns the operating model for clinical data (L8)' in detector.split('# Profile reference sections')[0], \
+        'the gap detector was not handed the role statement'
     assert 'CR-006' not in info and info['CR-005']['demand'] == 'required', 'gap QC expected a Not ranked row'
 
     # The assembler rewrites jd_needs.md from the ranker's output, carrying each

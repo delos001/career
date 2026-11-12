@@ -4,7 +4,7 @@ company: <company>
 role_title: <title>
 created: YYYY-MM-DD
 last_updated: YYYY-MM-DD
-sources: [research.md, gap_analysis.md, interview_notes.md, cv_content.md, jd.md, retrieval.md]
+sources: [research.md, gap_analysis.md, interview_notes.md, cv_content.md, jd.md, jd_needs.md, retrieval.md]
 ---
 <!--
 TEMPLATE - structure authority for interview_prep.md (the cumulative, one-per-application
@@ -136,7 +136,7 @@ peer). Highest-confidence content in the section, so it leads. Everything below 
 JD and public research; keeping the two apart is the point of this heading. -->
 
 ### Role Accountabilities {optional}
-<!-- What the seat owns outright. Derived from the JD unless a Confirmed scope line covers it. -->
+<!-- What the seat owns outright. Derived from the role statement in jd_needs.md unless a Confirmed scope line covers it. -->
 
 ### Role Influences {optional}
 <!-- What it shapes without owning, and who takes it from there. -->
@@ -159,7 +159,7 @@ Sub-topics are the ### headings below, each conditional on the run producing usa
 <!-- The one reframe the candidacy rests on, plus the counterweight to the biggest gap. -->
 
 ### Level and title framing {optional}
-<!-- Only when the title is ambiguous: player-coach, founding seat, IC carrying a leadership title. -->
+<!-- Only when the title is ambiguous: player-coach, founding seat, IC carrying a leadership title. Use the lead-or-do line in jd_needs.md for whether the seat leads, does, or both. -->
 
 ### Posture {optional}
 <!-- How to behave in the room. -->

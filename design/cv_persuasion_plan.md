@@ -18,13 +18,14 @@ APP-028 passed every check and reviewer, and the user rewrote it by hand. The dr
 5. A requirement with qualifiers is answered by the closest exact match first, then broader transferable scope. Never claim the unmet qualifier; never drop a match because its wording differs from the JD's.
 6. A summary roll-up is allowed when every area it names has at least one bullet behind it.
 7. A generic phrase gives way to the JD's own phrase when the evidence supports it; a risk claim names the risk type the JD cares about.
+    - 7a. Within-role subheadings name needs (N-NN), in rank order, marked `<!-- need: N-NN -->`, not single requirements (`cv-structure.md:171`, `cv_qc.py` C4, `cv_to_docx.py`); built with the need tags of decision 10 (user, 2026-11-12, replacement audit).
 8. Relevance before size: a claim earns its place by the JD need it serves. The arc-composition ban (line 187) and the quantified-first preference are replaced by these rules.
 
 **Architect (`cv-architect.md`)**
 9. Remove "do not re-judge relevance"; the architect judges what each entry means for each need.
 10. Two-stage draft: a long, persuasive draft with no length limit, each bullet tagged with its JD need (`<!-- need: N-NN -->`) beside its source citation; then a cut to length by need priority, lowest first.
 11. The drafting plan records claims per need; limits become one column, not the plan.
-11a. Starting point (user, 2026-11-12, from his hand rewrite): the architect starts from the role statement's key items in `jd_needs.md` and, for each, picks the experience showing the candidate has done that core function in some capacity; specifics come second. Tools and methods the JD names are included when the candidate has them, and the closest ones the candidate has otherwise.
+    - 11a. Starting point (user, 2026-11-12, from his hand rewrite): the architect starts from the role statement's key items in `jd_needs.md` and, for each, picks the experience showing the candidate has done that core function in some capacity; specifics come second. Tools and methods the JD names are included when the candidate has them, and the closest ones the candidate has otherwise.
 
 **Reviewers**
 12. Inputs:

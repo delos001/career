@@ -19,7 +19,7 @@ The five axes and their rule folders:
 
 ## Inputs
 
-The dispatching skill gives you the paths to the JD, the comms file if any, and the research file (its company / role / industry blocks are your findings). Read each whole.
+The dispatching skill gives you the paths to the JD, the comms file if any, the research file (its company / role / industry blocks are your findings), and `jd_needs.md`. Read each whole. For what the role does and leads, use `jd_needs.md`'s job section (Role statement, and Leads, does, or both); the research file's Role block is outside market calibration of the title, not a read of the JD.
 
 ## Procedure - per axis, registry-first
 
@@ -74,6 +74,6 @@ The rationale is one sentence of at most 30 words, for a reviewer: the deciding 
 
 Every axis line begins with `- ` and carries a bare label: `- Industry:`, never `- **Industry:**` and never `**Industry:**`. Add no sub-bullets and no fields the block above does not list.
 
-**Tier** (leadership only): pick one tier name from the `### Tiers` block of `rules/levels/leadership.md` by the job's scope, per that block's rules, weighing the role research's seniority calibration (keep its stated confidence in mind), the JD's reach, and any level signal in the comms. The title is a weak hint, never the deciding factor. Do not write the words "Level:" or other axis labels inside the Tier rationale.
+**Tier** (leadership only): pick one tier name from the `### Tiers` block of `rules/levels/leadership.md` by the job's scope, per that block's rules, weighing the role research's seniority calibration (keep its stated confidence in mind) against the role statement and lead-or-do line in `jd_needs.md`, and any level signal in the comms. The title is a weak hint, never the deciding factor. Do not write the words "Level:" or other axis labels inside the Tier rationale.
 
 `scripts/role_classify_assemble.py finalize` writes this block into the session log verbatim, and `scripts/staging_append.py` reads the five values back out by matching that exact form. A bolded or un-bulleted label is not a style variation; it makes those values unreadable. `scripts/role_classify_qc.py` check C4 fails the run on any line that does not match.

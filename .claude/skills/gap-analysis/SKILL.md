@@ -45,7 +45,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 **Loading the role-intake and retrieval artifacts for this application.**
 
 - Input: application folder path (from the resume check), APP-NNN, slug.
-- Read `jd_needs.md` from the application folder: the requirements each piece of evidence is assessed against. Rows under `## Not ranked` are never evaluated.
+- Read `jd_needs.md` from the application folder: the requirements each piece of evidence is assessed against. Rows under `## Not ranked` are never evaluated, except Employment condition rows, which Phase 2 compares against eligibility.
 - Read `research.md` from the application folder. Extract the `## Role`, `## Company`, `## Industry` summary blocks (role context for downstream judgment).
 - Read `user-info.md` from the profile folder. Extract the eligibility / fit-signal sections:
   - `## Work Authorization` (Status, Sponsorship Required).
@@ -59,7 +59,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 
 **Flagging eligibility mismatches against the role for user review.**
 
-- Input: user-info eligibility sections, role/company/industry context.
+- Input: user-info eligibility sections, and the Employment condition rows on `jd_needs.md`'s Not ranked list; read `jd.md` only for a posted pay range, which is not a requirement row; the company and industry context for Exclusions.
 - The user-info values are dated defaults, not standing truth. Show the extracted values to the user in one short block and ask whether they are still current; apply any corrections before comparing (corrections also queue a user-info.md update at Phase 6).
 - Compare deterministically:
   - **Work Authorization**: if the role text suggests sponsorship is required and user requires sponsorship, flag.
@@ -137,7 +137,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - **`Proceed with caution`** - 1-2 unmet core requirements, an overridden eligibility flag, or core requirements resting on a `reader-dependent` theme.
   - **`Do not pursue`** - several unmet core requirements, or `reader-independent` or `structural` themes on core requirements.
   - These are guides for consistency, not thresholds. Adapt to role context, and state the role-specific reason in the rationale.
-  - **Do not read partials as a shortfall.** Job descriptions list far more than any one candidate holds, so partly-shown requirements are normal. Never weigh them by count. Judge whether what is open is something this role turns on or a line it could do without, and say which in the rationale.
+  - **Do not read partials as a shortfall.** Job descriptions list far more than any one candidate holds, so partly-shown requirements are normal. Never weigh them by count. Judge whether what is open is something this role turns on by its need: a partial in a core need is one the role turns on; one in a lower-ranked need is a line it could do without. Say which in the rationale.
   - **Depends on:** at least one condition, each specific enough to confirm or rule out at a screen (e.g. "They screen for transferable capability; the buyer-side work is the hinge (CR-004)"). Every core requirement left `partial-match`, `interview-deferred`, or `unresolved` is named by its CR-NNN in a condition. A `Do not pursue` states what would change it.
   **Write both files to disk immediately:** `<scratch>/gap_rationale.txt` (the rationale) and `<scratch>/gap_themes.json`: `{"themes": [{"name": "...", "kind": "...", "requirements": ["CR-NNN"], "meaning": "..."}], "depends_on": ["..."]}`.
 - Output: `gap_rationale.txt` and `gap_themes.json` written to `<scratch>`.

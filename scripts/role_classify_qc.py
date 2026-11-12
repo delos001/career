@@ -327,7 +327,7 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings):
         problems.append(f"CR-{row['num']:03d} is in no need, Qualifications or Not ranked")
     jd_lines = (jd_text or '').split('\n')
     # The role statement: its key items, a few words each, each citing its line.
-    items = [i.strip() for i in (parsed['job'].get('Role statement') or '').split(';') if i.strip()]
+    items = [i.strip() for i in parsed['job_items'].get('Role statement', []) if i.strip()]
     for item in items:
         if not re.search(r'\(L\d+(?:, L\d+)*\)$', item):
             problems.append(f'Role statement: item {item[:40]!r} must end with its jd.md line, e.g. (L22)')

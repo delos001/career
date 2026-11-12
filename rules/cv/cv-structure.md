@@ -64,7 +64,7 @@ Keep links on their own second line, not appended to line 1 (long URLs wrap mid-
 
 ## Professional Summary
 
-The opening value proposition. It primes both the fast human skim and the keyword match, so it leads with the candidate's positioning for THIS role, not a generic career abstract.
+The opening value proposition. It primes both the fast human skim and the keyword match, so it leads with the candidate's positioning for THIS role, as its role statement in `jd_needs.md` defines it, not a generic career abstract.
 
 **Content.** Strategic scope and, for leadership, its breadth (global, enterprise, cross-functional); domain and industry positioning; and the impact delivered, rolled up into words ("millions in savings across programs", "eliminated interim-analysis rework"). Weave the target role's terminology in naturally; do not stuff a keyword list.
 
@@ -182,7 +182,7 @@ An optional device to group a heavy role's bullets under thematic subheadings. U
 
 For roles whose target requires enterprise or cross-functional program-scope proof points, a list of atomic bullets undersells collective impact (the panel reads ten process improvements, not one transformation). Arc composition synthesizes related atomic entries into a single higher-level achievement bullet. Governed by `arc-composition-for-high-impact-roles`; reconciled here to flat layout.
 
-**Trigger.** The JD's primary deliverable language is at enterprise or cross-functional program scope ("led enterprise initiative," "built and scaled a capability"), and gap-analysis surfaced the relevant strength at arc level. Senior/leadership context. Otherwise compose atomic bullets normally.
+**Trigger.** The role statement in `jd_needs.md` is at enterprise or cross-functional program scope ("led enterprise initiative," "built and scaled a capability"), and gap-analysis surfaced the relevant strength at arc level. Senior/leadership context. Otherwise compose atomic bullets normally.
 
 **Composition unit: narratives (ST-NNN).** A narrative's required Linked Inventory field defines which atomic EX/PR entries form the arc and supplies the arc claim. The Drafter reads that authored grouping; it does not re-derive which entries combine. Synthesis without a backing narrative is not permitted - ad-hoc re-assembly of atomic entries is the fabrication-risk path and is disallowed.
 

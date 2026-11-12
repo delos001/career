@@ -17,7 +17,7 @@ Prepare the candidate for a recruiter or phone-screen interview for one applicat
 
 ## Inputs
 
-From the application folder: `research.md`, `gap_analysis.md`, `session_log.md`, `jd.md`, `cv_content.md` (the CV the interviewer holds), and the Signature Theme score table in `retrieval.md` (targeted read of that table only, never the whole manifest). From the profile folder (`python scripts/paths.py profile`): `positioning.md` (all sections; the routing rules in Phase 3 say where each lands), `user-info.md` (static facts and dated defaults), `inventory.md` Employment & Role History section (authoritative role records; verify any date/scope/count claim here before writing it). Rule file: `rules/interview-types/recruiter.md`, which sets this round's emphasis, research targets, and Question Bank priorities.
+From the application folder: `research.md`, `gap_analysis.md`, `session_log.md`, `jd.md`, `jd_needs.md` (the job section and ranked needs), `cv_content.md` (the CV the interviewer holds), and the Signature Theme score table in `retrieval.md` (targeted read of that table only, never the whole manifest). From the profile folder (`python scripts/paths.py profile`): `positioning.md` (all sections; the routing rules in Phase 3 say where each lands), `user-info.md` (static facts and dated defaults), `inventory.md` Employment & Role History section (authoritative role records; verify any date/scope/count claim here before writing it). Rule file: `rules/interview-types/recruiter.md`, which sets this round's emphasis, research targets, and Question Bank priorities.
 
 ## Phase 0: mode
 
@@ -49,9 +49,9 @@ The rules that need judgment emphasis (the template comments carry the rest):
 
 - Company & Industry: interview-usable hooks only. Consume the company's mission/values from research.md's Company section (top up via the company-values prep-research fallback only if intake left them blank); add "how to speak to them" hooks tying 1-2 values to the candidate's themes. The deployable "what do you know about us?" answer is an Anticipated Questions entry that curates these headline facts (allowed repetition).
 - Positioning & Approach: the screen's posture and any role stance/reframe; shared framing, kept general.
-- The Role: SEED lightly at screen stage; the role read is mostly JD-inferred and to-confirm. Later interviews refine it; do not force depth the screen cannot support.
+- The Role: SEED lightly at screen stage from `jd_needs.md`'s job section (role statement, lead-or-do line); still to-confirm, since the posting is the only source. Later interviews refine it; do not force depth the screen cannot support.
 - Concerns to Resolve: nascent at screen stage; seed only what the screen surfaces. Later interviews refine them.
-- Fit and Gaps: the top-scored Signature Themes from the retrieval theme table contribute their core message and proof point, mapped to the requirements they hit. Gap chunks must jointly cover every non-covered requirement in `gap_analysis.md`. Proof-point STAR stories and Situational may stay light at screen stage (both are required headings, so keep them and leave the body sparse), since the screen rarely goes deep on either.
+- Fit and Gaps: the top-scored Signature Themes from the retrieval theme table contribute their core message and proof point, mapped to the requirements they hit, ordered by the rank of the needs those requirements sit in. Gap chunks must jointly cover every non-covered requirement in `gap_analysis.md`. Proof-point STAR stories and Situational may stay light at screen stage (both are required headings, so keep them and leave the body sparse), since the screen rarely goes deep on either.
 - Anticipated Questions, positioning routing (compress to cue level, never verbatim prose):
   - "Walk me through your background" opens with the identity thesis (Positioning Statement / What Makes Me Unique / Elevator Statement; Experience Profile selects the 1-2 lead identities); chronology is one compressed sweep beat, land on this role.
   - "Why this company?" draws on Industry Trajectory and Where I Fit, matched to the company's strategic thesis.
@@ -60,7 +60,7 @@ The rules that need judgment emphasis (the template comments carry the rest):
 - Question Bank: the screen's informed questions become shared, reusable entries with stable labels; the rule file says which to flag.
 - Compensation / Logistics (one section): content per the rule file's Emphasis.
 
-After the main body, add this screen's **Recruiter Screen Appendix block** (the template's per-interview block): purpose + interviewer(s) + emphasis pointing INTO the main body (which Question Bank items to prioritize, what to lead with). Pointers, never copies. The heading is `## Recruiter Screen - <Interviewer(s)>`, with no date and no status: scheduling metadata lives only in `session_log.md`.
+After the main body, add this screen's **Recruiter Screen Appendix block** (the template's per-interview block): purpose + interviewer(s) + emphasis pointing INTO the main body (which Question Bank items to prioritize, what to lead with: the themes answering the top-ranked needs). Pointers, never copies. The heading is `## Recruiter Screen - <Interviewer(s)>`, with no date and no status: scheduling metadata lives only in `session_log.md`.
 
 ## Phase 4: session log, then QC
 

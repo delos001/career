@@ -16,6 +16,7 @@ The instructions below are templating guidance for tailoring the Recruiter Pitch
 **Step 1 --- Identify the role's core problem:**
 
 -   What are they trying to solve? What does the JD emphasize --- growth, efficiency, process maturity, technology modernization, governance? Name it in one sentence.
+-   When the skill is built, this step starts from the role statement and top needs in `jd_needs.md`, not a fresh read of the JD (2026-11-12, replacement audit).
 
 **Step 2 --- Match to a Signature Theme:**
 

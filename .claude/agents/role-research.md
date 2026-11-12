@@ -19,7 +19,9 @@ The dispatching skill gives you: the role title, the company name, and the path 
 - What this title typically means in this sector: scope of responsibility, who it reports to, what it owns.
 - Seniority calibration: where this title sits (IC vs leadership; junior / mid / senior / director / executive) and how the title drifts by company and sector.
 - Common variants of the title and what distinguishes them.
-- Whether the JD's described scope matches the title or runs above/below it.
+- Outside evidence the JD cannot give: the company's sibling postings, pay bands, and title inflation or band overlap in the sector.
+
+Do not restate or judge the JD's own scope; role-classify's ranked needs carry that. Read the JD to identify the role and find comparable postings.
 
 This supports role-level confirmation and orientation / specialty classification. Stop once you have enough - do not chase salary surveys or every JD variant online.
 
@@ -40,7 +42,7 @@ Return exactly this structure:
 ## Role
 
 ### Summary
-<2-4 sentences: what this role means and how its level/scope calibrates.>
+<2-4 sentences: what this title means in the market and where it calibrates; never a restatement of the JD.>
 
 ### Key facts
 - <fact> [source URL]
