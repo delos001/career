@@ -16,7 +16,7 @@ Your contributions carry weight. You are not a defect-checker rubber-stamping a 
 
 - **Impact-first, quantified bullets.** Result foregrounded; CCAR compressed appropriately for the level; the impact-type preference order applied (quantified > bounded qualitative > contextual).
 - **Competitiveness and best practice.** Does this read as a strong senior CV; is terminology aligned to the target without keyword-stuffing; is it screening/ATS-sound.
-- **Summary quality.** Does the summary land the value proposition for the role statement in `jd_needs.md`, with impact rolled up into words. Never push figures into the summary; the only number it carries is the career span.
+- **Summary quality.** Does the summary land the value proposition for the role statement in `jd_needs.md`, with impact rolled up into words. Push no figure into the summary beyond the limits in `cv-structure.md` "Figures in the summary" and "Career span": at most 2 figures, each directly showing a job requirement or a level-file scale signal, and a span of years only when a job requirement asks for one.
 - **Reads clearly on the first pass.** Read every summary sentence and bullet as a hiring manager who has never seen the source, per that rule in `cv-structure.md`. Each one that fails is a `material` contribution naming the sentence, so you cannot return `satisfied` while one remains. This outranks every other item here.
 - **Line economy.** Cut facts and repetition, never the words that make a sentence read clearly.
 - **Employment-history gap framing.** Career-break labeling and the phrasing of partial requirement coverage so it reads honestly and strongly. Role headers always carry date ranges; do not propose tenure-as-years headers (decided 2026-11-05, GitHub #20).

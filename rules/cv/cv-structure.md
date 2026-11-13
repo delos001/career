@@ -4,15 +4,17 @@ last_researched: 2026-05
 
 # CV Structure - Content and Layout Rules
 
-**Used by:** cv-targeted. Each drafting step pulls its sections through `scripts/rules_slice.py`; the career strategist reads the whole file.
+**Used by:** cv-targeted.
 
-**Purpose.** The CV must persuade a reviewer to interview the candidate, with every claim accurate and citable. Every rule here serves that test.
+**Purpose.** The CV must persuade a reviewer to invite the candidate for an interview. Every rule in this file serves that purpose.
 
-**How to read this file.** A section headed `## KEY: name` belongs to one drafting step; a section without a key applies to every step. The axis files supply voice, vocabulary and emphasis. Rules marked `(hard rule)` are non-negotiable; `(guideline)` rules are defaults. No-fabrication (`global-rules.md`) applies throughout.
+**Claims.** Every claim cites the profile entries that support it. A claim may reword or combine entries. A combined claim must cite each individual entry it draws on. No claim may state more than its entries show (`global-rules.md`).
+
+**How to read this file.** A section headed `## KEY: name` applies to one drafting step; a section without a key applies to every step. The five axis files are used to align the CV's prose with the job's orientation, industry, specialty, level and work state. A rule marked `(hard rule)` always applies; no reviewer suggestion overrides it.
 
 ## Section order - two bands
 
-The CV is two ordered bands, not one frozen list. The evidence band (top) carries the case for fit; the credentials tail (bottom) verifies. Within each band the members hold the fixed order below. Sections marked `(required)` always appear; the others appear only when they earn space (see each section's gating rule), and Technical Proficiencies, when present, is always last. Work output is one class whose members (any of the names listed) share a slot.
+To persuade a reviewer of a candidate's qualifications and abilities, a CV opens with evidence that the candidate fits the job's needs (Evidence band) and closes with sections outlining the candidate's credentials (Credentials tail). Sections marked `(required)` always appear. Other sections appear only when they pass the tests in "Which sections appear." Technical Proficiencies, when present, is always last. Independent Projects, Publications and Presentations appear together after Earlier Professional Roles, in any order.
 
 The block below is the single source for section order and required sections: `scripts/cv_qc.py` (S1, S2) reads it. Change the structure here, not in the script.
 
@@ -22,7 +24,7 @@ Evidence band:
 - Core Competencies (required)
 - Professional Experience (required)
 - Earlier Professional Roles
-- Work output: Independent Projects, Publications, Research, Patents, Presentations
+- Work output: Independent Projects, Publications, Presentations
 Credentials tail:
 - Education (required)
 - Certifications & Training
@@ -31,11 +33,11 @@ Credentials tail:
 - Technical Proficiencies
 ```
 
-Work-output sections sit in the evidence band, not the tail - a deliberate deviation from the academic-CV convention of tailing publications, because on a targeted industry CV these read as demonstrated work product, not credentials. The class is extensible (e.g. Patents, Presentations) under the same relevance gate.
+Work-output sections sit in the evidence band, not the tail - a deliberate deviation from the academic-CV convention of tailing publications, because on a targeted industry CV these read as demonstrated work product, not credentials. A new work-output section is added to this list when the inventory gains a matching section.
 
 ## Which sections appear
 
-Decide per role; no section appears because it usually does. For each optional section below, include it only if all three hold: (1) its inventory section has entries (not `Entries: None`), (2) they are relevant to this role, (3) they earn their lines against what else competes for the page. Record each decision in `drafting_plan.md`. Independent Projects is the exception: it always appears, because it is current work (see PROJ).
+Decide for each job; no section appears because it usually does. For each optional section below, include it only if all three tests hold. (1) Its inventory section has entries (not `Entries: None`). (2) The entries are relevant to this job. (3) The section more effectively persuades a reviewer to interview the candidate than whatever would be cut to make room for it. Record each decision in `drafting_plan.md`. Independent Projects is the exception to (2) and (3): when the inventory has a current project, the section appears (see PROJ).
 
 ```
 Inventory section -> CV section
@@ -58,52 +60,51 @@ A section marked not designed gets its rules when its first entry exists (`desig
 
 ## SUM: Professional Summary
 
-The opening value proposition. It primes both the fast human skim and the keyword match, so it leads with the candidate's positioning for THIS role, as its role statement in `jd_needs.md` defines it, not a generic career abstract.
+The summary is the first thing a reviewer reads. In a few seconds it must persuade the reviewer that the candidate has done the core work this job exists to do, so the reviewer keeps reading.
 
-**Content.** Build each sentence from one key item of the role statement in `jd_needs.md`. State that the candidate has done that work, summarized across roles, and anchor it in a detail particular to the candidate's experience (a domain, setting or kind of result), so the sentence does not merely restate the JD. The role statement determines what the summary covers; the orientation file governs how it is worded. Specific results belong in the bullets. A summary claim may name an area only if at least one bullet supports it. Mention current work only where it maps to a job need.
+**Content.** Build each sentence from one key item of the role statement in `jd_needs.md`, or two closely related items. State that the candidate has done that work, summarized across roles, and anchor it in a detail particular to the candidate's experience (a domain, setting, result or impact), so the sentence does not merely restate the JD. Detailed results, and descriptions of methods, tools or individual projects, belong in the bullets; the summary states the work at a high level. Every kind of work the summary names must appear in at least one bullet. Mention current work only where it maps to a job need.
 
-**No figures in the summary (hard rule).** The summary summarizes; the experience section holds the detail. The only number allowed is the career span ("25+ years"). Every other figure (percentages, money, counts, team sizes, study counts) stays in its bullet and is rolled up into words here. This departs on purpose from the practitioner advice in `cv-best-practices.md` (one to two quantified achievements): the user's hand edits removed these figures, and the model over-supplies numbers.
+**Figures in the summary (hard rule).** Besides the career span, the summary may carry at most 2 figures, and only when each directly shows a job requirement or a scale signal the level file names. Pair each figure with words that give its scope ("30-person global study team"). Every other figure stays in its bullet. Never add a figure to reach the limit.
 
-**Length.** At most 5 sentences, one per top role-statement item. Never pad to reach a count.
+**Length (hard rule).** At most 5 sentences and at most 6 lines in the rendered CV (8 for a leadership job). Never pad to reach either limit.
 
-**Line cap (guard).** Vertical space is the binding constraint, so the summary carries a line budget, not only a sentence count: target <=6 rendered lines (default / IC), <=8 lines (leadership exception). A 5-sentence summary at 3-4 lines each would eat roughly half a page - over budget even when the sentence count looks fine. Caps are estimated at draft time and confirmed at render (see Page length and line economy).
-
-**Career-span claims are derived, never inherited.** When the summary states a span ("nearly 25 years", "over a decade"), compute it from the role records in `inventory.md` (a script computes it; the writer uses that figure): take the earliest start date among the roles that fall inside the scope the sentence actually claims, and count to the latest end date. Never lift a span from a previous CV. A prior CV's figure is a conservative floor written for a different target, and carrying it forward understates the candidate.
-
-Two rules follow from that:
-- **Scope first, number second.** A sentence covering one field of practice takes the span of the roles in that field; a sentence covering a whole sector takes the sector's span. Widening the scope to buy a bigger number costs the specificity the target is screening for, and is usually the wrong trade. Earlier roles remain visible further down the document regardless.
-- **When asking the candidate to choose, quote the drafted sentence.** The question is which scope the sentence claims, not which number they prefer, and they cannot answer it without seeing the wording.
-
-The same derive-do-not-inherit rule applies to any other span the summary asserts (years in a specialty): source it from the inventory records, not from a prior artifact.
+**Career span.** State a span of years only when a job requirement asks for years of experience. Match that requirement's field and threshold: a requirement for "15+ years in clinical data management" gets "over 15 years in clinical data management," never the candidate's total career years. A long total span signals age, which lowers callbacks; show breadth in words instead ("global and multi-regional study teams"). The writer names the positions in that field, and a script computes their span from the dates in `inventory.md`; if the span falls short of the threshold, state no span. Never copy a span from a previous CV.
 
 ## COMP: Core Competencies
 
-A high-placed keyword-and-skill block (directly under the summary) that doubles as the ATS keyword anchor and the recruiter's fast-scan signal. Tailored to the target role: the terms mirror the JD's language for the hard skills and domain capabilities the candidate genuinely holds. When the job asks for a capability the candidate's current independent work demonstrates, name it here in the JD's terms, even if no past role shows it (e.g. "AI-driven USDM and regulation knowledge graphing").
+Core Competencies persuades a reviewer, at a glance, that the candidate has the capabilities this job asks for. Each item is a short phrase naming one capability, in the JD's terms where they accurately describe the candidate's capability. A capability shown only in the candidate's Independent Projects may appear when the job asks for it (e.g. "AI-driven USDM and regulation knowledge graphing").
 
-**Count.** 8-10 items at IC; 8-12 at leadership. Each item is a concise capability phrase, not a sentence. Do not pad toward the ceiling or stuff a long keyword list; relevance to the target role governs inclusion. A bare tool or keyword enumeration (e.g. `SQL, R, Python, SAS`) belongs in Technical Proficiencies, not crammed into a competency item.
+**Count.** At most 10 items. Each item is a concise capability phrase, not a sentence. Include a capability only when it answers something the JD or `jd_needs.md` asks for. It may be an equivalent or transferable capability (a JD asking for leading a team of ten is answered by "functional and technical team leadership"). Never pad toward the ceiling. A bare tool or keyword enumeration (e.g. `SQL, R, Python, SAS`) belongs in Technical Proficiencies, not crammed into a competency item.
 
 **Format (ATS-safe).** Single column. Items separated by the pipe delimiter (`|`), or set as a simple single-level bulleted list. The pipe (or bullet) is the only item separator; commas are within-item punctuation only (a parenthetical enumeration such as `(CDASH, SDTM, CDISC LAB)` stays part of its one item). Do not separate items with commas. No multi-column layouts or tables - parsers read left-to-right and scramble columns.
 
-**Zoning.** Group the items into 2-3 coherent zones rather than one flat list, so the block reads as a structured capability profile aligned to the target role's emphasis. Label zones where a label adds scan value.
+**Groups.** Sort the items into 2 or 3 groups (zones) of related capabilities, each with a short label, so the reviewer sees at a glance which kinds of work the candidate covers for this job.
 
-Defined zonings by orientation:
-- **data-analytics** (3 zones): data strategy & governance; analytics capability & operating model; technical credibility.
-- **platform-technology** (3 zones): technology strategy & platform governance; systems & domain knowledge; analytical & process credibility.
+Build the groups from the orientation file's Section emphasis. Keep a group only when the JD asks for capabilities that belong in it; never add an item to fill a group. Use a single unlabeled list when the items do not form at least 2 groups of 2 or more.
 
-For an orientation without a defined zoning above, cluster the competencies into 2-3 zones following that orientation's emphasis (see the orientation axis file's Section emphasis); a flat single list is acceptable when zones would be artificial.
+## PLAN: Selection
+
+The plan step decides what goes on the CV before any section is written. It works from `jd_needs.md`, which lists the job's requirements and groups them into ranked needs (N-01 is the highest), and from the profile entries retrieval found for each need.
+
+**Read profile entries for what the candidate did.** A profile entry is a general description of work, not text to copy or to match word for word. For each entry, identify the core work done, function performed, goal reached or impact made, setting aside its contextual details. Then judge which needs that experience answers, considering whether its function, goal or impact is equivalent or transferable to what the job needs. Example: a JD asks for oversight of CROs; the candidate oversaw laboratory and imaging vendors. That oversight is a good substitute for what the JD asks, so the entry is chosen, and the bullet names the vendors the candidate actually oversaw, never CROs. Never choose an entry because its words match the JD, and never pass one over because they do not.
+
+**Choose content one ranked need at a time.** Work through the ranked needs in `jd_needs.md`, highest first. For each need, decide which entries best show that the candidate has done that work, reached that goal or had that impact, and which role each claim sits under. The writer makes this judgment; retrieval scores only find entries and break ties between entries that serve a need equally well.
+
+**Relevance decides, never the size of a figure.** Choose a claim for the need it serves. Never choose one claim over another because its figure (a percentage, count or amount) is larger.
+
+**Cover every required requirement.** Every requirement marked required in `jd_needs.md` must be present in the CV, in whichever section fits it. One bullet or item may cover several of them.
+
+**Strengths the JD does not ask for.** A strength or experience the JD does not specify gets a bullet only when an outcome in `jd_needs.md`, the level file and tier, or another axis file makes it persuasive for this job. When it does, the plan states the specific reason.
+
+**Record the choices in `drafting_plan.md`.** For each need, list the claims chosen and cite the profile entries each claim draws on. For each role older than the Professional Experience window, record whether it is included because it closes a gap no newer role closes. For each role inside the window, record whether it gets bullets or a one-to-two-line summary. When a reviser could not work out a choice from its need and citations alone, record a one-line reason for it: for example, when a strength beyond the JD is included, an older role is included, or a lower-ranked need is kept over a higher one.
+
+**Revisers keep the plan.** A later writer or reviser keeps each recorded choice unless a reviewer or QC finding challenges it.
+
+**Draft long, then cut.** The first draft is deliberately longer than the CV can be. Its goal is a complete set of persuasive, relevant options for every need, so the later cut has good options to choose from. Tag every bullet with the need it serves (`<!-- need: N-NN -->`) beside its source citation. A later step cuts the draft to length under the length rules, starting with the lowest-ranked need.
 
 ## Professional Experience
 
 The core evidence section. Reverse-chronological. Each role earns its space by relevance to the target; depth concentrates on the roles that matter most for this application.
-
-**"Relevant" is an upstream signal, not Drafter judgment.** Throughout this file, "relevant" / "relevance" means the retrieval manifest scores (semantic, axis exact-match, axis adjacency-weighted) and the gap-analysis per-requirement coverage, read together. The Drafter consumes those signals; it does not re-decide relevance ad hoc.
-
-**Selection under scarcity (tie-break).** When relevant entries compete for limited space (the page ceiling, or bullets-per-role), select deterministically in this order rather than by ad hoc judgment:
-1. **Need rank before duplication.** Every required row in a core need (one with the `role-statement` signal) and every required Qualification keeps its single strongest cited entry before any requirement receives a second. Rows in the other needs follow in rank order as space allows. Preferred rows earn no guaranteed slot; they are covered when an entry already chosen speaks to them (ride-along coverage), reflected in that entry's framing. A scarce slot never goes to a duplicate for an already-covered row while a higher-ranked need's row is thinly covered or uncovered. Need and Demand come from the gap-analysis requirement headers (`(N-01, required)`); they are not re-judged here.
-2. **Then by signal, in fixed order.** Among entries of equivalent coverage contribution (choosing extra entries once coverage is met, or choosing which of several entries on one requirement to keep), order by (a) semantic score, then (b) axis-exact count, then (c) axis-adjacency score, then (d) recency of the role.
-3. **Protected differentiator.** A genuinely differentiating, truthful strength (candidate-advocate domain) is not dropped for a marginally higher-ranked but generic entry; it earns space even if it sits slightly lower on the chain.
-
-This makes selection reproducible from the retrieval signals and the gap-analysis coverage map, and operationalizes the relevance-prioritized, no-pad principle below. The inputs are the upstream signals applied in this fixed order; it does not license re-judging relevance.
 
 **Adjacency translation (transferable experience).** Entries whose axis value is adjacent to the target (per the axis file's Adjacency section; adjacency weight ~0.5 in the manifest) are translated, not dropped: reworded toward the target value's language while the underlying facts stay intact. Entries whose axis value is non-adjacent are surfaced for their cross-cutting capability only (e.g. leadership, capability building, driving process), not claimed as target-domain experience. Cross-cutting themes that are not domain-bound transfer regardless of axis distance. Translation rewords; it never fabricates a domain, metric, or scope the source entry does not support.
 
@@ -218,18 +219,17 @@ Keep links on their own second line, not appended to line 1 (long URLs wrap mid-
 
 ### Credentials tail
 
-The verifying band, below the evidence band, read at lower attention. Fixed order: Education, then Certifications & Training, then Professional Affiliations (conditional), then Languages (conditional), then Technical Proficiencies (always last).
+Order is set in "Section order."
 
-**Education.** Below Professional Experience (the experienced-candidate convention; education leads only for new graduates). Degree, discipline, institution, year. No GPA or honors (per inventory schema). List the bachelor's and every graduate degree. Leave off a degree below the bachelor's (an associate's) when a bachelor's is listed. Not relevance-gated.
+**Education.** Degree, discipline, institution, year. No GPA or honors (per inventory schema). List every degree, with the exception that if a bachelor's degree is present, an associate degree is omitted.
 
-**Certifications & Training.** Certifications (with issuer and, where relevant, status/currency) and material training. Lead with credentials relevant to the target role; omit stale or off-target items that add noise rather than signal. Leave off a lower step beside a higher one (a Green Belt beside a Black Belt). In-progress training is an early cut when space is short. Concise reference lines, not bulleted achievements.
+**Certifications & Training.** Certifications, each with issuer, year earned and status (Active or Inactive), and training. List only items relevant to the job, most relevant first. If a higher level of the same certification is listed, omit the lower level (e.g., Lean Six Sigma Green Belt beside a Black Belt; CAPM beside a PMP). In-progress training is an early cut when space is short. Each item is one short line, not an achievement bullet.
 
-**Professional Affiliations (conditional, relevance-gated).** Include only for board, governance, or senior-leadership targets where memberships, board seats, or committee roles are a JD signal; omit otherwise. When included, place after Certifications & Training and before Technical Proficiencies. Affiliation, role (Member through Board / Officer / Committee Chair), and currency; concise reference lines drawn from the inventory's Professional Affiliations section.
+**Professional Affiliations.** Include only for board, governance, or senior-leadership jobs where the JD mentions memberships, board seats, or committee roles; omit otherwise. Affiliation, role (Member through Board / Officer / Committee Chair), and whether it is current; one short line each, drawn from the inventory's Professional Affiliations section.
 
-**Languages (conditional, relevance-gated).** Spoken languages with proficiency, on concise reference lines. Include when the role names a language or works across regions where one matters; omit a candidate's native language alone. Programming languages belong in Technical Proficiencies.
+**Languages.** Spoken languages with proficiency, one short line each. Include when the job names a language or works across regions where one matters; omit a candidate's native language alone. Programming languages belong in Technical Proficiencies.
 
-**Technical Proficiencies (always last).** Tools, platforms, languages, and methods the candidate genuinely holds, tailored to mirror the JD's technical terminology (a secondary ATS keyword anchor). Group into short labeled clusters (e.g. Languages, Platforms, Methods) where that aids scanning. For pure-leadership targets the section may be brief or omitted when technical tooling is not a JD signal. Listed proficiencies must be real; never list a technology to match a keyword the candidate does not actually know.
-
+**Technical Proficiencies.** Tools, platforms, languages, and methods listed in the inventory's Technical Experience section, named in the JD's terms so applicant tracking systems match them. Group into short labeled clusters (e.g. Languages, Platforms, Methods) where that aids scanning. For pure-leadership jobs the section may be brief or omitted when the JD does not ask for technical tools.
 ## Cross-cutting writing rules
 
 Apply across every section.
@@ -258,7 +258,7 @@ Apply across every section.
 
 **Achievement single-home (hard rule).** Each distinct achievement - a specific quantified result or named accomplishment (e.g. "200+ data transfers without headcount growth," "interim-analysis rework from ~60% to 0%," "selected Databricks as the enterprise platform") - has ONE home in Professional Experience: a single bullet, under the role that owns it. It is not restated as a second bullet under the same or another role. The Professional Summary may name the impact of a signature achievement in rolled-up words (the outcome and why it matters), but never its figure, which stays in the owning bullet (per the no-figures summary rule). Core Competencies are capability phrases only; a competency item never restates a metric or accomplishment carried by the summary or a bullet. The same number/metric surfacing in two places is redundancy.
 
-**Protect the lead role (guideline).** The most recent senior role is the highest-attention block; each of its bullets must carry a distinct achievement. When one initiative (e.g. a greenfield function build) spans several related entries, do not spend one bullet per facet (operating model, team, throughput, roadmap) repeating a shared qualifier ("greenfield," "without proportional headcount"). Prefer the arc-composition synthesis, or consolidate the facets so the qualifier appears once. This is Arc composition's "do not over-synthesize" applied in the other direction: do not over-fragment the lead role either.
+**Protect the lead role.** The most recent senior role is the highest-attention block; each of its bullets must carry a distinct achievement. When one initiative (e.g. a greenfield function build) spans several related entries, do not spend one bullet per facet (operating model, team, throughput, roadmap) repeating a shared qualifier ("greenfield," "without proportional headcount"). Prefer the arc-composition synthesis, or consolidate the facets so the qualifier appears once. This is Arc composition's "do not over-synthesize" applied in the other direction: do not over-fragment the lead role either.
 
 ## Page length and line economy
 
@@ -286,7 +286,7 @@ Leadership: target 2-3 pages, hard ceiling 3. 4+ pages is a flagged exception on
 
 This file owns CV content structure and writing rules only. It does not own, and does not restate:
 
-- **Relevance scoring, retrieval, and coverage** - the retrieval skill scores entries and exposes manifest signals; gap-analysis assigns per-requirement coverage. This file consumes those signals (see "Relevant is an upstream signal").
+- **Relevance scoring, retrieval, and coverage** - the retrieval skill scores entries and exposes manifest signals; gap-analysis assigns per-requirement coverage. This file uses those scores to find entries and break ties (see PLAN: Selection).
 - **Adjacency weights** - set by the retrieval manifest and the axis files' Adjacency sections. This file owns only the translation framing (how adjacent vs non-adjacent experience is worded; see Professional Experience).
 - **Axis voice and vocabulary** - level voice and verb vocabulary, orientation summary-lead and section-emphasis, and industry/specialty terminology come from the five axis files and compose with this structure.
 - **Critical-requirements extraction** - produced by role-classify in `jd_needs.md` (as text and Demand, grouped under ranked needs; a requirement's row number is its `CR-NNN` id). This file consumes them; it does not derive them.

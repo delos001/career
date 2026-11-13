@@ -10,7 +10,7 @@ last_researched: 2026-05
 1. Re-run the CV best-practice web research for each section below (senior leadership and senior IC, regulated industries), weighting sources as tagged (`[empirical]` over `[practitioner-consensus]`).
 2. Reconcile against this document: update findings that moved, add new ones, and keep the confidence tags and source links.
 3. Set `last_researched` to the current `YYYY-MM`.
-4. Cascade any changed rule into `rules/cv/cv-structure.md`, whose rules derive from this evidence, noting deliberate departures (as its no-figures summary rule does).
+4. Cascade any changed rule into `rules/cv/cv-structure.md`, whose rules derive from this evidence, noting deliberate departures.
 
 The AI-tell guidance ages fastest; check it first.
 
@@ -59,8 +59,14 @@ The strongest evidence supports a reverse-chronological structure with experienc
 
 - A summary/profile section IS recommended at senior level and should be the first content under the header; it functions as the value proposition / elevator pitch and primes both the human skim and keyword match. [practitioner-consensus] (ResumeSpice, Teal, Indeed, Dr. Kyle Elliott)
 - Length guidance clusters at roughly 2-5 sentences, with executive summaries trending to the longer end (3-6 sentences) given depth of experience; some coaches note 2 sentences can signal confidence for very senior, focused candidates. There is no empirical optimum; this is practitioner judgment. [practitioner-consensus]
-- Content for senior roles: strategic scope and leadership scale (team size, budget, P&L, cross-functional/enterprise reach), domain/industry positioning, and 1-2 quantified signature achievements, plus naturally woven keywords from the target posting (without keyword-stuffing a 30-40 term list). [practitioner-consensus]
-- LEGACY-CONVENTION CHECK: Proposed 3-4 sentences sits squarely inside the consensus band and is a reasonable default. Mild caution: hold it as a guideline, not a hard rule. Executive profiles sometimes justify up to ~6 sentences; the 3-4 figure is [practitioner-consensus], not [empirical].
+- Content for senior roles: strategic scope and leadership scale (team size, budget, P&L, cross-functional/enterprise reach), domain/industry positioning, and 1-2 quantified signature achievements, plus naturally woven keywords from the target posting (without keyword-stuffing a 30-40 term list). [practitioner-consensus] **Applied in `cv-structure.md` as:** at most 2 figures besides the career span, only when each directly shows a job requirement or a level-file scale signal; a limit, not a target.
+- LEGACY-CONVENTION CHECK: Proposed 3-4 sentences sits squarely inside the consensus band and is a reasonable default. Mild caution: hold it as a guideline, not a hard rule. Executive profiles sometimes justify up to ~6 sentences; the 3-4 figure is [practitioner-consensus], not [empirical]. **Applied in `cv-structure.md` as:** at most 5 sentences and a line cap, a hard rule (CV rebuild plan decision 2).
+- Years of experience in the summary (researched 2026-11-13):
+  - Age cues lower callbacks. The largest resume field experiment (Neumark, Burn and Button; over 40,000 applications, age signaled by graduation year) found fewer callbacks for older applicants in every job set, strongest for women, less consistent for men. [empirical] (confidence: high)
+  - Years of experience is the main cue reviewers use to estimate age: of the 42% of hiring managers who say they consider age, 82% estimate it from years of experience. Self-reported vendor survey. [survey] (confidence: low)
+  - Practitioners advise against opening with "20+ years": it invites an age guess and a "we want 5-7 years" screen-out; common advice shows 15-20 years of history, and one former recruiter says to leave years out entirely. Mostly commercial sources. [practitioner-consensus]
+  - Total versus field-specific years: example summaries mostly use a field-specific count; no study compares them. (confidence: low)
+  - **Applied in `cv-structure.md` as:** a span appears only when a job requirement asks for years, matching that requirement's field and threshold; breadth is shown in words.
 
 ## 5. Employment Gaps and Career Transitions
 
@@ -121,4 +127,8 @@ The strongest evidence supports a reverse-chronological structure with experienc
 - Distinctive Career Services, "Biotech & Pharmaceutical Resume Examples." https://www.distinctiveweb.com/project-examples/pharma-biotech-resume-example/
 - pharmanow.live, "Beyond Resumes: Smarter Hiring in Pharma & Biotech" (keyword-only screening caveat). https://www.pharmanow.live/hr-in-pharma/scientific-hiring-in-pharma-biotech
 - Jobscan tailoring/keyword magnitude claims (uncorroborated vendor data): "Top 500 ATS Resume Keywords." https://www.jobscan.co/blog/top-resume-keywords-boost-resume/
+- Neumark, D., Burn, I., & Button, P. "Is It Harder for Older Workers to Find Jobs? New and Improved Evidence from a Field Experiment." IZA DP 13506. https://docs.iza.org/dp13506.pdf
+- Resume Builder, "4 in 10 hiring managers admit to age bias" (survey of 1,000 hiring managers). https://resumebuilder.com/4-in-10-hiring-managers-admit-to-age-bias ; HR Dive coverage: https://www.hrdive.com/news/nearly-half-of-hiring-managers-admit-to-age-bias-in-resume-builder-survey/619333/
+- Work It Daily, "Why You Shouldn't Put 20+ Years of Experience on Your Resume." https://newsletter.workitdaily.com/p/why-you-shouldn-t-put-20-years-of-experience-on-your-resume ; Fox Business, "Ageism in the workplace: 5 tips for adjusting your resume." https://www.foxbusiness.com/lifestyle/ageism-workplace-5-tips-adjust-resume-fight-it ; NBC Los Angeles, ex-Nvidia recruiter: "Leave out the years of experience." https://www.nbclosangeles.com/news/business/money-report/3-tips-for-writing-an-effective-resume-summary-says-ex-nvidia-recruiter-leave-out-the-years-of-experience/3416309/ ; Chameleon Resumes, "How Far Back Should I Go On My Executive Resume." https://chameleonresumes.com/?p=28729
+- Zety, senior resume example. https://zety.com/blog/senior-resume-example ; The Career Whispers, "If I pivoted my career, how many years." https://thecareerwhispers.substack.com/p/if-i-pivoted-my-career-how-many-years
 - Vendor tailoring callback figures (low-confidence, uncorroborated): Resumly https://www.resumly.ai/blog/the-science-behind-tailored-resumes ; Reztune https://www.reztune.com/ai-resume-tailoring/ ; Scale.jobs https://scale.jobs/blog/resume-changes-that-improve-callback-rates-fast
