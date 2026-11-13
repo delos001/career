@@ -53,8 +53,8 @@ Industry/Specialty split replaces prior Domain axis. Axes are independent files.
 #### dual-orientation-asymmetric-authority
 A role may map to two orientations. Primary governs most surfaces; secondary gets bounded explicitly-scoped slots. They do not compete over the same surface.
 - Confirming a secondary (2026-11-11): an exclusion naming the headline deliverable and routing to the chosen primary bars that value as primary only, never as secondary; read literally it would block every adjacent dual orientation. Other exclusions bind both. Raised by qc-role-classify on Medtronic APP-024 (data-analytics + platform-technology).
-- CV: secondary in 2-3 achievements and 1-2 Core Competencies items. Summary primary-only.
-- Other deliverables: per-deliverable composition rule as needed. Existing CV dual-orientation rule transfers to `rules/orientations/cv_dual_orientation_composition.md`.
+- CV: **Superseded (user, 2026-11-12, CV rebuild decision 1b).** Was: secondary in 2-3 achievements and 1-2 Core Competencies items, summary primary-only. The job's needs pick CV content whatever orientation it belongs to, and the role statement sets the summary (`cv_edit_principles.md` principles 1 and 3); the secondary orientation only shapes how its content is worded. No rules file ever applied the quota.
+- Other deliverables: per-deliverable composition rule as needed. **Superseded (same decision):** the transfer of the CV dual-orientation rule to `rules/orientations/cv_dual_orientation_composition.md`; that file was never created and is no longer needed.
 
 #### inventory-entry-multi-value-orientation-2026-05
 Orientation on EX/PR inventory entries supports multi-value primary/secondary via pipe-delimited convention (`Orientation: <primary> | <secondary>`), extending `dual-orientation-asymmetric-authority` from CV-level to inventory-level.
@@ -74,7 +74,7 @@ Refs: GitHub #51, `level-builder-design` (deferrals).
 
 #### axes-composition-precedence
 Each axis owns a primary surface for cv_targeted composition:
-- **Orientation** → Section structure, Section emphasis, Summary lead framing.
+- **Orientation** → Section structure, Section emphasis, Summary framing: how the summary's claims are worded, never which claims it makes. The role statement in `jd_needs.md` sets what each summary sentence covers (user, 2026-11-12, CV rebuild decision 1a).
 - **Level** → Voice, verb selection, scope framing within bullets.
 - **Specialty** → Capability vocabulary, field-specific terminology, capability surfacing in Professional Experience.
 - **Industry** → Sector vocabulary, dialect (acronym recognition, non-preferred terms), sector-emphasis signal.

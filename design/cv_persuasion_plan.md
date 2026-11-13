@@ -29,13 +29,13 @@ APP-028 passed every check and reviewer, and the user rewrote it by hand. The dr
 
 **Reviewers**
 12. Inputs:
-    - Hiring manager: draft, JD, company research. No profile, gap analysis or retrieval.
-    - Career strategist: draft, JD, all five axis files, `cv-structure.md`, `cv-best-practices.md`, gap analysis.
-    - Advocate: draft, JD, inventory, narratives, gap analysis CV Notes. No retrieval or research.
+    - Hiring manager: draft, JD, company research. No `jd_needs.md`, profile, gap analysis or retrieval: like a real hiring manager it reads only the JD, which makes it an independent check on the ranking. Where its reading differs from the confirmed ranking, `jd_needs.md` wins by default and the difference goes to the user at handoff as a possible ranking error (user, 2026-11-12).
+    - Career strategist: draft, JD, `jd_needs.md`, all five axis files, `cv-structure.md`, `cv-best-practices.md`, gap analysis.
+    - Advocate: draft, JD, gap analysis CV Notes, and only the relevant parts of the profile: the per-need subset of entries, the Experience Entries of roles inside the `cv-structure.md` Professional Experience window, and Independent Projects. No full inventory or narratives, retrieval or research (user, 2026-11-12, Q1 architect workload).
 13. Each answers its own goal-framed question with yes or "no, because"; none can return satisfied on a no.
-    - Hiring manager: does the CV show what the role needs clearly enough to interview? Returns challenges as questions the architect answers from the profile.
+    - Hiring manager: would you interview him from this CV? If not, what would change your mind? This makes it the judge of persuasion, on the long draft and in the final read of the cut CV (decision 15) (user, 2026-11-12, replacing "does the CV show what the role needs clearly enough to interview?", which read as a clarity test). Returns challenges as questions the architect answers from the profile.
     - Strategist: does the writing keep a reviewer reading and show the role's level?
-    - Advocate: does each line carry the full weight of what happened?
+    - Advocate: does each line carry the full weight of what happened? Profile entries are general descriptions of work, not text to preserve; the advocate judges whether the CV makes a persuasive case from his actual experience, never whether an entry's wording survived. The no-overstatement limit is unchanged (user, 2026-11-12).
 14. All three may suggest wording. The domain bans on phrasing are removed.
 15. A final read of the cut CV by the hiring manager and strategist can fail it.
 
@@ -52,12 +52,12 @@ Reordered 2026-11-09: test whether the writing changes fix the CV before touchin
 
 1. #89 ranker: rewrite its instructions as steps, run on Jazz, BeOne APP-027, Otsuka APP-026, Acadia APP-025; the user reviews once. Close enough is the bar, since the user confirms the ranking at intake.
 2. Check decisions 2 to 8 (drawn from Jazz only) against the user's edits on Jazz (the reference: his edits there read the JD the way the ranker now does; it shows a principle but cannot confirm its own rules) and 5 others varied by orientation (Summit APP-023, WCT APP-022, Vertex APP-021, Faro APP-020, Genmab APP-018), excluding the test set. Each edit the user made is evidence; an edit recurring across CVs is stronger evidence. A place where an edit would apply but was not made is not evidence against it, since the user edited as time allowed, and the drafts were not good writing where left unedited. His edits depend on context (the JD, how his experience reads, neighboring bullets), so each pattern becomes a judgment principle stating its intent and when it applies, rarely a mechanical rule. The user confirms each principle one at a time.
-3. `cv-structure.md` rule changes (decisions 2 to 8, as revised by step 2).
-4. `cv-architect.md` (9 to 11) and the `cv-targeted/SKILL.md` long draft and cut (10).
+3. `cv-structure.md` rule changes (decisions 2 to 8, as revised by step 2), plus the section split and retire cuts decided under Q1 in `cv_rebuild_inventory.md`.
+4. `cv-architect.md` (9 to 11) and the `cv-targeted/SKILL.md` long draft and cut (10), in the shape decided under Q1 in `cv_rebuild_inventory.md` (read once, separate drafting steps, fresh revisers). Build #81 first: retrieval records which needs, and which requirements inside them, each entry fits, keeping topic-group neighbours together; the new writer steps read that subset.
 5. `qc-cv-targeted.md` (16): test on combined claims from several applications. Accurate rewrites from sent CVs pass; deliberately overstated versions fail, seen to fail.
-6. Rerun cv-targeted on the test set: Acadia APP-025, BeOne APP-027, Otsuka APP-026, Medtronic APP-024, from their existing research, retrieval and gap analysis.
+6. Rerun cv-targeted on the test set: Acadia APP-025, BeOne APP-027, Otsuka APP-026, Medtronic APP-024, from their existing research. First rerun retrieval (the per-need mapping, #81) and gap analysis for each, BeOne's role-classify Phase 2 before both: their `jd_needs.md` were re-extracted on 2026-11-11/12 in step 1, so the older gap analyses' CR numbers no longer match the current rows (checked 2026-11-12: no header matched in any of the four).
 7. Only if step 6 shows the need: reviewer files and file sets (12 to 14), final read (15), `cv_qc.py` need-tag check (17).
-8. Record the decisions in `design_decisions.md`; rewrite #88's body from this plan, including its Done when.
+8. Record the decisions in `design_decisions.md`, marking superseded the old reviewer rules (1523, 1644, 1646, 1659, 1749) whether or not step 7 ran; rewrite #88's body from this plan, including its Done when.
 
 ## Verification
 

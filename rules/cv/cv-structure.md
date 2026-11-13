@@ -4,9 +4,11 @@ last_researched: 2026-05
 
 # CV Structure - Content and Layout Rules
 
-**Used by:** cv-targeted
+**Used by:** cv-targeted. Each drafting step pulls its sections through `scripts/rules_slice.py`; the career strategist reads the whole file.
 
-Cross-cutting CV skeleton consumed by the cv-targeted skill alongside the five axis files. Owns section order, per-section content rules, bullet and summary structure, and the page-length guard. It does not vary by axis value; the axis files supply the voice, vocabulary, and emphasis that compose with this structure. Rules marked `(hard rule)` are non-negotiable; rules marked `(guideline)` are defaults a reviewer may negotiate. All rules operate under `global-rules.md` no-fabrication (every claim traces to a source entry; nothing is invented); that is assumed throughout and not repeated per rule.
+**Purpose.** The CV must persuade a reviewer to interview the candidate, with every claim accurate and citable. Every rule here serves that test.
+
+**How to read this file.** A section headed `## KEY: name` belongs to one drafting step; a section without a key applies to every step. The axis files supply voice, vocabulary and emphasis. Rules marked `(hard rule)` are non-negotiable; `(guideline)` rules are defaults. No-fabrication (`global-rules.md`) applies throughout.
 
 ## Section order - two bands
 
@@ -20,7 +22,7 @@ Evidence band:
 - Core Competencies (required)
 - Professional Experience (required)
 - Earlier Professional Roles
-- Work output: Selected Projects, Publications, Research, Patents, Presentations
+- Work output: Independent Projects, Publications, Research, Patents, Presentations
 Credentials tail:
 - Education (required)
 - Certifications & Training
@@ -33,13 +35,13 @@ Work-output sections sit in the evidence band, not the tail - a deliberate devia
 
 ## Which sections appear
 
-Decide per role; no section appears because it usually does. For each optional section below, include it only if all three hold: (1) its inventory section has entries (not `Entries: None`), (2) they are relevant to this role, (3) they earn their lines against what else competes for the page. Record each decision in `drafting_plan.md`.
+Decide per role; no section appears because it usually does. For each optional section below, include it only if all three hold: (1) its inventory section has entries (not `Entries: None`), (2) they are relevant to this role, (3) they earn their lines against what else competes for the page. Record each decision in `drafting_plan.md`. Independent Projects is the exception: it always appears, because it is current work (see PROJ).
 
 ```
 Inventory section -> CV section
 Employment & Role History -> Professional Experience, Earlier Professional Roles
 Experience Entries -> Professional Experience
-Independent & Volunteer Projects -> Selected Projects
+Independent & Volunteer Projects -> Independent Projects
 Industry Exposure Profile -> none of its own; may supply terms to Core Competencies and the Summary
 Technical Experience -> Technical Proficiencies
 Education -> Education
@@ -54,27 +56,19 @@ Languages -> Languages
 
 A section marked not designed gets its rules when its first entry exists (`design/deferrals.md`, `cv-rules-for-empty-inventory-sections`).
 
-## Header (name and contact)
-
-The CV opens with the candidate name, then the contact block on up to two centered lines:
-- Line 1: location | email | phone.
-- Line 2 (when profile links exist): the profile links, each shown as its bare domain and path (strip the scheme, any `www.`, and any trailing slash) with no platform label, since the domain identifies it (e.g. `linkedin.com/in/...`, `github.com/...`).
-
-Keep links on their own second line, not appended to line 1 (long URLs wrap mid-link). The full URLs live in `user-info.md`; the header shows the compact form.
-
-## Professional Summary
+## SUM: Professional Summary
 
 The opening value proposition. It primes both the fast human skim and the keyword match, so it leads with the candidate's positioning for THIS role, as its role statement in `jd_needs.md` defines it, not a generic career abstract.
 
-**Content.** Strategic scope and, for leadership, its breadth (global, enterprise, cross-functional); domain and industry positioning; and the impact delivered, rolled up into words ("millions in savings across programs", "eliminated interim-analysis rework"). Weave the target role's terminology in naturally; do not stuff a keyword list.
+**Content.** Build each sentence from one key item of the role statement in `jd_needs.md`. State that the candidate has done that work, summarized across roles, and anchor it in a detail particular to the candidate's experience (a domain, setting or kind of result), so the sentence does not merely restate the JD. The role statement determines what the summary covers; the orientation file governs how it is worded. Specific results belong in the bullets. A summary claim may name an area only if at least one bullet supports it. Mention current work only where it maps to a job need.
 
 **No figures in the summary (hard rule).** The summary summarizes; the experience section holds the detail. The only number allowed is the career span ("25+ years"). Every other figure (percentages, money, counts, team sizes, study counts) stays in its bullet and is rolled up into words here. This departs on purpose from the practitioner advice in `cv-best-practices.md` (one to two quantified achievements): the user's hand edits removed these figures, and the model over-supplies numbers.
 
-**Length (guideline, not a hard rule).** Default 3-4 sentences. IC 2-4 sentences; a focused 2-sentence summary can read as confident for a very senior, narrow target. Leadership up to ~6 sentences when scope genuinely requires it. Never pad to reach a count.
+**Length.** At most 5 sentences, one per top role-statement item. Never pad to reach a count.
 
 **Line cap (guard).** Vertical space is the binding constraint, so the summary carries a line budget, not only a sentence count: target <=6 rendered lines (default / IC), <=8 lines (leadership exception). A 5-sentence summary at 3-4 lines each would eat roughly half a page - over budget even when the sentence count looks fine. Caps are estimated at draft time and confirmed at render (see Page length and line economy).
 
-**Career-span claims are derived, never inherited.** When the summary states a span ("nearly 25 years", "over a decade"), compute it from the role records in `inventory.md`: take the earliest start date among the roles that fall inside the scope the sentence actually claims, and count to the latest end date. Never lift a span from a previous CV. A prior CV's figure is a conservative floor written for a different target, and carrying it forward understates the candidate.
+**Career-span claims are derived, never inherited.** When the summary states a span ("nearly 25 years", "over a decade"), compute it from the role records in `inventory.md` (a script computes it; the writer uses that figure): take the earliest start date among the roles that fall inside the scope the sentence actually claims, and count to the latest end date. Never lift a span from a previous CV. A prior CV's figure is a conservative floor written for a different target, and carrying it forward understates the candidate.
 
 Two rules follow from that:
 - **Scope first, number second.** A sentence covering one field of practice takes the span of the roles in that field; a sentence covering a whole sector takes the sector's span. Widening the scope to buy a bigger number costs the specificity the target is screening for, and is usually the wrong trade. Earlier roles remain visible further down the document regardless.
@@ -82,9 +76,9 @@ Two rules follow from that:
 
 The same derive-do-not-inherit rule applies to any other span the summary asserts (years in a specialty): source it from the inventory records, not from a prior artifact.
 
-## Core Competencies
+## COMP: Core Competencies
 
-A high-placed keyword-and-skill block (directly under the summary) that doubles as the ATS keyword anchor and the recruiter's fast-scan signal. Tailored to the target role: the terms mirror the JD's language for the hard skills and domain capabilities the candidate genuinely holds.
+A high-placed keyword-and-skill block (directly under the summary) that doubles as the ATS keyword anchor and the recruiter's fast-scan signal. Tailored to the target role: the terms mirror the JD's language for the hard skills and domain capabilities the candidate genuinely holds. When the job asks for a capability the candidate's current independent work demonstrates, name it here in the JD's terms, even if no past role shows it (e.g. "AI-driven USDM and regulation knowledge graphing").
 
 **Count.** 8-10 items at IC; 8-12 at leadership. Each item is a concise capability phrase, not a sentence. Do not pad toward the ceiling or stuff a long keyword list; relevance to the target role governs inclusion. A bare tool or keyword enumeration (e.g. `SQL, R, Python, SAS`) belongs in Technical Proficiencies, not crammed into a competency item.
 
@@ -212,13 +206,23 @@ One relevance-gated section class in the evidence band, demonstrating work produ
 
 **Standard rules still apply.** Entries are impact-first, one sentence per bullet, within the line limit, and each cites its inventory entry id (PR-NNN, or the relevant id for publications/research). A project appears as its objective, framed for the role, with the relevant elements folded in, never one bullet per element. A bullet using an element cites it with its objective (`PR-015, PR-015.03`), and an element's Outcome is the source for its impact.
 
-## Credentials tail
+## CRED: Header and credentials
+
+### Header (name and contact)
+
+The CV opens with the candidate name, then the contact block on up to two centered lines:
+- Line 1: location | email | phone.
+- Line 2 (when profile links exist): the profile links, each shown as its bare domain and path (strip the scheme, any `www.`, and any trailing slash) with no platform label, since the domain identifies it (e.g. `linkedin.com/in/...`, `github.com/...`).
+
+Keep links on their own second line, not appended to line 1 (long URLs wrap mid-link). The full URLs live in `user-info.md`; the header shows the compact form.
+
+### Credentials tail
 
 The verifying band, below the evidence band, read at lower attention. Fixed order: Education, then Certifications & Training, then Professional Affiliations (conditional), then Languages (conditional), then Technical Proficiencies (always last).
 
-**Education.** Below Professional Experience (the experienced-candidate convention; education leads only for new graduates). Degree, discipline, institution, year. No GPA or honors (per inventory schema). List all degrees; short reference content, not relevance-gated.
+**Education.** Below Professional Experience (the experienced-candidate convention; education leads only for new graduates). Degree, discipline, institution, year. No GPA or honors (per inventory schema). List the bachelor's and every graduate degree. Leave off a degree below the bachelor's (an associate's) when a bachelor's is listed. Not relevance-gated.
 
-**Certifications & Training.** Certifications (with issuer and, where relevant, status/currency) and material training. Lead with credentials relevant to the target role; omit stale or off-target items that add noise rather than signal. Concise reference lines, not bulleted achievements.
+**Certifications & Training.** Certifications (with issuer and, where relevant, status/currency) and material training. Lead with credentials relevant to the target role; omit stale or off-target items that add noise rather than signal. Leave off a lower step beside a higher one (a Green Belt beside a Black Belt). In-progress training is an early cut when space is short. Concise reference lines, not bulleted achievements.
 
 **Professional Affiliations (conditional, relevance-gated).** Include only for board, governance, or senior-leadership targets where memberships, board seats, or committee roles are a JD signal; omit otherwise. When included, place after Certifications & Training and before Technical Proficiencies. Affiliation, role (Member through Board / Officer / Committee Chair), and currency; concise reference lines drawn from the inventory's Professional Affiliations section.
 
