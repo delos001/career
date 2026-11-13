@@ -63,9 +63,12 @@ Test: is this the state of things, not what was done or what came of it?
 
 ## PR: Independent & Volunteer Projects
 
+**Dates**
+- Start Date and End Date are the project's own months of work, not its role's. End Date is blank while the project is in progress.
+
 **Objective**
 - One sentence stating the goal or problem.
-- No methods, tools, or status. The role's dates show whether the work is ongoing.
+- No methods, tools, or status. The project's dates show whether the work is ongoing.
 - An exploratory project says so: "An exploration of ...".
 
 **New objective or new element?**

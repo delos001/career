@@ -44,6 +44,7 @@ filenames:
   user_info_file: user-info.md                 # in the profile/ folder
   cv_content_file: cv_content.md               # written into each application folder by the cv-targeted skill
   cv_structure_file: cv-structure.md           # in the cv_rules folder; its Section order block is parsed by cv_qc.py (S1, S2)
+  cv_writing_file: cv-writing.md               # in the cv_rules folder; how CV content is chosen and written
   interview_prep_file: interview_prep.md       # written into each application folder by the preparation-screen skill (preparation-interview appends later)
   interview_prep_template: interview_prep.md   # in the templates/ folder; structure authority parsed by prep_qc.py
   interview_notes_file: interview_notes.md     # written into each application folder by the interview-notes skill; hand-filled during interviews

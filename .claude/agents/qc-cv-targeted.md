@@ -49,7 +49,7 @@ For each content unit in the draft, extract its cited ids, grep those ids in `in
 
 ### AI-tell phrasing (judgment subset only)
 
-6. **No machine-written tells that a regex cannot catch.** `cv_qc.py` already flags the mechanical AI-tell subset (negation-contrast, marketing-copulas, vague-intensifiers, buzzwords); do **not** re-check those. You own only the judgment subset from the `cv-structure.md` "No AI-tell phrasing" rule: rule-of-three padding (a forced third item for rhythm), trailing significance clauses (the appended "..., driving efficiency" flourish asserting vague impact), and Title Case headings or decorative boldface. Flag any instance, naming the unit.
+6. **No machine-written tells that a regex cannot catch.** `cv_qc.py` already flags the mechanical AI-tell subset (negation-contrast, marketing-copulas, vague-intensifiers, buzzwords); do **not** re-check those. You own only the judgment subset from the `cv-writing.md` "No AI-tell phrasing" rule: rule-of-three padding (a forced third item for rhythm), trailing significance clauses (the appended "..., driving efficiency" flourish asserting vague impact), and Title Case headings or decorative boldface. Flag any instance, naming the unit.
    Route-back: cv-architect (revise).
 
 ## Out of scope (do not check)

@@ -32,6 +32,8 @@ Reads as level-appropriate: championed, orchestrated, spearheaded, aligned, rede
 
 Reads as under-leveled: developed, built, implemented (without organizational framing), supported, executed (as primary verb), troubleshot, refactored.
 
+**Leadership is stated as "led."** Where the cited entries show the candidate led the work or the people, write "led," with no qualifier such as "operationally," "functionally" or "matrix-"; where it matters, the team or setting carries the detail ("led a global matrix team of seven data managers"). A qualified verb reads as "led, but not really." Any wording limit recorded in the candidate's role record still applies.
+
 ## Scope signals
 
 Reads as leadership-level scope: cross-functional or portfolio ownership, organizational decision-making, capability-building, governance frameworks, multi-function influence, headcount and budget responsibility, multi-year horizon, regulatory or compliance scope at the organizational level.

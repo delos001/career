@@ -159,6 +159,8 @@ ID: PR-{NNN}
 Project: {project name}
 Role: RL-{NNN}
 Company: {employer} {optional}
+Start Date: {YYYY-MM}
+End Date: {YYYY-MM, blank if in progress}
 Industry: {value} {optional}
 Specialty: {value}
 Orientation: {value}
@@ -170,7 +172,7 @@ Elements:
 
 `Role:` and `Company:` are mutually exclusive. Use `Role:` whenever a role record exists; `Company:` is the fallback for a project with no role record.
 
-One block per objective. A project with a second objective gets a second block with the same `Project:`; blocks sharing a project agree on Role or Company, Orientation, Level and Work-state.
+One block per objective. A project with a second objective gets a second block with the same `Project:`; blocks sharing a project agree on Role or Company, Start Date, End Date, Orientation, Level and Work-state.
 
 `Elements:` is a multi-line field: the label sits on its own line and each element follows, indented two spaces, as `- PR-{NNN}.{NN}: {element}`. An optional `Outcome: {observed result}` line sits under its element, indented four spaces.
 

@@ -105,7 +105,7 @@ def element_ids(inventory_text):
 # ---------------------------------------------------------------------------
 
 # Fields every block of one project must agree on.
-SHARED_FIELDS = ('Role', 'Company', 'Orientation', 'Level', 'Work-state')
+SHARED_FIELDS = ('Role', 'Company', 'Start Date', 'End Date', 'Orientation', 'Level', 'Work-state')
 
 
 def element_problems(block_id, block_lines):

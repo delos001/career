@@ -482,6 +482,8 @@ PR_LAST_LINE = '    Outcome: Used by a small number of external groups for forma
 PR_SECOND_BLOCK = """ID: PR-002
 Project: Open Trial Metadata Toolkit
 Role: RL-002
+Start Date: 2020-03
+End Date: 2021-06
 Specialty: data-engineering
 Orientation: platform-technology
 Level: leadership
@@ -533,6 +535,10 @@ BREAKAGES = [
      lambda t: t.replace('Elements:\n', 'Elements:\n    Outcome: Stray result.\n')),
     ('two blocks of one project that disagree',
      lambda t: t.replace(PR_LAST_LINE, PR_LAST_LINE + '\n' + PR_SECOND_BLOCK)),
+    ('two blocks of one project that disagree on dates',
+     lambda t: t.replace(PR_LAST_LINE, PR_LAST_LINE + '\n' + PR_SECOND_BLOCK
+                         .replace('Level: leadership', 'Level: ic')
+                         .replace('Start Date: 2020-03', 'Start Date: 2020-09'))),
     # The mechanical wording rules (P15), one per rule.
     ('first person in a Description',
      lambda t: t.replace('Replaced per-study spreadsheets', 'I replaced per-study spreadsheets')),
@@ -594,6 +600,14 @@ def test_wording_check_spares_domain_terms():
         assert profile_update_qc.wording_problems(clean, True) == [], clean
     for dirty in ('I ran the study.', 'Our team ran it.', 'Ran it for us.'):
         assert profile_update_qc.wording_problems(dirty, True), dirty
+
+
+def test_copula_check_spares_plain_designed_to():
+    """'is designed to' is a marketing copula; 'a workflow designed to cut rework'
+    is plain description and must not be flagged (2026-11-13)."""
+    import _wording
+    assert not _wording.ai_tell_hits('Built a workflow designed to cut rework.'), 'bare designed to flagged'
+    assert _wording.ai_tell_hits('The workflow is designed to cut rework.'), 'is designed to missed'
 
 
 def test_wording_findings_outside_the_run_are_advisory():

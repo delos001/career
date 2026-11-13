@@ -35,8 +35,8 @@ Checks:
   P12 (retired with the migrated record, #70)
   P13 PR elements are well-formed, sit in their own block, and are unique;
       every Outcome sits under an element
-  P14 Blocks sharing a Project agree on Role/Company, Orientation, Level and
-      Work-state
+  P14 Blocks sharing a Project agree on Role/Company, Start/End Date,
+      Orientation, Level and Work-state
   P15 Prose fields carry no first person, banned phrase, em dash, or
       mechanical AI-tell, and end with a period
 
@@ -456,7 +456,7 @@ def check_elements(findings, inventory_text, entries):
 
 
 def check_project_agreement(findings, entries):
-    """P14: blocks sharing a Project agree on Role/Company and framing axes."""
+    """P14: blocks sharing a Project agree on Role/Company, dates and framing axes."""
     findings.mark('P14')
     for where, problem in pr.project_conflicts(
             [e for e in entries if e['prefix'] == 'PR']):

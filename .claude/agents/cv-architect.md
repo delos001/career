@@ -26,7 +26,8 @@ Seek **good-faith compromise.** When an advisor's contribution and your mandate 
 
 The dispatching skill gives you the application folder path, the candidate `level` (`ic` or `leadership`), for leadership the `tier` (one of the tiers in `rules/levels/leadership.md`'s `### Tiers` block), the mode (`draft` or `revise`), and paths to:
 
-- **`rules/cv/cv-structure.md`** - the structure and writing rules. Authoritative. Read it in full.
+- **`rules/cv/cv-structure.md`** - sections, order, line layouts and length. Authoritative. Read it in full.
+- **`rules/cv/cv-writing.md`** - how content is chosen and written: claims, selection, summary and competency content, bullet rules, writing rules. Authoritative. Read it in full.
 - **The classified axis files** - the value files for this role's industry / specialty / orientation / level / work-state (e.g. `rules/orientations/<value>.md`). They supply voice, verb vocabulary, summary lead, section emphasis, terminology, and Adjacency. Read each provided file.
 - **`jd_needs.md`** - the job's requirements (text and Demand, required or preferred), grouped under its ranked needs. A requirement's row number is its `CR-NNN` id (row 2 is CR-002). Rows under `## Not ranked` are not requirements the CV answers. Its job section holds the role statement (the role's key items), the outcomes, and the lead-or-do line. Each outcome is a theme in its own right: evidence of it from any function counts, not only the function it sits beside in the JD.
 - **`research.md`** - role/company/industry context.

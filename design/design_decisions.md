@@ -817,6 +817,7 @@ PR entries stop sharing the EX shape. A project was being split across several E
 ID: PR-NNN
 Project: {name}
 Role: RL-NNN            (or Company: {employer}; mutually exclusive, per pr-role-reference-2026-07)
+Start Date / End Date: {YYYY-MM}   (added 2026-11-13; see Project dates below)
 Industry: {value}       {optional}
 Specialty / Orientation / Level / Work-state: {values}   (separate lines, as today)
 Objective: {one sentence}
@@ -844,6 +845,8 @@ Elements:
 **Architecture.** Entry parsing moves to a small shared core (entry boundaries, ID format, template roster) plus one module per entry type, so a PR change cannot break EX. Built first; the PR schema is chosen on its merits, not to fit the shared parser.
 
 **Migration.** Each project keeps its lowest existing PR ID as its block ID; the others retire to `personal/profile/inventory-ret.md` with a Notes value naming the block that absorbed them (e.g. "Merged into PR-001"); an old entry's content usually spread across several elements, so no single element is named. Narrative `Linked Inventory` refs repoint to surviving IDs. Content is rewritten one project at a time with user approval. Old application artifacts keep their old IDs.
+
+**Project dates (user, 2026-11-13).** PR blocks gain `Start Date: YYYY-MM` and `End Date: YYYY-MM` (blank while in progress) after Role/Company: the project's own months of work, not its role's. Why: the CV shows each project's range and orders projects newest first (principle 12; the Faro edit used per-project months), and the role record gave every project the same range. Blocks sharing a project agree on both dates (P14, `pr.SHARED_FIELDS`). Backfilled for the 8 live projects from the user's dates.
 
 **Supersedes, for PR only:** the Description/Impact/Context rules of `inventory-entry-structure-applied`, `impact-field-semantics-2026-05` and `outcome-folded-into-impact`; the "same field schema" clause of `experience-inventory-entry-types`; the PR half of the Description + Impact payload in `retrieval-architecture-2026-05`. EX is unchanged.
 
@@ -1693,6 +1696,9 @@ Refs: `cv-content-structure-decisions-2026-05`, `arc-composition-for-high-impact
 
 #### cv-section-order-single-source-2026-11
 CV section order and the required-section set live once, in the fenced block under `## Section order` in `rules/cv/cv-structure.md`; `cv_qc.py` S1/S2 parse it (`parse_section_order`) instead of holding their own lists. The rule file was chosen over `config.yaml` because the cv-architect already reads it, the same structure-authority pattern as `templates/inventory.md`. Why (GitHub #21): the script copy had drifted (it placed Earlier Professional Roles, which the rule's list omitted, and required sections the rule never named). The block now names Earlier Professional Roles and marks the required sections. Test: `test_cv_section_order_comes_from_the_rule_file`.
+
+#### cv-structure-and-writing-split-2026-11
+`rules/cv/cv-structure.md` holds only sections, order, when each appears, line layouts and length (limits, Word measurement, order of cuts). `rules/cv/cv-writing.md` holds how content is chosen and written: claims and citation, selection, summary and Core Competencies content, bullet rules and the writing rules. Voice, verbs and vocabulary stay in the axis files (so "led" lives in `rules/levels/leadership.md`), research stays in `cv-best-practices.md`, and agent files carry role, inputs, steps and return format without restating rules. Why (user, 2026-11-13): the structure file had filled with writing rules, so a failure could not be traced to one owner, and agent files restated rules in their own words and drifted (CCAR and the impact-type order survived in them after the rules changed). Both files keep keyed sections so each step pulls only what it needs. Supersedes the "owns ... the CCAR bullet structure, impact-type preference order" ownership in `cv-content-structure-decisions-2026-05`.
 
 #### cv-tenure-as-years-not-adopted-2026-11
 Role headers keep date ranges; no tenure-as-years option (GitHub #20). The evidence (Kristal et al. 2022, recorded in `rules/cv/cv-best-practices.md`) is one UK field study, and it tested replacing date ranges, which the same brief notes can read as evasive and can break ATS date parsing; adding a length next to the dates was never tested. For a senior US candidate whose history has no gap (2026 independent work covers the time since the last employer), the risk outweighs an unproven gain. career-strategist no longer proposes it. Revisit only if a CV must frame a real employment gap.

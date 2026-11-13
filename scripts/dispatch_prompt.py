@@ -61,10 +61,10 @@ AGENTS = {
     'qc-preparation-screen': {'folders': True},
     'qc-preparation-interview': {'folders': True},
     'cv-architect': {'facts': ['level', 'tier'], 'folders': True, 'axes': 'all',
-                     'files': ['cv_structure', 'jd_needs', 'research', 'retrieval', 'gap_analysis', 'inventory',
+                     'files': ['cv_structure', 'cv_writing', 'jd_needs', 'research', 'retrieval', 'gap_analysis', 'inventory',
                                'narratives', 'user_info', 'cv_notes']},
     'career-strategist': {'facts': ['level', 'tier'], 'axes': ['Level', 'Orientation'],
-                          'files': ['cv_content', 'cv_structure', 'cv_best_practices', 'jd_needs', 'research']},
+                          'files': ['cv_content', 'cv_structure', 'cv_writing', 'cv_best_practices', 'jd_needs', 'research']},
     'hiring-manager': {'facts': ['level'],
                        'files': ['cv_content', 'jd_needs', 'research', 'gap_analysis', 'retrieval', 'jd', 'comms?']},
     'candidate-advocate': {'facts': ['level'],
@@ -113,6 +113,7 @@ class _Sources:
             'narratives': os.path.join(profile, fn['narratives_file']),
             'user_info': os.path.join(profile, fn['user_info_file']),
             'cv_structure': os.path.join(cv_rules, fn['cv_structure_file']),
+            'cv_writing': os.path.join(cv_rules, fn['cv_writing_file']),
             'cv_best_practices': os.path.join(cv_rules, 'cv-best-practices.md'),
         }
         return table[key]

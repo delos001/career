@@ -132,6 +132,8 @@ Impact: Platform selection rested on a documented scoring model rather than incu
 ID: PR-001
 Project: Open Trial Metadata Toolkit
 Role: RL-002
+Start Date: 2020-03
+End Date: 2021-06
 Specialty: data-engineering
 Orientation: platform-technology
 Level: ic

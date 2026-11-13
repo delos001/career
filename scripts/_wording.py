@@ -32,7 +32,7 @@ AI_TELL_PATTERNS = [
         r"|\bnot\b[^,.]*,\s*but\b"
         r"|\bless about\b.*?\bmore about\b", re.IGNORECASE)),
     ('marketing-copula', re.compile(
-        r"\b(?:serves as|stands as|is designed to|designed to)\b", re.IGNORECASE)),
+        r"\b(?:serves as|stands as|is designed to)\b", re.IGNORECASE)),
     ('vague-intensifier', re.compile(
         r"\b(?:significantly|greatly|successfully|substantially)\b", re.IGNORECASE)),
     ('buzzword', re.compile(
