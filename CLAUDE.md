@@ -14,6 +14,18 @@ Do not rely on the working directory. Always use absolute paths for both the scr
 
 Example: `python C:\Users\delos\code\career\scripts\gap_assemble.py assemble --folder C:\Users\delos\code\career\personal\applications\... --requirements-file C:\Users\delos\code\career\...`
 
+## Talking to the User
+
+Everything the user reads (status, prompts, findings, errors) is plain English: what they need to know to wait, decide, or act. No check IDs, route-back labels, or implementation terms (subagent, JSON, script names).
+
+## Working Files
+
+Every working file a skill writes, and every output file its subagents write, goes in the scratch folder for that work. Create it if absent.
+
+- Application skills: `<scratch>` = `<app_folder>/scratch/`. It lasts for the life of the application (a resumed run reuses it) and is wiped when the application is closed or declined.
+- Axis builders: `<bscratch>` = `rules/scratch/`. Wiped at the end of the build.
+- Work with neither (profile-update): `temp/`.
+
 ## Skills
 
 This repo contains Claude Code skills in `.claude/skills/`. Each skill has a `SKILL.md` that is the authoritative spec for how the skill runs. Read it before running the skill. Follow it exactly.

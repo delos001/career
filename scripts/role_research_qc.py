@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """
-role_intake_qc.py - deterministic QC for the role-intake skill's artifacts
+role_research_qc.py - deterministic QC for the role-research skill's artifacts
 
-Owns the mechanical checks that the qc-role-intake judgment subagent must
+Owns the mechanical checks that the qc-role-research judgment subagent must
 not re-run: section and field presence, pending-marker detection, date
 form, URL presence in Sources, and cross-file field equality. The judgment
 agent keeps what a script cannot verify (whether claims trace to sources).
+Named role_intake_qc.py until research moved out of role-intake into its own
+skill (2026-11-16); the check IDs kept their I prefix.
 
 The sections role-classify fills (Axis Classification, Axis Gaps, and the
 Role Level and Industry metadata; its requirements and ranked needs go to
-jd_needs.md) are pending when role-intake hands off, so these checks skip
+jd_needs.md) are pending when role-research hands off, so these checks skip
 them; scripts/role_classify_qc.py checks them. The checks that moved there
 were I4, I5, I6, I7, I8, I3's axis half and I1's requirements half.
-role_classify_qc.py imports this file's parsing helpers.
+role_classify_qc.py, role_classify_assemble.py, role_research_assemble.py and
+dispatch_prompt.py import this file's parsing helpers.
 
 Checks:
   I1  Research file completeness: H1 + APP-NNN + Research completed lines;
@@ -31,7 +34,7 @@ line. Exit 0 when all pass, 1 otherwise.
 Author  : Jason Delosh
 Created : 2026-07-14
 Project : career
-Usage   : python scripts/role_intake_qc.py check --folder <app_folder>
+Usage   : python scripts/role_research_qc.py check --folder <app_folder>
 Depends : pyyaml (via _config)
 """
 
@@ -63,8 +66,8 @@ METADATA_OPTIONAL = ['Comms file', 'Comms source', 'Role Level', 'Industry']
 # Metadata date fields that must be YYYY-MM-DD.
 DATE_FIELDS = ['Session Start Date', 'Research Completed Date']
 
-# What role-classify fills after role-intake hands off: whole sections, and
-# metadata lines. Their pending markers are not role-intake's to clear.
+# What role-classify fills after role-research hands off: whole sections, and
+# metadata lines. Their pending markers are not role-research's to clear.
 CLASSIFY_SECTIONS = ['Axis Classification', 'Axis Gaps']
 _CLASSIFY_META_RE = re.compile(r'(?m)^- (?:Role Level|Industry):.*$')
 
@@ -116,7 +119,7 @@ def _outside_classify(text):
     """Return text with role-classify's sections and metadata lines removed.
 
     Used only for the pending-marker scan: those parts are legitimately pending
-    when role-intake hands off.
+    when role-research hands off.
     """
     for heading in CLASSIFY_SECTIONS:
         text = re.sub(rf'(?ms)^## {re.escape(heading)}[ \t]*\n.*?(?=^## |\Z)', '', text)
@@ -243,7 +246,7 @@ def _read(path):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Deterministic QC for role-intake artifacts.')
+        description='Deterministic QC for role-research artifacts.')
     sub = parser.add_subparsers(dest='command', required=True)
     p_check = sub.add_parser('check', help='validate one application folder')
     p_check.add_argument('--folder', required=True,

@@ -14,14 +14,12 @@ The file's `## Entries` section is a queue. An item waits there and is deleted o
 ## Operating rules
 
 - Read `rules/global-rules.md` first; operate under it throughout.
-- Phases run in order; each has a declared input and output.
 - Each phase opens with the **bold lead line** under its heading. Speak it verbatim before running the phase.
 - **One item at a time, always.** Phase 3 walks a single item from proposal through write before naming the next one. Batching the proposals is a failure even when the items look identical, and the batch step of any other skill does not override this.
 - **The staged item is the source, and its Limits field is binding.** A limit ("review and input, not authorship") is an instruction to this skill. Write nothing the item does not support, and carry every limit forward.
 - **Never write a fact the user has not attested.** When the item is too thin to write an honest entry, ask the user for what is missing; if it does not arrive, leave the item in the queue rather than filling the gap with inference.
 - **Rules come through `scripts/profile_rules_slice.py`.** Never read a rules file whole when a slice is asked for.
 - Script failures halt the phase per global rules.
-- Run-scratch goes in `temp/`; this skill has no application folder.
 
 ## Mode
 

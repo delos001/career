@@ -1,6 +1,6 @@
 ---
 name: cv-targeted
-description: Draft a role-tailored CV. Reads role-intake's research file, the retrieval manifest, and the gap analysis, then a lead writer (cv-architect) composes the CV while three stakeholders (career-strategist for craft, hiring-manager for fit and credibility, candidate-advocate for the applicant's interest) shape it and QC verifies every claim traces to a real inventory entry. Produces cv_content.md (text only, with source-citation comments) plus a session log section. Run after gap-analysis; the .docx render is a separate skill.
+description: Draft a role-tailored CV. Reads role-research's research file, the retrieval manifest, and the gap analysis, then a lead writer (cv-architect) composes the CV while three stakeholders (career-strategist for craft, hiring-manager for fit and credibility, candidate-advocate for the applicant's interest) shape it and QC verifies every claim traces to a real inventory entry. Produces cv_content.md (text only, with source-citation comments) plus a session log section. Run after gap-analysis; the .docx render is a separate skill.
 ---
 
 # cv-targeted - draft a role-tailored CV
@@ -11,11 +11,9 @@ Produces a **CV content artifact**, `cv_content.md` in the application folder (t
 
 - Read `rules/global-rules.md` first; operate under it throughout.
 - Each phase opens with the **bold lead line** under its heading - speak it verbatim before running the phase.
-- User-facing status and prompts use plain English. No raw check ids, route-back labels, or implementation jargon (subagent, JSON). Translate every finding, loop status, and error to what the user needs to decide or act.
 - **Single writer:** only the cv-architect edits the CV text. The stakeholders (career-strategist, hiring-manager, candidate-advocate) and QC return contributions and findings; the architect integrates them. This is the traceability control.
 - Heavy reading (inventory, narratives, retrieval manifest) lives in the sub-agents' isolated context, not the main skill's. The main skill carries only compact contributions, findings, and loop state.
 - Phase 3 (collaboration) and Phase 4 (QC) loop per their caps; on a bounded loop failure the artifact ships provisional with findings surfaced.
-- **Run-scratch goes in the application's scratch folder.** `<scratch>` denotes `<app_folder>/scratch/`; create it if absent. Write every working file this skill produces - and tell every sub-agent it spawns to write its output files - under `<scratch>`, never the shared `temp/`. Scratch persists for the life of the application (a resumed run reuses it); it is wiped in one shot by `scratch_cleanup.py` when the application is declined (gap-analysis) or closed (the `close-application` skill).
 
 ## Resume check - run before Phase 0
 
@@ -24,7 +22,7 @@ Ask if this session is for a new CV or to resume a previous one.
 - **New:** ask the APP-NNN; locate its folder with `python scripts/paths.py app <APP-NNN>`. Confirm `research.md`, `retrieval.md`, AND `gap_analysis.md` all exist in the folder (cv-targeted depends on all three). If any is missing, halt and direct the user to run the missing upstream skill.
 - **Resume:** ask the APP-NNN; locate its folder the same way. Probe and land per the ladder (first match wins):
   1. Folder missing - halt; APP-NNN likely wrong. Ask for APP-NNN again.
-  2. `research.md` missing - halt; direct the user to run `/role-intake`.
+  2. `research.md` missing - halt; direct the user to run `/role-research`.
   3. `retrieval.md` missing - halt; direct the user to run `/retrieval`.
   4. `gap_analysis.md` missing - halt; direct the user to run `/gap-analysis`.
   5. `cv_content.md` exists - announce ("A CV already exists for APP-NNN at

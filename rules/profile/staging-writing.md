@@ -21,7 +21,7 @@ Write the capture file, one `Label: value` line per field below, then run:
 python scripts/staging_append.py --folder <app_folder> --requirement <CR-NNN> --requirement-text-short "<text>" --capture-file <path> --label "<3-5 word label>"
 ```
 
-With no requirement to anchor it, pass `--requirement "n/a (<short reason>)"` and drop `--requirement-text-short`. The script fills the date, application, and job context, and refuses a capture with a field missing or blank. Never write into the staging file by hand. A better fact arriving before promotion replaces the item: remove it with `profile_update.py remove --item "<label>"` and stage again.
+With no requirement to anchor it, pass `--requirement "n/a (<short reason>)"` and drop `--requirement-text-short`. With no application running, also drop `--folder`; never make up application or job values. The script fills the date, application, and job context, and refuses a capture with a field missing or blank. Never write into the staging file by hand. A better fact arriving before promotion replaces the item: remove it with `profile_update.py remove --item "<label>"` and stage again.
 
 ## Fields
 

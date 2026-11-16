@@ -10,7 +10,7 @@ Closes a single application: records the final outcome and its date in the sessi
 ## Operating rules
 
 - Read `rules/global-rules.md` first; operate under it throughout.
-- Plain English to the user. Halt and ask on any failure rather than guessing.
+- Halt and ask on any failure rather than guessing.
 
 ## Phase 1 - Identify the application
 

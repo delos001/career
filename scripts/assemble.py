@@ -2,23 +2,29 @@
 """
 assemble.py - role-intake artifact assembler
 
-Writes the two artifacts the role-intake skill produces - the session log and the
-research file - so the skill does mechanical file-writing through a deterministic
-tool instead of by hand. Three subcommands, one per write point in the skill:
+Writes what the role-intake skill produces - the application folder, jd.md /
+comms.md, and the session log - so the skill does mechanical file-writing
+through a deterministic tool instead of by hand. One subcommand per write point:
 
-  ingest    Phase 3a - create the application folder and write jd.md (plus
-            comms.md if supplied) so raw inputs are persisted before the session
-            log is written.
-  init      Phase 3b - write the initial session log (metadata filled in, axis
-            sections marked pending) into the folder created by ingest.
-  research  Phase 5 - write (or, on a re-run, refresh) research.md from the three
-            Phase-4 subagent output blocks (company, role, industry), and fill
-            the session log's research-completed date. Axis Gaps is written
-            pending. The requirements are extracted by role-classify into
-            jd_needs.md (scripts/role_classify_assemble.py requirements).
+  folder    Phase 3 - resolve the company's slug (company_slug.py; a new
+            company needs --slug, asked for before any ID is claimed), take the
+            month from today, claim the next APP-NNN (app_id.py) and create its
+            folder; print the folder path, the ID, then the slug. Never run on a
+            resume: the folder already exists.
+  ingest    Phase 4 - write jd.md (plus comms.md if supplied) into the folder,
+            adding an identity header line for the title or company when the
+            JD text does not contain it. Refuses a folder that was never
+            created. Deletes its input files once saved, but only those inside
+            temp/ (Phase 1's working files).
+  init      Phase 5 - write the initial session log (metadata filled in, the
+            research date and axis sections marked pending) into the folder.
+  relabel   Correction - fix the company and/or title in place, keeping the
+            APP-NNN, and rename the folder when the slug changes. Used by
+            role-intake and role-research.
 
-The pending sections are filled by the role-classify skill
-(scripts/role_classify_assemble.py), which imports this file's section helpers.
+research.md is written by the role-research skill (role_research_assemble.py)
+and the pending sections by role-classify (role_classify_assemble.py); both
+import this file's section helpers.
 
 Nothing repo-dependent is hardcoded here. Folder locations, filenames, and naming
 patterns come from config.yaml (via _config); the artifact structures come from
@@ -29,9 +35,10 @@ re-runs and sections added by downstream skills are not clobbered.
 Author    : Jason Delosh
 Created   : 2026-05-14
 Project   : career
-Usage     : python scripts/assemble.py ingest   --slug ... --app-id ... --ym ... --jd-text-file ... [--comms-text-file ...]
-            python scripts/assemble.py init     --slug ... --app-id ... --ym ... --company ... --role ... [--level ...] [--industry ...] --start-date ... --jd-source ... [--comms-source ...]
-            python scripts/assemble.py research --folder ... --app-id ... --company ... --role ... --date ... --company-file ... --role-file ... --industry-file ...
+Usage     : python scripts/assemble.py folder   --company ... [--slug ...]
+            python scripts/assemble.py ingest   --folder ... --jd-text-file ... --title ... --company ... [--comms-text-file ...]
+            python scripts/assemble.py init     --folder ... --company ... --role ... [--level ...] [--industry ...] --start-date ... --jd-source ... [--comms-source ...]
+            python scripts/assemble.py relabel  --folder ... [--company ... [--slug ...]] [--role ...]
 Depends   : pyyaml (via _config)
 """
 
@@ -42,6 +49,8 @@ import sys
 
 import _config
 import _util
+import app_id
+import company_slug
 
 
 # ---------------------------------------------------------------------------
@@ -110,33 +119,82 @@ def _replace_section(text, heading, new_section):
     return pattern.sub(lambda _m: replacement, text)
 
 
+def _app_folder(args, repo_root, cfg):
+    """Return the application folder path named by slug, APP-NNN, and month."""
+    stem = cfg['naming']['application_stem'].format(
+        slug=args.slug.lower(), app_id=args.app_id, ym=args.ym)
+    return os.path.join(repo_root, cfg['paths']['applications'], stem)
+
+
+def _existing_folder(folder):
+    """Return an application folder's absolute path; raise if it was never created."""
+    folder = os.path.abspath(folder)
+    if not os.path.isdir(folder):
+        raise FileNotFoundError(
+            f'application folder not found (run the folder step first): {folder}')
+    return folder
+
+
+def _stem_ids(folder, cfg):
+    """Return (app_id, ym) read from an application folder's name.
+
+    The name is '<slug>_<APP-NNN>_<YYYY-MM>' (naming.application_stem). The slug
+    is everything before the ID, since a slug may itself hold an underscore.
+    """
+    prefix = re.escape(cfg['naming']['app_id_prefix'])
+    m = re.fullmatch(rf'.+?_({prefix}\d+)_(\d{{4}}-\d{{2}})', os.path.basename(folder))
+    if not m:
+        raise ValueError(f'not an application folder name: {os.path.basename(folder)}')
+    return m.group(1), m.group(2)
+
+
 # ---------------------------------------------------------------------------
-# Subcommand: ingest  (role-intake Phase 3a)
-# Creates the application folder and writes the JD (and comms if present) to
-# disk immediately. Run this before 'init' so raw inputs are persisted before
-# the session log is written - if the session closes between the two calls the
-# inputs survive and the run can be resumed from the session-log step.
+# Subcommand: folder  (role-intake Phase 3)
+# Claims the next APP-NNN and creates its application folder in one call, so the
+# ID never exists only in the conversation and nothing later creates the folder
+# as a side effect. Every call is a new application; a resume finds its folder
+# with paths.py and never runs this.
+# ---------------------------------------------------------------------------
+
+def cmd_folder(args, repo_root, cfg):
+    # Slug first: a new company with no --slug stops here, before an ID is claimed.
+    args.slug, is_new = company_slug.choose(repo_root, cfg, args.company, args.slug)
+    if is_new:
+        company_slug.record(repo_root, cfg, args.company, args.slug)
+    args.ym = _util.today_iso()[:7]
+    args.app_id = app_id.claim_app_id()
+    app_folder = _app_folder(args, repo_root, cfg)
+    # A fresh claim cannot have a folder yet; one existing means something is wrong.
+    os.makedirs(app_folder, exist_ok=False)
+    print(app_folder)
+    print(args.app_id)
+    print(args.slug)
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: ingest  (role-intake Phase 4)
+# Writes the JD (and comms if present) into the application folder. Run this
+# before 'init' so raw inputs are persisted before the session log is written -
+# if the session closes between the two calls the inputs survive and the run
+# can be resumed from the session-log step. The folder must already exist:
+# a missing one means the folder step was skipped.
 # ---------------------------------------------------------------------------
 
 def cmd_ingest(args, repo_root, cfg):
-    stem = cfg['naming']['application_stem'].format(
-        slug=args.slug.lower(), app_id=args.app_id, ym=args.ym)
-    app_folder = os.path.join(repo_root, cfg['paths']['applications'], stem)
-
-    os.makedirs(app_folder, exist_ok=True)
+    app_folder = _existing_folder(args.folder)
 
     jd_file_name = cfg['filenames']['jd_file']
     jd_path = os.path.join(app_folder, jd_file_name)
     jd_text = _util.read(args.jd_text_file)
-    # Prepend an identity header when the JD body does not name the role and/or
-    # company. Some JDs carry no in-text identifiers; the header makes jd.md
-    # traceable to its application even when read in isolation. The skill decides
-    # presence (it read the JD) and passes only the missing value(s).
+    # Prepend an identity header line for the confirmed title or company when
+    # the JD text does not contain it (case-insensitive), so jd.md stays
+    # traceable to its application when read in isolation.
+    lowered = jd_text.casefold()
     header_lines = []
-    if args.add_title:
-        header_lines.append(f'**Role:** {args.add_title}')
-    if args.add_company:
-        header_lines.append(f'**Company:** {args.add_company}')
+    if args.title.casefold() not in lowered:
+        header_lines.append(f'**Role:** {args.title}')
+    if args.company.casefold() not in lowered:
+        header_lines.append(f'**Company:** {args.company}')
     if header_lines:
         jd_text = '\n'.join(header_lines) + '\n\n---\n\n' + jd_text
     _util.write(jd_path, jd_text)
@@ -147,25 +205,31 @@ def cmd_ingest(args, repo_root, cfg):
         comms_path = os.path.join(app_folder, comms_file_name)
         _util.write(comms_path, _util.read(args.comms_text_file))
 
+    # The inputs are Phase 1's working files; once saved they have no further
+    # use. Only files inside temp/ are removed, so a file passed from anywhere
+    # else is never deleted.
+    temp_dir = os.path.abspath(os.path.join(repo_root, cfg['paths']['temp'])) + os.sep
+    for used in (args.jd_text_file, args.comms_text_file):
+        if used and os.path.abspath(used).startswith(temp_dir):
+            os.remove(used)
+
     # Print written paths so the skill can capture them and pass jd_path
     # (and comms_path) as the --jd-source / --comms-source to 'init'.
-    print(app_folder)
     print(jd_path)
     if comms_path is not None:
         print(comms_path)
 
 
 # ---------------------------------------------------------------------------
-# Subcommand: init  (role-intake Phase 3b)
+# Subcommand: init  (role-intake Phase 5)
 # Writes the initial session log into an already-existing application folder.
 # Run after 'ingest'. JD and comms are already on disk; this step only needs
 # their canonical paths (for the session log) plus the confirmed metadata.
 # ---------------------------------------------------------------------------
 
 def cmd_init(args, repo_root, cfg):
-    stem = cfg['naming']['application_stem'].format(
-        slug=args.slug.lower(), app_id=args.app_id, ym=args.ym)
-    app_folder = os.path.join(repo_root, cfg['paths']['applications'], stem)
+    app_folder = _existing_folder(args.folder)
+    app_id_value, ym = _stem_ids(app_folder, cfg)
     # The session log is a per-application artifact living in the app folder
     # alongside research.md / jd.md, under the fixed filename from config.
     session_log = os.path.join(app_folder, cfg['filenames']['session_log_file'])
@@ -174,9 +238,6 @@ def cmd_init(args, repo_root, cfg):
     # really a resume, which the skill's resume check should have caught.
     if os.path.exists(session_log):
         raise FileExistsError(f'session log already exists: {session_log}')
-    # Folder must exist - ingest creates it; missing folder means ingest was skipped.
-    if not os.path.exists(app_folder):
-        raise FileNotFoundError(f'application folder not found (run ingest first): {app_folder}')
 
     jd_file_name = cfg['filenames']['jd_file']
     comms_file_name = cfg['filenames']['comms_file']
@@ -189,8 +250,8 @@ def cmd_init(args, repo_root, cfg):
     body = _fill(skeleton, {
         'company': args.company,
         'role': args.role,
-        'ym': args.ym,
-        'app_id': args.app_id,
+        'ym': ym,
+        'app_id': app_id_value,
         # Level and industry are decided by the role-classify skill, which
         # writes them; init leaves them pending.
         'role_level': args.level or '_(pending)_',
@@ -211,54 +272,109 @@ def cmd_init(args, repo_root, cfg):
 
 
 # ---------------------------------------------------------------------------
-# Subcommand: research  (role-intake Phase 5)
-# Writes research.md from the three Phase 4 subagent output blocks: company,
-# role, and industry. On a re-run it replaces only
-# role-intake's own sections, leaving anything else. Also fills the session
-# log's research-completed date, the last field role-intake owns there.
+# Subcommand: relabel  (correction, role-intake or role-research)
+# Corrects the company and/or title after the folder exists, keeping the
+# APP-NNN. Going back to Phase 2 and running forward would repeat Phase 3,
+# which claims a new APP-NNN and makes a second folder. Rewrites the session
+# log's H1 and Company/Role lines, the research H1, and jd.md's identity header
+# when one was added, then renames the folder when the slug changes. Refuses a
+# folder holding files a later skill wrote: those carry the old labels too.
 # ---------------------------------------------------------------------------
 
-def cmd_research(args, repo_root, cfg):
-    research_file = os.path.join(args.folder, cfg['filenames']['research_file'])
-    session_log = os.path.join(args.folder, cfg['filenames']['session_log_file'])
-    if not os.path.exists(session_log):
-        raise FileNotFoundError(f'session log not found (run init first): {session_log}')
-    company_block = _util.read(args.company_file).strip()
-    role_block = _util.read(args.role_file).strip()
-    industry_block = _util.read(args.industry_file).strip()
+def _relabel_h1(text, prefix, company, role):
+    """Rewrite '# <prefix>: <company> | <role>[ | ...]', keeping any later parts."""
+    def fix(m):
+        parts = m.group(1).split(' | ')
+        if company:
+            parts[0] = company
+        if role and len(parts) > 1:
+            parts[1] = role
+        return f'# {prefix}: ' + ' | '.join(parts)
+    new, count = re.subn(rf'(?m)^# {re.escape(prefix)}: (.+)$', fix, text, count=1)
+    if not count:
+        raise ValueError(f'no "# {prefix}:" heading to correct')
+    return new
 
-    if not os.path.exists(research_file):
-        # First write: render the whole file from the template.
-        templates_dir = os.path.join(repo_root, cfg['paths']['templates'])
-        skeleton = _skeleton(templates_dir, cfg['filenames']['research_file_template'])
-        body = _fill(skeleton, {
-            'company': args.company,
-            'role': args.role,
-            'app_id': args.app_id,
-            'research_completed_date': args.date,
-            'company_block': company_block,
-            'role_block': role_block,
-            'industry_block': industry_block,
-            # Filled by the role-classify skill.
-            'axis_gaps': '## Axis Gaps\n\n_(pending)_',
-        })
-        _util.write(research_file, body)
-    else:
-        # Re-run: replace only role-intake's sections and the completed-date
-        # line, so a current-state refresh does not clobber anything else.
-        text = _util.read(research_file)
-        # Lambda replacement: the value is inserted literally, never read as a
-        # regex template.
-        text = re.sub(r'(?m)^\*\*Research completed:\*\* .*$',
-                      lambda _m: f'**Research completed:** {args.date}', text)
-        text = _replace_section(text, 'Company', company_block)
-        text = _replace_section(text, 'Role', role_block)
-        text = _replace_section(text, 'Industry', industry_block)
-        _util.write(research_file, text)
-    log_text = re.sub(r'(?m)^- Research Completed Date: .*$',
-                      lambda _m: f'- Research Completed Date: {args.date}', _util.read(session_log))
-    _util.write(session_log, log_text)
-    print(research_file)
+
+def _relabel_field(text, pattern, value, what):
+    """Replace one label line's value; raise when the line is absent."""
+    new, count = re.subn(pattern, lambda m: m.group(1) + value, text, count=1)
+    if not count:
+        raise ValueError(f'no {what} line to correct')
+    return new
+
+
+def cmd_relabel(args, repo_root, cfg):
+    if not (args.company or args.role):
+        raise ValueError('pass --company, --role, or both')
+    if args.slug and not args.company:
+        raise ValueError('--slug goes with --company')
+    fn = cfg['filenames']
+    folder = os.path.abspath(args.folder)
+    if not os.path.isdir(folder):
+        raise FileNotFoundError(f'application folder not found: {folder}')
+
+    # Only role-intake's and role-research's files may be present.
+    own = {fn['jd_file'], fn['comms_file'], fn['session_log_file'], fn['research_file'],
+           fn['scratch_subdir']}
+    later = sorted(set(os.listdir(folder)) - own)
+    if later:
+        raise ValueError(f'later skills have written {", ".join(later)}; relabel corrects role-intake '
+                         f'and role-research files only, so those would keep the old labels')
+
+    # Session log: H1 plus the Company / Role metadata lines.
+    log_path = os.path.join(folder, fn['session_log_file'])
+    log = _relabel_h1(_util.read(log_path), 'Session Log', args.company, args.role)
+    if args.company:
+        log = _relabel_field(log, r'(?m)^(- Company: ).*$', args.company, 'session log Company')
+    if args.role:
+        log = _relabel_field(log, r'(?m)^(- Role: ).*$', args.role, 'session log Role')
+    m = re.search(r'(?m)^- APP-NNN: (\S+)', log)
+    if not m:
+        raise ValueError('session log has no APP-NNN line')
+    app_id = m.group(1)
+
+    # Research file, if research has run.
+    research_path = os.path.join(folder, fn['research_file'])
+    research = None
+    if os.path.isfile(research_path):
+        research = _relabel_h1(_util.read(research_path), 'Research', args.company, args.role)
+
+    # jd.md identity header: only the lines ingest prepended before its '---' rule.
+    jd_path = os.path.join(folder, fn['jd_file'])
+    jd = _util.read(jd_path)
+    head, sep, body = jd.partition('\n\n---\n\n')
+    if sep and re.fullmatch(r'(\*\*(Role|Company):\*\* .+\n?)+', head + '\n'):
+        if args.role:
+            head = re.sub(r'(?m)^(\*\*Role:\*\* ).*$', lambda m: m.group(1) + args.role, head)
+        if args.company:
+            head = re.sub(r'(?m)^(\*\*Company:\*\* ).*$', lambda m: m.group(1) + args.company, head)
+        jd = head + sep + body
+
+    # Folder name: same APP-NNN and month, the corrected company's slug.
+    name = os.path.basename(folder)
+    target = folder
+    at = name.find('_' + app_id)
+    if args.company and at < 0:
+        raise ValueError(f'folder name {name} does not carry {app_id}')
+    is_new = False
+    if args.company:
+        # The registry decides the slug; a new company with no --slug stops here.
+        slug, is_new = company_slug.choose(repo_root, cfg, args.company, args.slug)
+        target = os.path.join(os.path.dirname(folder), slug + name[at:])
+        if target != folder and os.path.exists(target):
+            raise FileExistsError(f'a folder already exists at {target}')
+
+    # All checks passed: record a new slug, write, then rename.
+    if is_new:
+        company_slug.record(repo_root, cfg, args.company, slug)
+    _util.write(log_path, log)
+    if research is not None:
+        _util.write(research_path, research)
+    _util.write(jd_path, jd)
+    if target != folder:
+        os.rename(folder, target)
+    print(target)
 
 
 # ---------------------------------------------------------------------------
@@ -272,24 +388,28 @@ def main():
     parser = argparse.ArgumentParser(description='role-intake artifact assembler')
     sub = parser.add_subparsers(dest='command', required=True)
 
-    p_ingest = sub.add_parser('ingest', help='Phase 3a: create folder and write JD + comms to disk')
-    p_ingest.add_argument('--slug', required=True)
-    p_ingest.add_argument('--app-id', required=True)
-    p_ingest.add_argument('--ym', required=True, help='year-month, e.g. 2026-05')
+    p_folder = sub.add_parser('folder', help='Phase 3: claim the next APP-NNN and create its folder; '
+                                             'prints the folder path, the APP-NNN, then the slug')
+    p_folder.add_argument('--company', required=True, help='the confirmed company name')
+    p_folder.add_argument('--slug', default=None,
+                          help='only for a company with no recorded slug; recorded for reuse')
+    p_folder.set_defaults(func=cmd_folder)
+
+    p_ingest = sub.add_parser('ingest', help='Phase 4: write JD + comms into the application folder')
+    p_ingest.add_argument('--folder', required=True, help='the application folder printed by the folder step')
     p_ingest.add_argument('--jd-text-file', required=True,
                           help='path to a file holding the extracted JD text')
     p_ingest.add_argument('--comms-text-file', default=None,
                           help='path to a file holding the extracted comms text (optional)')
-    p_ingest.add_argument('--add-title', default=None,
-                          help='prepend a Role: header to jd.md (pass only when the JD body does not name the role)')
-    p_ingest.add_argument('--add-company', default=None,
-                          help='prepend a Company: header to jd.md (pass only when the JD body does not name the company)')
+    p_ingest.add_argument('--title', required=True,
+                          help='confirmed title; a header line is added when the JD text lacks it')
+    p_ingest.add_argument('--company', required=True,
+                          help='confirmed company; a header line is added when the JD text lacks it')
     p_ingest.set_defaults(func=cmd_ingest)
 
-    p_init = sub.add_parser('init', help='Phase 3b: write initial session log (run after ingest)')
-    p_init.add_argument('--slug', required=True)
-    p_init.add_argument('--app-id', required=True)
-    p_init.add_argument('--ym', required=True, help='year-month, e.g. 2026-05')
+    p_init = sub.add_parser('init', help='Phase 5: write initial session log (run after ingest); '
+                                         'the APP-NNN and month come from the folder name')
+    p_init.add_argument('--folder', required=True, help='the application folder')
     p_init.add_argument('--company', required=True)
     p_init.add_argument('--role', required=True)
     # Level and industry are decided and written by the role-classify skill;
@@ -303,16 +423,13 @@ def main():
                         help='app-folder path to comms.md (from ingest output), URL, or "pasted"; omit if no comms')
     p_init.set_defaults(func=cmd_init)
 
-    p_res = sub.add_parser('research', help='Phase 5: write research.md')
-    p_res.add_argument('--folder', required=True, help='the application folder')
-    p_res.add_argument('--app-id', required=True)
-    p_res.add_argument('--company', required=True)
-    p_res.add_argument('--role', required=True)
-    p_res.add_argument('--date', required=True, help='YYYY-MM-DD')
-    p_res.add_argument('--company-file', required=True)
-    p_res.add_argument('--role-file', required=True)
-    p_res.add_argument('--industry-file', required=True)
-    p_res.set_defaults(func=cmd_research)
+    p_rel = sub.add_parser('relabel', help='correct company and/or title, keeping the APP-NNN')
+    p_rel.add_argument('--folder', required=True, help='the application folder')
+    p_rel.add_argument('--company', default=None)
+    p_rel.add_argument('--role', default=None)
+    p_rel.add_argument('--slug', default=None,
+                       help='only for a corrected company with no recorded slug; recorded for reuse')
+    p_rel.set_defaults(func=cmd_relabel)
 
     args = parser.parse_args()
     try:

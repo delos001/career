@@ -23,7 +23,10 @@ Context comes from the application folder, not from the caller. Given --folder,
 the script reads the date (today), the application ID, the company, the role,
 and the five axis values out of that application's session log. Every derived
 field still has an explicit flag that overrides it, for the case where the
-session log is absent or the value needs correcting.
+session log is absent or the value needs correcting. A fact raised with no
+application running is staged with no --folder and no context flags; From and
+Role context then read 'n/a (no application)'. Some flags without the rest are
+refused (#76).
 
 The item's label is its handle: profile_update.py finds an item by it, so the
 label must be unique within the queue. There is no item number and no record of
@@ -37,6 +40,9 @@ Usage     : python scripts/staging_append.py --folder <app_folder> \\
                 --capture-file <path> --label ...
             python scripts/staging_append.py --folder <app_folder> \\
                 --requirement "n/a (surfaced during prep)" \\
+                --capture-file <path> --label ...
+            python scripts/staging_append.py \\
+                --requirement "n/a (<reason>)" \\
                 --capture-file <path> --label ...
 Depends   : pyyaml (via _config)
 """
@@ -72,6 +78,14 @@ _SCHEMA_LABEL_RE = re.compile(r'^- \*\*(.+?):\*\*', re.MULTILINE)
 
 # The labels this script writes itself, from the application folder or flags.
 DERIVED_LABELS = ('Captured', 'From', 'Requirement', 'Role context')
+
+# The application-context flags: given together (or derived from --folder), or
+# not at all when the fact surfaced with no application running.
+CONTEXT_FLAGS = ('from_app', 'company', 'role', 'industry', 'specialty',
+                 'orientation', 'level', 'work_state')
+
+# The value From and Role context carry when no application applies.
+NO_APPLICATION = 'n/a (no application)'
 
 # The capture label naming where the work happened, and the forms its value
 # may take besides an RL-NNN: a role the inventory does not carry yet, or an
@@ -224,16 +238,24 @@ def _requirement_line(args):
 
 
 def _render_item(args, capture, labels):
-    """Render one item block per the staging-file per-entry schema."""
-    role_context = (
-        f'Industry={args.industry}, Specialty={args.specialty}, '
-        f'Orientation={args.orientation}, Level={args.level}, '
-        f'Work-state={args.work_state}'
-    )
+    """Render one item block per the staging-file per-entry schema.
+
+    With no application, From and Role context carry the explicit none form,
+    so every schema field is still present and non-blank.
+    """
+    if args.no_application:
+        source = role_context = NO_APPLICATION
+    else:
+        source = f'{args.from_app} ({args.company} | {args.role})'
+        role_context = (
+            f'Industry={args.industry}, Specialty={args.specialty}, '
+            f'Orientation={args.orientation}, Level={args.level}, '
+            f'Work-state={args.work_state}'
+        )
     return (
         f'### {args.label}\n\n'
         f'- **Captured:** {args.captured}\n'
-        f'- **From:** {args.from_app} ({args.company} | {args.role})\n'
+        f'- **From:** {source}\n'
         f'{_requirement_line(args)}'
         f'- **Role context:** {role_context}\n'
         + ''.join(f'- **{label}:** {capture[label]}\n' for label in labels)
@@ -320,6 +342,7 @@ def main():
     try:
         sys.stdout.reconfigure(encoding='utf-8')
         repo_root, cfg = _config.load()
+        args.no_application = False
 
         # Fill the contextual fields from the application folder. An explicit
         # flag always wins, so a caller can correct a derived value.
@@ -329,15 +352,18 @@ def main():
                     setattr(args, flag, value)
         if not args.captured:
             args.captured = _util.today_iso()
-        missing = [f"--{flag.replace('_', '-')}" for flag in
-                   ('from_app', 'company', 'role', 'industry', 'specialty',
-                    'orientation', 'level', 'work_state')
+        # Context is all or nothing. None at all means the fact surfaced with
+        # no application running, and the item says so; some but not all means
+        # a caller dropped a value, which is refused rather than half-filled.
+        missing = [f"--{flag.replace('_', '-')}" for flag in CONTEXT_FLAGS
                    if not getattr(args, flag)]
-        if missing:
+        if len(missing) == len(CONTEXT_FLAGS):
+            args.no_application = True
+        elif missing:
             raise ValueError(
                 f"missing context: {', '.join(missing)}. Pass --folder to read "
-                f'these from the application session log, or pass each flag '
-                f'explicitly.')
+                f'these from the application session log, pass each flag '
+                f'explicitly, or pass none of them when no application applies.')
 
         skeleton, schema = load_schema(repo_root, cfg)
         labels = capture_labels(schema)

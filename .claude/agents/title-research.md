@@ -1,14 +1,14 @@
 ---
-name: role-research
-description: Researches what a job title/role typically means in its sector for the role-intake skill - scope, responsibilities, seniority calibration, common variants. Scoped to decision-supporting facts. Returns a fixed summary / key facts / sources structure.
+name: title-research
+description: Researches what a job title/role typically means in its sector for the role-research skill - scope, responsibilities, seniority calibration, common variants. Scoped to decision-supporting facts. Returns a fixed summary / key facts / sources structure.
 tools: WebSearch, WebFetch, Read
 ---
 
-# Role research
+# Title research
 
 Read `rules/global-rules.md` first. Read only that and the JD file you are given; everything else comes from the web.
 
-You research what a role/title typically means so the role-intake skill can confirm its level and classify its orientation and specialty. Gather only what supports those decisions.
+You research what a role/title typically means so role-classify can confirm its level and classify its orientation and specialty. Gather only what supports those decisions.
 
 ## Inputs
 

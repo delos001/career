@@ -9,8 +9,8 @@ Post-interview follow-up for one application round. Reads the round's debrief fr
 
 ## Interaction contract
 
+- Read `rules/global-rules.md` first; operate under it throughout.
 - One item per turn: one question, one draft decision. Never bundle.
-- Plain English.
 - Confirm-not-trust: any fact pulled from the notes, prep, session log, or positioning is SHOWN for confirmation before it enters the message, never silently reused.
 - Nothing is written to the artifact before the user approves the draft. The skill NEVER writes into `interview_notes.md` (the user's hand-written note surface); if the user recalls a thread the notes missed, confirm it, use it, and suggest they add it to General Notes themselves.
 

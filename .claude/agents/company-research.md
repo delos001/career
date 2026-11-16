@@ -1,6 +1,6 @@
 ---
 name: company-research
-description: Researches a hiring company for the role-intake skill - what it is, its scale, ownership/funding stage, recent leadership / M&A / strategic shifts that bear on a job's context, and the company's stated mission and core values. Scoped to decision-supporting facts, not an exhaustive dossier. Returns a fixed summary / key facts / sources structure.
+description: Researches a hiring company for the role-research skill - what it is, its scale, ownership/funding stage, recent leadership / M&A / strategic shifts that bear on a job's context, and the company's stated mission and core values. Scoped to decision-supporting facts, not an exhaustive dossier. Returns a fixed summary / key facts / sources structure.
 tools: WebSearch, WebFetch, Read
 ---
 
@@ -8,7 +8,7 @@ tools: WebSearch, WebFetch, Read
 
 Read `rules/global-rules.md` first. Read only that and the JD file you are given; everything else comes from the web.
 
-You research a hiring company so the role-intake skill can classify and contextualize a job. You do NOT write a dossier - gather only what supports the skill's decisions.
+You research a hiring company so later skills can classify and contextualize a job. You do NOT write a dossier - gather only what supports the skill's decisions.
 
 ## Inputs
 

@@ -26,9 +26,9 @@ _(none)_
 ### {label}
 
 - **Captured:** {YYYY-MM-DD}
-- **From:** {APP-NNN} ({company} | {role})
+- **From:** {APP-NNN} ({company} | {role}), or n/a (no application)
 - **Requirement:** {CR-NNN} - {requirement_text_short}, or n/a ({reason})
-- **Role context:** Industry={industry}, Specialty={specialty}, Orientation={orientation}, Level={level}, Work-state={work_state}
+- **Role context:** Industry={industry}, Specialty={specialty}, Orientation={orientation}, Level={level}, Work-state={work_state}, or n/a (no application)
 - **Work role:** {RL-NNN}, or new: {employer}, {title}, or n/a ({reason})
 - **Did:** {what the candidate did}
 - **Others did:** {what others did, or none}
@@ -39,6 +39,6 @@ _(none)_
 ## Field notes
 
 - **label** - 3-5 word descriptor. It is the item's handle: `show` and `remove` find the item by it, so it is unique within the queue.
-- **Captured, From, Requirement, Role context** - written by the script. `From` and `Role context` describe the job being applied for, not the job where the work happened. `Requirement` is where the fact surfaced; a CV that uses the fact before it reaches the inventory cites it as `GAP CR-NNN`.
+- **Captured, From, Requirement, Role context** - written by the script. `From` and `Role context` describe the job being applied for, not the job where the work happened; both read `n/a (no application)` when the fact surfaced with no application running. `Requirement` is where the fact surfaced; a CV that uses the fact before it reaches the inventory cites it as `GAP CR-NNN`.
 - **Work role, Did, Others did, Outcome, Limits** - the capture, passed in the capture file. Every field is required; the "none" forms are explicit answers, never blanks.
 - **Removal** - `profile_update.py remove` deletes an item after its written entry passes review, or when it needed no write or was retracted. Nothing records where an item went: the profile is the source.

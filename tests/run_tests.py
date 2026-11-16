@@ -236,6 +236,28 @@ def test_capture_refuses_a_missing_or_blank_field():
     assert code != 0 and 'already waiting' in out, f'a duplicate label was accepted:\n{out}'
 
 
+def test_capture_stages_with_no_application():
+    """Shipped 2026-11-16 (#76): global-rules says staging needs no application
+    folder, but the script demanded an application ID, company, role and five
+    axis values, so facts raised outside an application were staged under
+    invented placeholders. With no application context the item now says so;
+    a partial context is still refused, so no item is half-filled."""
+    path = write_block('capture.md', CAPTURE)
+    base = ('staging_append.py', '--requirement', 'n/a (raised during profile-update)',
+            '--capture-file', path)
+    before = docs()[1]
+    code, out = run(*base, '--label', 'Half context', '--company', 'Northwind')
+    assert code != 0 and 'missing context' in out, f'a partial context was accepted:\n{out}'
+    assert docs()[1] == before, 'a refused capture still changed the file'
+
+    code, out = run(*base, '--label', 'No application capture')
+    assert code == 0, out
+    item = pu.find_item(docs()[1], 'No application capture')
+    for field in ('From', 'Role context'):
+        assert pu.bullet_value(item['body'], field) == 'n/a (no application)', \
+            f'{field} not marked as having no application:\n{item["body"]}'
+
+
 def test_related_pull_covers_the_role_and_shared_words():
     """The routing decision (new entry, addition, or duplicate) used to rest on
     a by-hand search that missed covering entries. The pull is now fixed: every
@@ -2239,6 +2261,152 @@ def test_requirements_are_extracted_into_jd_needs():
     assert not present(None)[1], 'a missing jd_needs.md passed'
 
 
+# The confirmed title and company ingest takes, as the test JDs name them.
+JD_IDENT = ('--title', 'Director, Data Operations', '--company', 'Halloway Labs')
+
+
+def test_application_folder_is_created_on_purpose():
+    """Shipped 2026-11-16: the application folder was never created by a step of
+    its own; the first scratch write made it as a side effect, before ingest. And
+    the APP-NNN, claimed several steps earlier, lived only in the conversation
+    until then, kept from a second claim by an instruction. Now `assemble.py
+    folder` claims the ID and creates the folder in one call, and ingest refuses
+    a folder that was never created.
+    """
+    import company_slug
+    root, cfg = _config.load()
+    ym = _util.today_iso()[:7]
+    claims = os.path.join(RUN_DIR, 'applications', cfg['naming']['app_id_claims_dir'])
+    claimed = lambda: len(os.listdir(claims)) if os.path.isdir(claims) else 0
+    jd = write_block('jd.txt', 'Director, Data Operations at Halloway Labs.\n')
+    missing = os.path.join(RUN_DIR, 'applications', f'halloway_APP-009_{ym}')
+    code, out = run('assemble.py', 'ingest', '--folder', missing, '--jd-text-file', jd, *JD_IDENT)
+    assert code != 0 and 'folder' in out, f'ingest ran with no application folder:\n{out}'
+
+    # A company with no recorded slug stops before any ID is claimed.
+    before = claimed()
+    code, out = run('assemble.py', 'folder', '--company', 'Halloway Labs')
+    assert code != 0 and '--slug' in out, f'a new company ran with no slug:\n{out}'
+    assert claimed() == before, 'a stopped folder step still claimed an ID'
+
+    code, out = run('assemble.py', 'folder', '--company', 'Halloway Labs', '--slug', 'halloway')
+    assert code == 0, out
+    folder, app_id, slug = out.splitlines()[:3]
+    assert re.fullmatch(r'APP-\d{3}', app_id) and slug == 'halloway', out
+    assert os.path.isdir(folder) and folder.endswith(f'halloway_{app_id}_{ym}'), out
+    assert company_slug.lookup(root, cfg, 'Halloway Labs') == 'halloway', 'the new slug was not recorded'
+    code, out = run('assemble.py', 'ingest', '--folder', folder, '--jd-text-file', jd, *JD_IDENT)
+    assert code == 0 and os.path.isfile(os.path.join(folder, 'jd.md')), out
+    # init reads the APP-NNN and month from the folder name, not from the caller.
+    code, out = run('assemble.py', 'init', '--folder', folder, '--company', 'Halloway Labs',
+                    '--role', 'Director, Data Operations', '--start-date', '2026-02-03',
+                    '--jd-source', os.path.join(folder, 'jd.md'))
+    assert code == 0, out
+    log = _util.read(os.path.join(folder, 'session_log.md'))
+    assert f'- APP-NNN: {app_id}' in log and log.startswith(
+        f'# Session Log: Halloway Labs | Director, Data Operations | {ym}'), log
+
+    # A known company reuses its slug; each call is a new application.
+    code, out = run('assemble.py', 'folder', '--company', 'halloway labs')
+    assert code == 0, out
+    assert out.splitlines()[1] != app_id and out.splitlines()[2] == 'halloway', out
+    assert os.path.isdir(out.splitlines()[0]), out
+
+
+def test_jd_reaches_disk_without_being_retyped():
+    """Shipped 2026-11-16: jd_extract.py printed the JD and the model re-typed it
+    into a scratch file for ingest, a hand copy of a long document that nothing
+    checked. Now --out writes the extracted text to a file, prints no JD text,
+    and that file goes to ingest, so jd.md matches what was extracted.
+    """
+    sys.path.insert(0, os.path.join(SCRIPTS_DIR, 'ingest'))
+    import jd_extract
+    marker = 'Lead the clinical data review cadence across studies.'
+    source = write_block('posting.md', f'# Director, Data Operations, Halloway Labs\n\n{marker}\n\n'
+                                      f'- 10 years in data management\n')
+    out = os.path.join(RUN_DIR, 'intake', 'x_jd.txt')
+    code, printed = run(os.path.join('ingest', 'jd_extract.py'), source, '--out', out)
+    assert code == 0, printed
+    assert marker not in printed, f'the JD text was printed:\n{printed}'
+    assert _util.read(out) == jd_extract.extract(source).strip() + '\n', 'the file differs from the extraction'
+
+    empty = write_block('empty.md', '   \n')
+    code, printed = run(os.path.join('ingest', 'jd_extract.py'), empty, '--out', out + '.empty')
+    assert code != 0 and not os.path.exists(out + '.empty'), f'an empty extraction was written:\n{printed}'
+
+    code, printed = run('assemble.py', 'folder', '--company', 'Halloway Labs', '--slug', 'halloway')
+    assert code == 0, printed
+    folder = printed.splitlines()[0]
+    code, printed = run('assemble.py', 'ingest', '--folder', folder, '--jd-text-file', out, *JD_IDENT)
+    assert code == 0, printed
+    assert _util.read(os.path.join(folder, 'jd.md')) == _util.read(out), 'jd.md is not the extracted text'
+    assert os.path.isfile(out), 'ingest deleted an input file outside temp/'
+
+    # An input file in temp/ is deleted once saved, so Phase 1 files do not pile up.
+    root, cfg = _config.load()
+    staged = os.path.join(root, cfg['paths']['temp'], 'intake', 'run_tests_jd.txt')
+    try:
+        _util.write(staged, _util.read(out))
+        os.remove(os.path.join(folder, 'jd.md'))
+        code, printed = run('assemble.py', 'ingest', '--folder', folder, '--jd-text-file', staged, *JD_IDENT)
+        assert code == 0, printed
+        assert os.path.isfile(os.path.join(folder, 'jd.md')), 'jd.md not written'
+        assert not os.path.exists(staged), 'the temp input file was left behind'
+    finally:
+        if os.path.exists(staged):
+            os.remove(staged)
+
+
+def test_ingest_adds_the_identity_header_itself():
+    """Shipped 2026-11-16: the model judged whether the JD named the title and
+    company and passed --add-title / --add-company. ingest now takes both values
+    and adds a header line only for one the JD text does not contain.
+    """
+    code, out = run('assemble.py', 'folder', '--company', 'Halloway Labs', '--slug', 'halloway')
+    assert code == 0, out
+    folder = out.splitlines()[0]
+    jd_md = os.path.join(folder, 'jd.md')
+    ident = JD_IDENT
+
+    named = write_block('named.txt', 'Director, Data Operations\nHALLOWAY LABS is hiring.\n')
+    code, out = run('assemble.py', 'ingest', '--folder', folder, '--jd-text-file', named, *ident)
+    assert code == 0, out
+    assert _util.read(jd_md) == _util.read(named), 'a JD naming both values got a header'
+
+    unnamed = write_block('unnamed.txt', 'Director, Data Operations\nWe are hiring.\n')
+    code, out = run('assemble.py', 'ingest', '--folder', folder, '--jd-text-file', unnamed, *ident)
+    assert code == 0, out
+    assert _util.read(jd_md) == '**Company:** Halloway Labs\n\n---\n\n' + _util.read(unnamed), _util.read(jd_md)
+
+
+def test_relabel_corrects_company_without_a_new_application():
+    """Shipped 2026-11-16: a title or company corrected after the folder existed
+    was routed back to Phase 2, and running forward repeated Phase 3, which
+    claims a new APP-NNN and makes a second folder. `assemble.py relabel` fixes
+    the labels in place and keeps the APP-NNN; it refuses a folder later skills
+    have written to, since their files carry the old labels too.
+    """
+    code, out = run('assemble.py', 'relabel', '--folder', FIXTURE_APP, '--company', 'Halloway Labs',
+                    '--slug', 'halloway')
+    assert code != 0 and 'jd_needs.md' in out, f'relabel ran over later skills\' files:\n{out}'
+
+    for name in ('jd_needs.md', 'gap_analysis.md'):
+        os.remove(os.path.join(FIXTURE_APP, name))
+    jd_path = os.path.join(FIXTURE_APP, 'jd.md')
+    _util.write(jd_path, '**Company:** Aldridge Pharma\n\n---\n\n' + _util.read(jd_path))
+    code, out = run('assemble.py', 'relabel', '--folder', FIXTURE_APP, '--company', 'Halloway Labs',
+                    '--slug', 'halloway', '--role', 'Director, Data Operations')
+    assert code == 0, out
+    moved = os.path.join(RUN_DIR, 'applications', 'halloway_APP-001_2026-01')
+    assert out.splitlines()[0] == moved and os.path.isdir(moved) and not os.path.isdir(FIXTURE_APP), out
+    log, research, jd = (_util.read(os.path.join(moved, n)) for n in ('session_log.md', 'research.md', 'jd.md'))
+    assert '- Company: Halloway Labs' in log and '- Role: Director, Data Operations' in log, log
+    assert '- APP-NNN: APP-001' in log, 'relabel changed the APP-NNN'
+    assert research.startswith('# Research: Halloway Labs | Director, Data Operations'), research
+    assert jd.startswith('**Company:** Halloway Labs'), jd
+    assert '# Session Log: Halloway Labs | Director, Data Operations' in log, log
+
+
 def test_role_intake_hands_classification_to_role_classify():
     """Split 2026-11-09: ranking and axis classification moved out of role-intake
     into role-classify, because role-intake had grown to 193 lines. role-intake
@@ -2246,7 +2414,7 @@ def test_role_intake_hands_classification_to_role_classify():
     alone, and role-classify's checks must refuse them until filled.
     """
     import role_classify_qc as rcq
-    import role_intake_qc as riq
+    import role_research_qc as riq
     log_path = os.path.join(FIXTURE_APP, 'session_log.md')
     research_path = os.path.join(FIXTURE_APP, 'research.md')
     pending = '_(pending)_'
@@ -2277,10 +2445,15 @@ def test_role_intake_hands_classification_to_role_classify():
     # The research step fills the date; finalize fills Level, Industry and the axes.
     _util.write(log_path, handed_log)
     blocks = {k: write_block(f'{k}.md', f'## {k.capitalize()}\n\nx\n') for k in ('company', 'role', 'industry')}
-    code, out = run('assemble.py', 'research', '--folder', FIXTURE_APP, '--app-id', 'APP-001', '--company', 'Aldridge Pharma',
-                    '--role', 'Director, Clinical Data Strategy', '--date', '2026-01-11', '--company-file', blocks['company'],
-                    '--role-file', blocks['role'], '--industry-file', blocks['industry'])
+    # The research step reads APP-NNN, company and role from the session log
+    # (2026-11-16), so a resumed run has nothing to carry over by hand.
+    os.remove(research_path)
+    code, out = run('role_research_assemble.py', 'research', '--folder', FIXTURE_APP, '--date', '2026-01-11',
+                    '--company-file', blocks['company'], '--role-file', blocks['role'],
+                    '--industry-file', blocks['industry'])
     assert code == 0, out
+    assert _util.read(research_path).startswith('# Research: Aldridge Pharma | Director, Clinical Data Strategy\n\n'
+                                                '**APP-NNN:** APP-001'), _util.read(research_path)[:200]
     assert 'Critical Requirements' not in _util.read(research_path), 'the research step wrote requirements'
     assert '- Research Completed Date: 2026-01-11' in _util.read(log_path), 'the research step left the date pending'
     code, out = run('role_classify_assemble.py', 'finalize', '--folder', FIXTURE_APP,
@@ -2372,7 +2545,7 @@ def test_dispatch_prompts_are_printed_not_composed():
         return out.split('=== PROMPT ===\n')[1].split('\n=== END ===')[0]
 
     jd_path = os.path.join(FIXTURE_APP, 'jd.md')
-    for agent in ('company-research', 'role-research', 'industry-research', 'critical-requirements-extractor'):
+    for agent in ('company-research', 'title-research', 'industry-research', 'critical-requirements-extractor'):
         text = prompt(agent)
         assert 'Company: Aldridge Pharma' in text and jd_path in text, text
         assert 'Fixture job description' not in text, 'JD text was pasted into the prompt'
@@ -2412,18 +2585,18 @@ def test_dispatch_prompts_are_printed_not_composed():
 
     # A missing required file stops the run rather than dropping out of the prompt.
     os.remove(os.path.join(FIXTURE_APP, 'research.md'))
-    code, out = run('dispatch_prompt.py', 'qc-role-intake', '--folder', FIXTURE_APP)
+    code, out = run('dispatch_prompt.py', 'qc-role-research', '--folder', FIXTURE_APP)
     assert code != 0 and 'research.md' in out, f'a prompt was printed without its source: {out}'
 
     # The skills use it, and no listed step still hands an agent pasted content.
     skills = os.path.join(REPO_ROOT, '.claude', 'skills')
-    for skill, agents in (('role-intake', ['<agent>', 'qc-role-intake']),
+    for skill, agents in (('role-research', ['<agent>', 'qc-role-research']),
                           ('role-classify', ['jd-needs-ranker', 'axis-classifier', 'qc-role-classify']),
                           ('cv-targeted', ['<agent>', 'cv-architect']), ('gap-analysis', ['qc-gap-analysis'])):
         text = _util.read(os.path.join(skills, skill, 'SKILL.md'))
         for agent in agents:
             assert f'dispatch_prompt.py {agent}' in text, f'{skill} does not print the {agent} prompt'
-    assert 'giving each the JD text' not in _util.read(os.path.join(skills, 'role-intake', 'SKILL.md'))
+    assert 'giving each the JD text' not in _util.read(os.path.join(skills, 'role-research', 'SKILL.md'))
 
 
 def test_gap_verdicts_come_from_checked_claims():

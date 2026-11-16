@@ -1279,6 +1279,7 @@ Order: value, friction, scalability, learning tiebreaker. Scope creep and gold p
 
 #### global-rules-minimized
 `rules/global-rules.md` as single file. Six rules: never fabricate content; failure handling protocol; never proceed with partial content; stay inside the phase; approval gates open with two lines; stage new candidate facts.
+**Plain English lives in the project `CLAUDE.md` (2026-11-16),** not here and not in each skill. It binds only what the user reads, which only the main session produces, and `CLAUDE.md` loads in every session without a skill having to read it (four skills never read this file). It replaced a near-identical bullet in every skill's operating rules; step-level "translate this to plain English" instructions stay in the skills.
 **Minimal means operative text only.** The file is loaded by every skill on every run, so rationale, worked examples, quotes, and the reasoning for a rule's placement belong here in `design_decisions.md`, never in the rules file. On 2026-09-01 all three new rules were first written with "Why" paragraphs and placement arguments inline, duplicating what this file already held; the user caught it and they were cut back to the rule text.
 Refs: `stay-inside-the-phase`, `approval-gates-two-lines`, `candidate-facts-are-staged`.
 
@@ -1362,6 +1363,12 @@ On re-invocation the user is asked new or resume, then supplies the APP-NNN. The
 
 One-line announce, auto-proceed, no interactive confirm. The probe relies on Phase 3 atomicity (folder + `jd.md` + session log written together per `role-intake-jd-persistence-2026-05`). Phase 6 → Phase 7 split deliberately not introduced — re-running axis-classifier is a cheap recovery from interruption in that narrow window, and avoids splitting `assemble.py finalize`. Supersedes resume rule in `role-intake-control-flow`.
 Refs: `role-intake-jd-persistence-2026-05`.
+
+(Amended 2026-11-16: the ladder now reads folder missing, `jd.md` missing (Phase 1, keeping the APP-NNN), session log missing (Phase 2 then Phase 4), `research.md` missing (Phase 5), otherwise Phase 7. The `jd.md` case exists because the folder is created before the JD is saved, so "folder present" never meant "JD saved". A resume never claims a new APP-NNN; the slug and month come from the folder name. The SKILL.md is authoritative.)
+
+**Folder and session log split (2026-11-16).** The application folder used to appear as a side effect of the first scratch write, inside a phase that also wrote the session log. Phase 3 now creates the folder on purpose and saves `jd.md` / `comms.md`. `assemble.py folder` claims the APP-NNN (`app_id.claim_app_id`) and creates its folder in one call, so the ID never lives only in the conversation; the old "run `app_id.py` once and use that ID for the whole run" instruction is gone, and a resume skips the step because its folder exists. It also takes the confirmed company rather than a slug and month: it resolves the slug from the registry (`company_slug.choose`; a new company stops before any ID is claimed until the user gives a slug, which is then recorded) and takes the month from today, so Phase 3 has no hand-done prep before its first step. `relabel` uses the same slug rule. `ingest` and `init` take `--folder` rather than slug, ID and month, and `init` reads the ID and month from the folder name, so no step reassembles them by hand. `research` reads the APP-NNN, company and role from the session log, which retired the resume check's instruction to carry earlier phases' outputs over from disk by hand. The JD is written to a file once, in Phase 1 (`jd_extract.py --out` for a file or URL; the model writes a paste unchanged), in `temp/intake/` since no folder exists yet, and Phase 3 passes that file to `ingest`: the model never re-types a long JD and the text is never echoed into the conversation. `ingest` deletes those input files once saved, only when they sit inside `temp/`, so a file passed from anywhere else is never removed. Not done: `ingest` reading the source itself, which would fetch a URL twice and leave pastes on a different path; `ingest` refuses a folder that was never created. Phase 4 writes the session log and nothing else. Research, QC and approval moved to Phases 5 to 8. The folder cannot come earlier: its name carries the company slug, known only after Phase 2.
+
+**Title or company corrected after Phase 3 (2026-11-16).** Routing such a correction back to Phase 2 and running forward repeated Phase 3, which claims a new APP-NNN and makes a second folder. Once Phase 3 has run the APP-NNN is final and only labels are wrong, so `assemble.py relabel` rewrites them in place (session log H1 and Company/Role lines, research H1, `jd.md` identity header), renames the folder on a slug change, and the run continues at Phase 5, since research targeted the wrong company or title. It refuses a folder holding later skills' files, which carry the old labels too. Known limit: a wrong company name already recorded in the slug registry stays; it matters only if the same wrong name is entered again.
 
 #### role-intake-metadata-confirmation-gate-2026-05
 Phase 2 infers title, company, level, and industry from the JD; prompts the user for any value that couldn't be inferred; presents the full set for explicit confirmation before Phase 3 persistence:
@@ -1483,6 +1490,16 @@ Ranking the JD's needs and classifying the five axes moved out of role-intake in
 - Axis rationales are reviewer context, at most 30 words (config `axis_rationale_max_words`, enforced by C4): the deciding rule criterion and the JD line it rests on. Only `qc-role-classify` reads them; retrieval and cv-targeted take the values. The approval block prints values only. 2026-11-11: Medtronic's rationales ran 39 to 133 words and the block past 400.
 
 Refs: `role-intake-ranked-needs-2026-11`, GitHub #89.
+
+#### role-research-split-2026-11
+Research moved out of role-intake into a new skill, role-research (user, 2026-11-16). The pipeline is now role-intake, role-research, role-classify.
+
+- role-intake does one activity per phase: read the JD, confirm title and company, create the folder, save the JD, start the session log, hand off. It has no QC phase: every file it writes comes from a script fed confirmed values, and the scripts refuse bad input. Its resume check ends at "session log exists", which hands off to `/role-research`.
+- role-research dispatches the three research agents, writes `research.md` (`scripts/role_research_assemble.py`, moved out of `assemble.py`), runs QC (`scripts/role_research_qc.py`, renamed from `role_intake_qc.py`; check IDs kept their I prefix) and the `qc-role-research` agent (renamed from `qc-role-intake`), then the user approves.
+- The role-research agent was renamed `title-research`, so the skill could take the name `role-research` without two components sharing one name.
+- `assemble.py relabel` stays in role-intake's script and serves both skills: it accepts a folder holding role-intake's and role-research's files.
+
+Refs: `role-intake-architecture`, `role-classify-split-2026-11`.
 
 #### requirement-kinds-2026-11
 The ranker labels every requirement row by kind before grouping, so grouping follows from what each row is instead of shared words. Kinds, their wording lists and the tests that separate them live in `rules/jd-requirement-kinds.md`, built from 741 rows across 23 applications. The wording lists show typical wording and never limit a kind; the definitions decide.

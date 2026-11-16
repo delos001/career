@@ -10,11 +10,8 @@ User-invoked. Not called from role-classify; role-classify's Phase 2 may recomme
 ## Operating rules
 
 - Read `rules/global-rules.md` first; operate under it throughout.
-- **Run-scratch goes in the builder scratch folder.** `<bscratch>` denotes `rules/scratch/`; create it if absent. Write every working file this build produces (the drafted value file, the reconciler's sibling-edit / registry-entry / change-list JSON, and any other scratch) under `<bscratch>`, never the shared `temp/`; the `<temp>` placeholders below denote files under `<bscratch>`. Unlike the application pipeline, builder scratch is removed at the end of this build (final phase) via `python scripts/scratch_cleanup.py --builder --apply`.
-- Phases below run in order; each has a declared input and output.
 - Each phase opens with the bold lead line under its heading. Speak it verbatim before running the phase.
 - Halt on any failure or ambiguity outside the QC auto-fix loop; never proceed on partial content; never fabricate.
-- User-facing status uses plain English. No internal check IDs (A1, B2, E4, G1, H2, etc.), no implementation jargon (subagent, iteration, script half, judgment half, JSON, regex). Translate every phase summary, loop status, and error message to what the user needs to know to wait, decide, or act. Reserve technical detail for explicit dev-triage contexts (the `build_issues.md` log, deferral entries, this SKILL file).
 - **Script failure categorization.** Every `scripts/axis_*.py` invocation follows the same exit contract:
   - Exit 0: success. Parse stdout per the subcommand's documented output.
   - Exit 2 with `ContractError:` stderr prefix: a subagent's JSON output did not match the declared shape. The build cannot continue. Halt and tell the user verbatim: "The build couldn't continue because one of the helper outputs didn't match the expected shape. Details logged for dev triage." Then append a section to `design/build_issues.md` (header `## <YYYY-MM-DD> - <axis>-builder <mode> - <value> (contract failure)`), with one bullet containing the full stderr text and one bullet naming which subagent produced the offending output. Do not retry.
@@ -86,10 +83,10 @@ User-invoked. Not called from role-classify; role-classify's Phase 2 may recomme
   ```
   python scripts/axis_qc.py industries <value> \
     --mode <create|refresh> \
-    --value-file <temp> \
-    [--sibling-edits <temp>]   # create mode
-    [--registry-entry <temp>]  # create mode
-    [--changes <temp>]         # refresh mode
+    --value-file <bscratch> \
+    [--sibling-edits <bscratch>]   # create mode
+    [--registry-entry <bscratch>]  # create mode
+    [--changes <bscratch>]         # refresh mode
   ```
 
   The script auto-fixes script-owned issues in place. Re-read the (possibly mutated) value-file temp before dispatching the subagent.
@@ -112,18 +109,18 @@ User-invoked. Not called from role-classify; role-classify's Phase 2 may recomme
 
 ```
 python scripts/axis_apply.py create industries <value> \
-  --value-file <temp> \
-  --sibling-edits <temp> \
-  --registry-entry <temp> \
-  [--provisional --issues <temp>]
+  --value-file <bscratch> \
+  --sibling-edits <bscratch> \
+  --registry-entry <bscratch> \
+  [--provisional --issues <bscratch>]
 ```
 
 ### Refresh path
 
 ```
 python scripts/axis_apply.py refresh industries <value> \
-  --value-file <temp> \
-  [--provisional --issues <temp>]
+  --value-file <bscratch> \
+  [--provisional --issues <bscratch>]
 ```
 
 - Output: paths printed by the script.

@@ -11,7 +11,8 @@ verify (whether the classification and the ranking are right).
 C1 to C6 lived in role_intake_qc.py (as I3's axis half, I4, I5, I6, I8) until
 role-classify was split out of role-intake; C7 and C8 (as I1's requirements
 half and I7) until requirement extraction moved here too. The metadata parsing
-helpers stay in role_intake_qc.py.
+helpers stay in role_research_qc.py (named role_intake_qc.py until research
+became its own skill, 2026-11-16).
 
 Two commands. 'requirements' runs C7 and C8 alone, right after extraction, so a
 bad extraction is caught before ranking is spent on it. 'check' runs them all.
@@ -65,7 +66,7 @@ import sys
 import _config
 import _util
 import requirement_kinds
-from role_intake_qc import _PENDING_RE, _metadata_fields, _read, _section_body
+from role_research_qc import _PENDING_RE, _metadata_fields, _read, _section_body
 
 
 # ---------------------------------------------------------------------------

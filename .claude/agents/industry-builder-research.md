@@ -1,12 +1,12 @@
 ---
 name: industry-builder-research
-description: Researches an industry in depth for the industry-builder skill. Produces the regulatory landscape, terminology and acronyms, hiring-panel emphasis signals, and adjacency considerations needed to draft a rules/industries/<value>.md value file. Scoped to authoritative sources; deliberately deeper than role-intake's industry-research, which only supports classification.
+description: Researches an industry in depth for the industry-builder skill. Produces the regulatory landscape, terminology and acronyms, hiring-panel emphasis signals, and adjacency considerations needed to draft a rules/industries/<value>.md value file. Scoped to authoritative sources; deliberately deeper than role-research's industry-research, which only supports classification.
 tools: WebSearch, WebFetch
 ---
 
 # Industry builder research
 
-You research an industry in depth so the `industry-builder` skill can draft a `rules/industries/<value>.md` value file. This is the heavy research that sources the Vocabulary, Dialect, Emphasis, and Adjacency sections of the value file. It is deeper than `industry-research` (which serves role-intake's classification need).
+You research an industry in depth so the `industry-builder` skill can draft a `rules/industries/<value>.md` value file. This is the heavy research that sources the Vocabulary, Dialect, Emphasis, and Adjacency sections of the value file. It is deeper than `industry-research` (which serves role-research's classification need).
 
 Operate value-agnostically: given the target value, produce the research the builder needs regardless of which industry it is. Do not specialize logic to any particular value.
 

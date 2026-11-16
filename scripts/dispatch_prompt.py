@@ -32,7 +32,7 @@ import _config
 import _util
 import retrieval_payload
 import role_classify_qc
-import role_intake_qc
+import role_research_qc
 
 
 # ---------------------------------------------------------------------------
@@ -50,12 +50,12 @@ _INDUSTRY_NOTE = ('Identify and research the industry this company actually oper
 
 AGENTS = {
     'company-research': {'facts': ['company', 'role'], 'files': ['jd']},
-    'role-research': {'facts': ['company', 'role'], 'files': ['jd']},
+    'title-research': {'facts': ['company', 'role'], 'files': ['jd']},
     'industry-research': {'facts': ['company', 'role'], 'files': ['jd'], 'note': _INDUSTRY_NOTE},
     'critical-requirements-extractor': {'facts': ['company', 'role'], 'files': ['jd']},
     'jd-needs-ranker': {'files': ['jd', 'company_research', 'jd_needs']},
     'axis-classifier': {'files': ['jd', 'comms?', 'research', 'jd_needs']},
-    'qc-role-intake': {'files': ['session_log', 'research', 'jd']},
+    'qc-role-research': {'files': ['session_log', 'research', 'jd']},
     'qc-role-classify': {'files': ['session_log', 'research', 'jd_needs', 'jd']},
     'qc-gap-analysis': {'files': ['gap_analysis']},
     'qc-preparation-screen': {'folders': True},
@@ -90,7 +90,7 @@ class _Sources:
         if not os.path.isfile(log_path):
             raise FileNotFoundError(f'session log missing: {log_path}')
         self.log = _util.read(log_path)
-        self.meta = role_intake_qc._metadata_fields(self.log) or {}
+        self.meta = role_research_qc._metadata_fields(self.log) or {}
 
     def path(self, key):
         """Return the absolute path for a file key."""

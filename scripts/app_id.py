@@ -3,13 +3,15 @@
 app_id.py - next application ID claim
 
 Claims the next application ID (e.g. APP-004) for a new role-intake session
-and prints it. Used by the role-intake skill, Phase 3 (session init).
+and prints it. role-intake does not run this directly: `assemble.py folder`
+(Phase 3) calls claim_app_id() and creates the folder in the same call, so the
+ID never exists only in the conversation.
 
 Every evaluated job has a folder under the applications directory, named with
 the application ID embedded (e.g. PFM_APP-003_2026-05). The ID is a running
 counter shared across all companies.
 
-The folder is created several steps after the ID is drawn, so a bare max+1 over
+The folder used to be created several steps after the ID was drawn, so a bare max+1 over
 the folders let two sessions started back to back draw the same ID (two APP-015
 folders, 2026-07-14). The ID is therefore claimed before it is printed: an empty
 marker file per ID is created with an exclusive create, which the OS makes

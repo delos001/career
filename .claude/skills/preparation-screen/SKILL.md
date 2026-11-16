@@ -9,8 +9,8 @@ Prepare the candidate for a recruiter or phone-screen interview for one applicat
 
 ## Interaction contract (non-negotiable)
 
+- Read `rules/global-rules.md` first; operate under it throughout.
 - One item per turn: one research gap, one section draft, one question. Never bundle. State counts up front ("4 gaps; here is the first"), then wait.
-- Plain English at every step, including QC explanations and decision points. No internal check IDs or implementation jargon to the user.
 - Concise presentation: short bullets and chunked drafts, never long paragraphs. Headings concise.
 - Confirm-not-trust: every element pulled from another artifact or a profile default (logistics, comp target/floor, defense-layer language, constraint answers from gap analysis) is SHOWN to the user with an "is this still accurate?" check before it enters the artifact. Never silently reuse.
 - Nothing is written to the artifact before the user approves that section's content. Research ledger appends and the session log entry do not need per-write approval once their step is reached.

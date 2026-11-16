@@ -1,6 +1,6 @@
 ---
 name: role-classify
-description: Extract the job's requirements, label each by kind and rank the job's needs, and classify the job against the five axes (orientation, industry, specialty, level, work-state). Reads the jd.md and research.md that role-intake wrote and writes the requirements and ranked needs to jd_needs.md and the classification into the session log for retrieval, gap analysis, CV creation and interview prep. Run after role-intake; it works from files, so a fresh session is fine.
+description: Extract the job's requirements, label each by kind and rank the job's needs, and classify the job against the five axes (orientation, industry, specialty, level, work-state). Reads the jd.md that role-intake wrote and the research.md that role-research wrote, and writes the requirements and ranked needs to jd_needs.md and the classification into the session log for retrieval, gap analysis, CV creation and interview prep. Run after role-research; it works from files, so a fresh session is fine.
 ---
 
 # role-classify - rank the needs and classify the job
@@ -9,15 +9,13 @@ description: Extract the job's requirements, label each by kind and rank the job
 
 - Read `rules/global-rules.md` first; operate under it throughout.
 - Each phase opens with the **bold lead line** under its heading; speak it verbatim.
-- Talk to the user in plain English: no check IDs, route-back labels, or words like subagent or JSON.
-- Working files go in `<scratch>`, which is `<app_folder>/scratch/`.
 
 ## Start
 
 Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-NNN>`. Land on the first match:
 
 1. Folder missing: the APP-NNN is likely wrong; ask again.
-2. `research.md` missing: halt and tell the user to finish `/role-intake` first.
+2. `research.md` missing: halt and tell the user to finish `/role-research` first.
 3. No `jd_needs.md` in the folder: run `python scripts/display/introduce.py role-classify`, show the output, then go to Phase 1.
 4. `jd_needs.md` has no `## Needs` section: Phase 1, step 1b.
 5. `## Axis Classification` in the session log still `_(pending)_`: Phase 2.
@@ -68,4 +66,4 @@ Say "Starting APP-NNN at Phase N." and proceed.
 | A requirement wrong, missing, or reworded from the JD | Phase 1a (the ranking is redone from 1c) |
 | Ranking fails its checks or misreads the JD | Phase 1c, or a direct edit when the user reorders at 4b |
 | Classification wrong, or an axis gap got past Phase 2 | Phase 2 |
-| Company, role or industry research wrong | Halt; rerun `/role-intake` from its research phase, then this skill from Phase 2 |
+| Company, role or industry research wrong | Halt; rerun `/role-research`, then this skill from Phase 2 |

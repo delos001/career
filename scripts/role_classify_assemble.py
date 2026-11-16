@@ -2,7 +2,7 @@
 """
 role_classify_assemble.py - role-classify artifact writer
 
-Writes what the role-classify skill adds to an application that role-intake
+Writes what the role-classify skill adds to an application that role-research
 has already researched, and prints the skill's approval block, so none of it is
 written or composed by hand. Four subcommands:
 
@@ -45,7 +45,7 @@ import _util
 import requirement_kinds
 from assemble import _replace_section
 from role_classify_qc import _clause_holding
-from role_intake_qc import _metadata_fields, _section_body
+from role_research_qc import _metadata_fields, _section_body
 
 
 # ---------------------------------------------------------------------------
@@ -59,7 +59,7 @@ def _paths(folder, cfg):
     log = os.path.join(folder, fn['session_log_file'])
     for path in (research, log):
         if not os.path.exists(path):
-            raise FileNotFoundError(f'{path} not found (run role-intake first)')
+            raise FileNotFoundError(f'{path} not found (run role-intake and role-research first)')
     return research, log
 
 

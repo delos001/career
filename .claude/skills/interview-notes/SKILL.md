@@ -9,7 +9,8 @@ Scaffold one round's note-taking section in `interview_notes.md` in the applicat
 
 ## Interaction contract
 
-- One question per turn; plain English; concise.
+- Read `rules/global-rules.md` first; operate under it throughout.
+- One question per turn; concise.
 - Confirm-not-trust: any fact pulled from session_log.md, interview_prep.md, or an earlier round section is SHOWN for confirmation, never silently reused.
 
 ## Phase 1: intake

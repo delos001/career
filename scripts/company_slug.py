@@ -4,8 +4,9 @@ company_slug.py - company-to-slug registry for cross-application slug reuse
 
 Keeps one preferred folder slug per company so a repeat application for the same
 company reuses the same slug (e.g. "thermofisher") instead of the user being
-asked again and the slug drifting ("tfs" vs "thermofisher"). Used by the
-role-intake skill, Phase 3, before it prompts for a slug.
+asked again and the slug drifting ("tfs" vs "thermofisher"). role-intake uses
+it through assemble.py (folder in Phase 3, relabel for a corrected company),
+which imports choose() and record(); the subcommands below remain for direct use.
 
 The registry lives at <personal>/<company_slugs_file> (both from
 config.yaml), at the root of the private nested personal/ repo, as YAML keyed
@@ -60,8 +61,7 @@ _HEADER = (
     '# One entry per company, keyed by the slug used in application folder names\n'
     '# (<slug>_APP-NNN_YYYY-MM). role-intake Phase 3 looks a company up here before\n'
     '# asking for a slug, so a repeat application reuses the same slug. Maintained\n'
-    '# by scripts/company_slug.py (lookup / record / backfill); edit through the\n'
-    '# script rather than by hand.\n'
+    '# by scripts/company_slug.py; edit through the script rather than by hand.\n'
 )
 
 
@@ -92,34 +92,31 @@ def _norm(name):
 
 
 # ---------------------------------------------------------------------------
-# Subcommand: lookup
-# Print the slug mapped to a company name, or nothing on a miss. A miss is a
-# normal outcome (the company is new), not a failure, so exit stays 0.
+# Lookup and record, importable
+# assemble.py (folder, relabel) calls these directly, so the registry rules have
+# one implementation; the subcommands below are thin wrappers.
 # ---------------------------------------------------------------------------
 
-def cmd_lookup(args, repo_root, cfg):
-    data = _load(_registry_path(repo_root, cfg))
-    target = _norm(args.company)
-    for slug, entry in data.items():
+def lookup(repo_root, cfg, company):
+    """Return the slug recorded for a company, or None if it is new."""
+    target = _norm(company)
+    for slug, entry in _load(_registry_path(repo_root, cfg)).items():
         if _norm(entry.get('name')) == target:
-            print(slug)
-            return
-    # No match: print nothing. The skill reads empty stdout as "ask the user".
+            return slug
+    return None
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: record
-# Add or update a company -> slug mapping. Collisions (same slug pointing at a
-# different company, or the company already under a different slug) are warned
-# to stderr but not fatal - the latest record wins, and the warning surfaces
-# drift for a human to reconcile.
-# ---------------------------------------------------------------------------
+def record(repo_root, cfg, company, slug):
+    """Add or update a company -> slug mapping; return the stored slug.
 
-def cmd_record(args, repo_root, cfg):
+    Collisions (same slug pointing at a different company, or the company already
+    under a different slug) are warned to stderr but not fatal - the latest record
+    wins, and the warning surfaces drift for a human to reconcile.
+    """
     path = _registry_path(repo_root, cfg)
     data = _load(path)
-    slug = args.slug.strip().lower()
-    company = args.company.strip()
+    slug = slug.strip().lower()
+    company = company.strip()
 
     existing = data.get(slug)
     if existing and _norm(existing.get('name')) != _norm(company):
@@ -133,7 +130,47 @@ def cmd_record(args, repo_root, cfg):
 
     data[slug] = {'name': company}
     _save(path, data)
-    print(slug)
+    return slug
+
+
+def choose(repo_root, cfg, company, slug=None):
+    """Return (slug, is_new) for a company; write nothing.
+
+    A recorded company reuses its slug; passing a different one is refused so a
+    second slug never appears by accident. A new company needs a slug; without
+    one this raises. The caller records a new slug with record() once its own
+    checks pass, so a refused run leaves the registry untouched.
+    """
+    known = lookup(repo_root, cfg, company)
+    if known:
+        if slug and slug.strip().lower() != known:
+            raise ValueError(f'"{company}" already uses the slug "{known}"; '
+                             f'drop --slug to reuse it')
+        return known, False
+    if not slug:
+        raise ValueError(f'"{company}" has no recorded slug; ask the user for a short '
+                         f'lowercase slug and re-run with --slug')
+    return slug.strip().lower(), True
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: lookup
+# Print the slug mapped to a company name, or nothing on a miss. A miss is a
+# normal outcome (the company is new), not a failure, so exit stays 0.
+# ---------------------------------------------------------------------------
+
+def cmd_lookup(args, repo_root, cfg):
+    slug = lookup(repo_root, cfg, args.company)
+    if slug:
+        print(slug)
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: record
+# ---------------------------------------------------------------------------
+
+def cmd_record(args, repo_root, cfg):
+    print(record(repo_root, cfg, args.company, args.slug))
 
 
 # ---------------------------------------------------------------------------

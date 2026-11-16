@@ -2,34 +2,45 @@
 # Add one entry per skill, keyed by the skill's folder name.
 
 role-intake: |
-  # role-intake - understand the job
+  # role-intake - start a new application
 
-  Builds the foundational understanding of a job opportunity. It does not write a
-  CV or a gap analysis (later skills do). It produces two artifacts for downstream
-  use: a session log and a research file.
+  Takes in the job description and any recruiter messages, creates the
+  application's folder, saves the job description there, and starts the
+  session log.
 
   Steps:
-    1. Ingest the job description - paste it, or give a .txt / .docx / .pdf path
-       or a URL.
-    2. Pull in any role communications (e.g. a recruiter email): place them in the
-       same folder as the JD and they are read in too.
-    3. Confirm role title and company (you are prompted if absent from the JD).
-    4. Research the company, role, and industry - scoped to what the skill needs,
-       not exhaustive dossiers.
-    5. Write the session log and research file, then QC them.
+    1. Read in the job description - paste it, or give a .txt / .docx / .pdf
+       path or a URL - and any recruiter messages.
+    2. Confirm the role title and company.
+    3. Create the application folder.
+    4. Save the job description; you get its path to review.
+    5. Start the session log.
+
+  Next: role-research researches the company, role and industry.
+
+  Have ready: the job description, and any recruiter / hiring-manager messages.
+
+role-research: |
+  # role-research - research the company, role and industry
+
+  Runs after role-intake, from the application folder, so a fresh session works.
+
+  Steps:
+    1. Research the company, the role and the industry - scoped to what later
+       skills need, not exhaustive dossiers.
+    2. Write the research file.
+    3. Check it, then you review and approve.
 
   Next: role-classify pulls out the job's requirements, ranks its needs and
   classifies it.
 
-  Have ready: the job description, and any recruiter / hiring-manager messages.
-
-  Operates under rules/global-rules.md - halts and asks for direction on any
-  failure or ambiguity rather than guessing.
+  Have ready: the APP-NNN of a role that has finished role-intake.
 
 role-classify: |
   # role-classify - rank the needs and classify the job
 
-  Runs after role-intake, from the files it wrote, so a fresh session works.
+  Runs after role-research, from the files role-intake and role-research wrote,
+  so a fresh session works.
 
   Steps:
     1. Pull out the job's requirements in the JD's own words, and check each
@@ -43,7 +54,7 @@ role-classify: |
        rule file; if one is missing, the skill pauses so it can be built.
     4. Check both, then you confirm the ranking and approve.
 
-  Have ready: the APP-NNN of a role that has finished role-intake.
+  Have ready: the APP-NNN of a role that has finished role-research.
 
   Operates under rules/global-rules.md - halts and asks for direction on any
   failure or ambiguity rather than guessing.
@@ -51,8 +62,8 @@ role-classify: |
 retrieval: |
   # retrieval - surface the relevant profile content for a role
 
-  Runs after role-classify. Reads the JD and research artifacts role-intake and
-  role-classify produced, then scores every relevant piece of your profile (inventory
+  Runs after role-classify. Reads the JD and research artifacts role-intake,
+  role-research and role-classify produced, then scores every relevant piece of your profile (inventory
   entries, narratives, Signature Themes) against the role's critical
   requirements. Produces one artifact: a retrieval manifest that downstream
   skills (gap analysis, CV creation, interview prep, career brief) read as
@@ -75,7 +86,8 @@ retrieval: |
   own tier cutoffs (gap analysis: strong/moderate/weak; CV creation:
   primary/supporting/drop), so retrieval does NOT pre-classify entries.
 
-  Have ready: completed role-intake and role-classify runs for the role.
+  Have ready: completed role-intake, role-research and role-classify runs for
+  the role.
 
   Operates under rules/global-rules.md - halts and asks for direction on any
   failure or ambiguity rather than guessing.
@@ -83,7 +95,7 @@ retrieval: |
 gap-analysis: |
   # gap-analysis - evaluate candidate-to-role fit
 
-  Runs after retrieval. Reads role-intake's research file (critical
+  Runs after retrieval. Reads role-research's research file (critical
   requirements + role context) and the retrieval manifest (scored inventory,
   narratives, themes), then evaluates fit per critical requirement, walks
   any gaps interactively with you to close or categorize them, scores fit,
@@ -92,7 +104,7 @@ gap-analysis: |
 
   Steps:
     1. Locate the application folder (new application or resume by APP-NNN).
-    2. Load the role-intake and retrieval artifacts plus your eligibility
+    2. Load the research and retrieval artifacts plus your eligibility
        preferences from user-info.md.
     3. Surface any eligibility flags (sponsorship, geographic, exclusions)
        for you to override or stop.
@@ -121,7 +133,7 @@ gap-analysis: |
 cv-targeted: |
   # cv-targeted - draft a role-tailored CV
 
-  Runs after gap-analysis. Reads the role-intake research (critical
+  Runs after gap-analysis. Reads the role-research research (critical
   requirements + axis classification), the retrieval manifest, the gap
   analysis, and your inventory / narratives, then drafts a CV tailored to this
   role. Produces one artifact: cv_content.md (text only, with a source citation

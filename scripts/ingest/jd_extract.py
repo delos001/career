@@ -3,11 +3,14 @@
 jd_extract.py - job-description / role-communication text extractor
 
 Takes one job description (or a related communication such as a recruiter
-email), pulls the plain text out of it, and prints that text. Used by the
-role-intake skill, Phase 1 (JD + comms ingestion).
+email), pulls the plain text out of it, and writes that text to a file. Used by
+the role-intake skill, Phase 1 (JD + comms ingestion); Phase 3 hands the same
+file to assemble.py ingest, so the text reaches jd.md without the model
+re-typing it.
 
 The input can be a file (.txt, .md, .docx, .pdf) or a web address (http/https).
-On success the extracted text is printed to the normal output. On any problem -
+On success the text is written to --out and only the path and character count
+are printed, so the JD is not echoed into the conversation. On any problem -
 an unsupported file type, a missing file, or a file/page that yields no text -
 the script prints an error and exits with a non-zero code; it never prints a
 half-empty result (this matches the "never proceed on partial content" rule in
@@ -16,7 +19,7 @@ rules/global-rules.md).
 Author    : Jason Delosh
 Created   : 2026-05-14
 Project   : career
-Usage     : python scripts/ingest/jd_extract.py <path-or-url>
+Usage     : python scripts/ingest/jd_extract.py <path-or-url> --out <file>
 Depends   : python-docx, pypdf, requests, beautifulsoup4
 """
 
@@ -154,25 +157,30 @@ def extract(source):
 # ---------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    # Expect exactly one argument - the file path or URL to extract from.
-    if len(sys.argv) != 2:
-        print('Usage: python scripts/ingest/jd_extract.py <path-or-url>',
-              file=sys.stderr)
-        sys.exit(1)
+    import argparse
+    parser = argparse.ArgumentParser(description='extract a JD or message to a text file')
+    parser.add_argument('source', help='file path (.txt, .md, .docx, .pdf) or http(s) URL')
+    parser.add_argument('--out', required=True,
+                        help='file to write the extracted text to; parent folders are created')
+    args = parser.parse_args()
+    # Force UTF-8 output so paths with special characters print correctly on Windows.
+    sys.stdout.reconfigure(encoding='utf-8')
 
     try:
-        text = extract(sys.argv[1]).strip()
+        text = extract(args.source).strip()
     except Exception as e:
         print(f'Error: {e}', file=sys.stderr)
         sys.exit(1)
 
     if not text:
         # An empty result is treated as a failure, not a valid answer, so the
-        # calling skill does not proceed on nothing.
+        # calling skill does not proceed on nothing. Nothing is written.
         print('Error: extraction produced no text', file=sys.stderr)
         sys.exit(1)
 
-    # Force UTF-8 output so accented or special characters in the job
-    # description print correctly on Windows.
-    sys.stdout.reconfigure(encoding='utf-8')
-    print(text)
+    # Write the text to the file rather than printing it, so the JD reaches disk
+    # without passing through the model and is not echoed into the window.
+    os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
+    with open(args.out, 'w', encoding='utf-8') as f:
+        f.write(text + '\n')
+    print(f'{args.out} ({len(text)} characters)')

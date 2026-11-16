@@ -11,7 +11,7 @@ Thin orchestrator. The single authority for HOW the assessment is conducted is `
 
 - Read `rules/global-rules.md` first; operate under it throughout.
 - Read the protocol in full before anything else. It is deliberately short; there is no segmented loading. Its rules govern every phase below, including pacing (conclusions one at a time, count stated up front) and the load ceiling (a sitting ends when the subject says so).
-- Plain English to the user. Halt and ask on any failure rather than guessing.
+- Halt and ask on any failure rather than guessing.
 - Paths in commands are absolute (project rule); the runs folder and filenames come from `config.yaml` (`paths.self_assessment_runs`, `self_assessment` block), never hardcoded.
 
 ## Phase 1 - Intake and mode

@@ -1,6 +1,6 @@
 ---
 name: gap-analysis
-description: Evaluate candidate-to-role fit. Reads role-intake's research file and the retrieval manifest, detects gaps per critical requirement, runs an interactive loop with the user to close or categorize each gap, maps coverage and gap themes, and produces a gap analysis artifact plus session log entries for downstream CV creation, interview prep, and career brief. New information surfaced during the loop is captured to a profile-level staging file for a separate profile-update skill. Run this after retrieval.
+description: Evaluate candidate-to-role fit. Reads role-research's research file and the retrieval manifest, detects gaps per critical requirement, runs an interactive loop with the user to close or categorize each gap, maps coverage and gap themes, and produces a gap analysis artifact plus session log entries for downstream CV creation, interview prep, and career brief. New information surfaced during the loop is captured to a profile-level staging file for a separate profile-update skill. Run this after retrieval.
 ---
 
 # gap-analysis - evaluate candidate-to-role fit
@@ -13,10 +13,7 @@ The gap analysis is a **stopping point**: the user reads it to decide whether to
 
 - Read `rules/global-rules.md` first; operate under it throughout.
 - Each phase opens with the **bold lead line** under its heading - speak it verbatim before running the phase.
-- User-facing status and prompts use plain English. No raw QC check tags or route-back labels, no implementation jargon (subagent, JSON). Translate every finding, loop status, and error message to what the user needs to know to decide or act.
-- Phase 7 (QC) loops back per *Phase routing on failure*.
 - Heavy reading (retrieval manifest, inventory/narrative bodies) lives in sub-agents' isolated context, not the main skill's. The main skill receives only structured outcomes for the interactive loop.
-- **Run-scratch goes in the application's scratch folder.** `<scratch>` denotes `<app_folder>/scratch/`; create it if absent. Write every working file this skill produces - and tell every sub-agent it spawns to write its output files - under `<scratch>`, never the shared `temp/`. Scratch persists for the life of the application (a resumed run reuses it); it is wiped in one shot by `scratch_cleanup.py` when the application is declined (gap-analysis) or closed (the `close-application` skill).
 
 ## Resume check - run before Phase 0
 
@@ -25,7 +22,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 - **New:** ask the APP-NNN; locate its folder with `python scripts/paths.py app <APP-NNN>`. Confirm that `research.md` AND `retrieval.md` exist in the folder (gap analysis depends on both). If either is missing, halt and direct the user to run the missing upstream skill.
 - **Resume:** ask the APP-NNN; locate its folder the same way. Probe and land per the ladder (first match wins):
   1. Folder missing - halt; APP-NNN likely wrong. Ask for APP-NNN again.
-  2. `research.md` missing - halt; direct the user to run `/role-intake`.
+  2. `research.md` missing - halt; direct the user to run `/role-research`.
   3. `retrieval.md` missing - halt; direct the user to run `/retrieval`.
   4. `gap_analysis.md` exists - announce ("Gap analysis already exists for APP-NNN at <path>. Re-run? Y/N.") and on Y resume at **Phase 1**; on N print the path and exit (no Phase 8 walk - the user can open the file directly).
   5. Otherwise - resume at start of **Phase 1**.
@@ -42,7 +39,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 
 ## Phase 1 - Load context
 
-**Loading the role-intake and retrieval artifacts for this application.**
+**Loading the research and retrieval artifacts for this application.**
 
 - Input: application folder path (from the resume check), APP-NNN, slug.
 - Read `jd_needs.md` from the application folder: the requirements each piece of evidence is assessed against. Rows under `## Not ranked` are never evaluated, except Employment condition rows, which Phase 2 compares against eligibility.

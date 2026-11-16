@@ -1,6 +1,6 @@
 ---
 name: retrieval
-description: Surface the relevant profile content for a role. Reads role-intake's outputs, scores inventory entries, narratives, and Signature Themes against the role's critical requirements, and writes a retrieval manifest that downstream skills (gap analysis, CV creation, interview prep, career brief) consume. Run this after role-classify.
+description: Surface the relevant profile content for a role. Reads role-research's and role-classify's outputs, scores inventory entries, narratives, and Signature Themes against the role's critical requirements, and writes a retrieval manifest that downstream skills (gap analysis, CV creation, interview prep, career brief) consume. Run this after role-classify.
 ---
 
 # retrieval - surface the relevant profile content
@@ -10,20 +10,16 @@ Produces one artifact for the role: a **retrieval manifest**, `retrieval.md` in 
 ## Operating rules
 
 - Read `rules/global-rules.md` first; operate under it throughout.
-- Phases below run in order; each has a declared input and output.
 - Each phase opens with the **bold lead line** under its heading - speak it verbatim before running the phase.
-- User-facing status and prompts use plain English. No raw QC check tags or route-back labels, no implementation jargon (subagent, JSON). Translate every finding, loop status, and error message to what the user needs to know to decide or act.
-- Phase 5 (QC) loops back per *Phase routing on failure*.
-- **Run-scratch goes in the application's scratch folder.** `<scratch>` denotes `<app_folder>/scratch/`; create it if absent. Write every working file this skill produces - and tell every sub-agent it spawns to write its output files - under `<scratch>`, never the shared `temp/`. Scratch persists for the life of the application (a resumed run reuses it); it is wiped in one shot by `scratch_cleanup.py` when the application is declined (gap-analysis) or closed (the `close-application` skill).
 
 ## Resume check - run before Phase 0
 
 Ask if this session is for a new retrieval run or to resume a previous one?
 
-- **New:** ask the APP-NNN; locate its folder with `python scripts/paths.py app <APP-NNN>`. Confirm that `research.md` exists in the folder (retrieval depends on role-intake's output); if missing, halt and direct the user to run `/role-intake` first. Confirm that the session log's `## Axis Classification` is filled; if it is still `_(pending)_`, halt and direct the user to run `/role-classify` first.
+- **New:** ask the APP-NNN; locate its folder with `python scripts/paths.py app <APP-NNN>`. Confirm that `research.md` exists in the folder (retrieval depends on role-research's output); if missing, halt and direct the user to run `/role-research` first. Confirm that the session log's `## Axis Classification` is filled; if it is still `_(pending)_`, halt and direct the user to run `/role-classify` first.
 - **Resume:** ask the APP-NNN; locate the matching folder. Probe and land per the ladder (first match wins):
   1. Folder missing - halt; APP-NNN likely wrong. Ask for APP-NNN again.
-  2. `research.md` missing - halt; direct the user to run `/role-intake`.
+  2. `research.md` missing - halt; direct the user to run `/role-research`.
   3. Session log `## Axis Classification` still `_(pending)_` - halt; direct the user to run `/role-classify`.
   4. `retrieval.md` missing - resume at start of **Phase 1**.
   5. `retrieval.md` exists - announce ("Manifest already exists for APP-NNN. Re-run? Y/N.") and either resume at Phase 1 (re-run) or jump to Phase 6 (review existing).
@@ -40,7 +36,7 @@ Ask if this session is for a new retrieval run or to resume a previous one?
 
 ## Phase 1 - Load context
 
-**Loading the role-intake and role-classify artifacts for this application.**
+**Loading the role-research and role-classify artifacts for this application.**
 
 - Input: application folder path (from the resume check), APP-NNN, slug.
 - Confirm `jd_needs.md` and `jd.md` exist in the application folder. Do not extract or relay their content; Phase 2's `split` writes the requirements (without the Not ranked rows) and the JD into the scoring context file.

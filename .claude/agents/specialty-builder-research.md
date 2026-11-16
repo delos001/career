@@ -1,6 +1,6 @@
 ---
 name: specialty-builder-research
-description: Researches a specialty in depth for the specialty-builder skill. Produces the capability landscape, practice-specific terminology, knowledge-transfer convention, and adjacency considerations needed to draft a rules/specialties/<value>.md value file. Scoped to authoritative sources covering the specialty as a professional field of practice, deliberately deeper than role-intake's role-research, which only supports classification.
+description: Researches a specialty in depth for the specialty-builder skill. Produces the capability landscape, practice-specific terminology, knowledge-transfer convention, and adjacency considerations needed to draft a rules/specialties/<value>.md value file. Scoped to authoritative sources covering the specialty as a professional field of practice, deliberately deeper than role-research's title-research, which only supports classification.
 tools: WebSearch, WebFetch
 ---
 

@@ -1,12 +1,12 @@
 # Research File - template
 
-**Used by:** role-intake (creates); role-classify (fills Axis Gaps). Downstream skills append their own sections below role-intake's; each writing skill owns its own sections and its own portion of this spec.
+**Used by:** role-research (creates); role-classify (fills Axis Gaps). Downstream skills append their own sections below role-research's; each writing skill owns its own sections and its own portion of this spec.
 
 One per evaluated job, written to `research.md` in the application folder (`python scripts/paths.py app <APP-NNN>`).
 
 A **current-state document**: re-running or deepening research overwrites the affected sections; it does not accumulate a history of everything ever found.
 
-`scripts/assemble.py` renders the skeleton below: tokens in `{{double braces}}` are substituted. The `{{*_block}}` tokens are filled with the verbatim output of the three Phase 4 subagents - `company-research`, `role-research`, and `industry-research`. Each block carries its own heading and body:
+`scripts/role_research_assemble.py` renders the skeleton below: tokens in `{{double braces}}` are substituted. The `{{*_block}}` tokens are filled with the verbatim output of the three role-research agents - `company-research`, `title-research`, and `industry-research`. Each block carries its own heading and body:
 
 - `{{company_block}}` - `## Company` with Summary / Key facts / Sources.
 - `{{role_block}}` - `## Role` with Summary / Key facts / Sources.

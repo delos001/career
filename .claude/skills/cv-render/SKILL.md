@@ -10,7 +10,6 @@ Renders `cv_content.md` in the application folder (the cv-targeted handoff) to a
 ## Operating rules
 
 - Read `rules/global-rules.md` first; operate under it throughout.
-- User-facing status and prompts use plain English. No raw script internals.
 - Every format rule is in `rules/cv/cv-format.yaml`, which the script reads on every run; this skill resolves paths, runs it, and reports.
 
 ## Phase 0 - Intro
