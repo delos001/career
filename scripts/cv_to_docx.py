@@ -76,7 +76,8 @@ FORMAT_SCHEMA = {
     'company_line': {'name_bold': BOOL, 'first_space_before_pt': NUM, 'space_before_pt': NUM},
     'role_title': {'first_space_before_pt': NUM, 'space_before_pt': NUM, 'stacked_space_before_pt': NUM},
     'company_block_sections': SECTIONS,
-    'project_header': {'first_space_before_pt': NUM, 'space_before_pt': NUM},
+    'group_label': {'bold': BOOL, 'sections': SECTIONS},
+    'project_header': {'name_bold': BOOL, 'first_space_before_pt': NUM, 'space_before_pt': NUM},
     'project_sections': SECTIONS,
     'bullets': {'char': TEXT, 'font': TEXT, 'size_pt': SIZE, 'indent_left_dxa': NUM,
                 'indent_hanging_dxa': NUM, 'space_before_pt': NUM, 'every_line_sections': SECTIONS},
@@ -160,6 +161,7 @@ def load_format(text=None, known_sections=None):
         known_sections = set(order['order']) | order['work_output']
     for where, names in (('company_block_sections', fmt.get('company_block_sections')),
                          ('project_sections', fmt.get('project_sections')),
+                         ('group_label.sections', (fmt.get('group_label') or {}).get('sections')),
                          ('bullets.every_line_sections', (fmt.get('bullets') or {}).get('every_line_sections'))):
         if _type_ok(names, SECTIONS):
             problems += [f'{where} names {n!r}, which is not a section in cv-structure.md'
@@ -189,6 +191,36 @@ COMMENT_RE = re.compile(r'<!--.*?-->')
 INLINE_RE = re.compile(r'(\*\*.+?\*\*|\*[^*]+?\*)')
 # A {FIELD} token in the footer text, rendered as a live Word field.
 FIELD_RE = re.compile(r'\{([A-Z]+)\}')
+# A group line's opening label: the text before the first colon, holding no
+# pipe, with or without the writer's own '**' markers around it.
+GROUP_LABEL_RE = re.compile(r'^\**([^|:*]+?)\**\s*:\s*\**\s*(.*)$')
+
+
+def _lead_name(text, bold):
+    """Return a header line with its name (the text before the first ' | ')
+    bold or plain per the format setting; the rest of the line stays regular.
+
+    The name may arrive plain or bold-wrapped by the writer, so any bold
+    markers on it are dropped first and the setting is applied uniformly.
+    """
+    name, sep, rest = text.partition(' | ')
+    name = re.sub(r'\*\*', '', name.strip())
+    if bold:
+        name = f'**{name}**'
+    return name + (f' | {rest}' if sep else '')
+
+
+def _group_label_line(text):
+    """Return a group line with its label emphasis set from the format file.
+
+    Any bold the writer typed on the label is dropped first, so the label looks
+    the same however cv_content.md wrote it. A line with no label is unchanged.
+    """
+    m = GROUP_LABEL_RE.match(text)
+    if not m:
+        return text
+    label, rest = m.group(1).strip(), m.group(2)
+    return (f'**{label}:** ' if FMT['group_label']['bold'] else f'{label}: ') + rest
 
 
 # ---------------------------------------------------------------------------
@@ -446,6 +478,7 @@ def build_cv(md_path, out_path):
     company_block_sections = _section_set(FMT['company_block_sections'])
     project_sections = _section_set(FMT['project_sections'])
     project_fmt = FMT['project_header']
+    group_label_sections = _section_set(FMT['group_label']['sections'])
 
     # Parser state.
     section = None              # normalized current section
@@ -491,7 +524,10 @@ def build_cv(md_path, out_path):
 
         # Bullet (explicit '- ' list item, in any section).
         if re.match(r'^\s*-\s+', line):
-            add_bullet(doc, re.sub(r'^\s*-\s+', '', line).strip())
+            text = re.sub(r'^\s*-\s+', '', line).strip()
+            if section in group_label_sections:
+                text = _group_label_line(text)
+            add_bullet(doc, text)
             prev_was_title = False
             continue
 
@@ -499,6 +535,8 @@ def build_cv(md_path, out_path):
 
         # Sections whose every content line renders as a bullet.
         if section in force_bullet_sections:
+            if section in group_label_sections:
+                text = _group_label_line(text)
             add_bullet(doc, text)
             prev_was_title = False
             continue
@@ -506,16 +544,7 @@ def build_cv(md_path, out_path):
         # Non-list content line: spacing depends on the section.
         if section in company_block_sections:
             if _is_company_line(text):
-                # The company name is the segment before the first ' | '. It may
-                # arrive plain (older files) or bold-wrapped (current output), so
-                # strip any bold markers and apply the format setting uniformly;
-                # the text after the first '|' stays regular.
-                name, sep, rest = text.partition(' | ')
-                name = re.sub(r'\*\*', '', name.strip())
-                if company_fmt['name_bold']:
-                    name = f'**{name}**'
-                rendered = name + (f' | {rest}' if sep else '')
-                add_line(doc, rendered,
+                add_line(doc, _lead_name(text, company_fmt['name_bold']),
                          before_pt=company_fmt['first_space_before_pt'] if section_just_started
                          else company_fmt['space_before_pt'])
                 section_just_started = False
@@ -535,7 +564,7 @@ def build_cv(md_path, out_path):
                 prev_was_title = True
         elif section in project_sections:
             # Every non-bullet line here is a project header line.
-            add_line(doc, text,
+            add_line(doc, _lead_name(text, project_fmt['name_bold']),
                      before_pt=project_fmt['first_space_before_pt'] if section_just_started
                      else project_fmt['space_before_pt'])
             section_just_started = False

@@ -37,7 +37,9 @@ A role belongs in Professional Experience when any of these hold:
 2. It is older, but it covers a requirement in `jd_needs.md` that no newer role covers.
 3. It is newer than a role included under rule 2, so no gap opens between the two sections.
 
-Every role inside the window appears there, except a role whose only entries are projects; never drop one. The plan step decides whether each role inside the window gets bullets or a role summary, and whether an older role qualifies under rule 2. A role kept only so the timeline has no gap gets the role summary. On a transformation-strategy or process-operations job, an earlier operational role's summary (for example, project management or clinical monitoring) shows the operational breadth the later work built on.
+Every role inside the window appears there, except a role whose only entries are projects; never drop one. A role summary is one bullet that describes the role as a whole, in place of achievement bullets. The plan step decides whether each role inside the window gets achievement bullets or a role summary, and whether an older role qualifies under rule 2. A role kept only so the timeline has no gap gets the role summary. On a transformation-strategy or process-operations job, an earlier operational role's summary (for example, project management or clinical monitoring) shows the operational breadth the later work built on.
+
+**Bullets per role.** The long draft has no limit on bullets per role. In the cut CV, a recent role carries roughly 2 to 8 bullets, and an older role kept in Professional Experience may carry just one.
 
 **Earlier Professional Roles.** Every role outside the window that does not qualify under rule 2 goes in Earlier Professional Roles.
 
@@ -65,7 +67,7 @@ Every role inside the window appears there, except a role whose only entries are
 
 **Within-role subheadings.** Use them only on a leadership CV, and only for a recent role with many bullets (roughly 8 or more) across distinct needs. Older and lighter roles stay flat.
 
-**Subheading labels name needs (hard rule).** Each label names one ranked need in `jd_needs.md` that the role has cited evidence for, condensed from the need's wording (for example, `FSP and vendor oversight`). Never draw labels from the raw JD or from the profile.
+**Subheading labels name needs (hard rule).** Each label names one ranked need in `jd_needs.md` that the role has cited evidence for, condensed from the need's wording (for example, `FSP vendor oversight`). Never draw labels from the raw JD or from the profile.
 
 **No forcing.** Never create a subheading the role cannot fill, and never stretch a bullet to fit one.
 
@@ -73,18 +75,26 @@ Every role inside the window appears there, except a role whose only entries are
 
 **Bullets or one line.** A current project gets bullets when it serves a job need, or when an outcome in `jd_needs.md`, the level file and tier, or another axis file makes it persuasive for this job (see Strengths the JD does not ask for); any other current project gets one line with its name and dates.
 
+**Project header content.** The name comes from the project's `Project:` field, and the dates from its Start Date and End Date. A repository link, when given, is the specific repository URL, not a profile landing page.
+
 ## CRED: Credentials
 
-**Education.** List every degree, except that an associate degree is omitted when a bachelor's degree is present.
+**Header.** Contact details come from `user-info.md`; a profile link is shown without its scheme, `www.` or trailing slash.
+
+**Education.** List every degree, except that an associate degree is omitted when a bachelor's degree is present. Show no GPA or honors.
 
 **Certifications & Training.** List only items relevant to the job, most relevant first. If a higher level of the same certification is listed, omit the lower level (e.g., Lean Six Sigma Green Belt beside a Black Belt; CAPM beside a PMP). In-progress training is an early cut when space is short.
 
 **Languages.** Programming languages belong in Technical Proficiencies, not Languages.
 
-**Technical Proficiencies.** For a pure-leadership job the section may be brief.
+## TECH: Technical Proficiencies
+
+For a pure-leadership job the section may be brief.
 
 ## Length and cuts
 
-**Content decides length.** Never add content to fill a page. Never cut persuasive content for a high-ranked need only to reach a lower page count. The page count follows from choosing the right content, within the page limits in `cv-structure.md`.
+**Page targets.** An individual contributor CV aims for 2 pages and runs to 3 only for a long, relevant history. A leadership CV aims for 2 to 3 pages. The hard limit is in `cv-structure.md`.
+
+**Content decides length.** Never add content to fill a page or to reach any limit in `cv-structure.md`. Never cut persuasive content for a high-ranked need only to reach a lower page count. The page count follows from choosing the right content, within the page limits in `cv-structure.md`.
 
 **Order of cuts.** Only whole lines shorten the CV, so every cut must remove at least one rendered line. When Word measures the CV over its page limit, cut in this order. First, reword bullets so they end a line sooner: 3-line bullets first, then 2-line bullets whose last line holds only a few words. Second, merge related bullets into one, in older roles first and then newer roles, where the level file supports merging. Third, drop in-progress training. If the CV is still over the limit, remove nothing more: hand it to the candidate with the measured overage and a list of cut candidates: the bullets serving the lowest-ranked needs first, older roles first on a tie, then one-line projects that serve no need. Every cut follows "Cutting words can create an overstatement" in `cv-writing.md`.

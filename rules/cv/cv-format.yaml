@@ -11,8 +11,8 @@
 page:                          # US Letter
   width_in: 8.5
   height_in: 11
-  margin_in: 0.75              # all four sides; the length estimate in cv-structure.md
-                               # and cv_qc.py assume this geometry, so change them together
+  margin_in: 0.75              # all four sides; cv_qc.py's page estimate assumes this
+                               # geometry, and a test fails until it is recalibrated
   header_distance_in: 0.5
   footer_distance_in: 0.5
 
@@ -56,7 +56,14 @@ role_title:                    # role lines under a company (bold comes from cv_
 company_block_sections:        # sections laid out as company and role lines
   - Professional Experience
 
-project_header:                # each project's '**Name** | Context | dates' line
+group_label:                   # the 'Label:' that opens a group line, such as 'Data Leadership:'
+  bold: true
+  sections:                    # sections whose lines may open with a group label
+    - Core Competencies
+    - Technical Proficiencies
+
+project_header:                # each project's 'Name | dates' line
+  name_bold: true              # the project name; text after the first '|' stays regular
   first_space_before_pt: 0     # first project in the section
   space_before_pt: 8           # every later project, so projects do not run together
 

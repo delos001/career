@@ -937,13 +937,15 @@ def test_length_finding_names_the_cheapest_lines_to_recover():
     many = '\n'.join(f'- {"e" * (capacity + i)}' for i in range(1, 20))
     assert len(cv_measure.trim_candidates(many, 2)) == 7, 'the list should stay near the overage'
 
-    root, cfg = _config.load()
-    rules = _util.read(os.path.join(root, cfg['paths']['cv_rules'], cfg['filenames']['cv_structure_file']))
-    usable = re.search(r'Usable lines per page: ~(\d+) \(page 1.*?~(\d+) \(later', rules)
-    chars = re.search(r'Characters per line at wrap: ~(\d+) full-width; bullets ~(\d+)', rules)
-    assert (int(usable[1]), int(usable[2])) == (cv_qc.USABLE_LINES_PAGE_1, cv_qc.USABLE_LINES_LATER), usable[0]
-    assert (int(chars[1]), int(chars[2])) == (cv_qc.CHARS_PER_LINE_FULL, cv_qc.CHARS_PER_LINE_BULLET), chars[0]
+    # The estimate's capacities were calibrated for one page geometry; when the
+    # format file changes it, this fails so the estimate gets recalibrated.
+    import cv_to_docx
+    fmt = cv_to_docx.load_format()
+    live = {'width_in': fmt['page']['width_in'], 'height_in': fmt['page']['height_in'],
+            'margin_in': fmt['page']['margin_in'], 'body_size_pt': fmt['body']['size_pt']}
+    assert live == cv_qc.ESTIMATE_GEOMETRY, f'cv-format.yaml geometry {live} differs from the estimate\'s {cv_qc.ESTIMATE_GEOMETRY}'
 
+    root, cfg = _config.load()
     architect = _util.read(os.path.join(root, '.claude', 'agents', 'cv-architect.md'))
     assert 'estimated_pages' not in architect, 'the writer must not keep a second page estimate'
     assert 'cost no length' in architect, 'the writer must be told citations are free'
@@ -2630,12 +2632,14 @@ def test_render_values_come_from_cv_format():
     cv = write_block('fmt_cv.md', (
         '# Pat Example\nCity, ST | a@b.c\n\n'
         '## Professional Summary\nLed data work.\n\n'
+        '## Core Competencies\n- Data Leadership: Team building | Vendor oversight\n'
+        '**Analytics**: Dashboards | Reporting\n\n'
         '## Professional Experience\n'
         '**Acme** | Boston, MA | 2020 - Present\n**Director**\n### Vendor oversight\n- Built a model.\n'
         '**Manager**\n- Ran cleaning.\n**Analyst**\n**Associate**\n- Shared bullet.\n'
         '**Beta** | Austin, TX | 2015 - 2019\n**Lead**\n- Delivered.\n\n'
-        '## Independent Projects\n**Tool A** | Personal Project | Feb 2026 - Present\n- Built it.\n'
-        '**Tool B** | Personal Project | Jan 2025 - Dec 2025\n- Built that.\n\n'
+        '## Independent Projects\n**Tool A** | Feb 2026 - Present\n- Built it.\n'
+        '**Tool B** | Jan 2025 - Dec 2025\n- Built that.\n\n'
         '## Education\nMS, Stats, Uni, 2009\n'))
 
     def render_xml():

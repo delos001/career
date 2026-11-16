@@ -60,9 +60,9 @@ Independent Projects persuades the reviewer that the candidate's skills are curr
 
 **Writing project bullets.** Project bullets follow every bullet rule. A project appears as its objective, framed for the job, with its relevant elements folded in. Each objective gets one bullet by default; it gets a second only when its elements serve different job needs, and each bullet cites the objective. Never write one bullet per element. A bullet that uses an element cites it with its objective (`PR-015, PR-015.03`), and the element's Outcome is the source for its impact.
 
-## CRED: Credentials
+## TECH: Technical Proficiencies
 
-**Technical Proficiencies.** Name tools, platforms, languages and methods in the JD's terms so applicant tracking systems match them.
+Name tools, platforms, languages and methods in the JD's terms so applicant tracking systems match them.
 
 ## Writing rules
 

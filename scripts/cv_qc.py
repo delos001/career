@@ -81,12 +81,15 @@ from inventory_model import pr
 
 # ---------------------------------------------------------------------------
 # Calibration and level constants
-# Geometry guard constants are the cv-structure.md "Calibration guard
-# constants" (US Letter, 0.75in margins, Calibri 11pt). They are a conservative
-# estimate only; the render stage is authoritative. Bullet capacity is slightly
-# below full width since bullets sit at a 0.25in indent.
+# The line and character capacities below drive the advisory L1 page estimate
+# only; cv_measure.py's Word measurement is authoritative. They were calibrated
+# for the page geometry in ESTIMATE_GEOMETRY, and a test fails when
+# rules/cv/cv-format.yaml no longer matches it, so a format change flags the
+# estimate for recalibration. Bullet capacity is slightly below full width
+# since bullets sit at the bullet indent.
 # ---------------------------------------------------------------------------
 
+ESTIMATE_GEOMETRY = {'width_in': 8.5, 'height_in': 11, 'margin_in': 0.75, 'body_size_pt': 11}
 USABLE_LINES_PAGE_1 = 47      # name + contact block consume page 1's top
 USABLE_LINES_LATER = 50
 CHARS_PER_LINE_BULLET = 95    # indented list item (0.25in indent)

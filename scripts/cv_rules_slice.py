@@ -44,9 +44,12 @@ DRAFTING_STEPS = {
     'PLAN': 'plan step: chooses the content and records it in drafting_plan.md',
     'SUM':  'writes the Professional Summary',
     'COMP': 'writes Core Competencies',
-    'EXP':  'writes Professional Experience and Earlier Professional Roles',
+    'EXP':  'writes Professional Experience',
+    'EPR':  'writes Earlier Professional Roles (planned to be filled by a script)',
     'PROJ': 'writes Independent Projects',
-    'CRED': 'writes the header and the credential sections',
+    'CRED': 'writes the header and the credential sections (Education, Certifications & Training, '
+            'Professional Affiliations, Languages)',
+    'TECH': 'writes Technical Proficiencies',
 }
 
 

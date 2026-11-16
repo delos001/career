@@ -18,8 +18,6 @@ A rule marked `(hard rule)` always applies; no reviewer suggestion overrides it.
 
 Sections appear in the CV in the order listed below. The sections on the Work output line may appear in any order among themselves.
 
-The block below is the single source for section order and required sections: `scripts/cv_qc.py` (S1, S2) reads it. Change the structure here, not in the script.
-
 ```
 - Professional Summary (required)
 - Core Competencies (required)
@@ -33,94 +31,94 @@ The block below is the single source for section order and required sections: `s
 - Technical Proficiencies
 ```
 
-A new work-output section is added to this list when the inventory gains a matching section.
+## ALL: Date format
+
+- **Professional Experience, Earlier Professional Roles, Independent Projects:** a range, `Mon YYYY - Mon YYYY` (e.g. `Feb 2024 - Jan 2026`), or `Mon YYYY - Present` when active. When only the year is known, `YYYY - YYYY`.
+- **Education:** the year completed, `YYYY`.
+- **Certifications & Training:** the year earned or completed, `YYYY`, or `In progress` for unfinished training.
 
 ## SUM: Professional Summary
 
 **Prose.** The summary is a paragraph, never bullets.
 
-**Length (hard rule).** At most 5 sentences and at most 6 lines in the rendered CV (8 for a leadership job). Never pad to reach either limit.
+**Length (hard rule).** At most 5 sentences. The sentences fill at most 8 lines in the rendered CV for a leadership job, or 6 lines for an individual contributor job.
 
 ## COMP: Core Competencies
 
-**Count.** At most 10 items.
-
-**Format (ATS-safe).** Single column. Items separated by the pipe delimiter (`|`), or set as a simple single-level bulleted list. The pipe (or bullet) is the only item separator; commas are within-item punctuation only (a parenthetical enumeration such as `(CDASH, SDTM, CDISC LAB)` stays part of its one item). Do not separate items with commas. No multi-column layouts or tables - parsers read left-to-right and scramble columns.
-
-**Groups.** Items sit in 2 or 3 groups (zones), each with a short label, or in a single unlabeled list.
+**Layout.** Core Competencies is made up of 2 or 3 competency groups. Each group is one bulleted line: a short group label, a colon, then the group's items separated by a pipe, as in `Label: item | item | item`. A group's line may wrap to a second line. When the items do not form at least 2 groups of 2 or more, the section is a single bulleted line of items with no label. The section holds at most 10 items across all groups. Items are separated only by the pipe; a comma appears only inside an item, as in `(CDASH, SDTM, CDISC LAB)`.
 
 ## EXP: Professional Experience
 
-Roles run newest first.
+**Shape.** Professional Experience is a list of companies. Under each company line are its roles, each on its own role line. Under each role line are the bullets that describe the work in that role.
 
-**Company line.** Each company is a `Company | Location | dates` line, company name in bold, followed by its roles. For a company with several roles, `dates` is the total span across them; for a single role, it is that role's dates. The hiring organization (the end client) is the company; a staffing agency appears as a role qualifier (Type, below).
+**Company order.** Companies run newest first by their most recent role, with an active role counting as newest.
 
-**Role line and qualifiers.** Each role is `Title (dates) | Style | Type | Allocation`, title in bold. The `(dates)` appear only when the company has more than one role. Each qualifier appears only when the role differs from the default (on-site, direct hire, not concurrent, fully allocated), in this order:
-- **Style:** `Remote` or `Hybrid`.
-- **Type:** `Contract: <Agency>` (naming the staffing agency) or `Freelance`.
-- **Allocation:** a concurrent role shows `Concurrent`, followed by its allocation when under 100% (`Concurrent 60%`). A role that is not concurrent shows `X%` only when under 100%.
+**Company line.** Each company is one line: `Company | Location | dates`. The company is the organization the work was done for and the company name is used even if a staffing agency placed the candidate.
 
-Qualifier values come from the inventory's Employment & Role History records.
+For a single role, `dates` is that role's start and end. For a company with several roles, `dates` runs from the earliest role's start to the latest role's end.
 
-**Date format.** `Mon YYYY - Mon YYYY` (e.g. `Feb 2024 - Jan 2026`), or `Mon YYYY - Present` for an active role. Use the months in the role records; use the year alone only when a record has only a year. This applies to company lines, role lines and Earlier Professional Roles lines.
+**Role line.** Each role is `Title (dates) | Style | Type | Allocation`. The `(dates)` appear on the role line only when the company has more than one role. Style, Type and Allocation appear in this order, each only when it applies.
 
-**Multiple roles at one company.** Give each role its own title line, dates, qualifiers and bullets, newest first, however few bullets a role carries. Never put two titles on one line, and never share one bullet list across roles: a shared list hides which work belongs to which role. The candidate combines titles by hand when wanted.
+- **Style:** `Remote` or `Hybrid`. Left off for an on-site role.
+- **Type:** `Contract: <Agency>` or `Freelance`. Left off for a direct hire.
+- **Allocation:** `Concurrent` for a role held at the same time as another, followed by its share when under 100% (`Concurrent 60%`); `X%` for a single role under 100%. Left off for a single full-time role.
 
-**Role summary.** A role summary is a single bullet under the role line, one to two lines long.
+**Multiple roles at one company.** Give each role its own role line and bullets, newest first. Never put two titles on one line, and never share one bullet list across roles.
 
-**Earlier Professional Roles.** Each role gets one `Company | Title | Dates` line, with no bullets or description. Give each role its own line, including several or concurrent roles at one company.
+**Layout.** A role's bullets are one flat list, never nested.
 
-**Layout.** Bullets sit directly under the role line as one flat list. Individual contributor CVs always use this layout; leadership CVs may add subheadings (see Within-role subheadings).
+### Within-role subheadings
 
-**Bullets per role.** The long draft has no limit on bullets per role. In the cut CV, a recent role carries roughly 2 to 8 bullets, and an older role kept in Professional Experience may carry just one. A role given a role summary carries only that summary, in both drafts.
+Used only when the job is classified at the leadership level.
 
-### Within-role subheadings (leadership only)
+**Shape.** A subheading groups a role's bullets under a short label, below the role line. It never acts as a new section.
 
-**Labels.** Each subheading is a short label of a few words, marked `<!-- need: N-NN -->`. Subheadings run in need-rank order.
+**Count.** At most 3 subheadings per role, each with at least 2 bullets under it. A role that cannot form at least 2 such groups has no subheadings.
 
-**Count.** At most 3 subheadings per role, each over at least 2 bullets. If fewer than 2 groups qualify, the role stays flat.
+**Labels.** Each label is at most 3 words, marked `<!-- need: N-NN -->`. Subheadings run in need-rank order.
 
-**Subheadings stay below the role.** Subheadings organize bullets under a role and never act as new sections.
+## EPR: Earlier Professional Roles
+
+Each role gets one `Company | Title | Dates` line, with no bullets or description. Give each role its own line, including several or concurrent roles at one company. Lines run newest first by end date; roles with the same end date run newest first by start date.
 
 ## PROJ: Independent Projects
 
-Independent Projects holds the candidate's independent and volunteer project work (inventory Independent & Volunteer Projects, `PR-NNN`). Publications and Presentations, the other work-output sections, have no rules yet (see `cv-sections.md`).
+**Shape.** Independent Projects is a list of projects. Each project is one header line followed by its bullets, or the header line alone for a one-line project. A project appears once, under one header, however many inventory entries it has.
 
-**Order and dates.** Each project shows its own Start Date and End Date from its inventory entry (a blank End Date shows as `Present`), in the date format used in Professional Experience. List projects newest first by Start Date.
+**Order.** Projects run newest first by start date.
 
-**Project header.** Each project opens with one header line: `**Name** | Context | dates`, then an optional ` | repository link`. The name comes from the `Project:` field; the context is a short descriptor such as `Personal Project`; the link, when given, is the specific repository URL, not a profile landing page. Blocks that share a project sit under one header. A one-line project is that header alone, with no bullets.
+**Project header.** `Name | dates`, then an optional `| repository link`.
 
-## CRED: Header and credentials
+## CRED: Header
 
-### Header (name and contact)
+The CV opens with the candidate's name, then the contact block on one or two lines:
+- Line 1: `location | email | phone`.
+- Line 2, when profile links exist: the links, each as its bare domain and path with no platform label (`linkedin.com/in/...`, `github.com/...`). Links never go on line 1, where a long URL would wrap mid-link.
 
-The CV opens with the candidate name, then the contact block on up to two centered lines:
-- Line 1: location | email | phone.
-- Line 2 (when profile links exist): the profile links, each shown as its bare domain and path (strip the scheme, any `www.`, and any trailing slash) with no platform label, since the domain identifies it (e.g. `linkedin.com/in/...`, `github.com/...`).
+## CRED: Education
 
-Keep links on their own second line, not appended to line 1 (long URLs wrap mid-link). The full URLs live in `user-info.md`; the header shows the compact form.
+One bulleted line per degree: `Degree, Discipline | Institution | YYYY`.
 
-### Education, certifications, affiliations and languages
+## CRED: Certifications & Training
 
-Order is set in "Section order."
+One bulleted line per item, certifications first, then training.
+- A certification: `Certification | Issuer | YYYY | Status`, where Status is `Active` or `Inactive`.
+- A training item: `Training | Provider | YYYY`, or `Training | Provider | In progress` when not finished.
 
-**Education.** Degree, discipline, institution, year. No GPA or honors (per inventory schema).
+## CRED: Professional Affiliations
 
-**Certifications & Training.** Each certification shows its issuer, year earned and status (Active or Inactive). Each item is one short line, not an achievement bullet.
+One bulleted line per affiliation: `Affiliation | Membership | Status`. Membership is the role held, such as `Member`, `Committee Chair` or `Peer reviewer`; Status is `Active` or `Inactive`.
 
-**Professional Affiliations.** Affiliation, role (Member through Board / Officer / Committee Chair), and whether it is current; one short line each, drawn from the inventory's Professional Affiliations section.
+## CRED: Languages
 
-**Languages.** Spoken languages with proficiency, one short line each.
+One bulleted line per language: `Language | Proficiency`, as in `Spanish | Fluent`.
 
-**Technical Proficiencies.** Tools, platforms, languages, and methods from the inventory's Technical Experience section. Group into short labeled clusters (e.g. Languages, Platforms, Methods) where that aids scanning.
+## TECH: Technical Proficiencies
+
+**Layout.** Technical Proficiencies is made up of groups, one bulleted line per group: a short group label, a colon, then the group's items separated by a pipe, as in `Platforms: Databricks | Spotfire | SAS`. A group's line may wrap to a second line. When the items do not form at least 2 groups of 2 or more, the section is a single bulleted line of items with no label. Items are separated only by the pipe; a comma appears only inside an item.
+
+**Caps.** At most 4 groups and at most 15 items across all groups. Each group label is at most 3 words.
 
 ## PLAN: Length
 
-**Page limits.** An individual contributor CV aims for 2 pages and may run to 3 for a long, relevant history. A leadership CV aims for 2 to 3 pages and never exceeds 3.
-
-**Length is measured in Word.** At QC, the skill renders a draft .docx and asks Word for the page count (`scripts/cv_measure.py`). Only a measured overage sends the CV back to be cut, by the number of lines Word measured. If Word is unavailable, the length is reported as unmeasured and nothing is cut. The character-count estimate below is an early warning only and never triggers a cut; it has run 4 to 9 lines short of the Word measurement.
-
-**Estimate settings.** The early-warning estimate uses these numbers, set for the CV layout (US Letter, 0.75-inch margins, 0.5-inch header and footer, Calibri 11pt body). `cv_qc.py` holds them, and a test fails if the two lines below differ from it. Citation comments are removed before any length check, so they add no length.
-- Usable lines per page: ~47 (page 1, with the name and contact block) / ~50 (later pages).
-- Characters per line at wrap: ~100 full-width; bullets ~95 (bullets sit at a 0.25-inch indent).
-- A unit's estimated lines are its characters divided by the line capacity, rounded up. The Word measurement always overrides the estimate.
+**Page limit (hard rule).** At most 3 pages, for an individual contributor job and a leadership job alike.
