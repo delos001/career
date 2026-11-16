@@ -1496,6 +1496,7 @@ Research moved out of role-intake into a new skill, role-research (user, 2026-11
 
 - role-intake does one activity per phase: read the JD, confirm title and company, create the folder, save the JD, start the session log, hand off. The hand-off runs a small mechanical check (`scripts/role_intake_qc.py`, S1 to S5: folder name, `jd.md`, `comms.md` against the log, log fields, APP-NNN against the folder), then gives the user every path to review in one place before approval; no judgment agent, since every file comes from a script fed confirmed values. Its resume check ends at "session log exists", which hands off to `/role-research`.
 - role-research dispatches the three research agents, writes `research.md` (`scripts/role_research_assemble.py`, moved out of `assemble.py`), runs QC (`scripts/role_research_qc.py`, renamed from `role_intake_qc.py`; check IDs kept their I prefix) and the `qc-role-research` agent (renamed from `qc-role-intake`), then the user approves.
+- The three research agents write their own blocks to the output files `dispatch_prompt.py` names (`<scratch>/research_company.md`, `_role`, `_industry`), which Phase 2 passes to the assembler; the orchestrator never copies research text, the same rule as the JD.
 - The role-research agent was renamed `title-research`, so the skill could take the name `role-research` without two components sharing one name.
 - `assemble.py relabel` stays in role-intake's script and serves both skills: it accepts a folder holding role-intake's and role-research's files.
 

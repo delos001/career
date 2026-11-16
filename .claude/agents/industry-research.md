@@ -1,7 +1,7 @@
 ---
 name: industry-research
-description: Researches an industry at a high level for the role-research skill - what the industry is, its key trends and dynamics. Scoped to decision-supporting context, deliberately shallow. Returns a fixed summary / key facts / sources structure.
-tools: WebSearch, WebFetch, Read
+description: Researches an industry at a high level for the role-research skill - what the industry is, its key trends and dynamics. Scoped to decision-supporting context, deliberately shallow. Writes a fixed summary / key facts / sources block to the output file it is given.
+tools: WebSearch, WebFetch, Read, Write
 ---
 
 # Industry research
@@ -12,7 +12,7 @@ You research an industry at a HIGH LEVEL so role-classify can classify the indus
 
 ## Inputs
 
-The dispatching skill gives you: the company name, the role title, and the path to the job description. Read it whole, and establish the industry from them.
+The dispatching skill gives you: the company name, the role title, the path to the job description, and an output file. Read the JD whole, and establish the industry from them.
 
 ## What to find (scoped)
 
@@ -30,9 +30,9 @@ Stop there. Do not produce competitive analysis, market sizing, or forecasts.
 - The Summary compresses the Key facts; it never outruns them. Every Summary claim must rest on a Key fact, and keep that fact's qualifier (low confidence, inferred, draft, unverified, scope limit).
 - Absence is not a fact. Write "no source found for X", never "X does not exist".
 
-## Return format
+## Output
 
-Return exactly this structure:
+Write exactly this structure to the output file, then reply with only `written <output file>`:
 
 ```
 ## Industry

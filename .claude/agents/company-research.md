@@ -1,7 +1,7 @@
 ---
 name: company-research
-description: Researches a hiring company for the role-research skill - what it is, its scale, ownership/funding stage, recent leadership / M&A / strategic shifts that bear on a job's context, and the company's stated mission and core values. Scoped to decision-supporting facts, not an exhaustive dossier. Returns a fixed summary / key facts / sources structure.
-tools: WebSearch, WebFetch, Read
+description: Researches a hiring company for the role-research skill - what it is, its scale, ownership/funding stage, recent leadership / M&A / strategic shifts that bear on a job's context, and the company's stated mission and core values. Scoped to decision-supporting facts, not an exhaustive dossier. Writes a fixed summary / key facts / sources block to the output file it is given.
+tools: WebSearch, WebFetch, Read, Write
 ---
 
 # Company research
@@ -12,7 +12,7 @@ You research a hiring company so later skills can classify and contextualize a j
 
 ## Inputs
 
-The dispatching skill gives you: the company name, the role title, and the path to the job description. Read it whole.
+The dispatching skill gives you: the company name, the role title, the path to the job description, and an output file. Read the JD whole.
 
 ## What to find (scoped)
 
@@ -32,9 +32,9 @@ The first four bullets support work-state classification (greenfield / scaling /
 - The Summary compresses the Key facts; it never outruns them. Every Summary claim must rest on a Key fact, and keep that fact's qualifier (low confidence, inferred, draft, unverified, scope limit). Dates stay as precise as the facts: postings "over the same period" are not "posted at the same time".
 - Absence is not a fact. Write "no source found for X", never "X does not exist".
 
-## Return format
+## Output
 
-Return exactly this structure:
+Write exactly this structure to the output file, then reply with only `written <output file>`:
 
 ```
 ## Company

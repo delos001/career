@@ -2615,6 +2615,12 @@ def test_dispatch_prompts_are_printed_not_composed():
         assert 'Company: Aldridge Pharma' in text and jd_path in text, text
         assert 'Fixture job description' not in text, 'JD text was pasted into the prompt'
     assert 'actually operates in' in prompt('industry-research')
+    # 2026-11-16: each research agent writes its own block, so the model never
+    # re-types the research into a file.
+    for agent, name in (('company-research', 'research_company.md'), ('title-research', 'research_role.md'),
+                        ('industry-research', 'research_industry.md')):
+        text = prompt(agent)
+        assert f'Output file: {os.path.join(FIXTURE_APP, "scratch", name)}' in text, text
     ranker = prompt('jd-needs-ranker')
     company_path = os.path.join(FIXTURE_APP, 'scratch', 'company.md')
     assert jd_path in ranker and company_path in ranker, ranker

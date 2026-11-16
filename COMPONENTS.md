@@ -350,7 +350,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Purpose**: Research a hiring company — what it is, scale, ownership/funding stage, recent strategic shifts, and its stated mission and core values — scoped to what later skills need to classify and contextualize a job; mission/values are captured here once as a reused company attribute for downstream skills (CV, prep, career brief).
 - **Status**: Designed
 - **Inputs**: Skill-passed (by `role-research`, via `dispatch_prompt.py`): company name, role title, JD path. Tools: WebSearch, WebFetch.
-- **Outputs**: Structured findings block (`## Company` — Summary / Key facts / Sources) returned to the caller.
+- **Outputs**: Structured findings block (`## Company` — Summary / Key facts / Sources) written to the output file `dispatch_prompt.py` names (`<scratch>/research_company.md`).
 - **Triggers**: Invoked by `role-research` Phase 1, in parallel with `title-research` and `industry-research`.
 - **Update Triggers**: When the work-state or industry axis definitions change (the classifications it supports).
 
@@ -359,7 +359,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Purpose**: Research what a job title/role typically means in its sector — scope, responsibilities, seniority calibration, common variants — scoped to decision-supporting facts. Named `role-research` until the role-research skill took that name (2026-11-16).
 - **Status**: Designed
 - **Inputs**: Skill-passed (by `role-research`, via `dispatch_prompt.py`): role title, company name, JD path. Tools: WebSearch, WebFetch.
-- **Outputs**: Structured findings block (`## Role` — Summary / Key facts / Sources) returned to the caller.
+- **Outputs**: Structured findings block (`## Role` — Summary / Key facts / Sources) written to the output file `dispatch_prompt.py` names (`<scratch>/research_role.md`).
 - **Triggers**: Invoked by `role-research` Phase 1, in parallel with `company-research` and `industry-research`.
 - **Update Triggers**: When the level, orientation, or specialty axis definitions change.
 
@@ -368,7 +368,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Purpose**: Research an industry at a high level — what it is, key trends and dynamics — scoped to decision-supporting context, deliberately shallow.
 - **Status**: Designed
 - **Inputs**: Skill-passed (by `role-research`, via `dispatch_prompt.py`): company name, role title, JD path. Tools: WebSearch, WebFetch.
-- **Outputs**: Structured findings block (`## Industry` — Summary / Key facts / Sources) returned to the caller.
+- **Outputs**: Structured findings block (`## Industry` — Summary / Key facts / Sources) written to the output file `dispatch_prompt.py` names (`<scratch>/research_industry.md`).
 - **Triggers**: Invoked by `role-research` Phase 1, in parallel with `company-research` and `title-research`.
 - **Update Triggers**: When the industry axis registry or value files change.
 

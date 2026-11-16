@@ -10,6 +10,9 @@ that exist, and a required file that is missing stops the run. The retrieval
 scorers, gap-detector, and qc-profile-update have their own scripts for the same
 pattern.
 
+An agent whose output a script consumes is given an 'Output file:' to write
+it to (the three research agents), so the orchestrator never copies it.
+
 Content the orchestrator itself produces during a run (stakeholder contributions,
 QC findings, dispositions) goes in a file passed with --input-file. CV Notes, and
 research.md's Company section for the ranker, are copied byte for byte into the
@@ -49,9 +52,10 @@ _INDUSTRY_NOTE = ('Identify and research the industry this company actually oper
                   'run, so establish the sector from scratch.')
 
 AGENTS = {
-    'company-research': {'facts': ['company', 'role'], 'files': ['jd']},
-    'title-research': {'facts': ['company', 'role'], 'files': ['jd']},
-    'industry-research': {'facts': ['company', 'role'], 'files': ['jd'], 'note': _INDUSTRY_NOTE},
+    'company-research': {'facts': ['company', 'role'], 'files': ['jd'], 'output': 'research_company.md'},
+    'title-research': {'facts': ['company', 'role'], 'files': ['jd'], 'output': 'research_role.md'},
+    'industry-research': {'facts': ['company', 'role'], 'files': ['jd'], 'note': _INDUSTRY_NOTE,
+                          'output': 'research_industry.md'},
     'critical-requirements-extractor': {'facts': ['company', 'role'], 'files': ['jd']},
     'jd-needs-ranker': {'files': ['jd', 'company_research', 'jd_needs']},
     'axis-classifier': {'files': ['jd', 'comms?', 'research', 'jd_needs']},
@@ -243,6 +247,12 @@ def build_prompt(agent, src, mode=None, input_file=None, continued=False):
             raise FileNotFoundError(f'required file missing: {path}')
     if input_file:
         lines.append(f'Input file: {input_file}')
+    if spec.get('output'):
+        # The agent writes its own block, so its text reaches the next script
+        # without the orchestrator copying it.
+        out = os.path.join(src.folder, src.cfg['filenames']['scratch_subdir'], spec['output'])
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        lines.append(f'Output file: {out}')
     if spec.get('note'):
         lines.append(spec['note'])
     return '\n'.join(lines)

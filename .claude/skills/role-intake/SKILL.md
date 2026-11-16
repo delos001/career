@@ -15,10 +15,10 @@ description: Starts a new job application by ingesting a job description and rel
 Ask: "Is this a new role, or are you resuming one?"
 
 - **New:** go to Phase 0.
-- **Resume:** ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-NNN>`; use it as `<app_folder>` and never run Phase 3. Find the first case that matches. For cases 2 to 4, tell the user in plain words which application this is (the folder name), what is already saved, and the step being picked up; then go there without asking.
-  1. **No folder** (the lookup fails): the APP-NNN is probably wrong. Say so and ask for it again.
-  2. **No `jd.md`:** go to Phase 1.
-  3. **No session log:** run Phase 2 on `jd.md` and `comms.md`, then Phase 5. Ask the user where the JD and messages came from, since Phase 1's sources are not on disk.
+- **Resuming:** ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-NNN>`; use it as `<app_folder>` and never run Phase 3. Then check the folder against the cases below, in order, and follow the first one that is true. For cases 2 to 4, first tell the user in plain words which application this is (the folder name), what is already saved, and the step being picked up; then go there without asking.
+  1. **There is no folder** (the lookup fails): the APP-NNN is probably wrong. Tell the user and ask for it again.
+  2. **There is no `jd.md`:** go to Phase 1.
+  3. **There is no session log:** run Phase 2 on `jd.md` and `comms.md`, then Phase 5. Ask the user where the JD and messages came from, since Phase 1's sources are not on disk.
   4. **Otherwise:** go to Phase 6.
 
 ## Phase 0 - Show the intro
