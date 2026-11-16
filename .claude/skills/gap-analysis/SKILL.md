@@ -99,7 +99,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
   - Partially addresses it (transferable but not a full match) → assign `partial-match`; note the transferable element and the gap that remains. When the user surfaced substantive experience the inventory under-represents, queue a staging capture for it.
   - Does not close it → re-categorize as `interview-deferred` or `unresolved`.
 - A `covered` requirement can also surface under-represented experience during the walk. Queue a staging capture for that too; it changes no status.
-- **Captures follow `rules/profile/staging-writing.md`** (run `python scripts/rules_slice.py staging-writing` before the first one). Ask the questions it lists while the user is still in the conversation; the profile-update run cannot ask them later.
+- **Captures follow `rules/profile/staging-writing.md`** (run `python scripts/profile_rules_slice.py staging-writing` before the first one). Ask the questions it lists while the user is still in the conversation; the profile-update run cannot ask them later.
 - **Step 4d - Final statuses.** Map intents to final statuses per the locked taxonomy:
   - `covered` (from Phase 3, no user input needed).
   - `closed` (was a gap; closed via user input; staging entry queued).

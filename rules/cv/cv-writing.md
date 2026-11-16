@@ -2,59 +2,39 @@
 last_researched: 2026-11
 ---
 
-# CV Writing - How Content Is Chosen and Written
+# CV Writing - How Content Is Written
 
 **Used by:** cv-targeted.
 
-**Purpose.** The CV must persuade a reviewer to invite the candidate for an interview. Every rule in this file serves that purpose.
+**Purpose.** This file sets how the content chosen for each CV section is worded, so the CV persuades a reviewer to invite the candidate for an interview. Which sections appear is in `cv-sections.md`; what content goes into each section is in `cv-section-content.md`; section order, line layouts and length limits are in `cv-structure.md`.
 
 **Claims.** Every claim cites the profile entries that support it. A claim may reword or combine entries. A combined claim must cite each individual entry it draws on. No claim may state more than its entries show (`global-rules.md`). A fact the candidate gave in this application's gap analysis that is not yet in the inventory is cited by its requirement (`<!-- src: GAP CR-005 -->`), only when that requirement's status in this application's `gap_analysis.md` is `closed` or `partial-match`, and the claim may not exceed its Notes there.
 
-**How to read this file.** This file says how CV content is chosen and written; `cv-structure.md` says which sections exist, their order, their line layouts and the length limits. A section headed `## KEY: name` applies to one drafting step; a section without a key applies to every step. The five axis files are used to align the CV's prose with the job's orientation, industry, specialty, level and work state. A rule marked `(hard rule)` always applies; no reviewer suggestion overrides it.
-
-## PLAN: Selection
-
-The plan step decides what goes on the CV before any section is written. It works from `jd_needs.md`, which lists the job's requirements and groups them into ranked needs (N-01 is the highest), and from the profile entries retrieval found for each need.
-
-**Read profile entries for what the candidate did.** A profile entry is a general description of work, not text to copy or to match word for word. For each entry, identify the core work done, function performed, goal reached or impact made, setting aside its contextual details. Then judge which needs that experience answers, considering whether its function, goal or impact is equivalent or transferable to what the job needs. Example: a JD asks for oversight of CROs; the candidate oversaw laboratory and imaging vendors. That oversight is a good substitute for what the JD asks, so the entry is chosen, and the bullet names the vendors the candidate actually oversaw, never CROs. Never choose an entry because its words match the JD, and never pass one over because they do not.
-
-**Choose content one ranked need at a time.** Work through the ranked needs in `jd_needs.md`, highest first. For each need, decide which entries best show that the candidate has done that work, reached that goal or had that impact, and which role each claim sits under. The writer makes this judgment; retrieval scores only find entries and break ties between entries that serve a need equally well.
-
-**Relevance decides, never the size of a figure.** Choose a claim for the need it serves. Never choose one claim over another because its figure (a percentage, count or amount) is larger.
-
-**Cover every required requirement.** Every requirement marked required in `jd_needs.md` must be present in the CV, in whichever section fits it. One bullet or item may cover several of them.
-
-**Strengths the JD does not ask for.** A strength or experience the JD does not specify gets a bullet only when an outcome in `jd_needs.md`, the level file and tier, or another axis file makes it persuasive for this job. When it does, the plan states the specific reason.
-
-**Record the choices in `drafting_plan.md`.** For each need, list the claims chosen and cite the profile entries each claim draws on. For each role older than the Professional Experience window, record whether it is included because it closes a gap no newer role closes. For each role inside the window, record whether it gets bullets or a one-to-two-line summary. When a reviser could not work out a choice from its need and citations alone, record a one-line reason for it: for example, when a strength beyond the JD is included, an older role is included, or a lower-ranked need is kept over a higher one.
-
-**Revisers keep the plan.** A later writer or reviser keeps each recorded choice unless a reviewer or QC finding challenges it.
-
-**Draft long, then cut.** The first draft is deliberately longer than the CV can be. Its goal is a complete set of persuasive, relevant options for every need, so the later cut has good options to choose from. Tag every bullet with the need it serves (`<!-- need: N-NN -->`) beside its source citation. A later step cuts the draft to length under the length rules in `cv-structure.md`, starting with the lowest-ranked need.
+**How to read this file.** A section headed `## KEY: name` applies to one drafting step; a section without a key applies to every step. The five axis files are used to align the CV's prose with the job's orientation, industry, specialty, level and work state. A rule marked `(hard rule)` always applies; no reviewer suggestion overrides it.
 
 ## SUM: Professional Summary
 
 The summary is the first thing a reviewer reads. In a few seconds it must persuade the reviewer that the candidate has done the core work this job exists to do, so the reviewer keeps reading.
 
-**Content.** Build each sentence from one key item of the role statement in `jd_needs.md`, or two closely related items. State that the candidate has done that work, summarized across roles, and anchor it in a detail particular to the candidate's experience (a domain, setting, result or impact), so the sentence does not merely restate the JD. Detailed results, and descriptions of methods, tools or individual projects, belong in the bullets; the summary states the work at a high level. Every kind of work the summary names must appear in at least one bullet. Mention current work only where it maps to a job need.
+**Content.** Each sentence states that the candidate has done the work it covers, summarized across roles, and anchors it in a detail particular to the candidate's experience (a domain, setting, result or impact), so the sentence does not merely restate the JD. Detailed results, and descriptions of methods, tools or individual projects, belong in the bullets; the summary states the work at a high level.
 
-**Figures in the summary (hard rule).** Besides the career span, the summary may carry at most 2 figures, and only when each directly shows a job requirement or a scale signal the level file names. Pair each figure with words that give its scope ("30-person global study team"). A figure a bullet already carries is never repeated in the summary; the summary states that impact in words. Never add a figure to reach the limit.
-
-**Career span.** State a span of years only when a job requirement asks for years of experience. Match that requirement's field and threshold: a requirement for "15+ years in clinical data management" gets "over 15 years in clinical data management," never the candidate's total career years. A long total span signals age, which lowers callbacks; show breadth in words instead ("global and multi-regional study teams"). The writer names the positions in that field, and a script computes their span from the dates in `inventory.md`; if the span falls short of the threshold, state no span. Never copy a span from a previous CV.
+**Figures and breadth in words.** Pair each figure with words that give its scope ("30-person global study team"). Where a bullet already carries a figure, the summary states that impact in words. Show breadth in words instead of a long total span ("global and multi-regional study teams").
 
 ## COMP: Core Competencies
 
-Core Competencies persuades a reviewer, at a glance, that the candidate has the capabilities this job asks for. Each item is a short phrase naming one capability, in the JD's terms where they accurately describe the candidate's capability. A capability shown only in the candidate's Independent Projects may appear when the job asks for it (e.g. "AI-driven USDM and regulation knowledge graphing").
+Core Competencies persuades a reviewer, at a glance, that the candidate has the capabilities this job asks for.
 
-**What qualifies.** Include a capability only when it answers something the JD or `jd_needs.md` asks for. It may be an equivalent or transferable capability (a JD asking for leading a team of ten is answered by "functional and technical team leadership"). Never pad toward the ceiling.
+**Items.** Each item is a concise phrase naming one capability, not a sentence, in the JD's terms where they accurately describe the candidate's capability.
 
 ## EXP: Professional Experience
 
-Professional Experience persuades the reviewer that the candidate has done the work this job needs. The roles that serve the job's highest-ranked needs get the most depth.
+Professional Experience persuades the reviewer that the candidate has done the work this job needs.
 
 **Every role in Professional Experience is evidence.** When any role in Professional Experience, including the earliest, shows a job need, especially ownership, accountability or adoption, its bullet says so with the scope that proves it, even when the role carries one bullet.
 
 **Bullet order.** Within a role, keep related bullets together so they read as one area of breadth. Order the groups and single bullets by the needs they serve, highest-ranked first; a group takes the place of its highest-ranked bullet.
+
+**Subheadings.** Bullets under a subheading follow every bullet rule.
 
 ### Bullet rules
 
@@ -79,6 +59,10 @@ Independent Projects persuades the reviewer that the candidate's skills are curr
 **Voice.** Describe a project as work product: what was designed, built, analyzed or delivered. The leadership voice used in Professional Experience does not apply here, whatever the CV's level.
 
 **Writing project bullets.** Project bullets follow every bullet rule. A project appears as its objective, framed for the job, with its relevant elements folded in. Each objective gets one bullet by default; it gets a second only when its elements serve different job needs, and each bullet cites the objective. Never write one bullet per element. A bullet that uses an element cites it with its objective (`PR-015, PR-015.03`), and the element's Outcome is the source for its impact.
+
+## CRED: Credentials
+
+**Technical Proficiencies.** Name tools, platforms, languages and methods in the JD's terms so applicant tracking systems match them.
 
 ## Writing rules
 

@@ -19,7 +19,7 @@ The file's `## Entries` section is a queue. An item waits there and is deleted o
 - **One item at a time, always.** Phase 3 walks a single item from proposal through write before naming the next one. Batching the proposals is a failure even when the items look identical, and the batch step of any other skill does not override this.
 - **The staged item is the source, and its Limits field is binding.** A limit ("review and input, not authorship") is an instruction to this skill. Write nothing the item does not support, and carry every limit forward.
 - **Never write a fact the user has not attested.** When the item is too thin to write an honest entry, ask the user for what is missing; if it does not arrive, leave the item in the queue rather than filling the gap with inference.
-- **Rules come through `scripts/rules_slice.py`.** Never read a rules file whole when a slice is asked for.
+- **Rules come through `scripts/profile_rules_slice.py`.** Never read a rules file whole when a slice is asked for.
 - Script failures halt the phase per global rules.
 - Run-scratch goes in `temp/`; this skill has no application folder.
 
@@ -68,8 +68,8 @@ The staging file is the resume state: an item is in it because it is waiting. Ru
 Repeat every step below for one item before naming the next.
 
 - **Step 3a - Read the item.** Run `python scripts/profile_update.py show --item "<label>"`. Note its Work role, what others did, the stated outcome, and every limit.
-- **Step 3b - Route it.** Run `python scripts/rules_slice.py routing` and follow it: it pulls the related entries with a script and names the one outcome to propose (new entry, addition, list item, duplicate, or the user's retraction).
-- **Step 3c - Draft against the writing rules.** For an inventory write, run `python scripts/rules_slice.py inventory-writing --type <PREFIX>` (the entry type being written, e.g. `EX`; `LIST` for a list item) and draft to it.
+- **Step 3b - Route it.** Run `python scripts/profile_rules_slice.py routing` and follow it: it pulls the related entries with a script and names the one outcome to propose (new entry, addition, list item, duplicate, or the user's retraction).
+- **Step 3c - Draft against the writing rules.** For an inventory write, run `python scripts/profile_rules_slice.py inventory-writing --type <PREFIX>` (the entry type being written, e.g. `EX`; `LIST` for a list item) and draft to it.
 - **Step 3d - Show the actual text.** Present the full proposed entry, or a before/after for an addition, inline in the response. Never describe an edit the user has to look up to evaluate. Wait for approval. Apply any correction and re-show before writing. A correction that adds a fact the item does not hold is re-staged first (remove, then `staging_append.py`), so Phase 4 reviews against what the user attested.
 - **Step 3e - Write it.** Each command prints what it wrote; keep those IDs and addresses for Phase 4. Never hand-edit `inventory.md`.
   - New inventory entry: write the block WITHOUT its `ID:` line to `temp/pu_block.md`, then run `python scripts/profile_update.py insert --prefix <PREFIX> --block-file temp/pu_block.md` (add `--subsection "<heading>"` for a section that has sub-sections). An EX entry also takes `--group "<label>"`, the approved topic group it closes, or `--new-group "<label>"` for a new group the user approved.

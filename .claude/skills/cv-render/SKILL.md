@@ -1,17 +1,17 @@
 ---
 name: cv-render
-description: Render a targeted CV to a formatted .docx. Reads the cv_content.md that the cv-targeted skill produced and renders it to a Word document matching the CV format spec (Calibri 11pt, native middle-dot bullets, US Letter / 0.75-inch margins, centered name and contact, page-number footer). Carries no judgment - it does not rewrite, re-order, or re-cite; cv_content.md is the sole input and its citation comments are stripped. Run after cv-targeted; the render is the final step of the CV pipeline.
+description: Render a targeted CV to a formatted .docx. Reads the cv_content.md that the cv-targeted skill produced and renders it to a Word document using the format settings in rules/cv/cv-format.yaml. Carries no judgment - it does not rewrite, re-order, or re-cite; cv_content.md is the sole input and its citation comments are stripped. Run after cv-targeted; the render is the final step of the CV pipeline.
 ---
 
 # cv-render - render the targeted CV to a .docx
 
-Renders `cv_content.md` in the application folder (the cv-targeted handoff) to a formatted `.docx` in the same folder. The render is mechanical: `scripts/cv_to_docx.py` parses the markdown, strips the `<!-- src: ... -->` / `<!-- cr: ... -->` citation comments, and applies the formatting in `design/format_spec.md`. This skill adds no content judgment - it does not rewrite, re-order, re-cite, or trim. `cv_content.md` is the sole input.
+Renders `cv_content.md` in the application folder (the cv-targeted handoff) to a formatted `.docx` in the same folder. The render is mechanical: `scripts/cv_to_docx.py` parses the markdown, strips the `<!-- src: ... -->` / `<!-- cr: ... -->` citation comments, and applies the formatting in `rules/cv/cv-format.yaml`. This skill adds no content judgment - it does not rewrite, re-order, re-cite, or trim. `cv_content.md` is the sole input.
 
 ## Operating rules
 
 - Read `rules/global-rules.md` first; operate under it throughout.
 - User-facing status and prompts use plain English. No raw script internals.
-- The script is the single source of formatting truth (it encodes `format_spec.md`); this skill resolves paths, runs it, and reports.
+- Every format rule is in `rules/cv/cv-format.yaml`, which the script reads on every run; this skill resolves paths, runs it, and reports.
 
 ## Phase 0 - Intro
 
@@ -33,9 +33,9 @@ Renders `cv_content.md` in the application folder (the cv-targeted handoff) to a
 
 **Naming the output document.**
 
-- Build the default output filename per `design/format_spec.md`: `<LastName>_CV_<Company>_<AbbreviatedRole>_<YYYY-MM>.docx`, where:
-  - `LastName` is the candidate's surname from the contact block in `user-info.md` in the profile folder (`python scripts/paths.py profile`) (e.g. `Delosh`). Surname only, not the full name and not initials.
-  - `Company` and the role come from `## Company` / `## Role` in the application's `research.md`; abbreviate the role to a short token (e.g. "Associate Director, Operational Excellence" -> `AssocOpExDir`).
+- Build the default output filename as `<LastName>_CV_<CompanyName>_<AbbreviatedRole>_<YYYY-MM>.docx` (e.g. `Delosh_CV_Pfizer_VPDataOps_2026-03.docx`), where:
+  - `LastName` is the candidate's surname from the contact block in `user-info.md` in the profile folder (`python scripts/paths.py profile`). Surname only, never the full name or initials.
+  - `CompanyName` and the role come from `## Company` / `## Role` in the application's `research.md`; abbreviate the role to a short token (e.g. "Associate Director, Operational Excellence" -> `AssocOpExDir`).
   - `YYYY-MM` is the application folder's `ym`.
 - Present the proposed filename and ask the user to confirm or override it. The output path is `<application folder>/<confirmed filename>`.
 

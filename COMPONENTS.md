@@ -256,12 +256,12 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### cv-render
 
-- **Purpose**: Render the targeted CV (`cv_content.md`) to a formatted `.docx` matching `design/format_spec.md`. Mechanical only: no content judgment, no rewriting, re-ordering, or re-citing. Final step of the CV pipeline.
+- **Purpose**: Render the targeted CV (`cv_content.md`) to a formatted `.docx` per `rules/cv/cv-format.yaml`. Mechanical only: no content judgment, no rewriting, re-ordering, or re-citing. Final step of the CV pipeline.
 - **Status**: Built.
 - **Inputs**: User input (APP-NNN; output filename confirmation). Files: the application folder's `cv_content.md`; `personal/profile/user-info.md` (candidate name) and the folder's `research.md` (company, role) for the output filename. Rules: `rules/global-rules.md`. Script: `scripts/cv_to_docx.py`.
 - **Outputs**: `<application folder>/<CandidateName>_CV_<Company>_<Role>_<YYYY-MM>.docx`.
 - **Triggers**: User invocation (`/cv-render`) after cv-targeted produces `cv_content.md`.
-- **Update Triggers**: When `cv_content.md`'s grammar (the cv-architect / `cv_qc.py` contract) changes, or when `format_spec.md` changes.
+- **Update Triggers**: When `cv_content.md`'s grammar (the cv-architect / `cv_qc.py` contract) changes, or when `cv-format.yaml` gains or loses a setting.
 
 ---
 
@@ -289,9 +289,9 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Purpose**: Promote staged items into the profile. Walks each item with the user one at a time, routes it per `rules/profile/routing.md`, drafts it per `rules/profile/inventory-writing.md`, and writes it into `inventory.md` as a new entry, an addition to an existing entry, or an item on one of the flat-list sections. Items are deleted from the queue only after their entries pass review; nothing records where they went (#70). Narrative- and positioning-bound items stay in the queue. The only skill that writes to the profile documents; every other skill reads them. Mode parameter: `adhoc` (user-invoked) / `inline` (from gap-analysis Phase 8).
 - **Status**: Designed
 - **Inputs**:
-  - Rules: `rules/global-rules.md`; `rules/profile/routing.md` and `rules/profile/inventory-writing.md` (read through `scripts/rules_slice.py`); `rules/<axis>/registry.md` (read by the QC script for axis-value validation).
+  - Rules: `rules/global-rules.md`; `rules/profile/routing.md` and `rules/profile/inventory-writing.md` (read through `scripts/profile_rules_slice.py`); `rules/<axis>/registry.md` (read by the QC script for axis-value validation).
   - Agents: `qc-profile-update`.
-  - Scripts: `scripts/display/introduce.py`, `scripts/profile_update.py`, `scripts/profile_slice.py` (`related`), `scripts/rules_slice.py`, `scripts/profile_update_qc.py`.
+  - Scripts: `scripts/display/introduce.py`, `scripts/profile_update.py`, `scripts/profile_slice.py` (`related`), `scripts/profile_rules_slice.py`, `scripts/profile_update_qc.py`.
   - Templates: `templates/inventory.md` (structure authority), `templates/profile_updates_pending.md`.
   - Profile docs: `personal/profile/profile_updates_pending.md` (the work list), `personal/profile/inventory.md`. `narratives.md` and `positioning.md` are not written.
   - User input: run scope (which items to process), per-item outcome approval, and the approved entry text.
@@ -687,16 +687,30 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 - **Purpose**: Mechanical quality checks for the `profile-update` skill, plus the judgment reviewer's context file. `check`: section roster and order (P1), per-entry field rosters (P2), ID integrity (P3), EX placement in a role and topic group, with well-formed, non-empty, unique group markers (P4), `Role` / `Recognizes` reference resolution (P5), axis values against the registries (P6), table-of-contents accuracy (P7), empty-section markers (P8), every queued staging item complete under a unique label (P10), list-section content and per-category duplicate items (P11), project elements well-formed and unique (P13), blocks of one project agreeing on employer and framing (P14), mechanical wording in prose fields: first person, banned phrases, em dashes, AI-tells, sentences ending in periods (P15). P9 and P12 retired with the PU numbering (#70). `context`: writes the staged items, the written entries, and the matching rules slices verbatim into one file and prints the `qc-profile-update` dispatch prompt. Judgment checks belong to `qc-profile-update`.
 - **Status**: Designed
-- **Inputs**: Subcommand args (`check` with repeatable `--scope-id`; `context` with repeatable `--item` and `--scope-id`, optional `--out`). Config: `config.yaml` via `scripts/_config.py`. Filesystem: `personal/profile/inventory.md`, `personal/profile/profile_updates_pending.md`, `templates/inventory.md`, `templates/profile_updates_pending.md`, `rules/<axis>/registry.md`, `rules/profile/inventory-writing.md`. Imports `profile_update.py`, `staging_append.py`, `profile_slice.py`, `rules_slice.py`, `_wording.py`, and `scripts/inventory_model/`.
+- **Inputs**: Subcommand args (`check` with repeatable `--scope-id`; `context` with repeatable `--item` and `--scope-id`, optional `--out`). Config: `config.yaml` via `scripts/_config.py`. Filesystem: `personal/profile/inventory.md`, `personal/profile/profile_updates_pending.md`, `templates/inventory.md`, `templates/profile_updates_pending.md`, `rules/<axis>/registry.md`, `rules/profile/inventory-writing.md`. Imports `profile_update.py`, `staging_append.py`, `profile_slice.py`, `profile_rules_slice.py`, `_wording.py`, and `scripts/inventory_model/`.
 - **Outputs**: Check tally and verdict on stdout; findings listed per check. Exit 1 on any blocking finding. Findings outside the declared `--scope-id` set (which holds entry IDs and list addresses alike) are reported as pre-existing advisories and do not fail the run; with no scope declared, the whole document is in scope.
 - **Triggers**: Invoked by `profile-update` Phase 4 (Steps 4a and 4b). Also runnable with no scope as a full-document inventory audit.
 - **Update Triggers**: When `templates/inventory.md` changes; when the axis registries change location or bullet format; when the staging-file schema changes; when a check is added or retired.
 
-#### scripts/rules_slice.py
+#### scripts/_shared_slicer.py
 
-- **Purpose**: Print the part of a `rules/profile/` writing-rules file a task needs: the opening text, every shared `## ` section, and only the requested type's `## <KEY>: <name>` section. Without `--type`, the whole file. A requested type with no section is an error. The one way skills and agents read these files, so each rule is written once.
+- **Purpose**: Shared parsing for the rules slicers. Splits a rules file into its opening and `## <KEY>: <name>` sections, and slices by key. Knows no key meanings: each slicer passes its valid keys and its shared key. A heading with no key or an unknown key is an error.
 - **Status**: Designed
-- **Inputs**: Args (`<name>`, `--type`). Config: `config.yaml` (`paths.profile_rules`).
+- **Inputs**: Called by `profile_rules_slice.py` and `cv_rules_slice.py`.
+- **Outputs**: Section text; `ValueError` naming each unroutable heading.
+
+#### scripts/cv_rules_slice.py
+
+- **Purpose**: Print the part of a `rules/cv/` rules file a CV drafting step needs: the opening, every `ALL` section, and the requested steps' sections. Keys are the drafting steps listed in the script (`PLAN`, `SUM`, `COMP`, `EXP`, `PROJ`, `CRED`). Without `--key`, the whole file.
+- **Status**: Designed; not yet called by cv-targeted (wired with the CV rebuild's key-assignment pass).
+- **Inputs**: Args (`<name>`, repeatable `--key`). Config: `config.yaml` (`paths.cv_rules`).
+- **Outputs**: Rules text on stdout. Errors to stderr with exit 1.
+
+#### scripts/profile_rules_slice.py
+
+- **Purpose**: Print the part of a `rules/profile/` writing-rules file a task needs: the opening text, every `ALL` section, and only the requested type's `## <KEY>: <name>` section. Keys are the inventory template's ID prefixes plus `LIST`, read at run time. Without `--type`, the whole file. A requested type with no section is an error. The one way skills and agents read these files, so each rule is written once.
+- **Status**: Designed
+- **Inputs**: Args (`<name>`, `--type`). Config: `config.yaml` (`paths.profile_rules`, `paths.templates`).
 - **Outputs**: Rules text on stdout. Errors to stderr with exit 1.
 - **Triggers**: `profile-update` Steps 3b-3c; `gap-analysis` Phase 4 and the prep skills (staging rules); `profile_update_qc.py context`.
 - **Update Triggers**: When the section heading pattern of the rules files changes.
@@ -784,12 +798,12 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/cv_to_docx.py
 
-- **Purpose**: Render `cv_content.md` to a formatted `.docx` per `design/format_spec.md`. Parses the cv-architect / `cv_qc.py` markdown grammar, strips all HTML citation comments, and applies the typography, spacing, native-list bullets (middle-dot U+00B7 in Cambria, 144/144 indent, injected as a numbering definition), and a centered "Page X of Y" footer. Distinguishes company header lines from role-title lines by a location token for per-block spacing.
+- **Purpose**: Render `cv_content.md` to a formatted `.docx`. Parses the cv-architect / `cv_qc.py` markdown grammar and strips all HTML citation comments. Every format rule (page, fonts, sizes, alignment, bold / italic / caps, spacing, bullets, footer) is read from `rules/cv/cv-format.yaml` at import and checked against the script's list of settings; a missing or unknown setting raises. Distinguishes company header lines from role-title lines by a location token.
 - **Status**: Built.
-- **Inputs**: Args (`--cv-file`, `--out`). Deps: python-docx. (No config dependency; the cv-render skill resolves the paths.)
+- **Inputs**: Args (`--cv-file`, `--out`). Config: `config.yaml` (`paths.cv_rules`, `filenames.cv_format_file`). Deps: python-docx, pyyaml.
 - **Outputs**: The `.docx` at `--out`; path echoed to stdout. Errors to stderr with exit 1 on a missing input file.
 - **Triggers**: Invoked by the `cv-render` skill Phase 3.
-- **Update Triggers**: When `format_spec.md` changes; when `cv_content.md`'s grammar (the cv-architect / `cv_qc.py` contract) changes.
+- **Update Triggers**: When `cv-format.yaml` gains or loses a setting; when `cv_content.md`'s grammar (the cv-architect / `cv_qc.py` contract) changes.
 
 ---
 

@@ -10,7 +10,7 @@ last_researched: 2026-05
 1. Re-run the CV best-practice web research for each section below (senior leadership and senior IC, regulated industries), weighting sources as tagged (`[empirical]` over `[practitioner-consensus]`).
 2. Reconcile against this document: update findings that moved, add new ones, and keep the confidence tags and source links.
 3. Set `last_researched` to the current `YYYY-MM`.
-4. Cascade any changed rule into `rules/cv/cv-structure.md` or `rules/cv/cv-writing.md`, whose rules derive from this evidence, noting deliberate departures.
+4. Cascade any changed rule into `rules/cv/cv-structure.md`, `rules/cv/cv-sections.md`, `rules/cv/cv-section-content.md` or `rules/cv/cv-writing.md`, whose rules derive from this evidence, noting deliberate departures.
 
 The AI-tell guidance ages fastest; check it first.
 
@@ -59,14 +59,14 @@ The strongest evidence supports a reverse-chronological structure with experienc
 
 - A summary/profile section IS recommended at senior level and should be the first content under the header; it functions as the value proposition / elevator pitch and primes both the human skim and keyword match. [practitioner-consensus] (ResumeSpice, Teal, Indeed, Dr. Kyle Elliott)
 - Length guidance clusters at roughly 2-5 sentences, with executive summaries trending to the longer end (3-6 sentences) given depth of experience; some coaches note 2 sentences can signal confidence for very senior, focused candidates. There is no empirical optimum; this is practitioner judgment. [practitioner-consensus]
-- Content for senior roles: strategic scope and leadership scale (team size, budget, P&L, cross-functional/enterprise reach), domain/industry positioning, and 1-2 quantified signature achievements, plus naturally woven keywords from the target posting (without keyword-stuffing a 30-40 term list). [practitioner-consensus] **Applied in `cv-writing.md` as:** at most 2 figures besides the career span, only when each directly shows a job requirement or a level-file scale signal; a limit, not a target.
+- Content for senior roles: strategic scope and leadership scale (team size, budget, P&L, cross-functional/enterprise reach), domain/industry positioning, and 1-2 quantified signature achievements, plus naturally woven keywords from the target posting (without keyword-stuffing a 30-40 term list). [practitioner-consensus] **Applied in `cv-section-content.md` as:** at most 2 figures besides the career span, only when each directly shows a job requirement or a level-file scale signal; a limit, not a target.
 - LEGACY-CONVENTION CHECK: Proposed 3-4 sentences sits squarely inside the consensus band and is a reasonable default. Mild caution: hold it as a guideline, not a hard rule. Executive profiles sometimes justify up to ~6 sentences; the 3-4 figure is [practitioner-consensus], not [empirical]. **Applied in `cv-structure.md` as:** at most 5 sentences and a line cap, a hard rule (CV rebuild plan decision 2).
 - Years of experience in the summary (researched 2026-11-13):
   - Age cues lower callbacks. The largest resume field experiment (Neumark, Burn and Button; over 40,000 applications, age signaled by graduation year) found fewer callbacks for older applicants in every job set, strongest for women, less consistent for men. [empirical] (confidence: high)
   - Years of experience is the main cue reviewers use to estimate age: of the 42% of hiring managers who say they consider age, 82% estimate it from years of experience. Self-reported vendor survey. [survey] (confidence: low)
   - Practitioners advise against opening with "20+ years": it invites an age guess and a "we want 5-7 years" screen-out; common advice shows 15-20 years of history, and one former recruiter says to leave years out entirely. Mostly commercial sources. [practitioner-consensus]
   - Total versus field-specific years: example summaries mostly use a field-specific count; no study compares them. (confidence: low)
-  - **Applied in `cv-writing.md` as:** a span appears only when a job requirement asks for years, matching that requirement's field and threshold; breadth is shown in words.
+  - **Applied in `cv-section-content.md` as:** a span appears only when a job requirement asks for years, matching that requirement's field and threshold; breadth is shown in words.
 
 ## 5. Employment Gaps and Career Transitions
 

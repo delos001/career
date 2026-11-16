@@ -267,34 +267,78 @@ def test_related_pull_covers_the_role_and_shared_words():
     assert all(sum(len(b) for b in p) <= 120 for p in parts), 'a part exceeded the limit'
 
 
-def test_rules_slice_prints_shared_rules_and_one_type():
-    """Writing one entry type loads the shared rules and that type's section
+def test_profile_rules_slice_prints_shared_rules_and_one_type():
+    """Writing one entry type loads the ALL rules and that type's section
     only; a type with no section is an error, never the shared rules alone."""
-    import rules_slice
-    text = ('# Rules\n\nOpening.\n\n## Shared wording\n\nShared rule.\n\n'
+    import profile_rules_slice
+    text = ('# Rules\n\nOpening.\n\n## ALL: Shared wording\n\nShared rule.\n\n'
             '## EX: Experience entries\n\nEX rule.\n\n## ED: Education\n\nED rule.\n')
-    ex_slice = rules_slice.slice_text(text, 'EX')
+    ex_slice = profile_rules_slice.slice_text(text, 'EX')
     assert 'Opening.' in ex_slice and 'Shared rule.' in ex_slice and 'EX rule.' in ex_slice, ex_slice
     assert 'ED rule.' not in ex_slice, 'another type leaked into the slice'
-    assert rules_slice.slice_text(text) == text
+    assert profile_rules_slice.slice_text(text) == text
     try:
-        rules_slice.slice_text(text, 'PR')
+        profile_rules_slice.slice_text(text, 'PR')
     except ValueError as e:
         assert 'PR' in str(e) and 'EX, ED' in str(e), e
     else:
         raise AssertionError('a type with no section did not raise')
-    code, out = run('rules_slice.py', 'routing')
+    code, out = run('profile_rules_slice.py', 'routing')
     assert code == 0 and '# Routing rules' in out, out
+    code, out = run('profile_rules_slice.py', 'inventory-writing', '--type', 'EX')
+    assert code == 0 and 'Shared wording' in out, out
+
+
+def test_rules_slicers_fail_on_a_missing_or_unknown_key():
+    """Built 2026-11-16: a '## ' section with no key used to mean every reader
+    got it, so a forgotten key was indistinguishable from a shared section and
+    quietly widened what every step read. Every heading now needs a key the
+    slicer lists; a missing or mistyped key stops the slice and names the
+    heading. Each slicer owns its own vocabulary."""
+    import cv_rules_slice
+    import profile_rules_slice
+    cv_ok = ('# CV rules\n\nOpening.\n\n## ALL: Shared\n\nShared rule.\n\n'
+             '## SUM: Summary\n\nSUM rule.\n\n## EXP: Experience\n\nEXP rule.\n')
+    sum_slice = cv_rules_slice.slice_steps(cv_ok, ['SUM'])
+    assert 'Shared rule.' in sum_slice and 'SUM rule.' in sum_slice, sum_slice
+    assert 'EXP rule.' not in sum_slice, 'another step leaked into the slice'
+
+    cases = {
+        'missing key': (cv_ok + '\n## Length\n\nUnrouted rule.\n', '## Length'),
+        'unknown key': (cv_ok.replace('## SUM: Summary', '## SMU: Summary'), 'SMU'),
+    }
+    for label, (text, named) in cases.items():
+        try:
+            cv_rules_slice.slice_steps(text, ['EXP'])
+        except ValueError as e:
+            assert named in str(e), f'{label}: error did not name the heading: {e}'
+        else:
+            raise AssertionError(f'cv slicer accepted a {label}')
+
+    # The profile slicer has its own keys: a CV step key is unknown there.
+    root, cfg = _config.load()
+    profile_text = ('# Rules\n\n## ALL: Shared\n\nx\n\n## EX: Experience\n\ny\n\n## SUM: Summary\n\nz\n')
+    try:
+        profile_rules_slice.slice_types(profile_text, ['EX'], root, cfg)
+    except ValueError as e:
+        assert 'SUM' in str(e), e
+    else:
+        raise AssertionError('profile slicer accepted a CV step key')
+
+    # The live profile file is fully keyed.
+    import _shared_slicer
+    _shared_slicer.check_keys(profile_rules_slice.load(root, cfg, 'inventory-writing'),
+                              profile_rules_slice.valid_keys(root, cfg), profile_rules_slice.SHARED_KEY)
 
 
 def test_every_entry_type_has_writing_rules():
     """The writer and the reviewer load rules per entry type; a type with no
     section stops the run rather than leaving the model to guess. Every type the
     template defines, plus the list sections, must have one."""
-    import rules_slice
+    import profile_rules_slice
     root, cfg = _config.load()
     prefixes = set(document.parse_template(_util.read(pu._template_path(root, cfg))))
-    keys = set(rules_slice.type_keys(rules_slice.load(root, cfg, 'inventory-writing')))
+    keys = set(profile_rules_slice.type_keys(profile_rules_slice.load(root, cfg, 'inventory-writing')))
     missing = sorted((prefixes | {'LIST'}) - keys)
     assert not missing, f'entry types with no writing rules: {missing}'
 
@@ -314,7 +358,7 @@ def test_reviewer_context_carries_items_entries_and_rules():
     context = _util.read(path)
     assert pu.find_item(docs()[1], VENDOR_ITEM)['body'] in context, 'item not copied verbatim'
     assert f'ID: {new_id}' in context and 'Tableau' in context, 'written entries missing'
-    assert '## EX: ' in context and '## LIST: ' in context and '## Shared wording' in context
+    assert '## EX: ' in context and '## LIST: ' in context and '## ALL: Shared wording' in context
     assert '## PR: ' not in context and '## ED: ' not in context, 'unrelated rules leaked'
 
 
@@ -2543,7 +2587,8 @@ def test_cv_rules_account_for_every_inventory_section():
     import cv_to_docx
     root, cfg = _config.load()
     rules = _util.read(os.path.join(root, cfg['paths']['cv_rules'], cfg['filenames']['cv_structure_file']))
-    block = re.search(r'(?ms)^## Which sections appear.*?^```\s*\nInventory section -> CV section\n(.*?)\n```', rules)[1]
+    sections_rules = _util.read(os.path.join(root, cfg['paths']['cv_rules'], cfg['filenames']['cv_sections_file']))
+    block = re.search(r'(?ms)^## Optional sections.*?^```\s*\nInventory section -> CV section\n(.*?)\n```', sections_rules)[1]
     mapping = dict(line.split(' -> ') for line in block.splitlines())
 
     template = _util.read(os.path.join(root, cfg['paths']['templates'], cfg['filenames']['inventory_template']))
@@ -2560,7 +2605,89 @@ def test_cv_rules_account_for_every_inventory_section():
             assert cv_section.lower() in known, f'{inventory_section} points at unknown section {cv_section}'
 
     assert structure['order'].index('languages') < structure['order'].index('technical proficiencies')
-    assert 'languages' in cv_to_docx.FORCE_BULLET_SECTIONS, 'Languages lines would not render as bullets'
+    assert 'languages' in cv_to_docx._section_set(cv_to_docx.FMT['bullets']['every_line_sections']), \
+        'Languages lines would not render as bullets'
+
+
+def test_render_values_come_from_cv_format():
+    """Built 2026-11-16: the format spec and the renderer each held their own
+    copy of every format value, and they had drifted (Languages bulleted in the
+    code, missing from the spec). Every format rule now lives in
+    cv-format.yaml and the renderer reads it on every run, so editing a setting
+    changes the render; a missing or unrecognized setting stops the renderer
+    instead of falling back to a value in code.
+    """
+    import zipfile
+    import cv_to_docx
+    text = _util.read(cv_to_docx.format_path())
+    fmt = cv_to_docx.load_format(text)
+    assert cv_to_docx.FMT == fmt, 'the renderer is not using the format file'
+
+    # Every setting reaches the rendered document: change one setting at a time
+    # to another valid value, render, and require the Word XML to differ from
+    # the unchanged render. A setting the script ignores, or a value hard-coded
+    # back into the script, leaves the XML unchanged and fails here by name.
+    cv = write_block('fmt_cv.md', (
+        '# Pat Example\nCity, ST | a@b.c\n\n'
+        '## Professional Summary\nLed data work.\n\n'
+        '## Professional Experience\n'
+        '**Acme** | Boston, MA | 2020 - Present\n**Director**\n### Vendor oversight\n- Built a model.\n'
+        '**Manager**\n- Ran cleaning.\n**Analyst**\n**Associate**\n- Shared bullet.\n'
+        '**Beta** | Austin, TX | 2015 - 2019\n**Lead**\n- Delivered.\n\n'
+        '## Independent Projects\n**Tool A** | Personal Project | Feb 2026 - Present\n- Built it.\n'
+        '**Tool B** | Personal Project | Jan 2025 - Dec 2025\n- Built that.\n\n'
+        '## Education\nMS, Stats, Uni, 2009\n'))
+
+    def render_xml():
+        out = os.path.join(RUN_DIR, 'fmt_cv.docx')
+        cv_to_docx.build_cv(cv, out)
+        with zipfile.ZipFile(out) as z:
+            return {n: z.read(n) for n in z.namelist() if n.startswith('word/')}
+
+    def changed(value, kind):
+        if kind == cv_to_docx.BOOL:
+            return not value
+        if kind in (cv_to_docx.NUM, cv_to_docx.SIZE):
+            return value + 1
+        if kind == cv_to_docx.ALIGN_T:
+            return 'right' if value != 'right' else 'left'
+        if kind == cv_to_docx.SECTIONS:
+            return []
+        return value + 'X'
+
+    baseline = render_xml()
+    ignored = []
+    for group, spec in cv_to_docx.FORMAT_SCHEMA.items():
+        settings = spec.items() if isinstance(spec, dict) else [(None, spec)]
+        for key, kind in settings:
+            holder, slot = (cv_to_docx.FMT[group], key) if key else (cv_to_docx.FMT, group)
+            saved = holder[slot]
+            try:
+                holder[slot] = changed(saved, kind)
+                if render_xml() == baseline:
+                    ignored.append(f'{group}.{key}' if key else group)
+            finally:
+                holder[slot] = saved
+    assert not ignored, f'settings that do not change the render: {ignored}'
+    assert render_xml() == baseline, 'a setting was not restored'
+
+    for label, broken, named in (
+            ('missing setting', re.sub(r'(?m)^  all_caps: .*\n', '', text), 'missing section_header.all_caps'),
+            ('unknown setting', text.replace('  bold: true', '  bold: true\n  colour: red', 1), 'unknown section_header.colour'),
+            ('bad alignment', text.replace('align: center', 'align: middle', 1), 'name.align must be an alignment'),
+            ('quoted flag', text.replace('  bold: true', '  bold: "false"', 1), 'section_header.bold must be true or false'),
+            ('size off the half-point grid', text.replace('size_pt: 18', 'size_pt: 10.3', 1), 'name.size_pt must be a size'),
+            ('section list as text', re.sub(r'(?m)^company_block_sections:.*\n(  - .*\n)+',
+                                            'company_block_sections: Professional Experience\n', text),
+             'company_block_sections must be a list'),
+            ('misspelled section', text.replace('- Professional Experience', '- Professional Experiance'),
+             "'Professional Experiance', which is not a section")):
+        try:
+            cv_to_docx.load_format(broken)
+        except ValueError as e:
+            assert named in str(e), f'{label}: {e}'
+        else:
+            raise AssertionError(f'renderer accepted a {label}')
 
 
 def test_notes_checklist_follows_the_appendix_order():

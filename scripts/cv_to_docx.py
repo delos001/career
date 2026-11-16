@@ -3,9 +3,10 @@
 cv_to_docx.py - render a targeted CV (cv_content.md) to a formatted .docx
 
 Converts the cv-targeted skill's handoff artifact (cv_content.md) into a Word
-document whose geometry, typography, spacing, and bullets match the user's
-example CVs (temp/CV_example_for_specs{1,2,3}.docx, the source of truth per the
-cv-render-build-2026-06 design decision) and design/format_spec.md.
+document. Every format rule (page geometry, fonts, sizes, alignment, bold /
+italic / caps, spacing, bullets, footer) comes from rules/cv/cv-format.yaml,
+read at import and checked: a missing or unrecognized setting stops the script.
+This script holds only how cv_content.md is read and how Word builds a list.
 
 Input grammar (the cv_qc.py + cv-architect contract):
   - '# Name' and the contact line(s) sit above the first '## ' heading.
@@ -19,9 +20,6 @@ Input grammar (the cv_qc.py + cv-architect contract):
     carried by markdown '**...**' / '*...*' and rendered faithfully.
   - All HTML comments ('<!-- ... -->') are stripped so citations never render.
 
-Bullets render as a native Word list (middle-dot U+00B7 in Cambria, indent
-left=144 / hanging=144), not a literal bullet character run.
-
 The command line refuses to overwrite a .docx that changed since this script last
 wrote it, or that it has no record of writing, because hand edits are never synced
 back to cv_content.md (GitHub #69). It exits 2 and writes nothing; --overwrite-edited
@@ -32,7 +30,7 @@ Created   : 2026-06-02
 Project   : career
 Usage     : python scripts/cv_to_docx.py --cv-file <cv_content.md> --out <out.docx>
                 [--overwrite-edited]
-Depends   : python-docx, pyyaml (via _config)
+Depends   : python-docx, pyyaml
 """
 
 import argparse
@@ -40,6 +38,8 @@ import hashlib
 import os
 import re
 import sys
+
+import yaml
 
 import _config
 
@@ -51,77 +51,161 @@ from docx.oxml import OxmlElement
 
 
 # ---------------------------------------------------------------------------
-# Formatting constants (design/format_spec.md, grounded on the example CVs)
-# Sizes in points; indents/spacing in DXA (twips): 1 pt = 20 DXA, 1440 DXA = 1 in.
+# Format settings
+# Every format rule lives in rules/cv/cv-format.yaml. FORMAT_SCHEMA lists every
+# setting the file must hold; a setting missing from the file, or present in
+# the file but not listed here, stops the script, so a typo or a stale setting
+# never renders silently.
 # ---------------------------------------------------------------------------
 
-FONT_BODY = 'Calibri'
-FONT_BULLET = 'Symbol'           # round-bullet glyph font (U+F0B7 renders as •)
-BULLET_CHAR = ''           # Symbol-font round bullet
-SIZE_BODY = 11
-SIZE_NAME = 18
-SIZE_CONTACT = 10
-SIZE_BULLET_GLYPH = 10           # bullet glyph size (text stays SIZE_BODY)
+# Setting types: NUM a number; SIZE a font size in points, in half-point steps
+# (Word stores sizes as whole half-points); BOOL true or false; TEXT a string;
+# ALIGN_T one of the ALIGN names; SECTIONS a list of section names.
+NUM, SIZE, BOOL, TEXT, ALIGN_T, SECTIONS = 'a number', 'a size in half-point steps', \
+    'true or false', 'text', 'an alignment', 'a list of section names'
 
-SPACE_SECTION = 14               # pt before a section header (~one blank line, a clear break between sections)
-SPACE_COMPANY = 8                # pt before the first company block in a section
-SPACE_SUBSEQUENT_TITLE = 8       # pt before a 2nd+ role title under one company
-SPACE_STACKED_TITLE = 0          # pt before a stacked title sharing one bullet list
-SPACE_SUBHEADING = 6             # pt before a within-role thematic subheading
+FORMAT_SCHEMA = {
+    'page': {'width_in': NUM, 'height_in': NUM, 'margin_in': NUM,
+             'header_distance_in': NUM, 'footer_distance_in': NUM},
+    'body': {'font': TEXT, 'size_pt': SIZE, 'line_spacing': NUM, 'space_before_pt': NUM,
+             'space_after_pt': NUM, 'align': ALIGN_T},
+    'name': {'size_pt': SIZE, 'align': ALIGN_T, 'space_before_pt': NUM},
+    'contact': {'size_pt': SIZE, 'align': ALIGN_T, 'space_before_pt': NUM},
+    'section_header': {'bold': BOOL, 'all_caps': BOOL, 'space_before_pt': NUM},
+    'subheading': {'italic': BOOL, 'space_before_pt': NUM},
+    'company_line': {'name_bold': BOOL, 'first_space_before_pt': NUM, 'space_before_pt': NUM},
+    'role_title': {'first_space_before_pt': NUM, 'space_before_pt': NUM, 'stacked_space_before_pt': NUM},
+    'company_block_sections': SECTIONS,
+    'project_header': {'first_space_before_pt': NUM, 'space_before_pt': NUM},
+    'project_sections': SECTIONS,
+    'bullets': {'char': TEXT, 'font': TEXT, 'size_pt': SIZE, 'indent_left_dxa': NUM,
+                'indent_hanging_dxa': NUM, 'space_before_pt': NUM, 'every_line_sections': SECTIONS},
+    'footer': {'text': TEXT, 'size_pt': SIZE, 'align': ALIGN_T, 'space_before_pt': NUM},
+}
 
-BULLET_INDENT_LEFT = 360         # DXA: text starts 0.25" from the margin
-BULLET_INDENT_HANGING = 360      # DXA: bullet hangs back to the margin (0.25" gap)
-BULLET_NUM_ID = 100              # our injected numbering definition id
+ALIGN = {
+    'left': WD_ALIGN_PARAGRAPH.LEFT,
+    'center': WD_ALIGN_PARAGRAPH.CENTER,
+    'right': WD_ALIGN_PARAGRAPH.RIGHT,
+    'justify': WD_ALIGN_PARAGRAPH.JUSTIFY,
+}
+
+
+def _type_ok(value, kind):
+    """True when a setting's value has the type its schema entry names."""
+    # bool is a subclass of int in Python, so exclude it from the number checks.
+    is_num = isinstance(value, (int, float)) and not isinstance(value, bool)
+    if kind == NUM:
+        return is_num and value >= 0
+    if kind == SIZE:
+        return is_num and value > 0 and float(value * 2).is_integer()
+    if kind == BOOL:
+        return isinstance(value, bool)
+    if kind == TEXT:
+        return isinstance(value, str) and value != ''
+    if kind == ALIGN_T:
+        return value in ALIGN
+    if kind == SECTIONS:
+        return (isinstance(value, list) and value
+                and all(isinstance(v, str) and v.strip() for v in value))
+    raise ValueError(f'unknown setting type {kind}')
+
+
+def format_path():
+    """Return the path of the configured format file."""
+    root, cfg = _config.load()
+    return os.path.join(root, cfg['paths']['cv_rules'], cfg['filenames']['cv_format_file'])
+
+
+def _section_set(names):
+    """Normalize section names the way headings are matched: lowercase, single spaces."""
+    return {re.sub(r'\s+', ' ', n).strip().lower() for n in names}
+
+
+def load_format(text=None, known_sections=None):
+    """Return cv-format.yaml as a dict, after checking it against FORMAT_SCHEMA
+    and checking every section it names against cv-structure.md.
+
+    Takes the file text and the known section names for tests; reads the
+    configured files otherwise.
+    """
+    if text is None:
+        with open(format_path(), encoding='utf-8') as f:
+            text = f.read()
+    fmt = yaml.safe_load(text) or {}
+    problems = []
+    for group, spec in FORMAT_SCHEMA.items():
+        if group not in fmt:
+            problems.append(f'missing {group}')
+            continue
+        if not isinstance(spec, dict):
+            # A top-level setting with its own type (a section list).
+            if not _type_ok(fmt[group], spec):
+                problems.append(f'{group} must be {spec}, not {fmt[group]!r}')
+            continue
+        values = fmt[group] if isinstance(fmt[group], dict) else {}
+        problems += [f'missing {group}.{k}' for k in sorted(set(spec) - set(values))]
+        problems += [f'unknown {group}.{k}' for k in sorted(set(values) - set(spec))]
+        for key, kind in spec.items():
+            if key in values and not _type_ok(values[key], kind):
+                extra = f' ({", ".join(ALIGN)})' if kind == ALIGN_T else ''
+                problems.append(f'{group}.{key} must be {kind}{extra}, not {values[key]!r}')
+    problems += [f'unknown {g}' for g in sorted(set(fmt) - set(FORMAT_SCHEMA))]
+
+    # Every section named in a section list must be a real CV section: one in
+    # the Section order block of cv-structure.md (cv_qc.py parses that block).
+    if known_sections is None:
+        import cv_qc
+        order = cv_qc.load_section_order()
+        known_sections = set(order['order']) | order['work_output']
+    for where, names in (('company_block_sections', fmt.get('company_block_sections')),
+                         ('project_sections', fmt.get('project_sections')),
+                         ('bullets.every_line_sections', (fmt.get('bullets') or {}).get('every_line_sections'))):
+        if _type_ok(names, SECTIONS):
+            problems += [f'{where} names {n!r}, which is not a section in cv-structure.md'
+                         for n in names if _section_set([n]).pop() not in known_sections]
+    if problems:
+        raise ValueError('cv-format.yaml: ' + '; '.join(problems))
+    return fmt
+
+
+FMT = load_format()
+
+PAGE = FMT['page']
+BODY = FMT['body']
+BULLETS = FMT['bullets']
+BULLET_NUM_ID = 100              # our injected numbering definition id (internal, not a format rule)
+
+
+# ---------------------------------------------------------------------------
+# Input parsing patterns (how cv_content.md is read; not format rules)
+# ---------------------------------------------------------------------------
 
 # A company header line is distinguished from a role-title line by a location
 # token: '(Remote)'/'(Onsite)'/'(Hybrid)' or a 'City, ST' two-letter state.
 LOCATION_RE = re.compile(r'\((?:Remote|Onsite|On-site|Hybrid)\)|,\s*[A-Z]{2}\b')
-
-# Sections whose every content line renders as a bullet (matched on the
-# normalized lowercase heading). Professional Experience is excluded (its
-# company / title header lines are not bullets); Selected Projects is excluded
-# (its project-name line is a header, with '- ' description bullets beneath it).
-FORCE_BULLET_SECTIONS = {
-    'core competencies',
-    'education',
-    'earlier professional roles',
-    'certifications & training',
-    'professional affiliations',
-    'languages',
-    'technical proficiencies',
-}
-
 COMMENT_RE = re.compile(r'<!--.*?-->')
-BOLD_RE = re.compile(r'\*\*(.+?)\*\*')
 # Inline markdown tokenizer: a bold span, an italic span, or a plain run.
 INLINE_RE = re.compile(r'(\*\*.+?\*\*|\*[^*]+?\*)')
+# A {FIELD} token in the footer text, rendered as a live Word field.
+FIELD_RE = re.compile(r'\{([A-Z]+)\}')
 
 
 # ---------------------------------------------------------------------------
-# Low-level docx helpers (paragraph spacing, indent, runs)
+# Low-level docx helpers (paragraph spacing, runs)
 # ---------------------------------------------------------------------------
 
-def _set_spacing(para, before_pt=0):
-    """Single line spacing (240 auto), zero after, `before_pt` before."""
+def _set_spacing(para, before_pt):
+    """Body line spacing and space after, `before_pt` before."""
     pPr = para._p.get_or_add_pPr()
     spacing = pPr.find(qn('w:spacing'))
     if spacing is None:
         spacing = OxmlElement('w:spacing')
         pPr.append(spacing)
     spacing.set(qn('w:before'), str(int(before_pt * 20)))
-    spacing.set(qn('w:after'), '0')
-    spacing.set(qn('w:line'), '240')
+    spacing.set(qn('w:after'), str(int(BODY['space_after_pt'] * 20)))
+    spacing.set(qn('w:line'), str(int(240 * BODY['line_spacing'])))   # 240 = single
     spacing.set(qn('w:lineRule'), 'auto')
-
-
-def _set_indent(para, left_dxa, hanging_dxa):
-    pPr = para._p.get_or_add_pPr()
-    ind = pPr.find(qn('w:ind'))
-    if ind is None:
-        ind = OxmlElement('w:ind')
-        pPr.append(ind)
-    ind.set(qn('w:left'), str(left_dxa))
-    ind.set(qn('w:hanging'), str(hanging_dxa))
 
 
 def _set_numbering(para, num_id, ilvl=0):
@@ -137,11 +221,10 @@ def _set_numbering(para, num_id, ilvl=0):
     pPr.append(numPr)
 
 
-def _run(para, text, bold=False, italic=False, size_pt=SIZE_BODY,
-         font=FONT_BODY, color=None):
+def _run(para, text, bold=False, italic=False, size_pt=None, font=None, color=None):
     r = para.add_run(text)
-    r.font.name = font
-    r.font.size = Pt(size_pt)
+    r.font.name = font or BODY['font']
+    r.font.size = Pt(size_pt or BODY['size_pt'])
     # Only emit the b/i toggles when on, so plain runs carry no element (the
     # examples omit them entirely rather than writing an explicit "off").
     if bold:
@@ -153,14 +236,14 @@ def _run(para, text, bold=False, italic=False, size_pt=SIZE_BODY,
     return r
 
 
-def _para(doc, align=WD_ALIGN_PARAGRAPH.LEFT, before_pt=0):
+def _para(doc, before_pt, align=None):
     p = doc.add_paragraph()
-    p.alignment = align
+    p.alignment = ALIGN[align or BODY['align']]
     _set_spacing(p, before_pt)
     return p
 
 
-def _add_inline(para, text, size_pt=SIZE_BODY):
+def _add_inline(para, text, size_pt=None):
     """Render a line with inline markdown: '**bold**' and '*italic*' spans.
 
     Splits the text into bold / italic / plain runs so company names, zone
@@ -178,10 +261,10 @@ def _add_inline(para, text, size_pt=SIZE_BODY):
 
 
 # ---------------------------------------------------------------------------
-# Numbering definition: inject the example CVs' bullet (U+00B7, Cambria, 144/144)
+# Footer and bullet list definition
 # ---------------------------------------------------------------------------
 
-def _add_field(para, instr):
+def _add_field(para, instr, size_pt):
     """Append a simple Word field (e.g. PAGE, NUMPAGES) to a footer paragraph.
 
     Uses w:fldSimple with a placeholder result; Word recalculates the value when
@@ -192,10 +275,10 @@ def _add_field(para, instr):
     r = OxmlElement('w:r')
     rPr = OxmlElement('w:rPr')
     rFonts = OxmlElement('w:rFonts')
-    rFonts.set(qn('w:ascii'), FONT_BODY)
-    rFonts.set(qn('w:hAnsi'), FONT_BODY)
+    rFonts.set(qn('w:ascii'), BODY['font'])
+    rFonts.set(qn('w:hAnsi'), BODY['font'])
     sz = OxmlElement('w:sz')
-    sz.set(qn('w:val'), str(SIZE_CONTACT * 2))   # half-points
+    sz.set(qn('w:val'), str(int(size_pt * 2)))   # whole half-points
     rPr.append(rFonts)
     rPr.append(sz)
     r.append(rPr)
@@ -207,23 +290,26 @@ def _add_field(para, instr):
 
 
 def add_page_footer(sec):
-    """Centered 'Page X of Y' footer (10pt Calibri), shown on every page."""
+    """The footer text on every page, its {FIELD} tokens as live Word fields."""
+    footer_fmt = FMT['footer']
     footer = sec.footer
     footer.is_linked_to_previous = False
     p = footer.paragraphs[0]
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    _set_spacing(p, 0)
-    _run(p, 'Page ', size_pt=SIZE_CONTACT)
-    _add_field(p, 'PAGE')
-    _run(p, ' of ', size_pt=SIZE_CONTACT)
-    _add_field(p, 'NUMPAGES')
+    p.alignment = ALIGN[footer_fmt['align']]
+    _set_spacing(p, footer_fmt['space_before_pt'])
+    # re.split with one capture group alternates text, field name, text, ...
+    for i, part in enumerate(FIELD_RE.split(footer_fmt['text'])):
+        if i % 2:
+            _add_field(p, part, footer_fmt['size_pt'])
+        elif part:
+            _run(p, part, size_pt=footer_fmt['size_pt'])
 
 
 def _ensure_bullet_numbering(doc):
     """Add an abstractNum + num for the CV bullet to the document numbering part.
 
-    Mirrors the example CVs' list definition: a middle-dot glyph in Cambria with
-    a left indent of 144 DXA and a 144 DXA hanging indent. Idempotent on id.
+    The glyph, its font and size, and the indents come from the bullets
+    settings; the rest is how Word defines a one-level bulleted list.
     """
     numbering = doc.part.numbering_part.element
     abstract_id = str(BULLET_NUM_ID)
@@ -233,24 +319,24 @@ def _ensure_bullet_numbering(doc):
     lvl = OxmlElement('w:lvl')
     lvl.set(qn('w:ilvl'), '0')
     for tag, val in (('w:start', '1'), ('w:numFmt', 'bullet'),
-                     ('w:lvlText', BULLET_CHAR), ('w:lvlJc', 'left')):
+                     ('w:lvlText', BULLETS['char']), ('w:lvlJc', 'left')):
         el = OxmlElement(tag)
         el.set(qn('w:val'), val)
         lvl.append(el)
     pPr = OxmlElement('w:pPr')
     ind = OxmlElement('w:ind')
-    ind.set(qn('w:left'), str(BULLET_INDENT_LEFT))
-    ind.set(qn('w:hanging'), str(BULLET_INDENT_HANGING))
+    ind.set(qn('w:left'), str(BULLETS['indent_left_dxa']))
+    ind.set(qn('w:hanging'), str(BULLETS['indent_hanging_dxa']))
     pPr.append(ind)
     lvl.append(pPr)
     rPr = OxmlElement('w:rPr')
     rFonts = OxmlElement('w:rFonts')
-    rFonts.set(qn('w:ascii'), FONT_BULLET)
-    rFonts.set(qn('w:hAnsi'), FONT_BULLET)
+    rFonts.set(qn('w:ascii'), BULLETS['font'])
+    rFonts.set(qn('w:hAnsi'), BULLETS['font'])
     rFonts.set(qn('w:hint'), 'default')
     rPr.append(rFonts)
     sz = OxmlElement('w:sz')
-    sz.set(qn('w:val'), str(SIZE_BULLET_GLYPH * 2))   # half-points
+    sz.set(qn('w:val'), str(int(BULLETS['size_pt'] * 2)))   # whole half-points
     rPr.append(sz)
     lvl.append(rPr)
     abstract.append(lvl)
@@ -275,39 +361,35 @@ def _ensure_bullet_numbering(doc):
 # ---------------------------------------------------------------------------
 
 def add_name(doc, text):
-    p = _para(doc, align=WD_ALIGN_PARAGRAPH.CENTER, before_pt=0)
-    _run(p, text, size_pt=SIZE_NAME)
+    p = _para(doc, FMT['name']['space_before_pt'], align=FMT['name']['align'])
+    _run(p, text, size_pt=FMT['name']['size_pt'])
 
 
 def add_contact(doc, text):
-    p = _para(doc, align=WD_ALIGN_PARAGRAPH.CENTER, before_pt=0)
-    _add_inline(p, text, size_pt=SIZE_CONTACT)
+    p = _para(doc, FMT['contact']['space_before_pt'], align=FMT['contact']['align'])
+    _add_inline(p, text, size_pt=FMT['contact']['size_pt'])
 
 
 def add_section_header(doc, text):
-    # Section headers ('## ' lines) render in ALL CAPS, bold (user decision
-    # 2026-06-03, GitHub #19). Render-only: cv_content.md stays mixed case, and
-    # the name, '###' subheadings, and company / title lines are unaffected.
-    p = _para(doc, before_pt=SPACE_SECTION)
-    _run(p, text.upper(), bold=True)
+    fmt = FMT['section_header']
+    p = _para(doc, before_pt=fmt['space_before_pt'])
+    _run(p, text.upper() if fmt['all_caps'] else text, bold=fmt['bold'])
 
 
 def add_subheading(doc, text):
-    # Non-bold italic: distinguishes the within-role thematic category from the
-    # bold job-title lines above it without relying on indentation (which would
-    # cost line-width on an already page-tight CV).
-    p = _para(doc, before_pt=SPACE_SUBHEADING)
-    _run(p, text, bold=False, italic=True)
+    fmt = FMT['subheading']
+    p = _para(doc, before_pt=fmt['space_before_pt'])
+    _run(p, text, italic=fmt['italic'])
 
 
-def add_line(doc, text, before_pt=0):
+def add_line(doc, text, before_pt):
     """A non-bullet content line rendered with inline markdown."""
     p = _para(doc, before_pt=before_pt)
     _add_inline(p, text)
 
 
 def add_bullet(doc, text):
-    p = _para(doc, before_pt=0)
+    p = _para(doc, BULLETS['space_before_pt'])
     _set_numbering(p, BULLET_NUM_ID)
     _add_inline(p, text)
 
@@ -340,30 +422,37 @@ def build_cv(md_path, out_path):
             p._element.getparent().remove(p._element)
             break
 
-    # Page layout: US Letter, 0.75-inch margins, 0.5-inch header/footer.
     sec = doc.sections[0]
-    sec.page_height = Inches(11)
-    sec.page_width = Inches(8.5)
-    sec.top_margin = sec.bottom_margin = Inches(0.75)
-    sec.left_margin = sec.right_margin = Inches(0.75)
-    sec.header_distance = sec.footer_distance = Inches(0.5)
+    sec.page_height = Inches(PAGE['height_in'])
+    sec.page_width = Inches(PAGE['width_in'])
+    sec.top_margin = sec.bottom_margin = Inches(PAGE['margin_in'])
+    sec.left_margin = sec.right_margin = Inches(PAGE['margin_in'])
+    sec.header_distance = Inches(PAGE['header_distance_in'])
+    sec.footer_distance = Inches(PAGE['footer_distance_in'])
 
-    # Normal style: Calibri 11pt, no space before/after.
     normal = doc.styles['Normal']
-    normal.font.name = FONT_BODY
-    normal.font.size = Pt(SIZE_BODY)
-    normal.paragraph_format.space_before = Pt(0)
-    normal.paragraph_format.space_after = Pt(0)
+    normal.font.name = BODY['font']
+    normal.font.size = Pt(BODY['size_pt'])
+    normal.paragraph_format.space_before = Pt(BODY['space_before_pt'])
+    normal.paragraph_format.space_after = Pt(BODY['space_after_pt'])
 
     _ensure_bullet_numbering(doc)
     add_page_footer(sec)
+
+    company_fmt, title_fmt = FMT['company_line'], FMT['role_title']
+    # Read the section lists at render time, not import time, so every setting
+    # is taken from FMT when the document is built.
+    force_bullet_sections = _section_set(BULLETS['every_line_sections'])
+    company_block_sections = _section_set(FMT['company_block_sections'])
+    project_sections = _section_set(FMT['project_sections'])
+    project_fmt = FMT['project_header']
 
     # Parser state.
     section = None              # normalized current section
     saw_name = False            # have we emitted the name (h1) yet
     in_first_section = False    # have we passed the first '## '
     pending_first_title = False  # next title under the current company is the 1st
-    prev_was_title = False      # previous PE content line was a role-title line
+    prev_was_title = False      # previous company-block line was a role-title line
     section_just_started = False  # next content line is the first under a header
 
     for raw in lines:
@@ -409,47 +498,50 @@ def build_cv(md_path, out_path):
         text = line.strip()
 
         # Sections whose every content line renders as a bullet.
-        if section in FORCE_BULLET_SECTIONS:
+        if section in force_bullet_sections:
             add_bullet(doc, text)
             prev_was_title = False
             continue
 
         # Non-list content line: spacing depends on the section.
-        if section == 'professional experience':
+        if section in company_block_sections:
             if _is_company_line(text):
-                # The first company line binds to the section header (no gap);
-                # later company blocks carry SPACE_COMPANY to separate them. Bold
-                # the company name (the segment before the first ' | '); the
-                # location and dates after it stay regular, matching how a job
-                # title renders (title bold, dates regular).
+                # The company name is the segment before the first ' | '. It may
+                # arrive plain (older files) or bold-wrapped (current output), so
+                # strip any bold markers and apply the format setting uniformly;
+                # the text after the first '|' stays regular.
                 name, sep, rest = text.partition(' | ')
-                # The name may arrive plain (older files) or already bold-wrapped
-                # (current cv-targeted output). Strip any bold markers, then apply
-                # bold uniformly so the name renders bold and the location/dates
-                # after the first '|' stay regular, per format_spec.
                 name = re.sub(r'\*\*', '', name.strip())
-                rendered = f'**{name}**' + (f' | {rest}' if sep else '')
+                if company_fmt['name_bold']:
+                    name = f'**{name}**'
+                rendered = name + (f' | {rest}' if sep else '')
                 add_line(doc, rendered,
-                         before_pt=0 if section_just_started else SPACE_COMPANY)
+                         before_pt=company_fmt['first_space_before_pt'] if section_just_started
+                         else company_fmt['space_before_pt'])
                 section_just_started = False
                 pending_first_title = True
                 prev_was_title = False
             elif pending_first_title:
                 # First role title under this company.
-                add_line(doc, text, before_pt=0)
+                add_line(doc, text, before_pt=title_fmt['first_space_before_pt'])
                 pending_first_title = False
                 prev_was_title = True
             elif prev_was_title:
-                # A stacked title: another title line with no bullets between it
-                # and the prior title, so the group shares one bullet list. Pack
-                # it tight rather than opening a full subsequent-role gap.
-                add_line(doc, text, before_pt=SPACE_STACKED_TITLE)
+                # A role line directly under another role line.
+                add_line(doc, text, before_pt=title_fmt['stacked_space_before_pt'])
             else:
-                # A subsequent role sub-entry following the prior role's bullets.
-                add_line(doc, text, before_pt=SPACE_SUBSEQUENT_TITLE)
+                # A later role, following the previous role's bullets.
+                add_line(doc, text, before_pt=title_fmt['space_before_pt'])
                 prev_was_title = True
+        elif section in project_sections:
+            # Every non-bullet line here is a project header line.
+            add_line(doc, text,
+                     before_pt=project_fmt['first_space_before_pt'] if section_just_started
+                     else project_fmt['space_before_pt'])
+            section_just_started = False
+            prev_was_title = False
         else:
-            add_line(doc, text, before_pt=0)
+            add_line(doc, text, before_pt=BODY['space_before_pt'])
             prev_was_title = False
 
     doc.save(out_path)

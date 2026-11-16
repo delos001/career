@@ -97,5 +97,5 @@ Build missing main-body sections; refine existing ones with what this interview 
   Running the op is optional for a reschedule (the `followup` skill reconciles the date from the notes round's `Schedule changes:` line) but is the accurate capture path for a cancel, which no downstream skill sees. `close-application` verifies the record at close-out either way.
 
   Interviewer-structural changes (single to panel, add/remove a person) are the skill plus the `interview-notes` AMEND flow, not this op.
-- Staging: new GENERAL (role-independent) candidate facts - list them, ask which to stage, and stage each approved one per `rules/profile/staging-writing.md` (run `python scripts/rules_slice.py staging-writing`).
+- Staging: new GENERAL (role-independent) candidate facts - list them, ask which to stage, and stage each approved one per `rules/profile/staging-writing.md` (run `python scripts/profile_rules_slice.py staging-writing`).
 - Handoff in plain English: where the doc is, read the main body plus this interview's Appendix, speak the arcs aloud.

@@ -295,12 +295,16 @@ career/
 │   │   ├── post-merger-integration.md, divestiture.md
 │   │   └── pivot.md
 │   ├── cv/
-│   │   ├── cv-structure.md              # hard rules; cv_qc.py enforces them
-│   │   └── cv-best-practices.md
+│   │   ├── cv-structure.md              # sections, order, layouts, length
+│   │   ├── cv-sections.md               # which sections appear
+│   │   ├── cv-section-content.md        # what content goes in each section
+│   │   ├── cv-writing.md                # how content is worded
+│   │   ├── cv-best-practices.md
+│   │   └── cv-format.yaml               # how the .docx looks; read by cv_to_docx.py
 │   ├── interview-types/                 # sets emphasis + research gaps per audience
 │   │   ├── hiring-manager.md, peer-team.md
 │   │   └── executive.md, recruiter.md
-│   ├── profile/                         # profile writing rules, read through rules_slice.py
+│   ├── profile/                         # profile writing rules, read through profile_rules_slice.py
 │   │   ├── routing.md                   # where a staged fact goes
 │   │   ├── staging-writing.md           # how a new fact is captured
 │   │   └── inventory-writing.md         # how each inventory entry type is written
@@ -316,7 +320,9 @@ career/
 ├── scripts/                             # all deterministic logic
 │   ├── _config.py                       # resolves repo root from __file__, loads config.yaml
 │   ├── _util.py, _prep_checks.py, _wording.py, axis_utils.py    # shared helpers
-│   ├── rules_slice.py                   # shared rules plus one entry type's section
+│   ├── _shared_slicer.py                # splits a keyed rules file; fails on a missing or unknown key
+│   ├── profile_rules_slice.py           # ALL rules plus one entry type's section
+│   ├── cv_rules_slice.py                # ALL rules plus one CV drafting step's sections
 │   ├── app_id.py, company_slug.py       # ID and slug allocation
 │   ├── assemble.py, session_log.py      # artifact assembly from templates
 │   ├── profile_slice.py                 # addressed slice extraction (no whole-doc loads)
@@ -329,7 +335,7 @@ career/
 │   ├── axis_registry.py, axis_apply.py  # axis-builder read and write
 │   ├── interview_lifecycle.py           # reschedule / cancel three-file sync
 │   ├── notes_assemble.py                # per-round note scaffold + cue card
-│   ├── cv_to_docx.py                    # render to format_spec.md
+│   ├── cv_to_docx.py                    # render per rules/cv/cv-format.yaml
 │   ├── scratch_cleanup.py               # wipe run-scratch at close
 │   ├── *_qc.py                          # deterministic QC, one per gated skill
 │   ├── ingest/jd_extract.py             # JD from paste, file, or URL
@@ -351,7 +357,6 @@ career/
 │   ├── deferrals.md                     # deferred work with rationale and trigger
 │   ├── open_questions.md
 │   ├── build_issues.md                  # appended on provisional ship
-│   ├── format_spec.md                   # .docx format authority
 │   └── *_audit.md, registry_company_type.md
 ├── personal/                            # nested private repo; gitignored here
 │   ├── profile/                         # inventory, narratives, positioning, user-info,

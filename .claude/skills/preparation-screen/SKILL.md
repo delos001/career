@@ -72,6 +72,6 @@ After the main body, add this screen's **Recruiter Screen Appendix block** (the 
 
 ## Phase 5: close out
 
-1. Staging: if the prep surfaced new GENERAL facts about the candidate (role-independent), list them and ask the user which to stage. Stage each approved one per `rules/profile/staging-writing.md` (run `python scripts/rules_slice.py staging-writing`). Role-specific answers stay in the artifact only.
+1. Staging: if the prep surfaced new GENERAL facts about the candidate (role-independent), list them and ask the user which to stage. Stage each approved one per `rules/profile/staging-writing.md` (run `python scripts/profile_rules_slice.py staging-writing`). Role-specific answers stay in the artifact only.
 
 2. Handoff, in plain English: where the artifact is, what the user should do before the call (read it once, speak the arcs aloud), and any provisional QC residual.

@@ -44,7 +44,7 @@ Checks (all report-only):
        names a closed or partial-match requirement in --gap-analysis
   B1   one sentence per bullet
   B2   bullet within the line limit (<=3 estimated rendered lines)
-  S1   section order valid (evidence band, then credentials tail; Tech last)
+  S1   section order valid (rule file's listed order; Tech last)
   S2   required sections present
   S3   Core Competencies item count within the level's range
   L1   total estimated pages within the level's ceiling
@@ -167,22 +167,23 @@ def _record(check_id, passed, detail):
 def parse_section_order(rule_text):
     """Return the CV section structure from cv-structure.md's Section order block.
 
-    The block is the first fenced block under '## Section order'. Band lines end
-    in ':'; member lines are '- <Name>' with an optional '(required)' tag, and the
-    work-output class is '- Work output: <member>, <member>, ...'. Returns
-    {'order': [normalized names, evidence band then credentials tail, with the
-    work-output class as 'work-output'], 'required': set, 'work_output': set}.
+    The block is the first fenced block under '## Section order'. Member lines
+    are '- <Name>' with an optional '(required)' tag, and the work-output class
+    is '- Work output: <member>, <member>, ...'; other lines are ignored. Returns
+    {'order': [normalized names in listed order, with the work-output class as
+    'work-output'], 'required': set, 'work_output': set}.
     Raises if the block is missing or empty, so a rule edit that breaks the
     contract fails loudly instead of checking nothing.
     """
-    m = re.search(r'(?ms)^## Section order.*?^```\s*\n(.*?)\n```', rule_text)
+    # The heading may carry a drafting-step key ('## ALL: Section order').
+    m = re.search(r'(?ms)^## (?:[A-Z]+: )?Section order.*?^```\s*\n(.*?)\n```', rule_text)
     if not m:
         raise ValueError("cv-structure.md has no fenced block under '## Section order'")
     order, required, work_output = [], set(), set()
     for line in m.group(1).splitlines():
         item = re.match(r'^-\s+(.+?)\s*$', line)
         if not item:
-            continue   # band label lines ('Evidence band:') only mark grouping
+            continue   # non-member lines carry no order
         text = item.group(1)
         wo = re.match(r'(?i)^work output:\s*(.+)$', text)
         if wo:
@@ -481,7 +482,7 @@ def _check_c6_no_project_in_experience(sections):
     """C6: independent project (PR-NNN) entries are not cited in Professional Experience.
 
     PR-NNN ids are inventory Independent & Volunteer Projects entries; per
-    cv-structure.md they belong in the work-output (Selected Projects) section,
+    cv-section-content.md they belong in the work-output (Selected Projects) section,
     placed after Professional Experience, not as roles or bullets inside it. A PR
     citation in the Professional Experience body signals project work misplaced as
     an experience role (e.g. a between-roles independent build elevated to the top
@@ -583,15 +584,15 @@ def _check_b2_bullet_length(sections):
 
 
 # ---------------------------------------------------------------------------
-# Group S - Structure / banding
-# S1 verifies the two-band order; S2 required sections; S3 competency count.
+# Group S - Structure
+# S1 verifies section order; S2 required sections; S3 competency count.
 # ---------------------------------------------------------------------------
 
 def _check_s1_section_order(sections, structure):
-    """S1: sections follow the two-band canonical order; Tech Proficiencies last.
+    """S1: sections follow the canonical order; Tech Proficiencies last.
 
     Build the canonical index for each recognized heading from the rule file's
-    Section order block (evidence band before credentials tail), ignoring
+    Section order block, ignoring
     unrecognized headings, and verify the recognized headings appear in
     non-decreasing canonical order.
     """
@@ -600,7 +601,7 @@ def _check_s1_section_order(sections, structure):
     order_idx = [idx for _, idx in seen]
     if order_idx != sorted(order_idx):
         names = ' -> '.join(n for n, _ in seen)
-        return _record('S1', False, f'section order violates the two-band order: {names}')
+        return _record('S1', False, f'section order violates the listed order: {names}')
     # Technical Proficiencies, if present, must be the last recognized section.
     if seen and 'technical proficiencies' in [n for n, _ in seen]:
         if seen[-1][0] != 'technical proficiencies':
@@ -867,7 +868,7 @@ def run_qc(args):
     checks.append(_check_b1_one_sentence(sections))
     checks.append(_check_b2_bullet_length(sections))
 
-    # --- Group S: structure / banding ---
+    # --- Group S: structure ---
     checks.append(_check_s1_section_order(sections, structure))
     checks.append(_check_s2_required_sections(sections, structure))
     checks.append(_check_s3_competency_count(sections, args.level))

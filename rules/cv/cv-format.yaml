@@ -1,0 +1,86 @@
+# CV format: how the rendered .docx looks.
+#
+# scripts/cv_to_docx.py reads this file on every run, so changing a value here
+# changes the CV. The script stops if a setting is missing or not recognized.
+# Section order and what each line contains are in cv-structure.md; this file
+# only sets how those lines look.
+#
+# Units: _in = inches, _pt = points, _dxa = twentieths of a point (1440 = 1 inch).
+# align: left, center, right or justify.
+
+page:                          # US Letter
+  width_in: 8.5
+  height_in: 11
+  margin_in: 0.75              # all four sides; the length estimate in cv-structure.md
+                               # and cv_qc.py assume this geometry, so change them together
+  header_distance_in: 0.5
+  footer_distance_in: 0.5
+
+body:                          # every paragraph unless an element below says otherwise
+  font: Calibri
+  size_pt: 11
+  line_spacing: 1.0            # 1.0 = single
+  space_before_pt: 0           # plain lines, such as the summary and project headers
+  space_after_pt: 0
+  align: left
+
+name:                          # the '# Name' line
+  size_pt: 18
+  align: center
+  space_before_pt: 0
+
+contact:                       # the lines between the name and the first section
+  size_pt: 10
+  align: center
+  space_before_pt: 0
+
+section_header:                # each '## ' heading
+  bold: true
+  all_caps: true               # in the .docx only; cv_content.md keeps mixed case
+  space_before_pt: 14
+
+subheading:                    # within-role thematic subheadings ('### ')
+  italic: true
+  space_before_pt: 6
+
+company_line:                  # 'Company | Location | dates' lines
+  name_bold: true              # the company name; text after the first '|' stays regular
+  first_space_before_pt: 0     # first company in a section
+  space_before_pt: 8           # every later company in a section
+
+role_title:                    # role lines under a company (bold comes from cv_content.md)
+  first_space_before_pt: 0     # first role under a company
+  space_before_pt: 8           # a later role, after the previous role's bullets
+  stacked_space_before_pt: 0   # a role line directly under another role line
+
+company_block_sections:        # sections laid out as company and role lines
+  - Professional Experience
+
+project_header:                # each project's '**Name** | Context | dates' line
+  first_space_before_pt: 0     # first project in the section
+  space_before_pt: 8           # every later project, so projects do not run together
+
+project_sections:              # sections where every line that is not a bullet is a project header
+  - Independent Projects
+
+bullets:                       # every '- ' line, in any section
+  char: ""               # round bullet in the Symbol font
+  font: Symbol
+  size_pt: 10                  # the bullet mark only; bullet text uses the body size
+  indent_left_dxa: 360         # 0.25 inch
+  indent_hanging_dxa: 360
+  space_before_pt: 0
+  every_line_sections:         # sections where every line is a bullet, '- ' or not
+    - Core Competencies
+    - Education
+    - Earlier Professional Roles
+    - Certifications & Training
+    - Professional Affiliations
+    - Languages
+    - Technical Proficiencies
+
+footer:                        # on every page; {PAGE} and {NUMPAGES} are live Word fields
+  text: "Page {PAGE} of {NUMPAGES}"
+  size_pt: 10
+  align: center
+  space_before_pt: 0

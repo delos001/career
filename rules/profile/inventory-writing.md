@@ -1,10 +1,10 @@
 # Inventory writing rules
 
-**Used by:** profile-update (drafting) and qc-profile-update (review). Read through `python scripts/rules_slice.py inventory-writing --type <PREFIX>`, which prints this opening, the shared rules, and the one entry type's section.
+**Used by:** profile-update (drafting) and qc-profile-update (review). Read through `python scripts/profile_rules_slice.py inventory-writing --type <PREFIX>`, which prints this opening, the `ALL` sections (shared by every entry type), and the one entry type's section.
 
 `templates/inventory.md` holds the schema: which fields each entry type has and in what order. This file holds how to write them.
 
-## Shared wording
+## ALL: Shared wording
 
 These apply to every entry type.
 

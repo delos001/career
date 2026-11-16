@@ -59,7 +59,7 @@ import _util
 import _wording
 import profile_slice
 import profile_update as pu
-import rules_slice
+import profile_rules_slice
 import staging_append
 from inventory_model import document, entry_block, pr
 
@@ -609,8 +609,8 @@ def build_context(repo_root, cfg, labels, scope_ids):
             keys.append(key)
 
     out += ['## Writing rules', '']
-    out.append(rules_slice.slice_types(
-        rules_slice.load(repo_root, cfg, 'inventory-writing'), keys))
+    out.append(profile_rules_slice.slice_types(
+        profile_rules_slice.load(repo_root, cfg, 'inventory-writing'), keys, repo_root, cfg))
     return '\n'.join(out)
 
 
