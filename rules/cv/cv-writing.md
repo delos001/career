@@ -36,7 +36,7 @@ Professional Experience persuades the reviewer that the candidate has done the w
 
 **Subheadings.** Bullets under a subheading follow every bullet rule.
 
-### Bullet rules
+## ALL: Bullet rules
 
 These rules apply to every bullet on the CV, including role summaries and project bullets.
 
@@ -64,7 +64,7 @@ Independent Projects persuades the reviewer that the candidate's skills are curr
 
 Name tools, platforms, languages and methods in the JD's terms so applicant tracking systems match them.
 
-## Writing rules
+## ALL: Writing rules
 
 These rules apply to every section of the CV.
 

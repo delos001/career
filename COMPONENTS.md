@@ -701,7 +701,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/cv_rules_slice.py
 
-- **Purpose**: Print the part of a `rules/cv/` rules file a CV drafting step needs: the opening, every `ALL` section, and the requested steps' sections. Keys are the drafting steps listed in the script (`PLAN`, `SUM`, `COMP`, `EXP`, `EPR`, `PROJ`, `CRED`, `TECH`). Without `--key`, the whole file.
+- **Purpose**: Print the part of a `rules/cv/` rules file a CV drafting step needs: the opening, every `ALL` section, and the requested steps' sections. Keys are the drafting steps listed in the script (`PLAN`, `SUM`, `COMP`, `EXP`, `EPR`, `PROJ`, `CRED`, `TECH`, `CUT`). Without `--key`, the whole file.
 - **Status**: Designed; not yet called by cv-targeted (wired with the CV rebuild's key-assignment pass).
 - **Inputs**: Args (`<name>`, repeatable `--key`). Config: `config.yaml` (`paths.cv_rules`).
 - **Outputs**: Rules text on stdout. Errors to stderr with exit 1.

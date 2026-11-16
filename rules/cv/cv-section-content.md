@@ -28,7 +28,7 @@ The plan step decides what goes on the CV before any section is written. It work
 
 **Revisers keep the plan.** A later writer or reviser keeps each recorded choice unless a reviewer or QC finding challenges it.
 
-**Draft long, then cut.** The first draft is deliberately longer than the CV can be. Its goal is a complete set of persuasive, relevant options for every need, so the later cut has good options to choose from. Tag every bullet with the need it serves (`<!-- need: N-NN -->`) beside its source citation. A later step cuts the draft to length under Length and cuts, below.
+**Draft long, then cut.** The first draft is deliberately longer than the CV can be. Its goal is a complete set of persuasive, relevant options for every need, so the later cut has good options to choose from. Tag every bullet with the need it serves (`<!-- need: N-NN -->`) beside its source citation. A later step cuts the draft to length under Order of cuts, below.
 
 ### Which roles appear in Professional Experience
 
@@ -91,10 +91,12 @@ Every role inside the window appears there, except a role whose only entries are
 
 For a pure-leadership job the section may be brief.
 
-## Length and cuts
+## PLAN: Page targets
 
 **Page targets.** An individual contributor CV aims for 2 pages and runs to 3 only for a long, relevant history. A leadership CV aims for 2 to 3 pages. The hard limit is in `cv-structure.md`.
 
 **Content decides length.** Never add content to fill a page or to reach any limit in `cv-structure.md`. Never cut persuasive content for a high-ranked need only to reach a lower page count. The page count follows from choosing the right content, within the page limits in `cv-structure.md`.
+
+## CUT: Order of cuts
 
 **Order of cuts.** Only whole lines shorten the CV, so every cut must remove at least one rendered line. When Word measures the CV over its page limit, cut in this order. First, reword bullets so they end a line sooner: 3-line bullets first, then 2-line bullets whose last line holds only a few words. Second, merge related bullets into one, in older roles first and then newer roles, where the level file supports merging. Third, drop in-progress training. If the CV is still over the limit, remove nothing more: hand it to the candidate with the measured overage and a list of cut candidates: the bullets serving the lowest-ranked needs first, older roles first on a tie, then one-line projects that serve no need. Every cut follows "Cutting words can create an overstatement" in `cv-writing.md`.

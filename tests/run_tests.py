@@ -302,6 +302,15 @@ def test_rules_slicers_fail_on_a_missing_or_unknown_key():
     sum_slice = cv_rules_slice.slice_steps(cv_ok, ['SUM'])
     assert 'Shared rule.' in sum_slice and 'SUM rule.' in sum_slice, sum_slice
     assert 'EXP rule.' not in sum_slice, 'another step leaked into the slice'
+    cut_slice = cv_rules_slice.slice_steps(cv_ok, ['CUT'])
+    assert 'Shared rule.' in cut_slice and 'SUM rule.' not in cut_slice, \
+        'a step with no section in a file must still get its ALL rules'
+    try:
+        cv_rules_slice.slice_steps(cv_ok, ['CTU'])
+    except ValueError as e:
+        assert 'CTU' in str(e), e
+    else:
+        raise AssertionError('cv slicer accepted an unknown step key')
 
     cases = {
         'missing key': (cv_ok + '\n## Length\n\nUnrouted rule.\n', '## Length'),
@@ -325,10 +334,13 @@ def test_rules_slicers_fail_on_a_missing_or_unknown_key():
     else:
         raise AssertionError('profile slicer accepted a CV step key')
 
-    # The live profile file is fully keyed.
+    # The live profile file and every live CV rules file are fully keyed.
     import _shared_slicer
     _shared_slicer.check_keys(profile_rules_slice.load(root, cfg, 'inventory-writing'),
                               profile_rules_slice.valid_keys(root, cfg), profile_rules_slice.SHARED_KEY)
+    for key in ('cv_structure_file', 'cv_sections_file', 'cv_section_content_file', 'cv_writing_file'):
+        name = cfg['filenames'][key][:-3]
+        cv_rules_slice.check(cv_rules_slice.load(root, cfg, name))
 
 
 def test_every_entry_type_has_writing_rules():
@@ -2590,7 +2602,7 @@ def test_cv_rules_account_for_every_inventory_section():
     root, cfg = _config.load()
     rules = _util.read(os.path.join(root, cfg['paths']['cv_rules'], cfg['filenames']['cv_structure_file']))
     sections_rules = _util.read(os.path.join(root, cfg['paths']['cv_rules'], cfg['filenames']['cv_sections_file']))
-    block = re.search(r'(?ms)^## Optional sections.*?^```\s*\nInventory section -> CV section\n(.*?)\n```', sections_rules)[1]
+    block = re.search(r'(?ms)^## (?:[A-Z]+: )?Optional sections.*?^```\s*\nInventory section -> CV section\n(.*?)\n```', sections_rules)[1]
     mapping = dict(line.split(' -> ') for line in block.splitlines())
 
     template = _util.read(os.path.join(root, cfg['paths']['templates'], cfg['filenames']['inventory_template']))

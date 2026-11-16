@@ -66,20 +66,23 @@ def check_keys(text, valid, shared):
             f"{', '.join(sorted(allowed))}:\n  " + '\n  '.join(problems))
 
 
-def slice_keys(text, wanted, valid, shared):
+def slice_keys(text, wanted, valid, shared, require_section=True):
     """Return the opening, the shared sections, and each wanted key's sections.
 
     The file is checked first, so a slice is never taken from a file whose
-    routing is broken. A wanted key the file has no section for is an error,
-    never a silent fall back to the shared sections alone.
+    routing is broken. An unknown wanted key is always an error. With
+    require_section, a valid key the file has no section for is also an error,
+    never a silent fall back to the shared sections alone; a slicer whose
+    readers take several files, some holding only shared rules for them,
+    passes require_section=False.
     """
     check_keys(text, valid, shared)
     unknown = [k for k in wanted if k not in valid]
     if unknown:
         raise ValueError(f"unknown key {', '.join(unknown)}; valid keys are {', '.join(sorted(valid))}")
-    present = keys(text)
+    present = list(dict.fromkeys(keys(text)))       # file order, each key once
     missing = [k for k in wanted if k not in present]
-    if missing:
+    if missing and require_section:
         raise ValueError(
             f"no section for {', '.join(missing)}; this file has sections for "
             f"{', '.join(k for k in present if k != shared) or 'no keys'}")

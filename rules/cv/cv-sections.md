@@ -8,11 +8,11 @@ last_researched: 2026-11
 
 **Purpose.** This file holds the rules a skill follows to decide which sections appear on the CV for this job, from the inventory, `jd_needs.md` and the retrieval manifest. It decides only whether each section is included. Section order and layout are in `cv-structure.md`; what content goes into each included section is in `cv-section-content.md`; how it is worded is in `cv-writing.md`.
 
-## Required sections
+## PLAN: Required sections
 
 The sections marked `(required)` in the `cv-structure.md` Section order block always appear.
 
-## Optional sections
+## PLAN: Optional sections
 
 Decide for each job; no section appears because it usually does. For each optional section below, include it only if all three tests hold. (1) Its inventory section has entries (not `Entries: None`). (2) The entries are relevant to this job. (3) The section more effectively persuades a reviewer to interview the candidate than whatever would be cut to make room for it. Record each decision in `drafting_plan.md`. Independent Projects is the exception to (2) and (3) (see Independent Projects below).
 
@@ -35,22 +35,22 @@ Languages -> Languages
 
 A section marked not designed gets its rules when its first entry exists (`design/deferrals.md`, `cv-rules-for-empty-inventory-sections`).
 
-## Earlier Professional Roles
+## PLAN: Earlier Professional Roles
 
 The section appears when at least one role is placed there under "Which roles appear in Professional Experience" in `cv-section-content.md`.
 
-## Independent Projects
+## PLAN: Independent Projects
 
 The section appears whenever the inventory has a current project, one whose End Date is blank. A project that is not current appears only when it passes the three tests in Optional sections.
 
-## Professional Affiliations
+## PLAN: Professional Affiliations
 
 Include only for board, governance, or senior-leadership jobs where the JD mentions memberships, board seats, or committee roles; omit otherwise.
 
-## Languages
+## PLAN: Languages
 
 Include when the job names a language or works across regions where one matters; omit a candidate's native language alone.
 
-## Technical Proficiencies
+## PLAN: Technical Proficiencies
 
 For pure-leadership jobs the section may be omitted when the JD does not ask for technical tools.

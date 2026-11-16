@@ -50,6 +50,7 @@ DRAFTING_STEPS = {
     'CRED': 'writes the header and the credential sections (Education, Certifications & Training, '
             'Professional Affiliations, Languages)',
     'TECH': 'writes Technical Proficiencies',
+    'CUT':  'cuts the measured CV to its page limit',
 }
 
 
@@ -71,8 +72,13 @@ def check(text):
 
 
 def slice_steps(text, wanted):
-    """Return the opening, the ALL sections, and each wanted step's sections."""
-    return _shared_slicer.slice_keys(text, wanted, DRAFTING_STEPS, SHARED_KEY)
+    """Return the opening, the ALL sections, and each wanted step's sections.
+
+    A step reads all four CV rules files, and a file may hold only ALL rules for
+    it, so a valid step with no section here gets the ALL sections alone. An
+    unknown step key is still an error.
+    """
+    return _shared_slicer.slice_keys(text, wanted, DRAFTING_STEPS, SHARED_KEY, require_section=False)
 
 
 # ---------------------------------------------------------------------------
