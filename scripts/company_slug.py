@@ -133,6 +133,19 @@ def record(repo_root, cfg, company, slug):
     return slug
 
 
+def replace(repo_root, cfg, company, slug):
+    """Make slug the company's only recorded slug; return it.
+
+    Drops every entry naming the company, then records the new one. Used when
+    the user changes an application's slug; the caller checks first that no
+    other application folder still uses the old slug.
+    """
+    path = _registry_path(repo_root, cfg)
+    data = {s: e for s, e in _load(path).items() if _norm(e.get('name')) != _norm(company)}
+    _save(path, data)
+    return record(repo_root, cfg, company, slug)
+
+
 def choose(repo_root, cfg, company, slug=None):
     """Return (slug, is_new) for a company; write nothing.
 

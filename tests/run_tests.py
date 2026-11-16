@@ -2313,6 +2313,52 @@ def test_application_folder_is_created_on_purpose():
     assert os.path.isdir(out.splitlines()[0]), out
 
 
+def test_role_intake_checks_its_own_handoff():
+    """Shipped 2026-11-16: once research moved out, role-intake handed off with
+    nothing checking its folder, jd.md or session log. role_intake_qc.py now
+    checks them before the user reviews the paths.
+    """
+    code, out = run('assemble.py', 'folder', '--company', 'Halloway Labs', '--slug', 'halloway')
+    assert code == 0, out
+    folder = out.splitlines()[0]
+    jd = write_block('jd.txt', 'Director, Data Operations at Halloway Labs.\n')
+    code, out = run('assemble.py', 'ingest', '--folder', folder, '--jd-text-file', jd, *JD_IDENT)
+    assert code == 0, out
+    code, out = run('assemble.py', 'init', '--folder', folder, '--company', 'Halloway Labs',
+                    '--role', 'Director, Data Operations', '--start-date', '2026-02-03',
+                    '--jd-source', os.path.join(folder, 'jd.md'))
+    assert code == 0, out
+
+    code, out = run('role_intake_qc.py', 'check', '--folder', folder)
+    assert code == 0, f'a fresh hand-off failed its check:\n{out}'
+
+    log_path = os.path.join(folder, 'session_log.md')
+    log = _util.read(log_path)
+    _util.write(log_path, re.sub(r'- APP-NNN: \S+', '- APP-NNN: APP-999', log))
+    code, out = run('role_intake_qc.py', 'check', '--folder', folder)
+    assert code != 0 and 'APP-999' in out, f'a mismatched APP-NNN passed:\n{out}'
+    _util.write(log_path, log)
+
+    # A wrong session log is rewritten with --replace while role-intake still owns
+    # it; once research exists, replacing it would drop later work.
+    init = ('assemble.py', 'init', '--folder', folder, '--company', 'Halloway Labs',
+            '--role', 'Director, Data Operations', '--start-date', '2026-02-03',
+            '--jd-source', 'https://example.com/jd')
+    code, out = run(*init)
+    assert code != 0 and 'exists' in out, f'init overwrote a session log without --replace:\n{out}'
+    code, out = run(*init, '--replace')
+    assert code == 0, out
+    assert '- JD source: https://example.com/jd' in _util.read(log_path), 'the log was not rewritten'
+    _util.write(os.path.join(folder, 'research.md'), '# Research: x | y\n')
+    code, out = run(*init, '--replace')
+    assert code != 0 and 'research' in out, f'--replace ran after research:\n{out}'
+    os.remove(os.path.join(folder, 'research.md'))
+
+    os.remove(os.path.join(folder, 'jd.md'))
+    code, out = run('role_intake_qc.py', 'check', '--folder', folder)
+    assert code != 0 and 'jd.md' in out, f'a missing jd.md passed:\n{out}'
+
+
 def test_jd_reaches_disk_without_being_retyped():
     """Shipped 2026-11-16: jd_extract.py printed the JD and the model re-typed it
     into a scratch file for ingest, a hand copy of a long document that nothing
@@ -2405,6 +2451,25 @@ def test_relabel_corrects_company_without_a_new_application():
     assert research.startswith('# Research: Halloway Labs | Director, Data Operations'), research
     assert jd.startswith('**Company:** Halloway Labs'), jd
     assert '# Session Log: Halloway Labs | Director, Data Operations' in log, log
+
+    # A slug-only change renames the folder and replaces the registry slug,
+    # when no other application uses the old one.
+    import company_slug
+    root, cfg = _config.load()
+    code, out = run('assemble.py', 'relabel', '--folder', moved, '--slug', 'hlw')
+    assert code == 0, out
+    renamed = os.path.join(RUN_DIR, 'applications', 'hlw_APP-001_2026-01')
+    assert out.splitlines()[0] == renamed and os.path.isdir(renamed), out
+    assert company_slug.lookup(root, cfg, 'Halloway Labs') == 'hlw', 'the registry kept the old slug'
+    assert 'halloway' not in company_slug._load(company_slug._registry_path(root, cfg)), 'old slug left behind'
+
+    # Another application using the slug blocks the change, naming that folder.
+    code, out = run('assemble.py', 'folder', '--company', 'Halloway Labs')
+    assert code == 0, out
+    other = os.path.basename(out.splitlines()[0])
+    code, out = run('assemble.py', 'relabel', '--folder', renamed, '--slug', 'hal')
+    assert code != 0 and other in out, f'a shared slug was changed:\n{out}'
+    assert os.path.isdir(renamed) and company_slug.lookup(root, cfg, 'Halloway Labs') == 'hlw', 'a refused relabel changed something'
 
 
 def test_role_intake_hands_classification_to_role_classify():

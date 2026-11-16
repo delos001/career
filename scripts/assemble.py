@@ -18,6 +18,8 @@ through a deterministic tool instead of by hand. One subcommand per write point:
             temp/ (Phase 1's working files).
   init      Phase 5 - write the initial session log (metadata filled in, the
             research date and axis sections marked pending) into the folder.
+            --replace rewrites it, refused once research or a later section
+            exists.
   relabel   Correction - fix the company and/or title in place, keeping the
             APP-NNN, and rename the folder when the slug changes. Used by
             role-intake and role-research.
@@ -37,7 +39,7 @@ Created   : 2026-05-14
 Project   : career
 Usage     : python scripts/assemble.py folder   --company ... [--slug ...]
             python scripts/assemble.py ingest   --folder ... --jd-text-file ... --title ... --company ... [--comms-text-file ...]
-            python scripts/assemble.py init     --folder ... --company ... --role ... [--level ...] [--industry ...] --start-date ... --jd-source ... [--comms-source ...]
+            python scripts/assemble.py init     --folder ... --company ... --role ... [--level ...] [--industry ...] --start-date ... --jd-source ... [--comms-source ...] [--replace]
             python scripts/assemble.py relabel  --folder ... [--company ... [--slug ...]] [--role ...]
 Depends   : pyyaml (via _config)
 """
@@ -236,8 +238,20 @@ def cmd_init(args, repo_root, cfg):
 
     # Fail loudly rather than overwrite: an existing session log means this is
     # really a resume, which the skill's resume check should have caught.
+    # --replace rewrites it to correct role-intake's own fields, but only while
+    # nothing later has been added: once research has run, or another skill has
+    # appended a section, rewriting would drop that work.
     if os.path.exists(session_log):
-        raise FileExistsError(f'session log already exists: {session_log}')
+        if not args.replace:
+            raise FileExistsError(f'session log already exists (pass --replace to correct it): {session_log}')
+        if os.path.exists(os.path.join(app_folder, cfg['filenames']['research_file'])):
+            raise ValueError('research has run for this application; correct the session log through '
+                             'relabel or by hand, not --replace')
+        sections = re.findall(r'(?m)^## (.+?)\s*$', _util.read(session_log))
+        extra = [s for s in sections if s not in ('Metadata', 'Axis Classification', 'Axis Gaps')]
+        if extra:
+            raise ValueError(f'the session log has sections from later skills ({", ".join(extra)}); '
+                             f'--replace would drop them')
 
     jd_file_name = cfg['filenames']['jd_file']
     comms_file_name = cfg['filenames']['comms_file']
@@ -277,8 +291,10 @@ def cmd_init(args, repo_root, cfg):
 # APP-NNN. Going back to Phase 2 and running forward would repeat Phase 3,
 # which claims a new APP-NNN and makes a second folder. Rewrites the session
 # log's H1 and Company/Role lines, the research H1, and jd.md's identity header
-# when one was added, then renames the folder when the slug changes. Refuses a
-# folder holding files a later skill wrote: those carry the old labels too.
+# when one was added, then renames the folder when the slug changes. --slug on
+# its own changes the company's registry slug, refused while another
+# application folder uses the old one. Refuses a folder holding files a later
+# skill wrote: those carry the old labels too.
 # ---------------------------------------------------------------------------
 
 def _relabel_h1(text, prefix, company, role):
@@ -305,10 +321,8 @@ def _relabel_field(text, pattern, value, what):
 
 
 def cmd_relabel(args, repo_root, cfg):
-    if not (args.company or args.role):
-        raise ValueError('pass --company, --role, or both')
-    if args.slug and not args.company:
-        raise ValueError('--slug goes with --company')
+    if not (args.company or args.role or args.slug):
+        raise ValueError('pass --company, --role, --slug, or a combination')
     fn = cfg['filenames']
     folder = os.path.abspath(args.folder)
     if not os.path.isdir(folder):
@@ -351,23 +365,41 @@ def cmd_relabel(args, repo_root, cfg):
             head = re.sub(r'(?m)^(\*\*Company:\*\* ).*$', lambda m: m.group(1) + args.company, head)
         jd = head + sep + body
 
-    # Folder name: same APP-NNN and month, the corrected company's slug.
+    # Folder name: same APP-NNN and month, the company's slug.
     name = os.path.basename(folder)
     target = folder
     at = name.find('_' + app_id)
-    if args.company and at < 0:
+    if (args.company or args.slug) and at < 0:
         raise ValueError(f'folder name {name} does not carry {app_id}')
-    is_new = False
-    if args.company:
-        # The registry decides the slug; a new company with no --slug stops here.
-        slug, is_new = company_slug.choose(repo_root, cfg, args.company, args.slug)
+    registry_write = None
+    if args.company or args.slug:
+        company = args.company or re.search(r'(?m)^- Company: (.+?)\s*$', log).group(1)
+        known = company_slug.lookup(repo_root, cfg, company)
+        if known and args.slug and args.slug.strip().lower() != known:
+            # Changing a recorded company's slug. Refused while any other
+            # application folder carries the old slug, since the company would
+            # then live under two slugs.
+            apps_dir = os.path.dirname(folder)
+            prefix = re.escape(cfg['naming']['app_id_prefix'])
+            users = sorted(f for f in os.listdir(apps_dir) if f != name
+                           and re.match(rf'{re.escape(known)}_{prefix}\d+_', f))
+            if users:
+                raise ValueError(f'other applications use the slug "{known}" ({", ".join(users)}); '
+                                 f'changing it would split "{company}" across two slugs')
+            slug = args.slug.strip().lower()
+            registry_write = lambda: company_slug.replace(repo_root, cfg, company, slug)
+        else:
+            # The registry decides the slug; a new company with no --slug stops here.
+            slug, is_new = company_slug.choose(repo_root, cfg, company, args.slug)
+            if is_new:
+                registry_write = lambda: company_slug.record(repo_root, cfg, company, slug)
         target = os.path.join(os.path.dirname(folder), slug + name[at:])
         if target != folder and os.path.exists(target):
             raise FileExistsError(f'a folder already exists at {target}')
 
-    # All checks passed: record a new slug, write, then rename.
-    if is_new:
-        company_slug.record(repo_root, cfg, args.company, slug)
+    # All checks passed: update the registry, write, then rename.
+    if registry_write:
+        registry_write()
     _util.write(log_path, log)
     if research is not None:
         _util.write(research_path, research)
@@ -421,6 +453,8 @@ def main():
                         help='app-folder path to jd.md (from ingest output), or URL')
     p_init.add_argument('--comms-source', default=None,
                         help='app-folder path to comms.md (from ingest output), URL, or "pasted"; omit if no comms')
+    p_init.add_argument('--replace', action='store_true',
+                        help='rewrite an existing session log; refused once research or a later section exists')
     p_init.set_defaults(func=cmd_init)
 
     p_rel = sub.add_parser('relabel', help='correct company and/or title, keeping the APP-NNN')
@@ -428,7 +462,8 @@ def main():
     p_rel.add_argument('--company', default=None)
     p_rel.add_argument('--role', default=None)
     p_rel.add_argument('--slug', default=None,
-                       help='only for a corrected company with no recorded slug; recorded for reuse')
+                       help='a new company\'s slug, or a changed slug for this company; refused while '
+                            'another application uses the old one')
     p_rel.set_defaults(func=cmd_relabel)
 
     args = parser.parse_args()

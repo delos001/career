@@ -99,7 +99,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Status**: Designed
 - **Inputs**:
   - Rules: `rules/global-rules.md`.
-  - Scripts: `scripts/display/introduce.py`, `scripts/ingest/jd_extract.py`, `scripts/assemble.py` (which calls `app_id.py` and `company_slug.py`).
+  - Scripts: `scripts/display/introduce.py`, `scripts/ingest/jd_extract.py`, `scripts/assemble.py` (which calls `app_id.py` and `company_slug.py`), `scripts/role_intake_qc.py`.
   - Templates: `templates/session_log.md`.
   - User input: job description (paste / file / URL), role communications (optional), a slug only for a new company, title/company confirmation.
 - **Outputs**:
@@ -426,6 +426,15 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Triggers**: Invoked by `role-research` Phase 3 Step 3a, before the `qc-role-research` judgment agent.
 - **Update Triggers**: When the session log or research file templates change.
 
+#### scripts/role_intake_qc.py
+
+- **Purpose**: Deterministic QC for role-intake's hand-off (S1 to S5): folder name form, `jd.md` present and non-empty, `comms.md` present exactly when the session log names a comms source, session log fields filled (only the research date, level, industry and axes may be pending), and the log's APP-NNN matching the folder. Imports parsing helpers from `role_research_qc.py`. (The name previously belonged to what is now `role_research_qc.py`.)
+- **Status**: Designed
+- **Inputs**: Args (`check --folder <app_folder>`). Config via `scripts/_config.py`.
+- **Outputs**: Per-check `PASS`/`FAIL` lines and a `RESULT` line; exit 0 when all pass, 1 otherwise.
+- **Triggers**: Invoked by `role-intake` Phase 6, before the user reviews the files.
+- **Update Triggers**: When `templates/session_log.md` or the application folder naming changes.
+
 #### scripts/role_research_assemble.py
 
 - **Purpose**: Write `research.md` from the three research agents' blocks and fill the session log's research-completed date (`research --folder --date --company-file --role-file --industry-file`); reads APP-NNN, company and role from the session log. On a re-run it replaces only the three research sections and the date. Moved out of `assemble.py` 2026-11-16.
@@ -619,11 +628,11 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/assemble.py
 
-- **Purpose**: Write role-intake's artifacts deterministically rather than by hand. Subcommands: `folder` (Phase 3; takes the company, resolves its slug via `company_slug.py` (a new company needs `--slug`, asked before any ID is claimed), takes the month from today, claims the APP-NNN via `app_id.py` and creates its folder in one call), `ingest` (Phase 4; `--folder`, `--title`, `--company`; writes `jd.md` / `comms.md`, adding an identity header line for a title or company the JD text lacks, refuses a folder never created, then deletes its input files if they sit in `temp/`), `init` (Phase 5; `--folder`; reads the APP-NNN and month from the folder name), `relabel` (a title or company corrected in role-intake or role-research: rewrites the labels in place, keeps the APP-NNN, renames the folder on a slug change, refuses a folder later skills have written to). Every write is section-scoped; `role_research_assemble.py` and `role_classify_assemble.py` import its section helpers.
+- **Purpose**: Write role-intake's artifacts deterministically rather than by hand. Subcommands: `folder` (Phase 3; takes the company, resolves its slug via `company_slug.py` (a new company needs `--slug`, asked before any ID is claimed), takes the month from today, claims the APP-NNN via `app_id.py` and creates its folder in one call), `ingest` (Phase 4; `--folder`, `--title`, `--company`; writes `jd.md` / `comms.md`, adding an identity header line for a title or company the JD text lacks, refuses a folder never created, then deletes its input files if they sit in `temp/`), `init` (Phase 5; `--folder`; reads the APP-NNN and month from the folder name; `--replace` rewrites the log, refused once research or a later section exists), `relabel` (a title, company or slug corrected in role-intake or role-research: rewrites the labels in place, keeps the APP-NNN, renames the folder on a slug change, refuses a folder later skills have written to; a slug change for a recorded company replaces its registry slug and is refused while another application uses the old one). Every write is section-scoped; `role_research_assemble.py` and `role_classify_assemble.py` import its section helpers.
 - **Status**: Designed
 - **Inputs**: Skill-passed args (company, title, dates, sources, paths) and the Phase 1 text files. Config: `config.yaml` (paths, filenames, naming patterns) via `scripts/_config.py`. Templates: `session_log.md` (read as the structure source).
 - **Outputs**: the `personal/applications/<SLUG>_APP-NNN_YYYY-MM/` folder and, inside it, `jd.md`, `comms.md` and `session_log.md`. Paths echoed to stdout.
-- **Triggers**: Invoked by `role-intake` Phases 3 to 6; `relabel` also by `role-research`.
+- **Triggers**: Invoked by `role-intake` Phases 3 to 5, and `relabel` in Phase 7 and by `role-research`.
 - **Update Triggers**: When `templates/session_log.md` changes shape; when the role-intake phase structure changes.
 
 #### scripts/session_log.py
