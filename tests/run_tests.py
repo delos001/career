@@ -2572,6 +2572,52 @@ def test_research_file_reads_industry_company_role_with_sources_last():
     assert not findings[0][1] and 'citation order' in findings[0][2], findings[0]
 
 
+def test_research_layout_renumbers_after_a_hand_edit():
+    """Found 2026-11-17 (user, APP-029): a QC fix edited a Summary to cite a
+    source the file had numbered later, the citation-order check failed, and
+    nothing but hand renumbering could restore it, because sources were only
+    renumbered while an agent block still carried its own list. `layout`
+    re-lays out an existing file and renumbers from the end list.
+    """
+    import role_research_qc as riq
+    research_path = os.path.join(FIXTURE_APP, 'research.md')
+    os.remove(research_path)
+    blocks = (
+        '--company-file', write_block('company.md', '## Company\n\n### Summary\nS [c1].\n\n### Key facts\n- A [c1]\n'
+                                                     '- B [c2]\n\n### Sources\n- [c1] https://c-one.com\n'
+                                                     '- [c2] https://c-two.com\n'),
+        '--role-file', write_block('role.md', '## Title\n\n### Summary\nS.\n\n### Key facts\n- R [t1]\n\n'
+                                              '### Sources\n- [t1] https://t-one.com\n'),
+        '--industry-file', write_block('industry.md', '## Industry\n\n### Summary\nS.\n\n### Key facts\n- I [i1]\n\n'
+                                                      '### Sources\n- [i1] https://i-one.com\n'),
+    )
+    code, out = run('role_research_assemble.py', 'research', '--folder', FIXTURE_APP, '--date', '2026-01-11', *blocks)
+    assert code == 0, out
+    clean = _util.read(research_path)
+
+    # Laying out a clean file changes nothing.
+    code, out = run('role_research_assemble.py', 'layout', '--folder', FIXTURE_APP)
+    assert code == 0 and _util.read(research_path) == clean, 'layout changed a clean file'
+
+    # The hand edit: the Summary now cites c2 (c-two) before c1.
+    edited = clean.replace('S [c1].', 'S [c2][c1].')
+    assert edited != clean, 'the edit did not apply'
+    _util.write(research_path, edited)
+    findings = []
+    riq.check_research(edited, findings)
+    assert not findings[0][1] and 'citation order' in findings[0][2], findings[0]
+
+    code, out = run('role_research_assemble.py', 'layout', '--folder', FIXTURE_APP)
+    assert code == 0, out
+    fixed = _util.read(research_path)
+    # c-two is cited first now, so it is c1; each claim keeps its own URL.
+    assert 'S [c1][c2].' in fixed and '- A [c2]\n- B [c1]' in fixed, fixed
+    assert '- [c1] https://c-two.com\n- [c2] https://c-one.com' in fixed, fixed
+    findings = []
+    riq.check_research(fixed, findings)
+    assert findings[0][1], findings[0]
+
+
 def test_research_title_section_accepts_the_older_role_heading():
     """Renamed 2026-11-17 (user): research.md's '## Role' became '## Title',
     since it holds what title-research finds about the title, and 'role' in

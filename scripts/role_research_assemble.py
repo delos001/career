@@ -14,6 +14,9 @@ hand. Moved out of assemble.py when research became its own skill (2026-11-16).
             left in place. Every write lays the file out as Industry, Company,
             Title, other sections, then one Sources list in citation order (see
             Layout). An older file's '## Role' is renamed '## Title'.
+  layout    Re-lay out an existing research.md without new research. Run
+            after any hand edit: it renumbers each section's sources by first
+            citation, which a hand edit can break (2026-11-17, APP-029).
 
 Nothing repo-dependent is hardcoded here: filenames and the template location
 come from config.yaml (via _config); the structure comes from
@@ -24,6 +27,7 @@ Created   : 2026-11-16
 Project   : career
 Usage     : python scripts/role_research_assemble.py research --folder ... --date ...
                 --company-file ... --role-file ... --industry-file ...
+            python scripts/role_research_assemble.py layout --folder ...
 Depends   : pyyaml (via _config)
 """
 
@@ -55,15 +59,25 @@ _BLOCK_SOURCES_RE = re.compile(r'(?ms)^### Sources[ \t]*\n(.*?)(?=^#{1,3} |\Z)')
 def _split_sources(block, prefix):
     """Return (block without its Sources subsection, its source lines).
 
-    Marker-style lines (`- [c1] <URL>`) are renumbered by first citation in
-    the block, and the block's markers with them. Older inline-URL lists move
-    as they are. Uncited or unmatched lines are kept, last, for QC to report.
+    The lines are renumbered with the block's markers (see _renumber).
     """
     m = _BLOCK_SOURCES_RE.search(block)
     if not m:
         return block.strip(), []
     body = (block[:m.start()] + block[m.end():]).strip()
     lines = [ln.strip() for ln in m.group(1).split('\n') if ln.strip()]
+    return _renumber(body, lines, prefix)
+
+
+def _renumber(body, lines, prefix):
+    """Return (body, lines) with the prefix's sources numbered by first citation.
+
+    Marker-style lines (`- [c1] <URL>`) are renumbered by first citation in
+    the body, and the body's markers with them. Older inline-URL lists move
+    as they are. Uncited or unmatched lines are kept, last, for QC to report.
+    Used both on an agent block's own Sources and on a laid-out file's end
+    list, so a hand edit that cites a source earlier is renumbered too.
+    """
     entries = {}
     for ln in lines:
         e = _SOURCE_ENTRY_RE.match(ln)
@@ -115,8 +129,11 @@ def _layout(text):
         prefix = BLOCK_PREFIX[name]
         for section in named.pop(name, []):
             body, lines = _split_sources(section, prefix)
+            if not lines:
+                # A laid-out section: renumber its entries from the end list.
+                body, lines = _renumber(body, [ln for ln in kept if prefix_of(ln) == prefix], prefix)
             parts.append(body)
-            sources += lines or [ln for ln in kept if prefix_of(ln) == prefix]
+            sources += lines
     sources += [ln for ln in kept if prefix_of(ln) not in BLOCK_PREFIX.values()]
     for section in sections:
         heading = section.split('\n', 1)[0][3:].strip()
@@ -178,6 +195,18 @@ def cmd_research(args, repo_root, cfg):
 
 
 # ---------------------------------------------------------------------------
+# Subcommand: layout
+# ---------------------------------------------------------------------------
+
+def cmd_layout(args, repo_root, cfg):
+    research_file = os.path.join(args.folder, cfg['filenames']['research_file'])
+    if not os.path.exists(research_file):
+        raise FileNotFoundError(f'research file not found (run role-research first): {research_file}')
+    _util.write(research_file, _layout(_util.read(research_file)))
+    print(research_file)
+
+
+# ---------------------------------------------------------------------------
 # Command-line entry point
 # Reports failure to stderr with exit 1 so the calling skill halts per
 # global-rules.md.
@@ -195,6 +224,11 @@ def main():
     p_res.add_argument('--role-file', required=True)
     p_res.add_argument('--industry-file', required=True)
     p_res.set_defaults(func=cmd_research)
+
+    p_lay = sub.add_parser('layout', help='re-lay out research.md after a hand edit; renumbers sources '
+                                          'by first citation')
+    p_lay.add_argument('--folder', required=True, help='the application folder')
+    p_lay.set_defaults(func=cmd_layout)
 
     args = parser.parse_args()
     try:

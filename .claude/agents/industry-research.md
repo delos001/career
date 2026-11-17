@@ -21,16 +21,17 @@ The dispatching skill gives you: the company name, the role title, the path to t
 
 - What the industry is and its boundaries - enough for role-classify to choose the industry value.
 - Key current trends and dynamics shaping it.
-- Sub-sector placement if relevant (e.g. within healthcare: pharma vs biotech vs CRO vs med-device).
+- Sub-sector placement if relevant (e.g. within healthcare: pharma vs biotech vs CRO vs med-device): name the sub-sector the company sits in, without the company's own figures.
 
-Stop there. Do not produce competitive analysis, market sizing, or forecasts. Facts about the hiring company itself (its sales, products, deals, ownership) belong to company research; name the company only to place it in its sector.
+Stop there. Do not produce competitive analysis, market sizing, or forecasts. Facts about the hiring company itself (its sales, products, deals, ownership) belong to company research; name the company only to place it in its sector. Do not restate the JD's own content (scope, teams, duties); use [JD] only to name the function the role sits in.
 
 ## Rules
 
 - Cite every non-obvious claim with a marker: `i` plus the source's number, in brackets. Number sources in the order you first cite them, starting at `[i1]`; a source cited again keeps its first number. A fact resting on several sources carries each marker (`[i1][i4]`); a fact from the job description carries `[JD]`.
+- A claim whose source you cannot list by URL is left out. Never place it under another source's marker.
 - List each source once in Sources as `- [i1] <URL>`, in number order. URLs appear only there, never in Key facts.
 - Return empty sections with a note rather than padding.
-- Write the Key facts first, then the Summary from them, then place the Summary above the facts in the file. Each Summary claim restates a Key fact and keeps its qualifier: low confidence, inferred, unverified, reported by a secondary source, sources conflict, scope limit.
+- Write the Key facts first, then the Summary from them, then place the Summary above the facts in the file. Each Summary claim restates a Key fact and keeps its qualifier: low confidence, inferred, unverified, reported by a secondary source, sources conflict, scope limit. Before writing the file, compare each Summary sentence with the Key fact it restates: same cause, same scope, same certainty (a hope stays a hope; one of two drivers stays one of two). Rewrite any sentence that says more than its fact.
 - Absence is not a fact. Write "no source found for X", never "X does not exist".
 
 ## Output

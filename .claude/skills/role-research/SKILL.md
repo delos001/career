@@ -3,7 +3,7 @@ name: role-research
 description: Research the industry, company, and the role title for an application that role-intake started, and write the research file. Run after role-intake; role-extract runs next.
 ---
 
-# role-research - research the company, role and industry
+# role-research - research the industry, company and title
 
 ## Operating rules
 
@@ -16,13 +16,14 @@ Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-N
 
 - **There is no folder or no session log:** role-intake has not finished for this APP-NNN. Tell the user role intake must be completed first and stop.
 - **`research.md` already exists:** tell the user the research is already written, then go to Phase 3 to re-check it.
+- **All three research blocks are in `<scratch>` (`research_company.md`, `research_role.md`, `research_industry.md`):** tell the user the research finished but was never written up, then go to Phase 2.
 - **Otherwise:** go to Phase 0.
 
 ## Phase 0 - Show the intro
 
 - Run `python scripts/display/introduce.py role-research` and show the output.
 
-## Phase 1 - Research the company, role and industry
+## Phase 1 - Research the industry, company, and title
 
 - Dispatch `company-research`, `title-research` and `industry-research` in parallel. For each, run `python scripts/dispatch_prompt.py <agent> --folder <app_folder>` and send the prompt between `=== PROMPT ===` and `=== END ===` exactly as printed. Each agent writes its block to the output file the prompt names; never write or edit those files yourself.
 
@@ -48,6 +49,6 @@ Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-N
 | Finding | Fix |
 |---|---|
 | A section missing or substantially wrong | Phase 1, then Phase 2 |
-| One claim, hedge or source wrong | Edit that passage in `research.md` directly, showing the before/after first |
+| One claim, hedge or source wrong | Edit that passage in `research.md` directly, showing the before/after first, then run `python scripts/role_research_assemble.py layout --folder <app_folder>` |
 | Session log check fails | If the research date is still pending, re-run Phase 2. Otherwise stop and tell the user role-intake's files changed after its check. |
 | Title or company wrong | Run `python scripts/assemble.py relabel --folder <app_folder>` with `--role` and/or `--company` (and `--slug` if it asks for one); the path it prints is `<app_folder>` from then on. Then Phase 1. |

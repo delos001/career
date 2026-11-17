@@ -16,17 +16,17 @@ role-intake: |
     4. Save the job description; you get its path to review.
     5. Start the session log.
 
-  Next: role-research researches the company, role and industry.
+  Next: role-research researches the industry, company and title.
 
   Have ready: the job description, and any recruiter / hiring-manager messages.
 
 role-research: |
-  # role-research - research the company, role and industry
+  # role-research - research the industry, company and title
 
   Runs after role-intake, from the application folder, so a fresh session works.
 
   Steps:
-    1. Research the company, the role and the industry - scoped to what later
+    1. Research the industry, the company and the title - scoped to what later
        skills need, not exhaustive dossiers.
     2. Write the research file.
     3. Check it, then you review and approve.

@@ -235,7 +235,7 @@ career/
 ├── .claude/
 │   ├── skills/                          # one folder per skill; SKILL.md is the authoritative spec
 │   │   ├── role-intake/                 # pipeline: JD ingest, application folder, session log
-│   │   ├── role-research/               # pipeline: company, role and industry research
+│   │   ├── role-research/               # pipeline: industry, company and title research
 │   │   ├── role-extract/                # pipeline: JD requirements and ranked needs
 │   │   ├── role-classify/               # pipeline: five-axis classification
 │   │   ├── retrieval/                   # pipeline: score profile against requirements

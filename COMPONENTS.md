@@ -116,7 +116,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### role-research
 
-- **Purpose**: Research the company, role and industry for an application role-intake started, write `research.md`, check it, and hand off to role-extract. Split out of role-intake 2026-11-16 (`role-research-split-2026-11`).
+- **Purpose**: Research the industry, company and title for an application role-intake started, write `research.md`, check it, and hand off to role-extract. Split out of role-intake 2026-11-16 (`role-research-split-2026-11`).
 - **Status**: Designed
 - **Inputs**:
   - Rules: `rules/global-rules.md`.
@@ -419,7 +419,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 - **Purpose**: Judgment quality-check for the research file - verifies claims trace to sources or the JD and no section was completed on partial content. Mechanical checks are owned by `scripts/role_research_qc.py` and not re-run here. Named `qc-role-intake` until research became its own skill (2026-11-16).
 - **Status**: Designed
-- **Inputs**: Skill-passed (by `role-research`): session log, research file, and JD paths. Tools: Read, Grep.
+- **Inputs**: Skill-passed (by `role-research`): session log, research file, and JD paths. Tools: Read, Grep, WebFetch (opens the sources behind Summary claims).
 - **Outputs**: QC verdict (PASS / FINDINGS) with a route-back phase per finding.
 - **Triggers**: Invoked by `role-research` Phase 3 Step 3b, after `role_research_qc.py` passes.
 - **Update Triggers**: When the research file schema changes; when the skill's phase structure changes (route-back map); when the mechanical/judgment split with `role_research_qc.py` shifts.
