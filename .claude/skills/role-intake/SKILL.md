@@ -46,7 +46,7 @@ Ask: "Is this a new role, or are you resuming one?"
 
 ## Phase 3 - Create the application folder
 
-- Run `python scripts/assemble.py folder --company "<confirmed company>"`. It prints `app_folder`, the APP-NNN and the slug; tell the user the slug. If it stops because the company has no slug, suggest a 3-5 letter lowercase slug drawn from the company name and ask the user to accept it or give their own; re-run with `--slug`. Once it succeeds, never run it again: each success claims a new APP-NNN. A later slug or company change goes through `relabel` (see *Fixes*).
+- Run `python scripts/assemble.py folder --company "<confirmed company>"`. It prints `app_folder`, the APP-NNN and the slug; tell the user the slug. If it stops because the company has no slug, suggest a 2-5 letter lowercase slug drawn from the company name and ask the user to accept it or give their own; re-run with `--slug`. Once it succeeds, never run it again: each success claims a new APP-NNN. A later slug or company change goes through `relabel` (see *Fixes*).
 
 ## Phase 4 - Save the JD
 
@@ -54,7 +54,7 @@ Ask: "Is this a new role, or are you resuming one?"
 
 ## Phase 5 - Start the session log
 
-- Run `python scripts/assemble.py init --folder <app_folder> --company "<confirmed company>" --role "<confirmed title>" --start-date <today>` with `--jd-source` (the URL if the JD came from one, otherwise the `jd.md` path) and, if there are messages, `--comms-source` (the URL, the `comms.md` path, or `"pasted"`).
+- Run `python scripts/assemble.py init --folder <app_folder> --company "<confirmed company>" --role "<confirmed title>" --start-date <today>` with `--jd-source` and, if there are messages, `--comms-source`, each set to the Phase 1 source.
 
 ## Phase 6 - Check the application files
 

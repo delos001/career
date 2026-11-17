@@ -47,7 +47,7 @@ Ask if this session is for a new CV or to resume a previous one.
 
 - Input: application folder path (from the resume check), APP-NNN, slug.
 - Read `jd_needs.md` from the application folder: each requirement's text and Demand (required or preferred), grouped under the job's ranked needs. Rows under `## Not ranked` are not requirements the CV answers.
-- Read `research.md` from the application folder. Extract the `## Role`, `## Company`, `## Industry` summary blocks (role context).
+- Read `research.md` from the application folder. Extract the `## Title` (`## Role` in older files), `## Company`, `## Industry` summary blocks (role context).
 - Read the session log (`session_log.md`) from the application folder. Extract the `## Axis Classification` section (the five axis values, each with primary and optional secondary), and from it the candidate **level** (`ic` or `leadership`, the level axis value) and, for leadership, the **tier** (the `- Tier:` line, e.g. `function-lead`). A leadership log written before 2026-11-05 carries no tier; ask the user which tier fits the role (naming the four from `rules/levels/leadership.md`) rather than guessing.
 - Read `gap_analysis.md`. Extract:
   - The per-requirement coverage statuses keyed by `CR-NNN`. The `CR-NNN` ids are gap-analysis's id space and are the authoritative requirement ids for the CV; `CR-NNN` is the requirement's row number in `jd_needs.md` (row 2 is CR-002), and the bare "requirement N" references in `retrieval.md` use the same number.

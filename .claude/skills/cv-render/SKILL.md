@@ -34,7 +34,7 @@ Renders `cv_content.md` in the application folder (the cv-targeted handoff) to a
 
 - Build the default output filename as `<LastName>_CV_<CompanyName>_<AbbreviatedRole>_<YYYY-MM>.docx` (e.g. `Delosh_CV_Pfizer_VPDataOps_2026-03.docx`), where:
   - `LastName` is the candidate's surname from the contact block in `user-info.md` in the profile folder (`python scripts/paths.py profile`). Surname only, never the full name or initials.
-  - `CompanyName` and the role come from `## Company` / `## Role` in the application's `research.md`; abbreviate the role to a short token (e.g. "Associate Director, Operational Excellence" -> `AssocOpExDir`).
+  - `CompanyName` and the role come from the first line of the application's `research.md` (`# Research: <company> | <title>`); abbreviate the role to a short token (e.g. "Associate Director, Operational Excellence" -> `AssocOpExDir`).
   - `YYYY-MM` is the application folder's `ym`.
 - Present the proposed filename and ask the user to confirm or override it. The output path is `<application folder>/<confirmed filename>`.
 

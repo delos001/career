@@ -48,15 +48,10 @@ import role_research_qc
 _AXIS_FOLDERS = {'Orientation': 'orientations', 'Industry': 'industries', 'Specialty': 'specialties',
                  'Level': 'levels', 'Work-state': 'work-states'}
 
-_INDUSTRY_NOTE = ('Identify and research the industry this company actually operates in, using the '
-                  'company name and the job description. No industry was inferred earlier in this '
-                  'run, so establish the sector from scratch.')
-
 AGENTS = {
     'company-research': {'facts': ['company', 'role'], 'files': ['jd'], 'output': 'research_company.md'},
     'title-research': {'facts': ['company', 'role'], 'files': ['jd'], 'output': 'research_role.md'},
-    'industry-research': {'facts': ['company', 'role'], 'files': ['jd'], 'note': _INDUSTRY_NOTE,
-                          'output': 'research_industry.md'},
+    'industry-research': {'facts': ['company', 'role'], 'files': ['jd'], 'output': 'research_industry.md'},
     'critical-requirements-extractor': {'facts': ['company', 'role'], 'files': ['jd'],
                                         'output': 'requirements.md'},
     'jd-needs-ranker': {'files': ['jd', 'company_research', 'jd_needs'], 'output': 'needs.md'},
@@ -256,8 +251,6 @@ def build_prompt(agent, src, mode=None, input_file=None, continued=False):
         out = os.path.join(src.folder, src.cfg['filenames']['scratch_subdir'], spec['output'])
         os.makedirs(os.path.dirname(out), exist_ok=True)
         lines.append(f'Output file: {out}')
-    if spec.get('note'):
-        lines.append(spec['note'])
     return '\n'.join(lines)
 
 

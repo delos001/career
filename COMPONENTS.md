@@ -125,7 +125,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - Templates: `templates/research_file.md`.
   - Files: `jd.md`, `session_log.md`.
   - User input: APP-NNN; approval.
-- **Outputs**: `research.md` (`## Company`, `## Role`, `## Industry`, and a pending `## Axis Gaps`); the session log's research-completed date. Hands off to role-extract.
+- **Outputs**: `research.md` (`## Industry`, `## Company`, `## Title`, `## Interview prep`, then one `## Sources` list in citation order); the session log's research-completed date. Hands off to role-extract.
 - **Triggers**: User invocation `/role-research` after role-intake.
 - **Update Triggers**: When the research template or the research agents change; when the role-extract handoff contract changes.
 
@@ -153,7 +153,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - Scripts: `scripts/display/introduce.py`, `scripts/role_classify_assemble.py`, `scripts/role_classify_qc.py`, `scripts/dispatch_prompt.py`.
   - Files: `jd.md`, `comms.md` (optional), `research.md`, `jd_needs.md` (its job section), `session_log.md`.
   - User input: APP-NNN; approval.
-- **Outputs**: `## Axis Gaps` in `research.md`; `## Axis Classification`, `## Axis Gaps`, and the Role Level and Industry metadata in `session_log.md`. Hands off to retrieval.
+- **Outputs**: `## Axis Classification`, `## Axis Gaps`, and the Role Level and Industry metadata in `session_log.md`. Hands off to retrieval.
 - **Triggers**: User invocation `/role-classify` after role-extract.
 - **Update Triggers**: When the five-axis rule files or their registries change; when its agents or scripts change.
 
@@ -444,12 +444,21 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/role_research_qc.py
 
-- **Purpose**: Deterministic QC for role-research's hand-off (I1, I2, I3): research file structure and block subsections (with URL presence in Sources), session log metadata (with date form and pending-marker detection outside role-classify's sections), and cross-file field equality (company / role / APP-NNN). Holds the parsing helpers `role_classify_qc.py`, `role_extract_qc.py`, `role_classify_assemble.py`, `role_research_assemble.py` and `dispatch_prompt.py` import. Named `role_intake_qc.py` until 2026-11-16.
+- **Purpose**: Deterministic QC for role-research's hand-off (I1, I2, I3): research file structure and block subsections (with URL presence in Sources, and `[i1]` / `[c1]` / `[t1]` citation markers resolving one-to-one to Sources entries), session log metadata (with date form and pending-marker detection outside role-classify's sections), and cross-file field equality (company / role / APP-NNN). Holds the parsing helpers `role_classify_qc.py`, `role_extract_qc.py`, `role_classify_assemble.py`, `role_research_assemble.py` and `dispatch_prompt.py` import. Named `role_intake_qc.py` until 2026-11-16.
 - **Status**: Designed
 - **Inputs**: Args (`check --folder <app_folder>`). Config: `config.yaml` (filenames) via `scripts/_config.py`. Filesystem: research.md and session_log.md in the folder.
 - **Outputs**: Per-check `PASS`/`FAIL` lines and a `RESULT` line to stdout; exit 0 when all pass, 1 otherwise.
 - **Triggers**: Invoked by `role-research` Phase 3 Step 3a, before the `qc-role-research` judgment agent.
 - **Update Triggers**: When the session log or research file templates change.
+
+#### scripts/research_ledger.py
+
+- **Purpose**: Files one `prep-research` result into `research.md` as a dated `### <target>` entry under `## Interview prep`, renumbering its markers to `[pN]` (continuing across entries) and moving its sources to the file's `## Sources` list. Lays the file out first (`role_research_assemble._layout`), so an older research file gains the current order on its first entry.
+- **Status**: Designed
+- **Inputs**: Args (`add --folder --block-file --date --stage`). Config: `config.yaml` (filenames) via `scripts/_config.py`. Filesystem: research.md in the folder; the block file the prep skill saved.
+- **Outputs**: research.md rewritten; its path to stdout.
+- **Triggers**: Invoked by `preparation-screen` and `preparation-interview` after each `prep-research` return.
+- **Update Triggers**: When the research file template or the `prep-research` return format changes.
 
 #### scripts/role_intake_qc.py
 
@@ -471,7 +480,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/role_classify_qc.py
 
-- **Purpose**: Deterministic QC for role-classify's writes (C1-C5): classification sections and Level/Industry metadata filled, metadata matching the axis values, axis-gap mirroring between the two files, axis line form, leadership tier. The `jd_needs.md` checks moved to `role_extract_qc.py` 2026-11-16.
+- **Purpose**: Deterministic QC for role-classify's writes (C1, C2, C4, C5; C3 retired 2026-11-17): classification sections and Level/Industry metadata filled, metadata matching the axis values, axis line form, leadership tier. The `jd_needs.md` checks moved to `role_extract_qc.py` 2026-11-16.
 - **Status**: Designed
 - **Inputs**: Args (`check --folder <app_folder>`). Config via `scripts/_config.py`. Filesystem: research.md, session_log.md; `rules/levels/leadership.md` for the tiers.
 - **Outputs**: Per-check `PASS`/`FAIL` lines and a `RESULT` line; exit 0 when all pass, 1 otherwise.
@@ -663,7 +672,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/assemble.py
 
-- **Purpose**: Write role-intake's artifacts deterministically rather than by hand. Subcommands: `folder` (Phase 3; takes the company, resolves its slug via `company_slug.py` (a new company needs `--slug`, asked before any ID is claimed), takes the month from today, claims the APP-NNN via `app_id.py` and creates its folder in one call), `ingest` (Phase 4; `--folder`, `--title`, `--company`; writes `jd.md` / `comms.md`, adding an identity header line for a title or company the JD text lacks, refuses a folder never created, then deletes its input files if they sit in `temp/`), `init` (Phase 5; `--folder`; reads the APP-NNN and month from the folder name; `--replace` rewrites the log, refused once research or a later section exists), `relabel` (a title, company or slug corrected in role-intake or role-research: rewrites the labels in place, keeps the APP-NNN, renames the folder on a slug change, refuses a folder later skills have written to; a slug change for a recorded company replaces its registry slug and is refused while another application uses the old one). Every write is section-scoped; `role_research_assemble.py` and `role_classify_assemble.py` import its section helpers.
+- **Purpose**: Write role-intake's artifacts deterministically rather than by hand. Subcommands: `folder` (Phase 3; takes the company, resolves its slug via `company_slug.py` (a new company needs `--slug`, asked before any ID is claimed), takes the month from today, claims the APP-NNN via `app_id.py` and creates its folder in one call), `ingest` (Phase 4; `--folder`, `--title`, `--company`; writes `jd.md` / `comms.md`, always headed by `**Role:**` and `**Company:**` lines, refuses a folder never created, then deletes its input files if they sit in `temp/`), `init` (Phase 5; `--folder`; reads the APP-NNN and month from the folder name; `--replace` rewrites the log, refused once research or a later section exists), `relabel` (a title, company or slug corrected in role-intake or role-research: rewrites the labels in place, keeps the APP-NNN, renames the folder on a slug change, refuses a folder later skills have written to; a slug change for a recorded company replaces its registry slug and is refused while another application uses the old one). Every write is section-scoped; `role_research_assemble.py` and `role_classify_assemble.py` import its section helpers.
 - **Status**: Designed
 - **Inputs**: Skill-passed args (company, title, dates, sources, paths) and the Phase 1 text files. Config: `config.yaml` (paths, filenames, naming patterns) via `scripts/_config.py`. Templates: `session_log.md` (read as the structure source).
 - **Outputs**: the `personal/applications/<SLUG>_APP-NNN_YYYY-MM/` folder and, inside it, `jd.md`, `comms.md` and `session_log.md`. Paths echoed to stdout.

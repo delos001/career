@@ -19,9 +19,15 @@ dispatch_prompt.py import this file's parsing helpers.
 
 Checks:
   I1  Research file completeness: H1 + APP-NNN + Research completed lines;
-      Company / Role / Industry sections each carrying non-empty Summary,
-      Key facts, and Sources (with at least one URL). No pending markers
-      outside role-classify's sections.
+      Industry / Company / Title sections ('Role' in files before 2026-11-17)
+      each carrying non-empty Summary and
+      Key facts, and sources with at least one URL: one `## Sources` list at
+      the end of the file (since 2026-11-17, which also fixes the section
+      order) or, in older files, a `### Sources` in each block. Where a block
+      cites by marker (`[i1]`, `[c1]`, `[t1]`), every marker resolves to a
+      source entry, every entry is cited and listed in first-citation order,
+      every marker carries its section's letter, and no URL sits in Key
+      facts. No pending markers outside role-classify's sections.
   I2  Session log completeness: every Metadata field line present, the
       required ones non-empty, dates well-formed. No pending markers outside
       role-classify's sections.
@@ -52,7 +58,18 @@ import _util
 # ---------------------------------------------------------------------------
 
 # Research file: the three research blocks, each with these H3 subsections.
-RESEARCH_BLOCKS = ['Company', 'Role', 'Industry']
+RESEARCH_BLOCKS = ['Industry', 'Company', 'Title']  # reading order since 2026-11-17
+
+# '## Title' was '## Role' until 2026-11-17; earlier files keep the old name.
+LEGACY_HEADINGS = {'Title': 'Role'}
+
+
+def research_heading(text, block):
+    """Return the heading a research block carries in this file (current or older name)."""
+    old = LEGACY_HEADINGS.get(block)
+    if old and not re.search(rf'(?m)^## {block}[ \t]*$', text) and re.search(rf'(?m)^## {old}[ \t]*$', text):
+        return old
+    return block
 BLOCK_SUBSECTIONS = ['Summary', 'Key facts', 'Sources']
 
 # Session log Metadata: fields that must be present AND non-empty. Comms
@@ -76,6 +93,14 @@ _PENDING_RE = re.compile(r'_\(pending\)_|\{\{[a-z_]+\}\}')
 
 # Regex: a URL, for the Sources subsection check.
 _URL_RE = re.compile(r'https?://\S+')
+
+# Citation markers (2026-11-17): a Key fact cites `[c3]`, entry c3 of its
+# section's Sources list (`- [c3] <URL>`); the letter is the section's initial.
+# `[JD]` cites the job description. Files written before then carry inline
+# URLs instead and are checked only for a URL in Sources.
+BLOCK_PREFIX = {'Industry': 'i', 'Company': 'c', 'Title': 't'}
+_MARKER_RE = re.compile(r'\[([a-z])(\d+)\]')
+_SOURCE_ENTRY_RE = re.compile(r'^- \[([a-z])(\d+)\] https?://\S+\s*$')
 
 
 # ---------------------------------------------------------------------------
@@ -136,6 +161,47 @@ def _h1_company_role(text, prefix):
 # Checks
 # ---------------------------------------------------------------------------
 
+def _citation_problems(block, body, source_text):
+    """Return citation problems for one research block (part of I1).
+
+    `source_text` is the block's own Sources subsection (older layout) or its
+    lines from the file's `## Sources` list. A block is in the marker style
+    when any of those lines is a `- [x1] <URL>` entry; an older block with
+    inline URLs is left to the plain URL check.
+    """
+    facts = _section_body(body, 'Key facts', depth=3) or ''
+    summary = _section_body(body, 'Summary', depth=3) or ''
+    sources = source_text.split('\n')
+    if not any(_SOURCE_ENTRY_RE.match(line) for line in sources):
+        return []
+    prefix = BLOCK_PREFIX[block]
+    problems = []
+    entries = []
+    for line in filter(str.strip, sources):
+        m = _SOURCE_ENTRY_RE.match(line)
+        if not m:
+            problems.append(f'`## {block}` Sources line is not `- [{prefix}N] <URL>`: {line.strip()[:60]}')
+        else:
+            entries.append(m.group(1) + m.group(2))
+    cited = [a + n for a, n in _MARKER_RE.findall(summary + '\n' + facts)]
+    wrong = sorted({c for c in cited + entries if not c.startswith(prefix)})
+    if wrong:
+        problems.append(f'`## {block}` cites another section\'s sources: {", ".join(wrong)}')
+    dangling = sorted(set(cited) - set(entries))
+    if dangling:
+        problems.append(f'`## {block}` markers that do not resolve to a Sources entry: {", ".join(dangling)}')
+    unused = [e for e in entries if e not in cited]
+    if unused:
+        problems.append(f'`## {block}` Sources entries never cited: {", ".join(unused)}')
+    first_cited = list(dict.fromkeys(c for c in cited if c in entries))
+    if [e for e in entries if e in first_cited] != first_cited:
+        problems.append(f'`## {block}` Sources not listed in citation order: '
+                        f'listed {", ".join(entries)}, first cited {", ".join(first_cited)}')
+    if _URL_RE.search(facts):
+        problems.append(f'`## {block}` URL in Key facts; cite it as a marker and list it once in Sources')
+    return problems
+
+
 def check_research(research_text, findings):
     """I1: research file structure, block subsections, sources."""
     problems = []
@@ -145,17 +211,39 @@ def check_research(research_text, findings):
         m = re.search(rf'^\*\*{re.escape(label)}:\*\*\s*(.+)$', research_text, re.MULTILINE)
         if not m or not m.group(1).strip():
             problems.append(f'missing or empty **{label}:** line')
+    # Since 2026-11-17 the sources sit in one `## Sources` list at the end of
+    # the file; older files carry a `### Sources` inside each block.
+    file_sources = _section_body(research_text, 'Sources')
+    current = {old: new for new, old in LEGACY_HEADINGS.items()}
+    if file_sources is not None:
+        order = [current.get(h, h) for h in re.findall(r'(?m)^## (.+?)\s*$', research_text)]
+        order = [h for h in order if h in RESEARCH_BLOCKS]
+        if order != RESEARCH_BLOCKS:
+            problems.append(f'sections out of order: {", ".join(order)} (expected {", ".join(RESEARCH_BLOCKS)})')
     for block in RESEARCH_BLOCKS:
-        body = _section_body(research_text, block)
+        body = _section_body(research_text, research_heading(research_text, block))
         if body is None:
             problems.append(f'missing `## {block}` section')
             continue
         for sub in BLOCK_SUBSECTIONS:
-            sub_body = _section_body(body, sub, depth=3)
-            if not sub_body:
+            if sub != 'Sources' and not _section_body(body, sub, depth=3):
                 problems.append(f'`## {block}` missing or empty `### {sub}`')
-            elif sub == 'Sources' and not _URL_RE.search(sub_body):
-                problems.append(f'`## {block}` Sources carries no URL')
+        own = _section_body(body, 'Sources', depth=3)
+        if own is not None or file_sources is None:
+            source_text = own or ''
+        else:
+            prefix = BLOCK_PREFIX[block]
+            source_text = '\n'.join(ln for ln in file_sources.split('\n')
+                                    if (m := _SOURCE_ENTRY_RE.match(ln.strip())) and m.group(1) == prefix)
+            if not source_text and _URL_RE.search(file_sources):
+                # An inline-URL block moved into the file list carries no markers.
+                source_text = None
+        if source_text == '':
+            problems.append(f'`## {block}` has no sources')
+        elif source_text is not None and not _URL_RE.search(source_text):
+            problems.append(f'`## {block}` Sources carries no URL')
+        elif source_text is not None:
+            problems += _citation_problems(block, body, source_text)
     if _PENDING_RE.search(_outside_classify(research_text)):
         problems.append('pending markers or unfilled template tokens remain')
     findings.append(('I1', not problems, '; '.join(problems) or 'research file complete'))

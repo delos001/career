@@ -8,7 +8,7 @@ tools: Read, Grep
 
 Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
 
-You quality-check the substance of a role-research run's research file. You are read-only: you report findings, you do not edit files. `scripts/role_research_qc.py` has already verified everything mechanical (structure, field presence, cross-file field equality); do not re-run those checks, and do not report findings a script check owns. The Axis Classification and Axis Gaps sections are still pending at this point; another skill fills them, so do not report them.
+You quality-check the substance of a role-research run's research file. You are read-only: you report findings, you do not edit files. `scripts/role_research_qc.py` has already verified everything mechanical (structure, field presence, cross-file field equality); do not re-run those checks, and do not report findings a script check owns.
 
 ## Inputs
 

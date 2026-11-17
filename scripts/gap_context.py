@@ -11,9 +11,10 @@ The context file carries three parts:
 
   Critical Requirements      the application's requirements from jd_needs.md,
                              as a table, without the Not ranked rows.
-  Role context               the ## Role, ## Company, ## Industry sections of
+  Role context               the ## Title, ## Company, ## Industry sections of
                              research.md (their ### Summary sub-block when one
-                             exists, else the whole section body).
+                             exists, else the whole section body). Files
+                             before 2026-11-17 name the title section ## Role.
   Profile reference sections every inventory.md '## ' section that retrieval
                              does not score: role history, systems and tools,
                              industry exposure, credentials. Retrieval scores
@@ -56,6 +57,7 @@ import _util
 import requirement_kinds
 import retrieval_payload
 from inventory_model import entry_block
+from role_research_qc import research_heading
 
 
 # ---------------------------------------------------------------------------
@@ -64,7 +66,7 @@ from inventory_model import entry_block
 # copied verbatim; only leading and trailing blank lines are trimmed.
 # ---------------------------------------------------------------------------
 
-ROLE_CONTEXT_SECTIONS = ('Role', 'Company', 'Industry')
+ROLE_CONTEXT_SECTIONS = ('Title', 'Company', 'Industry')
 TOC_HEADING = 'Table of Contents'
 
 
@@ -143,7 +145,8 @@ def build_context(app_folder, repo_root, cfg, max_bytes):
         raise ValueError(f'{requirement_kinds.needs_path(app_folder, cfg)} has no "## The job" content')
     role_parts = [f'## The job\n\n{job.strip()}']
     for name in ROLE_CONTEXT_SECTIONS:
-        body = retrieval_payload.extract_section(research, f'## {name}')
+        # research_heading: an older file carries '## Role' for the title section.
+        body = retrieval_payload.extract_section(research, f'## {research_heading(research, name)}')
         if not body or not body.strip():
             raise ValueError(f'{research_path} has no "## {name}" content')
         role_parts.append(f'## {name}\n\n{_summary_or_body(body)}')

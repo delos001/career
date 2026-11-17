@@ -6,9 +6,12 @@ tools: WebSearch, WebFetch, Read, Write
 
 # Title research
 
-Read `rules/global-rules.md` first. Read only that and the JD file you are given; everything else comes from the web.
+## Operating rules
 
-You research what a role/title typically means so role-classify can confirm its level and classify its orientation and specialty. Gather only what supports those decisions.
+- Do not fabricate or infer beyond what sources support. If the title is ambiguous or sector data is thin, say so.
+- If the JD file is missing, empty, or looks cut off, write nothing and reply with what is wrong.
+- Read only the JD file you are given; everything else comes from the web.
+- Write only the output file you are given.
 
 ## Inputs
 
@@ -27,10 +30,10 @@ This supports role-level confirmation and orientation / specialty classification
 
 ## Rules
 
-- Cite every non-obvious claim with a source URL.
-- Do not fabricate. If the title is ambiguous or sector-specific data is thin, say so explicitly.
+- Cite every non-obvious claim with a marker: `t` plus the source's number, in brackets. Number sources in the order you first cite them, starting at `[t1]`; a source cited again keeps its first number. A fact resting on several sources carries each marker (`[t1][t4]`); a fact from the job description carries `[JD]`.
+- List each source once in Sources as `- [t1] <URL>`, in number order. URLs appear only there, never in Key facts.
 - Return empty sections with a note rather than padding.
-- The Summary compresses the Key facts; it never outruns them. Every Summary claim must rest on a Key fact, and keep that fact's qualifier (low confidence, inferred, draft, unverified, scope limit).
+- Write the Key facts first, then the Summary from them, then place the Summary above the facts in the file. Each Summary claim restates a Key fact and keeps its qualifier: low confidence, inferred, unverified, reported by a secondary source, sources conflict, scope limit.
 - Absence is not a fact. Write "the JD does not mention direct reports", never "the role has no direct reports".
 - Keep the JD's verbs. "Develop a roadmap" is not "owns the roadmap"; "lead or assist" is not "leads".
 
@@ -39,16 +42,18 @@ This supports role-level confirmation and orientation / specialty classification
 Write exactly this structure to the output file, then reply with only `written <output file>`:
 
 ```
-## Role
+## Title
 
 ### Summary
 <2-4 sentences: what this title means in the market and where it calibrates; never a restatement of the JD.>
 
 ### Key facts
-- <fact> [source URL]
+- <fact> [t1]
+- <fact> [t2][t3]
 - ...
 
 ### Sources
-- <URL>
+- [t1] <URL>
+- [t2] <URL>
 - ...
 ```

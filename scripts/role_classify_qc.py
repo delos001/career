@@ -4,7 +4,7 @@ role_classify_qc.py - deterministic QC for the role-classify skill's writes
 
 Owns the mechanical checks on what role-classify adds to an application: the
 axis classification, Level and Industry metadata, and Axis Gaps in the
-session log (mirrored into research.md). The qc-role-classify judgment agent
+session log. The qc-role-classify judgment agent
 keeps what a script cannot verify (whether the classification is right).
 
 C1 to C5 lived in role_intake_qc.py (as I3's axis half, I4, I5, I6) until
@@ -15,11 +15,11 @@ metadata parsing helpers stay in role_research_qc.py.
 Checks:
   C1  Completeness: the session log's Role Level and Industry metadata are
       filled; Axis Classification carries all five axis lines; Axis Gaps is
-      filled in both files. No pending markers in these sections.
+      filled. No pending markers in these sections.
   C2  The metadata Role Level and Industry values match the Axis
       Classification's Level and Industry values.
-  C3  Axis gaps recorded in both: the set of axes flagged in the session log's
-      Axis Gaps matches the set flagged in the research file's.
+  (C3, which matched Axis Gaps between the session log and research.md, was
+  retired 2026-11-17 when research.md stopped carrying Axis Gaps.)
   C4  Axis lines match the axis-classifier's declared return format
       (`- <Axis>: <values> - <rationale>`, no bold, no bare label), and no
       rationale runs past config axis_rationale_max_words.
@@ -82,24 +82,6 @@ def _axis_values(log_text):
     return values
 
 
-def _gap_axes(text):
-    """Return the set of axis names flagged in a file's ## Axis Gaps section.
-
-    `- None` (or an empty body) means no gaps and yields the empty set.
-    Returns None if the section is absent.
-    """
-    body = _section_body(text, 'Axis Gaps')
-    if body is None:
-        return None
-    axes = set()
-    for line in body.split('\n'):
-        # Accept plain and bold labels (see _axis_values).
-        m = re.match(r'^- (?:\*\*)?(Orientation|Industry|Specialty|Level|Work-state)\b', line)
-        if m:
-            axes.add(m.group(1))
-    return axes
-
-
 def leadership_tiers(repo_root, cfg):
     """Return the tier names from leadership.md's '### Tiers' block, in order.
 
@@ -115,7 +97,7 @@ def leadership_tiers(repo_root, cfg):
 # Checks
 # ---------------------------------------------------------------------------
 
-def check_complete(research_text, log_text, meta, findings):
+def check_complete(log_text, meta, findings):
     """C1: every section role-classify writes is filled."""
     problems = []
     if meta is None:
@@ -135,12 +117,11 @@ def check_complete(research_text, log_text, meta, findings):
         missing = [a for a in AXES if not (axes or {}).get(a)]
         if missing:
             problems.append(f"axis lines missing: {', '.join(missing)}")
-    for name, text in (('session log', log_text), ('research file', research_text)):
-        gaps = _section_body(text, 'Axis Gaps')
-        if gaps is None:
-            problems.append(f'{name} missing `## Axis Gaps`')
-        elif _PENDING_RE.search(gaps):
-            problems.append(f'{name} `## Axis Gaps` still pending')
+    gaps = _section_body(log_text, 'Axis Gaps')
+    if gaps is None:
+        problems.append('session log missing `## Axis Gaps`')
+    elif _PENDING_RE.search(gaps):
+        problems.append('session log `## Axis Gaps` still pending')
     findings.append(('C1', not problems, '; '.join(problems) or 'classification sections filled'))
 
 
@@ -157,18 +138,6 @@ def check_level_industry(log_text, meta, findings):
             problems.append(
                 f'metadata {meta_field} {meta_val!r} not in axis classification {axis} {axis_val!r}')
     findings.append(('C2', not problems, '; '.join(problems) or 'metadata matches the classification'))
-
-
-def check_gap_mirroring(research_text, log_text, findings):
-    """C3: the axes flagged as gaps match between the two files."""
-    log_gaps, research_gaps = _gap_axes(log_text), _gap_axes(research_text)
-    if log_gaps is None or research_gaps is None:
-        findings.append(('C3', False, 'an `## Axis Gaps` section is missing (see C1)'))
-        return
-    ok = log_gaps == research_gaps
-    findings.append(('C3', ok,
-                     f'gap axes diverge: session log {sorted(log_gaps)} vs research {sorted(research_gaps)}'
-                     if not ok else 'axis gaps mirrored'))
 
 
 def check_axis_line_form(log_text, max_words, findings):
@@ -242,18 +211,15 @@ def check_tier(log_text, tiers, findings):
 def cmd_check(args, repo_root, cfg):
     """Run all checks against one application folder; print report; return exit code."""
     fn = cfg['filenames']
-    research_text = _read(os.path.join(args.folder, fn['research_file']))
     log_text = _read(os.path.join(args.folder, fn['session_log_file']))
-    if research_text is None or log_text is None:
-        missing = fn['research_file'] if research_text is None else fn['session_log_file']
-        print(f'FATAL  {missing} not found in {args.folder}')
+    if log_text is None:
+        print(f"FATAL  {fn['session_log_file']} not found in {args.folder}")
         return 1
     meta = _metadata_fields(log_text)
 
     findings = []
-    check_complete(research_text, log_text, meta, findings)
+    check_complete(log_text, meta, findings)
     check_level_industry(log_text, meta, findings)
-    check_gap_mirroring(research_text, log_text, findings)
     check_axis_line_form(log_text, cfg['axis_rationale_max_words'], findings)
     check_tier(log_text, leadership_tiers(repo_root, cfg), findings)
     return _report(findings)

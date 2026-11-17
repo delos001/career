@@ -74,7 +74,7 @@ from _prep_checks import (
     _COMMENT_RE, _read, _headings, _sections, _frontmatter_keys,
     _frontmatter_sources, _is_placeholder, _is_optional, check_connectors,
     check_headings, check_xrefs, check_appendix_fields, check_appendix_status,
-    interview_date_problem)
+    interview_date_problem, research_ledger_problems)
 
 
 # ---------------------------------------------------------------------------
@@ -137,27 +137,14 @@ def check_artifact(artifact_text, template_text, app_folder, profile_dir, findin
 # Checks: research.md prep-attributed ledger sections only
 # ---------------------------------------------------------------------------
 
-_ADDED_RE = re.compile(r'\*\*Added:\*\*\s*(\d{4}-\d{2}-\d{2})\s*\(interview prep')
-_URL_RE = re.compile(r'https?://\S+')
-
-
 def check_research(research_text, findings):
-    """Run R1 on the prep-attributed sections. Other sections out of scope."""
-    prep_sections = [(h, b) for h, b in _sections(research_text)
-                     if '(interview prep' in b]
-    if not prep_sections:
-        findings.append(('R1', True, 'no prep-attributed sections (nothing to check)'))
+    """Run R1 on the prep research entries (shared with prep_qc)."""
+    count, bad = research_ledger_problems(research_text)
+    if not count:
+        findings.append(('R1', True, 'no prep research entries (nothing to check)'))
         return
-    bad = []
-    for heading, body in prep_sections:
-        if not _ADDED_RE.search(body):
-            bad.append(f'{heading}: missing dated **Added:** attribution')
-        if not _URL_RE.search(body):
-            bad.append(f'{heading}: no source URL')
-        if '—' in body:
-            bad.append(f'{heading}: em dash found')
     findings.append(('R1', not bad,
-                     f'{len(prep_sections)} prep ledger section(s) dated, sourced, em-dash-free'
+                     f'{count} prep research entr(y/ies) dated, sourced, em-dash-free'
                      if not bad else '; '.join(bad)))
 
 

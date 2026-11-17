@@ -8,10 +8,12 @@ role-research skill writes files through a deterministic tool instead of by
 hand. Moved out of assemble.py when research became its own skill (2026-11-16).
 
   research  Write (or, on a re-run, refresh) research.md. The APP-NNN, company
-            and role come from the session log, never from the caller. Axis
-            Gaps is written pending for role-classify. On a re-run only the
-            Company, Role and Industry sections and the completed date are
-            replaced, so sections other skills added are left in place.
+            and role come from the session log, never from the caller. On a
+            re-run only the Industry, Company and Title sections and the
+            completed date are replaced, so sections other skills added are
+            left in place. Every write lays the file out as Industry, Company,
+            Title, other sections, then one Sources list in citation order (see
+            Layout). An older file's '## Role' is renamed '## Title'.
 
 Nothing repo-dependent is hardcoded here: filenames and the template location
 come from config.yaml (via _config); the structure comes from
@@ -33,7 +35,95 @@ import sys
 import _config
 import _util
 from assemble import _fill, _replace_section, _skeleton
-from role_research_qc import _metadata_fields
+from role_research_qc import (BLOCK_PREFIX, LEGACY_HEADINGS, RESEARCH_BLOCKS, _MARKER_RE, _SOURCE_ENTRY_RE,
+                              _metadata_fields, research_heading)
+
+
+# ---------------------------------------------------------------------------
+# Layout (2026-11-17)
+# research.md reads Industry, Company, Title (RESEARCH_BLOCKS order), then any
+# section another skill added, then one `## Sources` list. Each agent block
+# arrives with its own `### Sources`; the list moves to the end of the file and
+# the section's markers are renumbered by first citation, so the list follows
+# the body whatever order the agent numbered in.
+# ---------------------------------------------------------------------------
+
+# Regex: a block's '### Sources' subsection, up to the next heading or the end.
+_BLOCK_SOURCES_RE = re.compile(r'(?ms)^### Sources[ \t]*\n(.*?)(?=^#{1,3} |\Z)')
+
+
+def _split_sources(block, prefix):
+    """Return (block without its Sources subsection, its source lines).
+
+    Marker-style lines (`- [c1] <URL>`) are renumbered by first citation in
+    the block, and the block's markers with them. Older inline-URL lists move
+    as they are. Uncited or unmatched lines are kept, last, for QC to report.
+    """
+    m = _BLOCK_SOURCES_RE.search(block)
+    if not m:
+        return block.strip(), []
+    body = (block[:m.start()] + block[m.end():]).strip()
+    lines = [ln.strip() for ln in m.group(1).split('\n') if ln.strip()]
+    entries = {}
+    for ln in lines:
+        e = _SOURCE_ENTRY_RE.match(ln)
+        if e and e.group(1) == prefix:
+            entries[e.group(2)] = ln
+    if not entries:
+        return body, lines
+    order = []
+    for letter, num in _MARKER_RE.findall(body):
+        if letter == prefix and num in entries and num not in order:
+            order.append(num)
+    order += [num for num in entries if num not in order]
+    new = {old: str(i) for i, old in enumerate(order, 1)}
+    body = _MARKER_RE.sub(
+        lambda mm: f'[{prefix}{new[mm.group(2)]}]' if mm.group(1) == prefix and mm.group(2) in new
+        else mm.group(0), body)
+    renumbered = [re.sub(r'^- \[[a-z]\d+\]', f'- [{prefix}{new[old]}]', entries[old]) for old in order]
+    others = [ln for ln in lines if ln not in entries.values()]
+    return body, renumbered + others
+
+
+def _layout(text):
+    """Return research.md rebuilt in reading order with all sources last."""
+    first = re.search(r'(?m)^## ', text)
+    header = (text[:first.start()] if first else text).rstrip()
+    sections = re.split(r'(?m)^(?=## )', text[first.start():]) if first else []
+    # An older file's '## Role' takes the current name, '## Title'.
+    headings = {s.split('\n', 1)[0][3:].strip() for s in sections}
+    for new, old in LEGACY_HEADINGS.items():
+        if old in headings and new not in headings:
+            sections = [f'## {new}' + s[3 + len(old):] if s.split('\n', 1)[0][3:].strip() == old else s
+                        for s in sections]
+    named = {}
+    for section in sections:
+        heading = section.split('\n', 1)[0][3:].strip()
+        named.setdefault(heading, []).append(section.strip())
+    # The end list already on file (a laid-out file): a research section that
+    # brings its own Sources replaces its entries there; one that does not keeps
+    # them. Lines that belong to no research section (prep [pN] entries, older
+    # plain URLs) follow in their existing order.
+    kept = [ln.strip() for sec in named.pop('Sources', []) for ln in sec.split('\n')[1:] if ln.strip()]
+
+    def prefix_of(line):
+        m = _SOURCE_ENTRY_RE.match(line)
+        return m.group(1) if m else None
+
+    parts, sources = [header], []
+    for name in RESEARCH_BLOCKS:
+        prefix = BLOCK_PREFIX[name]
+        for section in named.pop(name, []):
+            body, lines = _split_sources(section, prefix)
+            parts.append(body)
+            sources += lines or [ln for ln in kept if prefix_of(ln) == prefix]
+    sources += [ln for ln in kept if prefix_of(ln) not in BLOCK_PREFIX.values()]
+    for section in sections:
+        heading = section.split('\n', 1)[0][3:].strip()
+        if heading in named:
+            parts += named.pop(heading)
+    parts.append('## Sources\n\n' + '\n'.join(sources))
+    return '\n\n'.join(parts) + '\n'
 
 
 # ---------------------------------------------------------------------------
@@ -67,10 +157,8 @@ def cmd_research(args, repo_root, cfg):
             'company_block': company_block,
             'role_block': role_block,
             'industry_block': industry_block,
-            # Filled by the role-classify skill.
-            'axis_gaps': '## Axis Gaps\n\n_(pending)_',
         })
-        _util.write(research_file, body)
+        _util.write(research_file, _layout(body))
     else:
         # Re-run: replace only the research sections and the completed-date
         # line, so a current-state refresh does not clobber anything else.
@@ -80,9 +168,9 @@ def cmd_research(args, repo_root, cfg):
         text = re.sub(r'(?m)^\*\*Research completed:\*\* .*$',
                       lambda _m: f'**Research completed:** {args.date}', text)
         text = _replace_section(text, 'Company', company_block)
-        text = _replace_section(text, 'Role', role_block)
+        text = _replace_section(text, research_heading(text, 'Title'), role_block)
         text = _replace_section(text, 'Industry', industry_block)
-        _util.write(research_file, text)
+        _util.write(research_file, _layout(text))
     log_text = re.sub(r'(?m)^- Research Completed Date: .*$',
                       lambda _m: f'- Research Completed Date: {args.date}', _util.read(session_log))
     _util.write(session_log, log_text)

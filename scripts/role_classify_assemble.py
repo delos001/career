@@ -8,7 +8,7 @@ written or composed by hand. Two subcommands:
 
   finalize  Write the axis-classifier output into the session log (Axis
             Classification, Axis Gaps, and the Role Level and Industry metadata
-            lines) and mirror Axis Gaps into research.md.
+            lines). Axis Gaps is not copied into research.md (2026-11-17).
   approval  Print the approval block from the files on disk.
 
 finalize moved here from assemble.py when role-classify was split out of
@@ -89,7 +89,7 @@ def _normalize_axis_lines(body):
 
 
 def cmd_finalize(args, cfg):
-    research, log = _paths(args.folder, cfg)
+    _, log = _paths(args.folder, cfg)
     text = _util.read(log)
 
     # Split the axis file into classification lines and gaps lines. The classifier
@@ -121,9 +121,6 @@ def cmd_finalize(args, cfg):
     text = _replace_section(text, 'Axis Gaps', gaps_section)
     _util.write(log, text)
     print(log)
-
-    _util.write(research, _replace_section(_util.read(research), 'Axis Gaps', gaps_section))
-    print(research)
 
 
 # ---------------------------------------------------------------------------

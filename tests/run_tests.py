@@ -1530,7 +1530,7 @@ def test_detector_context_carries_unscored_profile_sections():
     table = requirement_kinds.requirements_table(FIXTURE_APP, _config.load()[1], by_need=True)
     assert table in context, 'the requirements table is not in the context'
     assert table.split('\n')[2].startswith('| 3 | N-01 '), f'the detector table is not in need rank order: {table}'
-    for name in ('Role', 'Company', 'Industry'):
+    for name in ('Title', 'Company', 'Industry'):
         assert research[name] in context, f'{name} context not copied verbatim'
 
     root, cfg = _config.load()
@@ -2300,7 +2300,7 @@ def test_application_folder_is_created_on_purpose():
     # init reads the APP-NNN and month from the folder name, not from the caller.
     code, out = run('assemble.py', 'init', '--folder', folder, '--company', 'Halloway Labs',
                     '--role', 'Director, Data Operations', '--start-date', '2026-02-03',
-                    '--jd-source', os.path.join(folder, 'jd.md'))
+                    '--jd-source', 'pasted')
     assert code == 0, out
     log = _util.read(os.path.join(folder, 'session_log.md'))
     assert f'- APP-NNN: {app_id}' in log and log.startswith(
@@ -2324,10 +2324,18 @@ def test_role_intake_checks_its_own_handoff():
     jd = write_block('jd.txt', 'Director, Data Operations at Halloway Labs.\n')
     code, out = run('assemble.py', 'ingest', '--folder', folder, '--jd-text-file', jd, *JD_IDENT)
     assert code == 0, out
+    # The source records where the JD came from. Its copy in the application
+    # folder is already named by 'JD file:', and a folder path goes stale when
+    # relabel renames the folder (APP-029, 2026-11-17).
     code, out = run('assemble.py', 'init', '--folder', folder, '--company', 'Halloway Labs',
                     '--role', 'Director, Data Operations', '--start-date', '2026-02-03',
                     '--jd-source', os.path.join(folder, 'jd.md'))
+    assert code != 0 and 'came from' in out, f'init recorded the folder copy as the JD source:\n{out}'
+    code, out = run('assemble.py', 'init', '--folder', folder, '--company', 'Halloway Labs',
+                    '--role', 'Director, Data Operations', '--start-date', '2026-02-03',
+                    '--jd-source', 'pasted')
     assert code == 0, out
+    assert '- JD source: pasted' in _util.read(os.path.join(folder, 'session_log.md')), out
 
     code, out = run('role_intake_qc.py', 'check', '--folder', folder)
     assert code == 0, f'a fresh hand-off failed its check:\n{out}'
@@ -2385,7 +2393,8 @@ def test_jd_reaches_disk_without_being_retyped():
     folder = printed.splitlines()[0]
     code, printed = run('assemble.py', 'ingest', '--folder', folder, '--jd-text-file', out, *JD_IDENT)
     assert code == 0, printed
-    assert _util.read(os.path.join(folder, 'jd.md')) == _util.read(out), 'jd.md is not the extracted text'
+    jd_body = _util.read(os.path.join(folder, 'jd.md')).partition('\n\n---\n\n')[2]
+    assert jd_body == _util.read(out), 'jd.md is not the extracted text'
     assert os.path.isfile(out), 'ingest deleted an input file outside temp/'
 
     # An input file in temp/ is deleted once saved, so Phase 1 files do not pile up.
@@ -2403,26 +2412,25 @@ def test_jd_reaches_disk_without_being_retyped():
             os.remove(staged)
 
 
-def test_ingest_adds_the_identity_header_itself():
-    """Shipped 2026-11-16: the model judged whether the JD named the title and
-    company and passed --add-title / --add-company. ingest now takes both values
-    and adds a header line only for one the JD text does not contain.
+def test_ingest_always_writes_the_identity_header():
+    """Shipped 2026-11-17: ingest added a header line only for a title or company
+    the JD text did not contain. A name found somewhere in the text does not
+    identify the role (APP-029's title appeared only mid-sentence), headers
+    varied by application, and relabel could not correct a line that was never
+    written. ingest now always writes both lines.
     """
     code, out = run('assemble.py', 'folder', '--company', 'Halloway Labs', '--slug', 'halloway')
     assert code == 0, out
     folder = out.splitlines()[0]
     jd_md = os.path.join(folder, 'jd.md')
-    ident = JD_IDENT
+    header = '**Role:** Director, Data Operations\n**Company:** Halloway Labs\n\n---\n\n'
 
-    named = write_block('named.txt', 'Director, Data Operations\nHALLOWAY LABS is hiring.\n')
-    code, out = run('assemble.py', 'ingest', '--folder', folder, '--jd-text-file', named, *ident)
-    assert code == 0, out
-    assert _util.read(jd_md) == _util.read(named), 'a JD naming both values got a header'
-
-    unnamed = write_block('unnamed.txt', 'Director, Data Operations\nWe are hiring.\n')
-    code, out = run('assemble.py', 'ingest', '--folder', folder, '--jd-text-file', unnamed, *ident)
-    assert code == 0, out
-    assert _util.read(jd_md) == '**Company:** Halloway Labs\n\n---\n\n' + _util.read(unnamed), _util.read(jd_md)
+    for name, text in (('named.txt', 'Director, Data Operations\nHALLOWAY LABS is hiring.\n'),
+                       ('unnamed.txt', 'We are hiring.\n')):
+        jd_file = write_block(name, text)
+        code, out = run('assemble.py', 'ingest', '--folder', folder, '--jd-text-file', jd_file, *JD_IDENT)
+        assert code == 0, out
+        assert _util.read(jd_md) == header + text, f'{name}:\n{_util.read(jd_md)}'
 
 
 def test_relabel_corrects_company_without_a_new_application():
@@ -2472,6 +2480,172 @@ def test_relabel_corrects_company_without_a_new_application():
     assert os.path.isdir(renamed) and company_slug.lookup(root, cfg, 'Halloway Labs') == 'hlw', 'a refused relabel changed something'
 
 
+def test_research_citations_resolve_to_numbered_sources():
+    """Shipped 2026-11-17 (APP-029): every Key fact carried its URL inline and
+    the Sources list repeated them all, 42 of about 115 lines, in a file eight
+    later agents read whole. Facts now cite `[c1]` / `[r1]` / `[i1]` against
+    their section's Sources list, so each URL appears once. Old inline-URL
+    research files still pass.
+    """
+    import role_research_qc as riq
+
+    def research(company_facts, company_sources):
+        blocks = {'Company': (company_facts, company_sources),
+                  'Title': ('- Title meaning [t1]', '- [t1] https://example.com/title'),
+                  'Industry': ('- Sector fact [i1]\n- From the posting [JD]', '- [i1] https://example.com/ind')}
+        text = '# Research: Halloway Labs | Director\n\n**APP-NNN:** APP-001\n**Research completed:** 2026-01-11\n\n'
+        for name, (facts, sources) in blocks.items():
+            text += f'## {name}\n\n### Summary\nS.\n\n### Key facts\n{facts}\n\n### Sources\n{sources}\n\n'
+        return text
+
+    def problems(text):
+        findings = []
+        riq.check_research(text, findings)
+        return findings[0]
+
+    good = problems(research('- Fact [c1][c2]\n- Other [c2]', '- [c1] https://a.com\n- [c2] https://b.com'))
+    assert good[1], good
+    old = problems(research('- Fact [https://a.com]', '- https://a.com'))
+    assert old[1], f'an old inline-URL research file failed:\n{old}'
+
+    cases = {
+        'do not resolve': ('- Fact [c3]', '- [c1] https://a.com'),
+        'never cited': ('- Fact [c1]', '- [c1] https://a.com\n- [c2] https://b.com'),
+        'section': ('- Fact [c1][t1]', '- [c1] https://a.com'),
+        'URL in Key facts': ('- Fact [c1] https://a.com', '- [c1] https://a.com'),
+    }
+    for expect, (facts, sources) in cases.items():
+        result = problems(research(facts, sources))
+        assert not result[1] and expect in result[2], f'{expect}: {result}'
+
+
+def test_research_file_reads_industry_company_role_with_sources_last():
+    """Shipped 2026-11-17 (user, APP-029): research.md now reads Industry,
+    Company, Role (the wider context first), and every source sits in one
+    `## Sources` list at the end of the file, in the order the body cites
+    them. The assembler moves each block's Sources there and renumbers each
+    section's markers by first citation, so the list follows the body whatever
+    order the agent numbered in.
+    """
+    import role_research_qc as riq
+    research_path = os.path.join(FIXTURE_APP, 'research.md')
+    os.remove(research_path)
+    blocks = {
+        'company': write_block('company.md', '## Company\n\n### Summary\nS [c2].\n\n### Key facts\n- A [c2]\n'
+                                             '- B [c1][c2]\n\n### Sources\n- [c1] https://c-one.com\n'
+                                             '- [c2] https://c-two.com\n'),
+        'role': write_block('role.md', '## Title\n\n### Summary\nS.\n\n### Key facts\n- R [t1]\n- From the JD [JD]\n\n'
+                                       '### Sources\n- [t1] https://t-one.com\n'),
+        'industry': write_block('industry.md', '## Industry\n\n### Summary\nS.\n\n### Key facts\n- I [i1]\n\n'
+                                               '### Sources\n- [i1] https://i-one.com\n'),
+    }
+    args = ('--company-file', blocks['company'], '--role-file', blocks['role'], '--industry-file', blocks['industry'])
+    code, out = run('role_research_assemble.py', 'research', '--folder', FIXTURE_APP, '--date', '2026-01-11', *args)
+    assert code == 0, out
+    text = _util.read(research_path)
+    headings = re.findall(r'(?m)^## (.+)$', text)
+    assert headings == ['Industry', 'Company', 'Title', 'Interview prep', 'Sources'], headings
+    assert '### Sources' not in text, 'a section kept its own Sources list'
+    # c2 is cited first, so it becomes c1; the list follows the body's order.
+    assert '- A [c1]\n- B [c2][c1]' in text and 'S [c1].' in text, text
+    sources = text.split('## Sources\n', 1)[1].split()
+    assert [s for s in sources if s.startswith('http')] == [
+        'https://i-one.com', 'https://c-two.com', 'https://c-one.com', 'https://t-one.com'], sources
+    findings = []
+    riq.check_research(text, findings)
+    assert findings[0][1], findings[0]
+
+    # A re-run rebuilds the same layout and keeps a section another skill added.
+    _util.write(research_path, text.replace('## Sources', '## Interview prep: x\n\nNotes.\n\n## Sources'))
+    code, out = run('role_research_assemble.py', 'research', '--folder', FIXTURE_APP, '--date', '2026-01-12', *args)
+    assert code == 0, out
+    rerun = _util.read(research_path)
+    assert re.findall(r'(?m)^## (.+)$', rerun) == ['Industry', 'Company', 'Title', 'Interview prep',
+                                                   'Interview prep: x', 'Sources'], rerun
+
+    # A hand edit that lists sources out of citation order is caught.
+    swapped = text.replace('- [c1] https://c-two.com\n- [c2] https://c-one.com',
+                           '- [c2] https://c-one.com\n- [c1] https://c-two.com')
+    assert swapped != text, 'the swap did not apply'
+    findings = []
+    riq.check_research(swapped, findings)
+    assert not findings[0][1] and 'citation order' in findings[0][2], findings[0]
+
+
+def test_research_title_section_accepts_the_older_role_heading():
+    """Renamed 2026-11-17 (user): research.md's '## Role' became '## Title',
+    since it holds what title-research finds about the title, and 'role' in
+    this repo also means the candidate's held roles. The 26 earlier research
+    files keep '## Role', so every reader accepts both, and laying a file out
+    renames the old heading.
+    """
+    import role_research_assemble
+    import role_research_qc as riq
+    research_path = os.path.join(FIXTURE_APP, 'research.md')
+    old = _util.read(research_path).replace('## Title\n', '## Role\n')
+    _util.write(research_path, old)
+    code, out, scratch = build_detector_context()
+    assert code == 0, f'the detector context failed on a "## Role" file:\n{out}'
+    assert '## Title' in _util.read(os.path.join(scratch, 'gap_detector_context.md')), 'the role context lost the title'
+    findings = []
+    riq.check_research(old, findings)
+    assert 'missing `## Title`' not in findings[0][2], findings[0]
+    laid_out = role_research_assemble._layout(old)
+    assert '## Title\n' in laid_out and '## Role\n' not in laid_out, laid_out
+
+
+def test_interview_prep_research_lands_in_its_section():
+    """Shipped 2026-11-17 (user): the prep skills appended each prep-research
+    result by hand as its own top-level section at the end of research.md, so
+    it landed after the file's Sources list (Faro carries 13). research.md now
+    has an `## Interview prep` section, and research_ledger.py files each
+    result under it, dated, with its sources moved to the end list as [pN].
+    """
+    import prep_interview_qc
+    import prep_qc
+    import role_research_qc as riq
+    research_path = os.path.join(FIXTURE_APP, 'research.md')
+    os.remove(research_path)
+    blocks = {k: write_block(f'{k}.md', f'## {k.capitalize()}\n\n### Summary\nS.\n\n### Key facts\n- F [{k[0]}1]\n\n'
+                                          f'### Sources\n- [{k[0]}1] https://{k}.com\n')
+              for k in ('company', 'role', 'industry')}
+    blocks['role'] = write_block('role.md', '## Title\n\n### Summary\nS.\n\n### Key facts\n- F [t1]\n\n'
+                                            '### Sources\n- [t1] https://title.com\n')
+    code, out = run('role_research_assemble.py', 'research', '--folder', FIXTURE_APP, '--date', '2026-01-11',
+                    '--company-file', blocks['company'], '--role-file', blocks['role'],
+                    '--industry-file', blocks['industry'])
+    assert code == 0, out
+    assert '## Interview prep' in _util.read(research_path), 'the research file has no Interview prep section'
+
+    prep = write_block('prep.md', '## Comp calibration\n\n### Summary\nS [2].\n\n### Key facts\n- A [2]\n- B [1]\n\n'
+                                  '### Sources\n1. https://p-one.com\n2. https://p-two.com\n')
+    add = ('research_ledger.py', 'add', '--folder', FIXTURE_APP, '--date', '2026-01-12')
+    code, out = run(*add, '--stage', 'phone screen', '--block-file', prep)
+    assert code == 0, out
+    second = write_block('prep2.md', '## Interviewer\n\n### Summary\nS.\n\n### Key facts\n- C [1]\n\n'
+                                     '### Sources\n1. https://p-three.com\n')
+    code, out = run(*add, '--stage', 'hiring manager', '--block-file', second)
+    assert code == 0, out
+    text = _util.read(research_path)
+    assert re.findall(r'(?m)^## (.+)$', text) == ['Industry', 'Company', 'Title', 'Interview prep', 'Sources'], text
+    assert 'No interview prep research yet.' not in text, 'the placeholder stayed after an entry was filed'
+    assert '### Comp calibration\n\n**Added:** 2026-01-12 (interview prep, phone screen)' in text, text
+    assert '#### Key facts\n- A [p1]\n- B [p2]' in text and '- C [p3]' in text, text
+    urls = [s for s in text.split('## Sources\n', 1)[1].split() if s.startswith('http')]
+    assert urls[-3:] == ['https://p-two.com', 'https://p-one.com', 'https://p-three.com'], urls
+
+    for module in (prep_qc, prep_interview_qc):
+        findings = []
+        module.check_research(text, findings)
+        assert findings[0][1], findings[0]
+        findings = []
+        module.check_research(text.replace('- C [p3]', '- C [p9]'), findings)
+        assert not findings[0][1] and 'p9' in findings[0][2], f'a dangling prep marker passed: {findings[0]}'
+    findings = []
+    riq.check_research(text, findings)
+    assert findings[0][1], findings[0]
+
+
 def test_role_intake_hands_classification_to_role_classify():
     """Split 2026-11-09: ranking and axis classification moved out of role-intake
     into role-classify, because role-intake had grown to 193 lines. role-intake
@@ -2487,16 +2661,12 @@ def test_role_intake_hands_classification_to_role_classify():
     log = _util.read(log_path).replace('- Source: fixture\n', '- Source: fixture\n' + meta_lines.format(pending))
     axes = log.split('## Axis Classification\n\n', 1)[1].split('\n\n## Axis Gaps', 1)[0]
     handed_log = log.replace(axes, pending).replace('## Axis Gaps\n\nNone.', f'## Axis Gaps\n\n{pending}')
-    research = _util.read(research_path)
-    handed_research = research.replace('## Axis Gaps\n\nNone.', f'## Axis Gaps\n\n{pending}')
-
     def detail(check, *args):
         findings = []
         check(*args, findings)
         return findings[0]
 
-    # role-intake's checks ignore what role-classify fills, but not its own fields.
-    assert 'pending' not in detail(riq.check_research, handed_research)[2], 'role-intake flagged the pending axis gaps'
+    # role-research's checks ignore what role-classify fills, but not their own fields.
     handed_meta = riq._metadata_fields(handed_log)
     dated_log = handed_log.replace(f'Research Completed Date: {pending}', 'Research Completed Date: 2026-01-11')
     session = detail(riq.check_session_log, dated_log, riq._metadata_fields(dated_log))
@@ -2504,7 +2674,7 @@ def test_role_intake_hands_classification_to_role_classify():
     assert 'pending' in detail(riq.check_session_log, handed_log, handed_meta)[2], 'a pending research date passed'
 
     # role-classify's checks refuse the hand-off state until it is filled.
-    complete = detail(rcq.check_complete, handed_research, handed_log, handed_meta)
+    complete = detail(rcq.check_complete, handed_log, handed_meta)
     assert not complete[1] and 'Role Level' in complete[2] and 'Axis Classification' in complete[2], complete
 
     # The research step fills the date; finalize fills Level, Industry and the axes.
@@ -2520,13 +2690,18 @@ def test_role_intake_hands_classification_to_role_classify():
     assert _util.read(research_path).startswith('# Research: Aldridge Pharma | Director, Clinical Data Strategy\n\n'
                                                 '**APP-NNN:** APP-001'), _util.read(research_path)[:200]
     assert 'Critical Requirements' not in _util.read(research_path), 'the research step wrote requirements'
+    # Axis Gaps lives in the session log only (2026-11-17): the research copy
+    # could only ever read None once a gap blocked role-classify, and nothing read it.
+    research_written = _util.read(research_path)
+    assert 'Axis Gaps' not in research_written, 'the research step wrote an Axis Gaps section'
     assert '- Research Completed Date: 2026-01-11' in _util.read(log_path), 'the research step left the date pending'
     code, out = run('role_classify_assemble.py', 'finalize', '--folder', FIXTURE_APP,
                     '--axis-file', write_block('axes.md', f'## Axis Classification\n\n{axes}\n\n## Axis Gaps\n\nNone'))
     assert code == 0, out
-    filled_log, filled_research = _util.read(log_path), _util.read(research_path)
+    filled_log = _util.read(log_path)
+    assert _util.read(research_path) == research_written, 'finalize changed the research file'
     assert '- Role Level: leadership' in filled_log and '- Industry: pharma' in filled_log, filled_log
-    complete = detail(rcq.check_complete, filled_research, filled_log, riq._metadata_fields(filled_log))
+    complete = detail(rcq.check_complete, filled_log, riq._metadata_fields(filled_log))
     assert complete[1], complete
     code, out = run('role_classify_assemble.py', 'approval', '--folder', FIXTURE_APP)
     # The approval block shows values only; rationales stay in the session log
@@ -2614,7 +2789,6 @@ def test_dispatch_prompts_are_printed_not_composed():
         text = prompt(agent)
         assert 'Company: Aldridge Pharma' in text and jd_path in text, text
         assert 'Fixture job description' not in text, 'JD text was pasted into the prompt'
-    assert 'actually operates in' in prompt('industry-research')
     # 2026-11-16: each research agent writes its own block, so the model never
     # re-types the research into a file.
     for agent, name in (('company-research', 'research_company.md'), ('title-research', 'research_role.md'),
@@ -2626,7 +2800,7 @@ def test_dispatch_prompts_are_printed_not_composed():
     assert jd_path in ranker and company_path in ranker, ranker
     assert os.path.join(FIXTURE_APP, 'research.md') not in ranker, 'the ranker was given the whole research file'
     company = _util.read(company_path)
-    assert company.startswith('## Company\n') and '## Role' not in company, f'the Company slice is wrong: {company[:200]}'
+    assert company.startswith('## Company\n') and '## Title' not in company, f'the Company slice is wrong: {company[:200]}'
     assert os.path.join(FIXTURE_APP, 'jd_needs.md') in ranker, 'the ranker was not given the requirements'
     assert 'Comms' not in prompt('axis-classifier'), 'an absent optional file was listed'
     _util.write(os.path.join(FIXTURE_APP, 'comms.md'), 'A note.')
@@ -3060,11 +3234,21 @@ def test_round_prepped_before_booking_passes_only_as_unscheduled():
 # exempt; their per-fact source URLs carry the no-fabrication rule instead.
 # ---------------------------------------------------------------------------
 
-def test_file_reading_agents_load_global_rules():
+def test_file_reading_agents_carry_the_no_fabrication_rule():
     """Shipped 2026-10-16 (APP-025): the axis-classifier put outside knowledge
     of the company's drugs into an industry rationale, because nothing in its
-    definition pointed it at rules/global-rules.md.
+    definition pointed it at rules/global-rules.md. Amended 2026-11-17: an agent
+    need not read global-rules.md, most of whose rules do not apply to it; it
+    may instead carry the rule itself in an `## Operating rules` section.
     """
+    def carries_rule(text):
+        if 'rules/global-rules.md' in text:
+            return True
+        m = re.search(r'(?ms)^## Operating rules\n(.*?)(?=^## |\Z)', text)
+        return bool(m and re.search(r'fabricat', m.group(1), re.I))
+
+    assert not carries_rule('## Operating rules\n\n- Write only the output file.\n\n## Inputs\n\nDo not fabricate.\n'), \
+        'a no-fabrication line outside Operating rules passed'
     agents_dir = os.path.join(REPO_ROOT, '.claude', 'agents')
     missing = []
     for name in sorted(os.listdir(agents_dir)):
@@ -3072,9 +3256,9 @@ def test_file_reading_agents_load_global_rules():
             continue
         text = _util.read(os.path.join(agents_dir, name))
         tools = next((ln for ln in text.splitlines() if ln.startswith('tools:')), '')
-        if 'Read' in tools and 'rules/global-rules.md' not in text:
+        if 'Read' in tools and not carries_rule(text):
             missing.append(name)
-    assert not missing, 'agents that can read files but never load the global rules: ' + ', '.join(missing)
+    assert not missing, 'agents that can read files but carry no no-fabrication rule: ' + ', '.join(missing)
 
 
 # ---------------------------------------------------------------------------

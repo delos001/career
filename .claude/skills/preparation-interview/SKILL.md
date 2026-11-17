@@ -54,8 +54,7 @@ Evaluate by PURPOSE-FIT, never by artifact age. Enumerate gaps, state the count,
 
 - Per-interviewer intel is the primary gap: one `prep-research` invocation per interviewer. Degrade gracefully when a footprint is empty - output "confirm live" handling plus an opener question, do not pad guesses.
 - Plus any audience-specific gaps the rule file names.
-- All research via `prep-research`, one target per invocation, foreground. Append to `research.md` dated `**Added:** YYYY-MM-DD (interview prep,
-  <audience>)` with Summary / Key facts / Sources, keeping each fact's `[n]` source marker and the numbered Sources list as returned; relay with hedges intact.
+- All research via `prep-research`, one target per invocation, foreground. Save the findings exactly as returned to `<scratch>/prep_research.md` and run `python scripts/research_ledger.py add --folder <app_folder> --block-file <scratch>/prep_research.md --date <today> --stage "<audience>"`, which files them under `research.md`'s Interview prep section; relay with hedges intact.
 
 ## Phase 3: main body (build or refine)
 

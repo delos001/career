@@ -43,7 +43,7 @@ Ask if this session is for a new gap analysis or to resume a previous one?
 
 - Input: application folder path (from the resume check), APP-NNN, slug.
 - Read `jd_needs.md` from the application folder: the requirements each piece of evidence is assessed against. Rows under `## Not ranked` are never evaluated, except Employment condition rows, which Phase 2 compares against eligibility.
-- Read `research.md` from the application folder. Extract the `## Role`, `## Company`, `## Industry` summary blocks (role context for downstream judgment).
+- Read `research.md` from the application folder. Extract the `## Title` (`## Role` in older files), `## Company`, `## Industry` summary blocks (role context for downstream judgment).
 - Read `user-info.md` from the profile folder. Extract the eligibility / fit-signal sections:
   - `## Work Authorization` (Status, Sponsorship Required).
   - `## Geographic Preferences` (Modality, Willing to Relocate, Travel).

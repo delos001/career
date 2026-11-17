@@ -12,8 +12,7 @@ through a deterministic tool instead of by hand. One subcommand per write point:
             folder; print the folder path, the ID, then the slug. Never run on a
             resume: the folder already exists.
   ingest    Phase 4 - write jd.md (plus comms.md if supplied) into the folder,
-            adding an identity header line for the title or company when the
-            JD text does not contain it. Refuses a folder that was never
+            headed by the confirmed title and company. Refuses a folder that was never
             created. Deletes its input files once saved, but only those inside
             temp/ (Phase 1's working files).
   init      Phase 5 - write the initial session log (metadata filled in, the
@@ -188,17 +187,10 @@ def cmd_ingest(args, repo_root, cfg):
     jd_file_name = cfg['filenames']['jd_file']
     jd_path = os.path.join(app_folder, jd_file_name)
     jd_text = _util.read(args.jd_text_file)
-    # Prepend an identity header line for the confirmed title or company when
-    # the JD text does not contain it (case-insensitive), so jd.md stays
-    # traceable to its application when read in isolation.
-    lowered = jd_text.casefold()
-    header_lines = []
-    if args.title.casefold() not in lowered:
-        header_lines.append(f'**Role:** {args.title}')
-    if args.company.casefold() not in lowered:
-        header_lines.append(f'**Company:** {args.company}')
-    if header_lines:
-        jd_text = '\n'.join(header_lines) + '\n\n---\n\n' + jd_text
+    # Always prepend the confirmed title and company as an identity header, so
+    # every jd.md names its role the same way at the top. A name found somewhere
+    # in the JD text does not identify the role, and relabel rewrites these lines.
+    jd_text = f'**Role:** {args.title}\n**Company:** {args.company}\n\n---\n\n' + jd_text
     _util.write(jd_path, jd_text)
 
     comms_file_name = cfg['filenames']['comms_file']
@@ -253,6 +245,15 @@ def cmd_init(args, repo_root, cfg):
             raise ValueError(f'the session log has sections from later skills ({", ".join(extra)}); '
                              f'--replace would drop them')
 
+    # A source records where the text came from (URL, original file path, or
+    # "pasted"). Its copy in the application folder is already named by the
+    # 'file' field, and a folder path goes stale when relabel renames the folder.
+    folder_prefix = app_folder + os.sep
+    for flag, value in (('--jd-source', args.jd_source), ('--comms-source', args.comms_source)):
+        if value and os.path.isabs(value) and os.path.abspath(value).startswith(folder_prefix):
+            raise ValueError(f'{flag} records where the text came from (a URL, the original file path, '
+                             f'or "pasted"), not its copy in the application folder: {value}')
+
     jd_file_name = cfg['filenames']['jd_file']
     comms_file_name = cfg['filenames']['comms_file']
     # comms_source presence signals that comms were ingested.
@@ -290,8 +291,8 @@ def cmd_init(args, repo_root, cfg):
 # Corrects the company and/or title after the folder exists, keeping the
 # APP-NNN. Going back to Phase 2 and running forward would repeat Phase 3,
 # which claims a new APP-NNN and makes a second folder. Rewrites the session
-# log's H1 and Company/Role lines, the research H1, and jd.md's identity header
-# when one was added, then renames the folder when the slug changes. --slug on
+# log's H1 and Company/Role lines, the research H1, and jd.md's identity header,
+# then renames the folder when the slug changes. --slug on
 # its own changes the company's registry slug, refused while another
 # application folder uses the old one. Refuses a folder holding files a later
 # skill wrote: those carry the old labels too.
@@ -354,7 +355,9 @@ def cmd_relabel(args, repo_root, cfg):
     if os.path.isfile(research_path):
         research = _relabel_h1(_util.read(research_path), 'Research', args.company, args.role)
 
-    # jd.md identity header: only the lines ingest prepended before its '---' rule.
+    # jd.md identity header: the Role and Company lines ingest wrote before its
+    # '---' rule. A jd.md written before 2026-11-17 may carry one line or none;
+    # a line it lacks is not added.
     jd_path = os.path.join(folder, fn['jd_file'])
     jd = _util.read(jd_path)
     head, sep, body = jd.partition('\n\n---\n\n')
@@ -434,9 +437,9 @@ def main():
     p_ingest.add_argument('--comms-text-file', default=None,
                           help='path to a file holding the extracted comms text (optional)')
     p_ingest.add_argument('--title', required=True,
-                          help='confirmed title; a header line is added when the JD text lacks it')
+                          help='confirmed title; written as the jd.md Role header line')
     p_ingest.add_argument('--company', required=True,
-                          help='confirmed company; a header line is added when the JD text lacks it')
+                          help='confirmed company; written as the jd.md Company header line')
     p_ingest.set_defaults(func=cmd_ingest)
 
     p_init = sub.add_parser('init', help='Phase 5: write initial session log (run after ingest); '
@@ -450,9 +453,9 @@ def main():
     p_init.add_argument('--industry', default=None)
     p_init.add_argument('--start-date', required=True, help='YYYY-MM-DD')
     p_init.add_argument('--jd-source', required=True,
-                        help='app-folder path to jd.md (from ingest output), or URL')
+                        help='where the JD came from: URL, original file path, or "pasted"')
     p_init.add_argument('--comms-source', default=None,
-                        help='app-folder path to comms.md (from ingest output), URL, or "pasted"; omit if no comms')
+                        help='where the messages came from: URL, original file path, or "pasted"; omit if no comms')
     p_init.add_argument('--replace', action='store_true',
                         help='rewrite an existing session log; refused once research or a later section exists')
     p_init.set_defaults(func=cmd_init)

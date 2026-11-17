@@ -21,9 +21,12 @@ Owns
   X3  each Appendix block carries only schema fields (Purpose / Interviewer / Emphasis)
   X4  no Appendix block heading carries a date or an event-status token
 
+The research ledger rule (R1) lives here too, as research_ledger_problems
+(2026-11-17), since both skills file prep research the same way.
+
 Per-skill checks stay in each script because they differ in scope: frontmatter /
-heading-order (P1-P5), the research ledger (R1), the session-log section each
-skill owns (S1-S2), and the advisory warnings (W1-W2).
+heading-order (P1-P5), the session-log section each skill owns (S1-S2), and the
+advisory warnings (W1-W2).
 
 Author    : Jason Delosh
 Created   : 2026-07-10
@@ -81,6 +84,43 @@ def _frontmatter_sources(text):
         return []
     sm = re.search(r'^sources\s*:\s*\[(.*?)\]', m.group(1), re.MULTILINE)
     return [s.strip() for s in sm.group(1).split(',') if s.strip()] if sm else []
+
+
+def research_ledger_problems(research_text):
+    """Return (entry count, problems) for the prep research filed in research.md.
+
+    Shared by both prep QC scripts' R1. Since 2026-11-17 each prep-research
+    result is a '### <target>' entry under '## Interview prep', filed by
+    research_ledger.py, citing [pN] entries in the file's '## Sources' list.
+    Files written earlier carry each result as its own '##' section with its
+    sources inside; those are still checked for a URL.
+    """
+    added_re = re.compile(r'\*\*Added:\*\*\s*\d{4}-\d{2}-\d{2}\s*\(interview prep')
+    entries = []
+    for heading, body in _sections(research_text):
+        if heading == 'Interview prep':
+            parts = re.split(r'(?m)^### (.+?)\s*$', body)
+            entries += [(parts[i], parts[i + 1], True) for i in range(1, len(parts), 2)]
+        elif '(interview prep' in body:
+            entries.append((heading, body, False))
+    sources = next((b for h, b in _sections(research_text) if h == 'Sources'), '')
+    listed = set(re.findall(r'(?m)^- \[(p\d+)\] https?://', sources))
+    problems = []
+    for heading, body, filed in entries:
+        if not added_re.search(body):
+            problems.append(f'{heading}: missing dated **Added:** attribution')
+        if filed:
+            markers = set(re.findall(r'\[(p\d+)\]', body))
+            dangling = sorted(markers - listed)
+            if dangling:
+                problems.append(f'{heading}: markers with no Sources entry: {", ".join(dangling)}')
+            if not markers:
+                problems.append(f'{heading}: cites no source')
+        elif not re.search(r'https?://\S+', body):
+            problems.append(f'{heading}: no source URL')
+        if '—' in body:
+            problems.append(f'{heading}: em dash found')
+    return len(entries), problems
 
 
 def _sections(text):
