@@ -1,6 +1,6 @@
 ---
 name: role-extract
-description: Extract the job's requirements from the job description, label each by kind, and group and rank them into the job's needs. Reads the jd.md that role-intake wrote and the research.md that role-research wrote, and writes jd_needs.md, which role-classify, retrieval, gap analysis, CV creation and interview prep read. Run after role-research; role-classify runs next.
+description: Extract the job's requirements from the job description. Requirements are labeled by what they are asking for, and grouped and ranked. Reads jd.md and research.md. Writes jd_needs.md, which is used by role-classify, retrieval, gap analysis, CV creation and interview prep. Run after role-research; role-classify runs next.
 ---
 
 # role-extract - extract the requirements and rank the needs
@@ -10,7 +10,7 @@ description: Extract the job's requirements from the job description, label each
 - Read `rules/global-rules.md` first; operate under it throughout.
 - Start each phase by saying "The next step is to" followed by the phase title after the dash, in lower case.
 
-## Start
+## Resume check - run before Phase 0
 
 Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-NNN>`; use it as `<app_folder>`. Then check the folder against the cases below, in order, and follow the first one that is true:
 
@@ -26,8 +26,8 @@ Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-N
 
 ## Phase 1 - Extract the requirements
 
-- Run `python scripts/dispatch_prompt.py critical-requirements-extractor --folder <app_folder>` and dispatch `critical-requirements-extractor` with the prompt between `=== PROMPT ===` and `=== END ===` exactly as printed.
-- Save its output to `<scratch>/requirements.md`, then run `python scripts/role_extract_assemble.py requirements --folder <app_folder> --requirements-file <scratch>/requirements.md`. Re-extracting replaces any earlier ranking.
+- Run `python scripts/dispatch_prompt.py critical-requirements-extractor --folder <app_folder>` and dispatch `critical-requirements-extractor` with the prompt between `=== PROMPT ===` and `=== END ===` exactly as printed. The agent writes its table to `<scratch>/requirements.md`; never write or edit that file yourself.
+- Run `python scripts/role_extract_assemble.py requirements --folder <app_folder> --requirements-file <scratch>/requirements.md`. Re-extracting replaces any earlier ranking.
 
 ## Phase 2 - Check the extraction against the job description
 
@@ -36,8 +36,8 @@ Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-N
 
 ## Phase 3 - Rank the needs
 
-- Run `python scripts/dispatch_prompt.py jd-needs-ranker --folder <app_folder>` and dispatch `jd-needs-ranker` with the printed prompt exactly as printed.
-- Save its output to `<scratch>/needs.md`, then run `python scripts/role_extract_assemble.py needs --folder <app_folder> --needs-file <scratch>/needs.md`.
+- Run `python scripts/dispatch_prompt.py jd-needs-ranker --folder <app_folder>` and dispatch `jd-needs-ranker` with the printed prompt exactly as printed. The agent writes its result to `<scratch>/needs.md`; never write or edit that file yourself.
+- Run `python scripts/role_extract_assemble.py needs --folder <app_folder> --needs-file <scratch>/needs.md`.
 
 ## Phase 4 - Check the requirements and the ranking
 

@@ -10,7 +10,7 @@ description: Research the industry, company, and the role title for an applicati
 - Read `rules/global-rules.md` first; operate under it throughout.
 - Start each phase by saying "The next step is to" followed by the phase title after the dash, in lower case.
 
-## Start
+## Resume check - run before Phase 0
 
 Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-NNN>`; use it as `<app_folder>`. Then check the folder against the cases below, in order, and follow the first one that is true:
 

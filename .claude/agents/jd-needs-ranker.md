@@ -1,16 +1,16 @@
 ---
 name: jd-needs-ranker
-description: Labels each of a job's extracted critical requirements by kind, describes the job, groups the requirements into the JD's needs and ranks them, for the role-extract skill. Reads the JD, the research file's Company section, the extracted requirements in jd_needs.md, and rules/jd-requirement-kinds.md. Returns the row kinds, the job description, and a Ranked Needs table; role_extract_assemble.py rewrites jd_needs.md with them, which cv-targeted, gap-analysis and interview prep read in priority order. Read-only.
-tools: Read
+description: Labels each of a job's extracted critical requirements by kind, describes the job, groups the requirements into the JD's needs and ranks them, for the role-extract skill. Reads the JD, the research file's Company section, the extracted requirements in jd_needs.md, and rules/jd-requirement-kinds.md. Writes the row kinds, the job description, and a Ranked Needs table to the output file it is given; role_extract_assemble.py rewrites jd_needs.md with them, which cv-targeted, gap-analysis and interview prep read in priority order.
+tools: Read, Write
 ---
 
 # JD needs ranker
 
-Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output. You are read-only.
+Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output. You write only the output file you are given.
 
 ## Inputs
 
-The dispatching skill gives you the paths to `jd.md`, the company research and `jd_needs.md`. Read the whole JD; any sentence can explain another, wherever it sits. Then read the company research, the numbered requirements in `jd_needs.md`, and `rules/jd-requirement-kinds.md`.
+The dispatching skill gives you the paths to `jd.md`, the company research and `jd_needs.md`, and an output file. Read the whole JD; any sentence can explain another, wherever it sits. Then read the company research, the numbered requirements in `jd_needs.md`, and `rules/jd-requirement-kinds.md`.
 
 ## Steps
 
@@ -41,9 +41,9 @@ Put every row with any part Function, Means, Working style or Setting in exactly
 - Name each need in the JD's own words where the JD names it, by the function it delivers. A tool, platform or technology the function uses stays in its rows, never in the need's name: "drives platform optimization, user adoption, process standardization", not "Veeva Vault Clinical"; "deploys AI applications in production", not "Generative AI". If dropping the tool changes what the work is, name the kind of tool instead ("from one programming language to another").
 - Quote one verbatim JD passage per need showing its strongest signal, copied exactly from one line of the JD.
 
-## Return format
+## Output format
 
-Return exactly this, needs in rank order:
+Write exactly this to the output file, needs in rank order, then reply with only `written <output file>`:
 
 ```
 ## Row Kinds
@@ -68,7 +68,7 @@ Return exactly this, needs in rank order:
 | N-01 | <need in the JD's words> | <row numbers, e.g. 1, 14, 21> | <role-statement, or blank> | <JD section> "<verbatim JD quote>" |
 ```
 
-`N-01` is the highest-ranked need; ids run in sequence with no gaps. If `jd_needs.md` has no requirement rows, return:
+`N-01` is the highest-ranked need; ids run in sequence with no gaps. If `jd_needs.md` has no requirement rows, write:
 
 ```
 ## Ranked Needs

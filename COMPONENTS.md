@@ -392,8 +392,8 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 - **Purpose**: Extract a structured list of competency requirements from a JD for the role-extract skill. Comprehensive scan across all JD sections (not just labeled "Requirements"); each requirement carries Text / Demand / Source for downstream use by retrieval, gap analysis, CV creation, and interview prep.
 - **Status**: Designed
-- **Inputs**: Skill-passed (by `role-extract`): JD path, role title and company name. Tools: Read.
-- **Outputs**: A `| # | Text | Demand | Source |` table, one row per requirement (the `#` column is the CR-NNN id), returned to the caller; `role_extract_assemble.py requirements` writes it to `jd_needs.md`, and `role_extract_qc.py requirements` (X1, X2) checks it against the JD.
+- **Inputs**: Skill-passed (by `role-extract`, via `dispatch_prompt.py`): JD path, role title, company name and output file. Tools: Read, Write.
+- **Outputs**: A `| # | Text | Demand | Source |` table, one row per requirement (the `#` column is the CR-NNN id), written to the output file `dispatch_prompt.py` names (`<scratch>/requirements.md`); `role_extract_assemble.py requirements` writes it to `jd_needs.md`, and `role_extract_qc.py requirements` (X1, X2) checks it against the JD.
 - **Triggers**: Invoked by `role-extract` Phase 1.
 - **Update Triggers**: When the three-field schema (Text / Type / Source) changes; when downstream consumers add new fields they need from extraction.
 
@@ -401,8 +401,8 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 - **Purpose**: Label each extracted requirement by kind (`rules/jd-requirement-kinds.md`), describe the job, group the requirements into the functions the role delivers, and rank them by the JD's statement of the role, repetition across sections, then space (GitHub #89).
 - **Status**: Designed
-- **Inputs**: Skill-passed (by `role-extract`): paths to `jd.md`, `scratch/company.md` (research.md's Company section, cut by `dispatch_prompt.py`) and `jd_needs.md` (the extracted requirements). Reads `rules/jd-requirement-kinds.md`. Tools: Read.
-- **Outputs**: Row kinds, the job description, and a needs table in rank order. `role_extract_assemble.py needs` rewrites `jd_needs.md` with them, placing the rows outside the needs into Qualifications or Not ranked by kind and carrying each requirement's text, Demand and Source over from the file; mechanical checks in `role_extract_qc.py` X3. Not ranked rows are filtered out of retrieval and gap analysis by `requirement_kinds.py`.
+- **Inputs**: Skill-passed (by `role-extract`): paths to `jd.md`, `scratch/company.md` (research.md's Company section, cut by `dispatch_prompt.py`) and `jd_needs.md` (the extracted requirements), and the output file. Reads `rules/jd-requirement-kinds.md`. Tools: Read, Write.
+- **Outputs**: Row kinds, the job description, and a needs table in rank order, written to the output file `dispatch_prompt.py` names (`<scratch>/needs.md`). `role_extract_assemble.py needs` rewrites `jd_needs.md` with them, placing the rows outside the needs into Qualifications or Not ranked by kind and carrying each requirement's text, Demand and Source over from the file; mechanical checks in `role_extract_qc.py` X3. Not ranked rows are filtered out of retrieval and gap analysis by `requirement_kinds.py`.
 - **Triggers**: Invoked by `role-extract` Phase 3.
 - **Update Triggers**: When the requirement schema changes; when a downstream skill needs more from the ranking.
 

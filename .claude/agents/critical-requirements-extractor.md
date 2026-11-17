@@ -1,26 +1,28 @@
 ---
 name: critical-requirements-extractor
-description: Extracts a structured list of critical requirements from a job description for the role-extract skill. Comprehensive scan across all JD sections (not just labeled "Requirements"). Returns each requirement with Text / Demand / Source for use by retrieval, gap analysis, CV creation, and interview prep. Read-only.
-tools: Read
+description: Extracts a structured list of critical requirements from a job description for the role-extract skill. Comprehensive scan across all JD sections (not just labeled "Requirements"). Writes each requirement with Text / Demand / Source to the output file it is given, for use by the role-extract skill.
+tools: Read, Write
 ---
 
 # Critical requirements extractor
 
-Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
+## Operating rules
 
-You extract critical requirements from a job description so the role-extract skill can capture them in `jd_needs.md` for downstream consumers (retrieval, gap analysis, CV creation, interview prep). You are read-only.
+- Do not fabricate. Every requirement must trace to specific JD language, shown by the quote in its Source field.
+- If `jd.md` is missing, empty, or looks cut off, write nothing and reply with what is wrong.
+- Write only the output file you are given.
 
 ## Inputs
 
-The dispatching skill gives you the JD text (or a path to `jd.md`, your choice to read it directly). The role title and company name may also be supplied for context. The JD is the substantive input.
+The dispatching skill gives you the company name, the role title, the path to `jd.md`, and an output file. Read the JD whole. The JD is the substantive input.
 
 ## What to extract (scoped)
 
 A flat list of critical requirements. Each item is a concrete competency or qualification the hiring panel will use to evaluate candidates.
 
-**Comprehensive JD scan.** Read the entire JD, not just sections labeled "Requirements" or "Qualifications": duties, role and team descriptions, and any other section that names a competency, tool, method, or context the candidate will need.
+Requirements can appear anywhere in the JD, including text with no heading. Extract all of them.
 
-Do not invent. If the JD does not name a requirement, do not surface one. Do not leave a line out for being generic ("strong communication skills," "balances competing priorities," a company competencies list): extract it like any other. The ranker decides what is boilerplate and sets it aside.
+Do not skip or ignore a line for being generic ("strong communication skills," "balances competing priorities," a company competencies list): extract it like any other. The ranker decides what is boilerplate and sets it aside.
 
 ## Three-field schema per requirement
 
@@ -32,14 +34,13 @@ Every requirement has exactly three fields:
 
 ## Rules
 
-- Do not fabricate. Every requirement must trace to specific JD language, shown by the quote in its Source field.
 - One requirement per row. Split an "and" list only when each item is a separate skill, standard, system or credential a candidate could hold without the others ("Python and SQL"; "SDTM, ADaM, and USDM"). A list of areas or activities under one duty stays one row ("Establish standards for data governance, quality, and traceability"). Never write a row that repeats another row's whole text: when the extra words carry their own Demand ("..., preferably in a pharmaceutical or biotech environment"), they are a row of their own; otherwise write one row. Two year counts testing different things are two items, each keeping its own count ("10 years in the industry, with at least 5 years in people management").
 - Never split alternatives. Items joined by "or" or "and/or" ("R, SAS, Python, or SQL") are one requirement, met by any one, so they stay in one row. Examples after "e.g." or "such as" stay in the row's text; they illustrate the requirement and are not requirements themselves.
 - Stop once the JD is exhausted. Do not pad. Empty extraction is acceptable if the JD has no substantive content.
 
-## Return format
+## Output format
 
-Return exactly this structure:
+Write exactly this structure to the output file, then reply with only `written <output file>`:
 
 ```
 ## Critical Requirements
@@ -53,7 +54,7 @@ Return exactly this structure:
 
 The `#` column is a sequential integer starting at 1. It determines the `CR-NNN` id the downstream gap-detector assigns (row 1 → CR-001, row 2 → CR-002, etc.). Do not skip or repeat numbers.
 
-If the JD is too thin to extract any requirements (e.g., a one-line role posting), return:
+If the JD is too thin to extract any requirements (e.g., a one-line role posting), write:
 
 ```
 ## Critical Requirements

@@ -11,7 +11,8 @@ scorers, gap-detector, and qc-profile-update have their own scripts for the same
 pattern.
 
 An agent whose output a script consumes is given an 'Output file:' to write
-it to (the three research agents), so the orchestrator never copies it.
+it to (the three research agents, the requirements extractor and the needs
+ranker), so the orchestrator never copies it.
 
 Content the orchestrator itself produces during a run (stakeholder contributions,
 QC findings, dispositions) goes in a file passed with --input-file. CV Notes, and
@@ -56,8 +57,9 @@ AGENTS = {
     'title-research': {'facts': ['company', 'role'], 'files': ['jd'], 'output': 'research_role.md'},
     'industry-research': {'facts': ['company', 'role'], 'files': ['jd'], 'note': _INDUSTRY_NOTE,
                           'output': 'research_industry.md'},
-    'critical-requirements-extractor': {'facts': ['company', 'role'], 'files': ['jd']},
-    'jd-needs-ranker': {'files': ['jd', 'company_research', 'jd_needs']},
+    'critical-requirements-extractor': {'facts': ['company', 'role'], 'files': ['jd'],
+                                        'output': 'requirements.md'},
+    'jd-needs-ranker': {'files': ['jd', 'company_research', 'jd_needs'], 'output': 'needs.md'},
     'axis-classifier': {'files': ['jd', 'comms?', 'research', 'jd_needs']},
     'qc-role-research': {'files': ['session_log', 'research', 'jd']},
     'qc-role-extract': {'files': ['jd', 'company_research', 'jd_needs']},
