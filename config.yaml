@@ -30,7 +30,7 @@ filenames:
   introductions: introductions.yaml            # next to scripts/display/introduce.py
   axis_registry: registry.md                   # in each rules/<axis>/ folder
   requirement_kinds_file: jd-requirement-kinds.md  # in the rules folder; kinds of JD requirement rows, parsed by requirement_kinds.py
-  jd_needs_file: jd_needs.md                   # written into each application folder by role-classify; each requirement's kind and the ranked needs
+  jd_needs_file: jd_needs.md                   # written into each application folder by role-extract; each requirement's kind and the ranked needs
   build_issues_log: build_issues.md            # in the design/ folder; appended to on provisional builds
   retrieval_manifest: retrieval.md             # written into each application folder by the retrieval skill
   gap_analysis_file: gap_analysis.md           # written into each application folder by the gap-analysis skill
@@ -95,7 +95,7 @@ retrieval_calibration:
   slope_bounds: [0.5, 2.0]  # a fitted slope outside this range means the chunk's scoring is unusable; the merge stops
   max_post_residual: 0.08   # QC fails when anchors still disagree by more than this on average after correction; provisional
 
-# Modifiers that set a requirement's bar (scripts/role_classify_qc.py C8). One
+# Modifiers that set a requirement's bar (scripts/role_extract_qc.py X2). One
 # case-insensitive regex each; whatever one matches in the JD clause holding a
 # requirement's quote must also appear in the Text of at least one row quoting
 # that clause. Add a word here when a run shows it being dropped.
@@ -112,7 +112,7 @@ requirement_qualifiers:
   - preferably
   - ideally
 
-# Words that mark a requirement optional (scripts/role_classify_qc.py C7). One
+# Words that mark a requirement optional (scripts/role_extract_qc.py X1). One
 # case-insensitive regex each; a row whose own text carries one must have
 # Demand 'preferred'.
 requirement_optional_words:

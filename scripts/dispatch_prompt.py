@@ -60,6 +60,7 @@ AGENTS = {
     'jd-needs-ranker': {'files': ['jd', 'company_research', 'jd_needs']},
     'axis-classifier': {'files': ['jd', 'comms?', 'research', 'jd_needs']},
     'qc-role-research': {'files': ['session_log', 'research', 'jd']},
+    'qc-role-extract': {'files': ['jd', 'company_research', 'jd_needs']},
     'qc-role-classify': {'files': ['session_log', 'research', 'jd_needs', 'jd']},
     'qc-gap-analysis': {'files': ['gap_analysis']},
     'qc-preparation-screen': {'folders': True},

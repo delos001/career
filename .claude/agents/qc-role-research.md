@@ -1,6 +1,6 @@
 ---
 name: qc-role-research
-description: Judgment quality-check for the role-research skill's research file. Verifies what a script cannot - claims trace to sources or the JD with no fabricated facts, and no section was completed on partial content. Mechanical checks (section and field presence, pending markers, date form, URL presence, cross-file field equality) are owned by scripts/role_research_qc.py and are not re-run here. The requirements, axis classification and ranked needs belong to role-classify. Read-only.
+description: Judgment quality-check for the role-research skill's research file. Verifies what a script cannot - claims trace to sources or the JD with no fabricated facts, and no section was completed on partial content. Mechanical checks (section and field presence, pending markers, date form, URL presence, cross-file field equality) are owned by scripts/role_research_qc.py and are not re-run here. The requirements and ranked needs belong to role-extract, the axis classification to role-classify. Read-only.
 tools: Read, Grep
 ---
 

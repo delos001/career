@@ -1950,7 +1950,7 @@ def test_requirement_text_keeps_jd_modifiers():
     are read from the JD clause holding the quote, so a narrow quote cannot step
     around the check.
     """
-    import role_classify_qc as rcq
+    import role_extract_qc as rxq
     _, cfg = _config.load()
     jd = ('Strong knowledge of the industry, including familiarity with drug discovery.\n'
           "Bachelor's degree required; advanced degree preferred.\n"
@@ -1958,7 +1958,7 @@ def test_requirement_text_keeps_jd_modifiers():
 
     def result(text, source):
         findings = []
-        rcq.check_requirement_text(needs_file((text, source)), jd, cfg['requirement_qualifiers'],
+        rxq.check_requirement_text(needs_file((text, source)), jd, cfg['requirement_qualifiers'],
                                    cfg['requirement_year_count'], findings)
         return findings[0]
 
@@ -1983,13 +1983,13 @@ def test_split_requirement_keeps_each_year_count():
     which left two tests sharing one gap verdict. Each count now needs to survive
     on some row from the clause, and a count lost from all of them still fails.
     """
-    import role_classify_qc as rcq
+    import role_extract_qc as rxq
     _, cfg = _config.load()
     jd = 'Minimum of 10 years in the industry, with at least 5 years in people management.\n'
 
     def result(*rows):
         findings = []
-        rcq.check_requirement_text(needs_file(*((text, f'Quals #1 "{quote}"') for text, quote in rows)),
+        rxq.check_requirement_text(needs_file(*((text, f'Quals #1 "{quote}"') for text, quote in rows)),
                                    jd, cfg['requirement_qualifiers'], cfg['requirement_year_count'], findings)
         return findings[0]
 
@@ -2012,17 +2012,17 @@ def test_split_requirement_keeps_modifier_on_some_row():
     effectively build AI solutions' split correctly into two rows, and C8 failed
     the second for lacking 'understanding of', which belongs only to the first.
     A script cannot read whether a modifier carries onto each half, so it needs
-    the modifier on some row from the clause (qc-role-classify judges the rest);
+    the modifier on some row from the clause (qc-role-extract judges the rest);
     a modifier lost from every row still fails.
     """
-    import role_classify_qc as rcq
+    import role_extract_qc as rxq
     _, cfg = _config.load()
     jd = ('Possess a deep understanding of clinical trial data to be able to build '
           'AI solutions that conform to regulatory compliance.\n')
 
     def result(*rows):
         findings = []
-        rcq.check_requirement_text(needs_file(*((text, f'Skills "{quote}"') for text, quote in rows)),
+        rxq.check_requirement_text(needs_file(*((text, f'Skills "{quote}"') for text, quote in rows)),
                                    jd, cfg['requirement_qualifiers'], cfg['requirement_year_count'], findings)
         return findings[0]
 
@@ -2046,7 +2046,7 @@ def test_ranked_needs_cover_every_requirement_once():
     rewrites the file from its own rows and a row the ranker drops stays on file.
     """
     import requirement_kinds
-    import role_classify_qc as rcq
+    import role_extract_qc as rxq
     repo_root, cfg = _config.load()
     kinds = requirement_kinds.load_kinds(repo_root, cfg)
     # Employment conditions (travel, location, authorization) are checked by
@@ -2065,7 +2065,7 @@ def test_ranked_needs_cover_every_requirement_once():
 
     def result(needs_text):
         findings = []
-        rcq.check_ranked_needs(needs_text, jd, kinds, findings)
+        rxq.check_ranked_needs(needs_text, jd, kinds, findings)
         return findings[0]
 
     assert result(good)[1], result(good)
@@ -2161,7 +2161,7 @@ def test_ranked_needs_cover_every_requirement_once():
               '| N-01 | Operating model | 3, 5 | role-statement | About the role "The Director owns the operating model for clinical data across the Aldridge" |\n'
               '| N-02 | Vendor oversight | 2 | repetition 2 | Requirements "Vendor oversight and contract management across external data providers" |\n'
               '| N-03 | Leading a data team | 4 | space | Responsibilities "Lead and develop a data team of five or more" |\n')
-    code, out = run('role_classify_assemble.py', 'needs', '--folder', FIXTURE_APP, '--needs-file', write_block('ranker.md', ranker))
+    code, out = run('role_extract_assemble.py', 'needs', '--folder', FIXTURE_APP, '--needs-file', write_block('ranker.md', ranker))
     assert code == 0, out
     written = _util.read(needs_path)
     assert result(written)[1], result(written)
@@ -2180,10 +2180,10 @@ def test_ranked_needs_cover_every_requirement_once():
     assert '## Qualifications\n\n' + table_head + '| 1 |' in written, 'row 1 was not placed in Qualifications by its kind'
     assert _util.read(research_path) == research, 'the needs step changed research.md'
     bad = write_block('ranker_bad.md', ranker.replace('| 3, 5 |', '| 3, 5, 9 |'))
-    code, out = run('role_classify_assemble.py', 'needs', '--folder', FIXTURE_APP, '--needs-file', bad)
+    code, out = run('role_extract_assemble.py', 'needs', '--folder', FIXTURE_APP, '--needs-file', bad)
     assert code != 0 and 'not in' in out, 'a row the file does not have was written'
     dropped = write_block('ranker_dropped.md', ranker.replace('| 3, 5 |', '| 3 |'))
-    code, out = run('role_classify_assemble.py', 'needs', '--folder', FIXTURE_APP, '--needs-file', dropped)
+    code, out = run('role_extract_assemble.py', 'needs', '--folder', FIXTURE_APP, '--needs-file', dropped)
     assert code == 0, out
     kept = _util.read(needs_path)
     assert '## Requirements\n\n' + table_head + '| 5 | Direct experience' in kept, 'a row the ranker dropped was lost on rewrite'
@@ -2199,7 +2199,7 @@ def test_requirements_are_extracted_into_jd_needs():
     before any ranking is spent on them.
     """
     import requirement_kinds
-    import role_classify_qc as rcq
+    import role_extract_qc as rxq
     _, cfg = _config.load()
     needs_path = os.path.join(FIXTURE_APP, 'jd_needs.md')
     research = _util.read(os.path.join(FIXTURE_APP, 'research.md'))
@@ -2211,7 +2211,7 @@ def test_requirements_are_extracted_into_jd_needs():
              'Nice to have "Familiarity with regulatory submission data packages"; also Requirements |\n'
              '| 3 | Direct experience with a commercial data warehouse platform | required | '
              'Requirements "Direct experience with a commercial data warehouse platform in production" |\n')
-    code, out = run('role_classify_assemble.py', 'requirements', '--folder', FIXTURE_APP,
+    code, out = run('role_extract_assemble.py', 'requirements', '--folder', FIXTURE_APP,
                     '--requirements-file', write_block('reqs.md', table))
     assert code == 0, out
     written = _util.read(needs_path)
@@ -2229,19 +2229,19 @@ def test_requirements_are_extracted_into_jd_needs():
     assert "| 1 | Bachelor's degree in a scientific or quantitative discipline |  | required |" in written, \
         'a recoverable Demand was not reduced to its allowed value'
     assert '## Needs' not in written, 're-extraction kept an old ranking'
-    code, out = run('role_classify_qc.py', 'requirements', '--folder', FIXTURE_APP)
+    code, out = run('role_extract_qc.py', 'requirements', '--folder', FIXTURE_APP)
     assert code == 0, out
 
-    code, out = run('role_classify_assemble.py', 'requirements', '--folder', FIXTURE_APP,
+    code, out = run('role_extract_assemble.py', 'requirements', '--folder', FIXTURE_APP,
                     '--requirements-file', write_block('bad.md', table.replace('| preferred |', '| Knowledge |')))
     assert code != 0 and 'Knowledge' in out, 'a Demand with no allowed value was written'
     old = write_block('old.md', table.replace('| preferred |', '| contextual |'))
-    code, out = run('role_classify_assemble.py', 'requirements', '--folder', FIXTURE_APP, '--requirements-file', old)
+    code, out = run('role_extract_assemble.py', 'requirements', '--folder', FIXTURE_APP, '--requirements-file', old)
     assert code != 0 and 'contextual' in out, 'a retired Type value was written as a Demand'
 
     def present(text):
         findings = []
-        rcq.check_requirements_present(text, cfg['requirement_optional_words'], findings)
+        rxq.check_requirements_present(text, cfg['requirement_optional_words'], findings)
         return findings[0]
 
     ok = needs_file(('A', 'S "a"'), ('B', 'S "b"'))
@@ -2662,7 +2662,8 @@ def test_dispatch_prompts_are_printed_not_composed():
     # The skills use it, and no listed step still hands an agent pasted content.
     skills = os.path.join(REPO_ROOT, '.claude', 'skills')
     for skill, agents in (('role-research', ['<agent>', 'qc-role-research']),
-                          ('role-classify', ['jd-needs-ranker', 'axis-classifier', 'qc-role-classify']),
+                          ('role-extract', ['critical-requirements-extractor', 'jd-needs-ranker', 'qc-role-extract']),
+                          ('role-classify', ['axis-classifier', 'qc-role-classify']),
                           ('cv-targeted', ['<agent>', 'cv-architect']), ('gap-analysis', ['qc-gap-analysis'])):
         text = _util.read(os.path.join(skills, skill, 'SKILL.md'))
         for agent in agents:

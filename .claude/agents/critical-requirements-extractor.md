@@ -1,6 +1,6 @@
 ---
 name: critical-requirements-extractor
-description: Extracts a structured list of critical requirements from a job description for the role-classify skill. Comprehensive scan across all JD sections (not just labeled "Requirements"). Returns each requirement with Text / Demand / Source for use by retrieval, gap analysis, CV creation, and interview prep. Read-only.
+description: Extracts a structured list of critical requirements from a job description for the role-extract skill. Comprehensive scan across all JD sections (not just labeled "Requirements"). Returns each requirement with Text / Demand / Source for use by retrieval, gap analysis, CV creation, and interview prep. Read-only.
 tools: Read
 ---
 
@@ -8,7 +8,7 @@ tools: Read
 
 Read `rules/global-rules.md` first; its Never Fabricate and Never Proceed with Partial Content rules bind everything you output.
 
-You extract critical requirements from a job description so the role-classify skill can capture them in `jd_needs.md` for downstream consumers (retrieval, gap analysis, CV creation, interview prep). You are read-only.
+You extract critical requirements from a job description so the role-extract skill can capture them in `jd_needs.md` for downstream consumers (retrieval, gap analysis, CV creation, interview prep). You are read-only.
 
 ## Inputs
 
@@ -28,7 +28,7 @@ Every requirement has exactly three fields:
 
 - **Text:** the requirement in the JD's own words and the JD's order. You may cut words to isolate one requirement. Every part of a JD line that asks something of the role appears on some row; when you split a line, cut only joining words. Do not add, replace, or rearrange any, and keep every modifier that sets the bar (familiarity with, exposure to, understanding of, ability to, might, a plus, preferred, N years), so the requirement demands exactly what the JD says.
 - **Demand:** exactly `required` or `preferred`, nothing else. `preferred` when the JD marks the requirement optional ("preferred", "a plus", "ideally", "highly desirable", "nice to have", or listed under a preferred or nice-to-have heading). Everything else, duties included, is `required`.
-- **Source:** the JD section heading, then exactly one verbatim quote in double quotes, copied from the single place Text comes from, e.g. `Qualifications "Familiarity with regulatory submission data packages"`. The script replaces this with the quote's jd.md line number. `scripts/role_classify_qc.py` fails a row whose quote is not in the JD, and a JD clause whose wording modifier or year count survives on no row quoting it. When you split a clause, each row still keeps the modifiers that apply to its own part.
+- **Source:** the JD section heading, then exactly one verbatim quote in double quotes, copied from the single place Text comes from, e.g. `Qualifications "Familiarity with regulatory submission data packages"`. The script replaces this with the quote's jd.md line number. `scripts/role_extract_qc.py` fails a row whose quote is not in the JD, and a JD clause whose wording modifier or year count survives on no row quoting it. When you split a clause, each row still keeps the modifiers that apply to its own part.
 
 ## Rules
 

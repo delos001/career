@@ -31,16 +31,15 @@ role-research: |
     2. Write the research file.
     3. Check it, then you review and approve.
 
-  Next: role-classify pulls out the job's requirements, ranks its needs and
-  classifies it.
+  Next: role-extract pulls out the job's requirements and ranks its needs.
 
   Have ready: the APP-NNN of a role that has finished role-intake.
 
-role-classify: |
-  # role-classify - rank the needs and classify the job
+role-extract: |
+  # role-extract - extract the requirements and rank the needs
 
-  Runs after role-research, from the files role-intake and role-research wrote,
-  so a fresh session works.
+  Runs after role-research, from the application folder, so a fresh session
+  works.
 
   Steps:
     1. Pull out the job's requirements in the JD's own words, and check each
@@ -49,12 +48,30 @@ role-classify: |
        requirements into the work the role delivers, and rank those needs.
        Boilerplate and other rows that are not needs are set aside, so later
        steps never use them.
-    3. Classify the job against the five axes (orientation, industry,
-       specialty, level, work-state). Every axis must resolve to a value with a
-       rule file; if one is missing, the skill pauses so it can be built.
-    4. Check both, then you confirm the ranking and approve.
+    3. Check both, then you confirm the ranking section by section.
+
+  Next: role-classify classifies the job against the five axes.
 
   Have ready: the APP-NNN of a role that has finished role-research.
+
+  Operates under rules/global-rules.md - halts and asks for direction on any
+  failure or ambiguity rather than guessing.
+
+role-classify: |
+  # role-classify - classify the job
+
+  Runs after role-extract, from the application folder, so a fresh session
+  works.
+
+  Steps:
+    1. Classify the job against the five axes (orientation, industry,
+       specialty, level, work-state). Every axis must resolve to a value with a
+       rule file; if one is missing, the skill pauses so it can be built.
+    2. Check the classification, then you approve.
+
+  Next: retrieval finds the profile content that fits the job.
+
+  Have ready: the APP-NNN of a role that has finished role-extract.
 
   Operates under rules/global-rules.md - halts and asks for direction on any
   failure or ambiguity rather than guessing.
@@ -63,7 +80,7 @@ retrieval: |
   # retrieval - surface the relevant profile content for a role
 
   Runs after role-classify. Reads the JD and research artifacts role-intake,
-  role-research and role-classify produced, then scores every relevant piece of your profile (inventory
+  role-research, role-extract and role-classify produced, then scores every relevant piece of your profile (inventory
   entries, narratives, Signature Themes) against the role's critical
   requirements. Produces one artifact: a retrieval manifest that downstream
   skills (gap analysis, CV creation, interview prep, career brief) read as
@@ -71,7 +88,7 @@ retrieval: |
 
   Steps:
     1. Locate the application folder (new application or resume by APP-NNN).
-    2. Read the role-intake and role-classify outputs - session_log.md (axis classification),
+    2. Read the role-intake, role-extract and role-classify outputs - session_log.md (axis classification),
        jd_needs.md (the requirements), and jd.md.
     3. Build per-corpus payloads from inventory, narratives, and positioning.
     4. Score each corpus against the critical requirements list (inventory
@@ -86,7 +103,7 @@ retrieval: |
   own tier cutoffs (gap analysis: strong/moderate/weak; CV creation:
   primary/supporting/drop), so retrieval does NOT pre-classify entries.
 
-  Have ready: completed role-intake, role-research and role-classify runs for
+  Have ready: completed role-intake, role-research, role-extract and role-classify runs for
   the role.
 
   Operates under rules/global-rules.md - halts and asks for direction on any

@@ -1,6 +1,6 @@
 ---
 name: retrieval
-description: Surface the relevant profile content for a role. Reads role-research's and role-classify's outputs, scores inventory entries, narratives, and Signature Themes against the role's critical requirements, and writes a retrieval manifest that downstream skills (gap analysis, CV creation, interview prep, career brief) consume. Run this after role-classify.
+description: Surface the relevant profile content for a role. Reads role-research's, role-extract's and role-classify's outputs, scores inventory entries, narratives, and Signature Themes against the role's critical requirements, and writes a retrieval manifest that downstream skills (gap analysis, CV creation, interview prep, career brief) consume. Run this after role-classify.
 ---
 
 # retrieval - surface the relevant profile content
@@ -36,7 +36,7 @@ Ask if this session is for a new retrieval run or to resume a previous one?
 
 ## Phase 1 - Load context
 
-**Loading the role-research and role-classify artifacts for this application.**
+**Loading the role-research, role-extract and role-classify artifacts for this application.**
 
 - Input: application folder path (from the resume check), APP-NNN, slug.
 - Confirm `jd_needs.md` and `jd.md` exist in the application folder. Do not extract or relay their content; Phase 2's `split` writes the requirements (without the Not ranked rows) and the JD into the scoring context file.

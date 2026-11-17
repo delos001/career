@@ -3,7 +3,7 @@
 requirement_kinds.py - the requirements file (jd_needs.md): its layout, the
 kinds it uses, and the rows later skills read
 
-jd_needs.md is the one home of a job's requirements. role-classify writes it in
+jd_needs.md is the one home of a job's requirements. role-extract writes it in
 two steps:
 
   1. Extraction: the critical-requirements-extractor's rows are written under
@@ -14,7 +14,7 @@ two steps:
      the rows into ranked needs. The file is rewritten as the job, one heading
      per need with its rows under it, then the Qualifications and Not ranked
      rows. A row the ranker placed nowhere stays under '## Requirements', where
-     role_classify_qc.py C6 reports it, so no requirement is lost on rewrite.
+     role_extract_qc.py X3 reports it, so no requirement is lost on rewrite.
 
 Rows on the Not ranked list (boilerplate, role shape, administrative detail)
 have done their job by the end of role-classify; retrieval and gap analysis
@@ -228,7 +228,7 @@ def jd_ref(jd_text, text, source):
     jd.md line, found from the quote. A requirement row passes its text, so a
     quote equal to it is dropped and the text is not stored twice; a need's
     Quote passes '' and keeps its quote. When the quote is not in the JD the
-    cell is returned unchanged, and role_classify_qc.py reports it.
+    cell is returned unchanged, and role_extract_qc.py reports it.
     """
     quotes = list(_SOURCE_QUOTE_RE.finditer(source))
     if len(quotes) > 1:
@@ -432,16 +432,16 @@ def ranked_rows(app_folder, cfg):
     """Return the rows later skills read: every row except Not ranked, by number.
 
     Raises when the application has no jd_needs.md or it holds no rows, so a
-    skill run before role-classify halts instead of working from nothing.
+    skill run before role-extract halts instead of working from nothing.
     """
     path = needs_path(app_folder, cfg)
     if not os.path.isfile(path):
-        raise FileNotFoundError(f'{path} not found; run /role-classify first')
+        raise FileNotFoundError(f'{path} not found; run /role-extract first')
     parsed = read_needs(_util.read(path))
     skip = {row['num'] for row in parsed['Not ranked']}
     rows = sorted((r for r in all_rows(parsed) if r['num'] not in skip), key=lambda r: r['num'])
     if not rows:
-        raise ValueError(f'{path} holds no requirements; run /role-classify first')
+        raise ValueError(f'{path} holds no requirements; run /role-extract first')
     return rows
 
 

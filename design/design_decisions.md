@@ -1491,6 +1491,8 @@ Ranking the JD's needs and classifying the five axes moved out of role-intake in
 
 Refs: `role-intake-ranked-needs-2026-11`, GitHub #89.
 
+(Amended by `role-extract-split-2026-11`: extraction and ranking moved to role-extract; role-classify keeps the axes.)
+
 #### role-research-split-2026-11
 Research moved out of role-intake into a new skill, role-research (user, 2026-11-16). The pipeline is now role-intake, role-research, role-classify.
 
@@ -1501,6 +1503,17 @@ Research moved out of role-intake into a new skill, role-research (user, 2026-11
 - `assemble.py relabel` stays in role-intake's script and serves both skills: it accepts a folder holding role-intake's and role-research's files.
 
 Refs: `role-intake-architecture`, `role-classify-split-2026-11`.
+
+#### role-extract-split-2026-11
+Extracting and ranking the requirements moved out of role-classify into a new skill, role-extract (user, 2026-11-16). role-classify was doing two kinds of work: turning the JD into a usable format (`jd_needs.md`) and classifying the job on the five axes. The pipeline is now role-intake, role-research, role-extract, role-classify.
+
+- The ranking moved with the extraction. The axis classifier reads the job section the ranker writes (Role statement, lead-or-do), so ranking must finish first, and leaving it behind would have had two skills writing `jd_needs.md`.
+- role-extract: extract (Phase 1), check the extraction against the JD before ranking (2), rank (3), QC (4), the user's section-by-section confirmation of `jd_needs.md` as approval (5). Scripts `role_extract_assemble.py` (`requirements`, `needs`) and `role_extract_qc.py` (X1 to X3, formerly `role_classify_qc.py` C7, C8, C6); judgment agent `qc-role-extract` (formerly `qc-role-classify` checks 3 and 4).
+- role-classify keeps the axis classifier, the gap gate, C1 to C5, `qc-role-classify` checks 1 and 2, and the approval block. It stops if `jd_needs.md` has no ranked needs.
+- The extractor stays an agent inside the skill. The recorded 2026-05 reason (running in parallel beside the research agents) no longer holds; what holds is a clean read of the JD alone, with no research or conversation to anchor on, and the extraction's tokens kept out of the main session.
+- The `role-` prefix stays (user, 2026-11-16): `role` and `job` are synonyms, so a rename buys no accuracy; bare names would collide with `prep-research`, `company-research` and prep skills' intake steps.
+
+Refs: `role-classify-split-2026-11`, `requirements-in-jd-needs-2026-11`, `role-intake-critical-requirements-extraction-2026-05`.
 
 #### requirement-kinds-2026-11
 The ranker labels every requirement row by kind before grouping, so grouping follows from what each row is instead of shared words. Kinds, their wording lists and the tests that separate them live in `rules/jd-requirement-kinds.md`, built from 741 rows across 23 applications. The wording lists show typical wording and never limit a kind; the definitions decide.

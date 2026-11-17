@@ -1,6 +1,6 @@
 ---
 name: jd-needs-ranker
-description: Labels each of a job's extracted critical requirements by kind, describes the job, groups the requirements into the JD's needs and ranks them, for the role-classify skill. Reads the JD, the research file's Company section, the extracted requirements in jd_needs.md, and rules/jd-requirement-kinds.md. Returns the row kinds, the job description, and a Ranked Needs table; role_classify_assemble.py rewrites jd_needs.md with them, which cv-targeted, gap-analysis and interview prep read in priority order. Read-only.
+description: Labels each of a job's extracted critical requirements by kind, describes the job, groups the requirements into the JD's needs and ranks them, for the role-extract skill. Reads the JD, the research file's Company section, the extracted requirements in jd_needs.md, and rules/jd-requirement-kinds.md. Returns the row kinds, the job description, and a Ranked Needs table; role_extract_assemble.py rewrites jd_needs.md with them, which cv-targeted, gap-analysis and interview prep read in priority order. Read-only.
 tools: Read
 ---
 

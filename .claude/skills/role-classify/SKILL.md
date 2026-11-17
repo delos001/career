@@ -1,69 +1,55 @@
 ---
 name: role-classify
-description: Extract the job's requirements, label each by kind and rank the job's needs, and classify the job against the five axes (orientation, industry, specialty, level, work-state). Reads the jd.md that role-intake wrote and the research.md that role-research wrote, and writes the requirements and ranked needs to jd_needs.md and the classification into the session log for retrieval, gap analysis, CV creation and interview prep. Run after role-research; it works from files, so a fresh session is fine.
+description: Classify the job against the five axes (orientation, industry, specialty, level, work-state). Reads the jd.md that role-intake wrote, the research.md that role-research wrote and the jd_needs.md that role-extract wrote, and writes the classification into the session log for retrieval, gap analysis, CV creation and interview prep. Run after role-extract; retrieval runs next.
 ---
 
-# role-classify - rank the needs and classify the job
+# role-classify - classify the job
 
 ## Operating rules
 
 - Read `rules/global-rules.md` first; operate under it throughout.
-- Each phase opens with the **bold lead line** under its heading; speak it verbatim.
+- Start each phase by saying "The next step is to" followed by the phase title after the dash, in lower case.
 
 ## Start
 
-Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-NNN>`. Land on the first match:
+Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-NNN>`; use it as `<app_folder>`. Then check the folder against the cases below, in order, and follow the first one that is true:
 
-1. Folder missing: the APP-NNN is likely wrong; ask again.
-2. `research.md` missing: halt and tell the user to finish `/role-research` first.
-3. No `jd_needs.md` in the folder: run `python scripts/display/introduce.py role-classify`, show the output, then go to Phase 1.
-4. `jd_needs.md` has no `## Needs` section: Phase 1, step 1b.
-5. `## Axis Classification` in the session log still `_(pending)_`: Phase 2.
-6. Otherwise: Phase 3.
+- **There is no folder or no session log:** role-intake has not finished for this APP-NNN. Tell the user role intake must be completed first and stop.
+- **There is no `research.md`:** tell the user role research must be completed first and stop.
+- **There is no `jd_needs.md`, or it has no `## Needs` section:** tell the user role extraction must be completed first and stop.
+- **`## Axis Classification` in the session log is still `_(pending)_`:** go to Phase 0.
+- **Otherwise:** tell the user the job is already classified, then go to Phase 2 to re-check it.
 
-Say "Starting APP-NNN at Phase N." and proceed.
+## Phase 0 - Show the intro
 
-## Phase 1 - Extract the requirements and rank the needs
+- Run `python scripts/display/introduce.py role-classify` and show the output.
 
-**Extracting the job's requirements, then labeling each one and ranking the job's needs.**
+## Phase 1 - Classify the job against the five axes
 
-- **1a. Extract.** Run `python scripts/dispatch_prompt.py critical-requirements-extractor --folder <app_folder>` and dispatch `critical-requirements-extractor` with the printed prompt exactly as printed. Save its output to a file in `<scratch>`, then run `python scripts/role_classify_assemble.py requirements --folder <app_folder> --requirements-file <path>`. It writes `jd_needs.md` holding the requirements; re-extracting replaces any earlier ranking.
-- **1b. Check the extraction.** Run `python scripts/role_classify_qc.py requirements --folder <app_folder>`. On a failure, tell the user in plain English which requirement does not match the JD, and redo 1a. Do not rank until it passes.
-- **1c. Rank.** Run `python scripts/dispatch_prompt.py jd-needs-ranker --folder <app_folder>` and dispatch `jd-needs-ranker` with the printed prompt exactly as printed. Save its output to a file in `<scratch>`, then run `python scripts/role_classify_assemble.py needs --folder <app_folder> --needs-file <path>`. It rewrites `jd_needs.md` with every requirement under its need.
-
-## Phase 2 - Classify the axes
-
-**Classifying the role against the five axes.**
-
-- Run `python scripts/dispatch_prompt.py axis-classifier --folder <app_folder>` and dispatch `axis-classifier` with the printed prompt exactly as printed. It classifies all five axes from scratch and is the authority on each.
-- **Gate.** Every axis needs a confirmed value whose rule file exists, or a `Registry-only` value. If the classifier flags an axis gap, stop, explain each gap in plain English, and resolve it before going on:
+- Run `python scripts/dispatch_prompt.py axis-classifier --folder <app_folder>` and dispatch `axis-classifier` with the prompt between `=== PROMPT ===` and `=== END ===` exactly as printed. It classifies all five axes from scratch and is the authority on each.
+- Every axis needs a confirmed value whose rule file exists, or a `Registry-only` value. If the classifier flags an axis gap, stop, explain each gap, and resolve it before going on:
   - **Value confirmed, file `File deferred`:** run the matching builder skill (`orientation-builder`, `industry-builder`, `specialty-builder`, `level-builder` or `work-state-builder`), then rerun this phase.
   - **No registry value confirms:** show the closest registry values. The user maps the role to one (rerun the classifier with that steer) or runs the builder to add a value, then this phase reruns.
-  - A gap is never carried past this gate.
-- Once every axis resolves, save the output to a file in `<scratch>` and run `python scripts/role_classify_assemble.py finalize --folder <app_folder> --axis-file <path>`. It writes the classification, the Level and Industry lines, and the Axis Gaps.
+  - A gap is never carried past this phase.
+- Once every axis resolves, save the output to `<scratch>/axes.md` and run `python scripts/role_classify_assemble.py finalize --folder <app_folder> --axis-file <scratch>/axes.md`.
 
-## Phase 3 - QC
+## Phase 2 - Check the classification
 
-**Checking the ranking and the classification.**
+- **Step 2a:** run `python scripts/role_classify_qc.py check --folder <app_folder>`.
+- **Step 2b:** after 2a passes, run `python scripts/dispatch_prompt.py qc-role-classify --folder <app_folder>` and dispatch `qc-role-classify` with the printed prompt exactly as printed.
+- On a failure or finding, tell the user what is wrong, fix it per *Routing on failure*, and re-run from Step 2a. Before any fix that changes wording or substance, show the before/after.
+- Stop after 3 rounds and carry anything left to Phase 3.
 
-- **3a.** Run `python scripts/role_classify_qc.py check --folder <app_folder>`. On a failure, tell the user what is wrong in plain English, fix it per *Routing on failure*, and rerun 3a.
-- **3b.** After 3a passes, run `python scripts/dispatch_prompt.py qc-role-classify --folder <app_folder>` and dispatch `qc-role-classify` with the printed prompt exactly as printed. On findings, tell the user in plain English, fix per *Routing on failure*, and rerun from 3a.
-- Before any fix that changes wording or substance, show a before/after table.
-- At most 3 rounds. Findings still open after round 3 go to Phase 4.
+## Phase 3 - Get approval and hand off to retrieval
 
-## Phase 4 - Your review
-
-**Reviewing the ranking and the classification with you.**
-
-- **4a. Open findings.** One per message: what is wrong, the recommended fix, and the before/after. Act on the user's decision before showing the next.
-- **4b. Confirm the ranking.** Its own decision, because a wrong ranking steers every later skill. Show `jd_needs.md` one section at a time, its text exactly as written (never paraphrased): the job, then each need with its requirements and kinds, then Qualifications, then Not ranked (retrieval and gap analysis never see those). The user confirms, or reorders, regroups, relabels or changes a kind. Apply a change as a direct edit to `jd_needs.md` (ids renumbered to rank order), show it as before/after, rerun 3a, and show the changed section again until confirmed.
-- **4c. Approval.** Run `python scripts/role_classify_assemble.py approval --folder <app_folder>` and show its output. On a correction, fix per *Routing on failure*, rerun Phase 3, and return here. On approval, tell the user the application is ready for `/retrieval`.
+- Present each finding QC left open as its own decision, one per response: what is wrong, the recommended fix, the before/after text.
+- Run `python scripts/role_classify_assemble.py approval --folder <app_folder>` and show its output. On a correction, fix it per *Routing on failure* and re-run Phase 2.
+- On approval, tell the user to run `/retrieval`.
 
 ## Routing on failure
 
-| Problem | Go back to |
+| Finding | Fix |
 |---|---|
-| A requirement wrong, missing, or reworded from the JD | Phase 1a (the ranking is redone from 1c) |
-| Ranking fails its checks or misreads the JD | Phase 1c, or a direct edit when the user reorders at 4b |
-| Classification wrong, or an axis gap got past Phase 2 | Phase 2 |
-| Company, role or industry research wrong | Halt; rerun `/role-research`, then this skill from Phase 2 |
+| Classification wrong, or an axis gap got past Phase 1 | Phase 1 |
+| Requirements or ranked needs wrong | Stop; the user reruns `/role-extract`, then this skill from Phase 1 |
+| Company, role or industry research wrong | Stop; the user reruns `/role-research`, then this skill from Phase 1 |

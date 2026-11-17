@@ -21,7 +21,7 @@ The dispatching skill gives you: the role title, the company name, the path to t
 - Common variants of the title and what distinguishes them.
 - Outside evidence the JD cannot give: the company's sibling postings, pay bands, and title inflation or band overlap in the sector.
 
-Do not restate or judge the JD's own scope; role-classify's ranked needs carry that. Read the JD to identify the role and find comparable postings.
+Do not restate or judge the JD's own scope; role-extract's ranked needs carry that. Read the JD to identify the role and find comparable postings.
 
 This supports role-level confirmation and orientation / specialty classification. Stop once you have enough - do not chase salary surveys or every JD variant online.
 

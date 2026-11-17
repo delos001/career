@@ -1,6 +1,6 @@
 ---
 name: role-research
-description: Research the industry, company, and the role title for an application that role-intake started, and write the research file. Run after role-intake; role-classify runs next.
+description: Research the industry, company, and the role title for an application that role-intake started, and write the research file. Run after role-intake; role-extract runs next.
 ---
 
 # role-research - research the company, role and industry
@@ -37,11 +37,11 @@ Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-N
 - On a failure or finding, tell the user what is wrong, fix it per *Routing on failure*, and re-run from Step 3a.
 - Stop after 3 rounds and carry anything left to Phase 4.
 
-## Phase 4 - Get approval and hand off to role-classify
+## Phase 4 - Get approval and hand off to role-extract
 
 - Present each finding QC left open as its own decision, one per response: what is wrong, the recommended fix, the before/after text.
 - Give the user the `research.md` path and ask for corrections or "approved". On a correction, fix it per *Routing on failure* and re-run Phase 3.
-- On approval, tell the user to run `/role-classify`.
+- On approval, tell the user to run `/role-extract`.
 
 ## Routing on failure
 

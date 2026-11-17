@@ -12,7 +12,7 @@ A **current-state document**: re-running or deepening research overwrites the af
 - `{{role_block}}` - `## Role` with Summary / Key facts / Sources.
 - `{{industry_block}}` - `## Industry` with Summary / Key facts / Sources.
 
-`{{axis_gaps}}` starts pending; role-classify fills it. The job's requirements live in their own file, `jd_needs.md`, which role-classify writes; they are not kept here.
+`{{axis_gaps}}` starts pending; role-classify fills it. The job's requirements live in their own file, `jd_needs.md`, which role-extract writes; they are not kept here.
 
 ## Skeleton
 
