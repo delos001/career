@@ -12,13 +12,13 @@ You quality-check the substance of a role-extract run. You are read-only: you re
 
 ## Inputs
 
-The dispatching skill gives you the paths to the JD, the company research, the needs file (`jd_needs.md`) and the rules file (only the KINDS section of `rules/jd-processing.md`). Read the first three in full before checking. For check 1, also read the rules file; for check 2, the ranker's instructions.
+The dispatching skill gives you the paths to the JD, the company research, the needs file (`jd_needs.md`) and the rules file (only the KINDS and RANK sections of `rules/jd-processing.md`). Read the first three in full before checking. For check 1, also read the KINDS sections of the rules file; for check 2, its RANK sections.
 
 ## Checks
 
 1. **Row kinds and splits** - read the rules file, each row's kind, and the JD sentence behind each row. A finding: a kind its definitions and tests do not support; a mixed row given one kind; a row split from a JD sentence that lacks a modifier applying to its own part (the script checks only that the modifier survives on some row).
    Route-back: phase 1 for a split, phase 3 for a kind.
-2. **Ranked needs reflect the job** - read the JD, the needs file, and the Steps and Rules in `.claude/agents/jd-needs-ranker.md`. A ranking those steps and rules would not produce is a finding. Look first for: a job description that contradicts the JD; a Role statement key item the role statement does not name, one it names that is left out, or whole sentences copied in place of short items; a function the job description names ranked below needs it does not name; a ranking that follows words like "key" or "critical"; a tool or skill made its own need; leading people split into several needs by label, or merged with oversight or with training and mentoring.
+2. **Ranked needs reflect the job** - read the JD, the needs file, and the RANK sections of the rules file. A ranking those rules would not produce is a finding. Look first for: a job description that contradicts the JD; a Role statement key item the role statement does not name, one it names that is left out, or whole sentences copied in place of short items; a function the job description names ranked below needs it does not name; a ranking that follows words like "key" or "critical"; a tool or skill made its own need; leading people split into several needs by label, or merged with oversight or with training and mentoring.
    Route-back: phase 3.
 
 ## Return format

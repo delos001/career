@@ -2633,7 +2633,7 @@ def test_jd_rules_slice_by_step():
             continue
         raise AssertionError(f'{why} was accepted')
     try:
-        jd_rules_slice.slice_steps(text, ['RANK'])
+        jd_rules_slice.slice_steps(text, ['BOGUS'])
     except ValueError:
         pass
     else:
@@ -3155,7 +3155,14 @@ def test_dispatch_prompts_are_printed_not_composed():
     assert '## SPLIT: ' not in _util.read(kinds_rules), 'the split rules reached the kind labeler'
     ranker = prompt('jd-needs-ranker')
     assert jd_path in ranker and company_path not in ranker, f'the ranker still gets the Company section: {ranker}'
-    assert os.path.join(FIXTURE_APP, 'jd_needs.md') in ranker and f'Rules file: {kinds_rules}' in ranker, ranker
+    rank_rules = os.path.join(FIXTURE_APP, 'scratch', 'rules_kinds_rank.md')
+    assert os.path.join(FIXTURE_APP, 'jd_needs.md') in ranker and f'Rules file: {rank_rules}' in ranker, ranker
+    # 2026-11-18: the ranking criteria moved from the ranker's own file into the
+    # RANK sections, so QC reads the same rules instead of the ranker's instructions.
+    heads = [ln for ln in _util.read(rank_rules).splitlines() if ln.startswith('## ')]
+    assert any(h.startswith('## RANK: ') for h in heads) and not any(h.startswith('## SPLIT: ') for h in heads), heads
+    assert 'jd-needs-ranker.md' not in _util.read(os.path.join(REPO_ROOT, '.claude', 'agents', 'qc-role-extract.md')), \
+        'QC still reads the ranker file for its rules'
     assert 'Comms' not in prompt('axis-classifier'), 'an absent optional file was listed'
     _util.write(os.path.join(FIXTURE_APP, 'comms.md'), 'A note.')
     assert 'Comms: ' in prompt('axis-classifier')
