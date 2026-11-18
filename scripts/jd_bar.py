@@ -44,6 +44,15 @@ import requirement_kinds
 EXPOSURE, WORKING, NONE = 'exposure', 'working', ''
 ALLOWED_BARS = {EXPOSURE, WORKING, NONE}
 
+# What each value means, shown in jd_needs.md's Definitions appendix.
+DEFINITIONS = [
+    (EXPOSURE, 'indirect or partial evidence can meet it ("knowledge of", "familiarity with", '
+               '"understanding of").'),
+    (WORKING, 'needs direct evidence of doing it ("experience with", "ability to", "strong ... skills", '
+              'or a knowledge word raised by "thorough", "deep" or similar).'),
+    ('(blank)', 'no bar word: a duty, a degree or a fact, judged by its own text.'),
+]
+
 
 # ---------------------------------------------------------------------------
 # Bar

@@ -2280,6 +2280,15 @@ def test_requirements_are_extracted_into_jd_needs():
         'columns out of order'
     # Bar comes from jd_bar: 'Familiarity with' is exposure.
     assert by_unit[nice['id']][0]['bar'] == 'exposure', by_unit[nice['id']]
+    # 2026-11-18: the file ends with a Definitions appendix for a reviewer,
+    # every kind's definition copied from the rules file, never parsed as rows.
+    repo_root, _ = _config.load()
+    defs = requirement_kinds.kind_definitions(repo_root, cfg)
+    assert [n for n, _ in defs] == list(requirement_kinds.load_kinds(repo_root, cfg)), defs
+    assert written.rstrip().endswith(written[written.index('## Definitions'):].rstrip()), 'Definitions is not last'
+    for name, text in defs:
+        assert f'- **{name}:** {text}' in written, f'the {name} definition is missing or reworded'
+    assert '- **exposure:** ' in written and '- **preferred:** ' in written, 'Demand or Bar definitions missing'
     # Demand comes from jd_demand: everything under a 'Nice to have' heading is preferred.
     assert by_unit[nice['id']][0]['demand'] == 'preferred', by_unit[nice['id']]
     split = by_unit[oversee['id']]

@@ -56,7 +56,7 @@ Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-N
 ## Phase 6 - Get approval and hand off to role-classify
 
 - Present each finding QC left open as its own decision, one per response: what is wrong, the recommended fix, the before/after text.
-- A wrong ranking steers every later skill, so the user confirms it section by section. Show `jd_needs.md` one section at a time, its text exactly as written: the job, then each need with its requirements and kinds, then Qualifications, then Not ranked (retrieval and gap analysis never see those). The user confirms, or reorders, regroups, relabels or changes a kind. Apply a change as a direct edit to `jd_needs.md` (ids renumbered to rank order), show it as before/after, re-run Step 5a, and show the changed section again until confirmed.
+- A wrong ranking steers every later skill, so the user confirms it section by section. Show `jd_needs.md` one section at a time, its text exactly as written: the job, then each need with its requirements and kinds, then Qualifications, then Not ranked (retrieval and gap analysis never see those). Tell the user that what each Kind, Demand and Bar value means is in the `## Definitions` appendix at the end of `jd_needs.md`. The user confirms, or reorders, regroups, relabels or changes a kind. Apply a change as a direct edit to `jd_needs.md` (ids renumbered to rank order), show it as before/after, re-run Step 5a, and show the changed section again until confirmed.
 - Once every section is confirmed, tell the user to run `/role-classify`. If role-classify has already run for this application, tell the user to run it again, since it reads the job section.
 
 ## Routing on failure

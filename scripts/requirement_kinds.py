@@ -27,6 +27,10 @@ not held here: a kind is a '### N. <name>' heading under KINDS_HEADING, and its
 section text says where it goes ('Not ranked list', 'Qualifications group',
 otherwise a need).
 
+The file ends with a '## Definitions' appendix: what each Kind, Demand and Bar
+value means, for a person reviewing the file. Kind definitions are copied from
+the rules file (kind_definitions); read_needs ignores the appendix.
+
 jd_needs.md layout (written by render_needs, read by read_needs):
 
     # JD needs: <Company> | <Role>
@@ -168,6 +172,46 @@ def load_kinds(repo_root, cfg):
     if not kinds:
         raise ValueError(f'{path} defines no kinds under "{KINDS_HEADING}"')
     return kinds
+
+
+def kind_definitions(repo_root, cfg):
+    """Return [(kind name, definition)] from the rules file, in file order.
+
+    A kind's definition is the first paragraph under its '### N. <name>'
+    heading in the KINDS_HEADING section, copied as written, so the
+    definitions shown in jd_needs.md never drift from the rules.
+    """
+    path = os.path.join(repo_root, cfg['paths']['rules'], cfg['filenames']['jd_rules_file'])
+    out, in_kinds = [], False
+    current, para, done = None, [], False
+
+    def flush():
+        if current and para:
+            out.append((current, ' '.join(para)))
+
+    for line in _util.read(path).split('\n'):
+        if line.startswith('## '):
+            flush()
+            current, para, done = None, [], False
+            in_kinds = line.strip() == KINDS_HEADING
+            continue
+        if not in_kinds:
+            continue
+        m = _KIND_HEADING_RE.match(line)
+        if m:
+            flush()
+            current, para, done = m.group(1), [], False
+            continue
+        if current is None or done:
+            continue
+        text = line.strip()
+        # The paragraph ends at the first blank line after it, or the first bullet.
+        if text.startswith('- ') or (not text and para):
+            done = True
+        elif text:
+            para.append(text)
+    flush()
+    return out
 
 
 def parse_kind_cell(cell):
@@ -360,14 +404,20 @@ def _table_row(line):
     return None
 
 
-def render_requirements(title, rows):
-    """Return jd_needs.md text holding the extracted rows only (before ranking)."""
+def render_requirements(title, rows, definitions=()):
+    """Return jd_needs.md text holding the extracted rows only (before ranking).
+
+    definitions: the lines of the '## Definitions' appendix (built by
+    role_extract_assemble.py), placed last so readers can stop before it.
+    """
     out = [f'# JD needs: {title}', '', f'## {UNPLACED}', '']
     out += _row_table(rows)
+    if definitions:
+        out += [''] + list(definitions)
     return '\n'.join(out) + '\n'
 
 
-def render_needs(title, job_lines, needs, qualifications, not_ranked, unplaced=()):
+def render_needs(title, job_lines, needs, qualifications, not_ranked, unplaced=(), definitions=()):
     """Return the ranked jd_needs.md text.
 
     needs: [{'id', 'label', 'signals', 'quote', 'rows': [row dict]}];
@@ -390,6 +440,7 @@ def render_needs(title, job_lines, needs, qualifications, not_ranked, unplaced=(
         out += [f'## {heading}', '']
         out += _row_table(rows)
         out.append('')
+    out += list(definitions)
     return '\n'.join(out)
 
 

@@ -84,6 +84,25 @@ def _title(research):
 # role_extract_qc.py's 'requirements' check, run right after this write.
 # ---------------------------------------------------------------------------
 
+def _definitions(repo_root, cfg):
+    """Return the lines of jd_needs.md's '## Definitions' appendix.
+
+    Kind definitions come from the rules file (requirement_kinds.kind_definitions);
+    Demand and Bar definitions sit beside the code that sets them (jd_demand,
+    jd_bar). Nothing is typed here, so the appendix cannot drift from them.
+    """
+    out = ['## Definitions', '',
+           'For a person reviewing this file. Later skills read only the tables above.', '',
+           f"**Kind** (what a row asks for; full rules in the KINDS section of "
+           f"`{cfg['paths']['rules']}/{cfg['filenames']['jd_rules_file']}`):", '']
+    out += [f'- **{name}:** {text}' for name, text in requirement_kinds.kind_definitions(repo_root, cfg)]
+    out += ['', '**Demand** (how firmly the job description asks):', '']
+    out += [f'- **{name}:** {text}' for name, text in jd_demand.DEFINITIONS]
+    out += ['', '**Bar** (what evidence meets it):', '']
+    out += [f'- **{name}:** {text}' for name, text in jd_bar.DEFINITIONS]
+    return out + ['']
+
+
 def _heading(unit):
     """Return a unit's heading as jd_sentences.md shows it: 'Section > Subsection'."""
     return unit['section'] + (f" > {unit['subsection']}" if unit['subsection'] else '')
@@ -128,7 +147,8 @@ def cmd_requirements(args, cfg):
     parts = requirement_kinds.parse_parts_table(_util.read(args.requirements_file))
     rows = build_rows(parts, jd_sentences.units(jd, cfg), cfg)
     path = requirement_kinds.needs_path(args.folder, cfg)
-    _util.write(path, requirement_kinds.render_requirements(_title(research), rows))
+    _util.write(path, requirement_kinds.render_requirements(_title(research), rows,
+                                                            _definitions(args.repo_root, cfg)))
     print(path)
 
 
@@ -173,7 +193,8 @@ def cmd_kinds(args, cfg):
         raise ValueError(f"no Kind for Part IDs: {', '.join(map(str, missing))}; rerun the labeler")
     for r in rows:
         r['kind'] = kind_by_row[r['num']]
-    _util.write(path, requirement_kinds.render_requirements(current['title'], rows))
+    _util.write(path, requirement_kinds.render_requirements(current['title'], rows,
+                                                            _definitions(args.repo_root, cfg)))
     print(path)
 
 
@@ -288,7 +309,7 @@ def cmd_needs(args, cfg):
     not_ranked = by_place[requirement_kinds.NOT_RANKED]
     unplaced = [dict(row) for num, row in sorted(by_num.items()) if num not in placed]
     out = requirement_kinds.render_needs(current['title'], job, needs, qualifications,
-                                         not_ranked, unplaced)
+                                         not_ranked, unplaced, _definitions(args.repo_root, cfg))
     _util.write(path, out)
     print(path)
 

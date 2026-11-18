@@ -40,6 +40,13 @@ import requirement_kinds
 
 REQUIRED, PREFERRED = 'required', 'preferred'
 
+# What each value means, shown in jd_needs.md's Definitions appendix.
+DEFINITIONS = [
+    (REQUIRED, 'the job description asks for it without marking it optional.'),
+    (PREFERRED, 'the job description marks it optional ("preferred", "a plus", "advantageous", or a '
+                'preferred-qualifications heading).'),
+]
+
 # Regex: a part that continues the one before it with "with ..." (rule 3).
 _WITH_RE = re.compile(r'^\W*with\b', re.IGNORECASE)
 
