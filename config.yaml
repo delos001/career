@@ -29,8 +29,7 @@ filenames:
   research_file_template: research_file.md      # in the templates/ folder
   introductions: introductions.yaml            # next to scripts/display/introduce.py
   axis_registry: registry.md                   # in each rules/<axis>/ folder
-  requirement_kinds_file: jd-requirement-kinds.md  # in the rules folder; kinds of JD requirement rows, parsed by requirement_kinds.py
-  jd_rules_file: jd-processing.md              # in the rules folder; rules for each step that works on the JD, read by section through jd_rules_slice.py
+  jd_rules_file: jd-processing.md              # in the rules folder; rules for each step that works on the JD, read by section through jd_rules_slice.py; requirement_kinds.py parses its KINDS section for the kind list
   jd_needs_file: jd_needs.md                   # written into each application folder by role-extract; each requirement's kind and the ranked needs
   jd_sentences_file: jd_sentences.md           # written into <app-folder>/scratch/ by scripts/jd_sentences.py; the JD as numbered units with hints
   build_issues_log: build_issues.md            # in the design/ folder; appended to on provisional builds
@@ -128,6 +127,51 @@ requirement_optional_words:
   - ideally
   - (?:highly )?desirable
   - advantageous
+
+# Bar: how much a part asks for (scripts/jd_bar.py). Two levels, decided
+# 2026-11-18 from a scan of 26 JDs and tested on APP-024, APP-028, APP-029:
+# 'exposure' (indirect or partial evidence can meet it) and 'working' (needs
+# direct evidence). A working word sets working; else an exposure word sets
+# exposure, raised to working by a raise word ("thorough knowledge of"); else a
+# praise word alone ("Strong judgment") sets working; else no bar. 'advanced'
+# and bare 'expert' are left out: in JDs they mostly name a thing ("advanced
+# analytics", "subject matter expert"). One case-insensitive regex each, matched
+# from a word start.
+bar_working_words:
+  - experience
+  - ability to
+  - proficien
+  - hands-on
+  - skilled in
+  - competen
+  - skills
+  - abilities
+  - application of
+  - expertise
+  - track record
+  - mastery
+bar_exposure_words:
+  - familiar(?:ity)? with
+  - exposure to
+  - awareness of
+  - basic
+  - understanding of
+  - knowledge of
+bar_raise_words:
+  - deep
+  - thorough
+  - in-depth
+  - strong
+  - solid
+  - extensive
+  - significant
+  - proven
+  - demonstrated
+bar_praise_words:
+  - strong
+  - excellent
+  - solid
+  - exceptional
 
 # Words in a JD heading that make every part under it 'preferred'
 # (scripts/jd_demand.py). One case-insensitive regex each, matched against the

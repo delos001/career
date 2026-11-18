@@ -1937,44 +1937,43 @@ def test_leadership_classification_carries_a_valid_tier():
 
 
 def needs_file(*rows, type_='required'):
-    """Return a jd_needs.md text holding (text, source) rows before ranking."""
-    body = ''.join(f'| {i} | {text} |  | {type_} | {source} |\n'
-                   for i, (text, source) in enumerate(rows, 1))
-    return ('# JD needs: X | Y\n\n## Requirements\n\n| Req | Requirement | Kind | Type | JD line |\n'
-            f'|---|---|---|---|---|\n{body}')
+    """Return a jd_needs.md text holding (text, unit) rows before ranking."""
+    body = ''.join(f'| {i} | {unit} | L1 | X | {text} | {type_} |  |  |\n'
+                   for i, (text, unit) in enumerate(rows, 1))
+    return ('# JD needs: X | Y\n\n## Requirements\n\n'
+            '| Part ID | Unit ID | Line | Section | Requirement | Demand | Bar | Kind |\n'
+            f'|---|---|---|---|---|---|---|---|\n{body}')
 
 
 def test_requirement_text_keeps_jd_modifiers():
     """Fixed 2026-11-05 (GitHub #83): the extractor dropped 'familiarity with'
-    from a must-have and nothing compared requirement text with the JD. Modifiers
-    are read from the JD clause holding the quote, so a narrow quote cannot step
-    around the check.
+    from a must-have and nothing compared requirement text with the JD.
+    Modifiers are read from the row's whole unit (since 2026-11-18; before,
+    from the clause holding the extractor's quote).
     """
     import role_extract_qc as rxq
     _, cfg = _config.load()
+    # Units: S-001; S-002a / S-002b (split at the semicolon); S-003.
     jd = ('Strong knowledge of the industry, including familiarity with drug discovery.\n'
           "Bachelor's degree required; advanced degree preferred.\n"
           'Master’s degree with 6 years of experience.\n')
 
-    def result(text, source):
+    def result(text, unit):
         findings = []
-        rxq.check_requirement_text(needs_file((text, source)), jd, cfg['requirement_qualifiers'],
-                                   cfg['requirement_year_count'], findings)
+        rxq.check_requirement_text(needs_file((text, unit)), jd, cfg, findings)
         return findings[0]
 
     whole ='Knowledge of the industry, including familiarity with drug discovery'
-    assert result(whole, 'Quals #1 "including familiarity with drug discovery"')[1]
-    dropped = result('Knowledge of the industry, including drug discovery', 'Quals #1 "including familiarity with drug discovery"')
+    assert result(whole, 'S-001')[1]
+    dropped = result('Knowledge of the industry, including drug discovery', 'S-001')
     assert not dropped[1] and 'familiarity with' in dropped[2], dropped
-    assert not result('Knowledge of the industry, including drug discovery', 'Quals #1 "drug discovery"')[1], 'a narrow quote hid the dropped modifier'
-    assert result("Bachelor's degree", 'Quals #2 "Bachelor\'s degree required"')[1], "'preferred' from the next clause bound this row"
-    assert not result('Advanced degree required', 'Quals #2 "advanced degree preferred"')[1], 'a swapped modifier passed'
-    assert result("Master's degree with 6 years", 'Quals #3 "Master\'s degree with 6 years"')[1], 'curly apostrophe broke the match'
-    assert not result("Master's degree with 5 years", 'Quals #3 "Master\'s degree with 6 years"')[1], 'a changed year count passed'
-    assert not result('Degree', 'Quals #2 "not in the JD"')[1], 'a quote absent from the JD passed'
-    assert not result('Advanced degree required', 'Quals #2')[1], 'a quoteless row whose text is not in the JD passed'
-    assert result('advanced degree preferred', 'Quals #2')[1], 'a quoteless row whose text is in the JD failed'
-    assert result('Degree', 'Quals #2 "Bachelor\'s degree required"; also Summary')[1], 'a section pointer after the quote broke the row'
+    assert result("Bachelor's degree", 'S-002a')[1], "'preferred' from the next unit bound this row"
+    assert not result('Advanced degree required', 'S-002b')[1], 'a swapped modifier passed'
+    assert result("Master's degree with 6 years", 'S-003')[1], 'curly apostrophe broke the match'
+    assert not result("Master's degree with 5 years", 'S-003')[1], 'a changed year count passed'
+    missing = result('Degree', 'S-009')
+    assert not missing[1] and 'not a unit' in missing[2], f'a unit absent from the JD passed: {missing}'
+    assert not result("Bachelor's degree", 'S-003')[1], 'a row checked against the wrong unit passed'
 
 
 def test_requirement_text_cuts_but_never_adds_or_reorders_jd_words():
@@ -1990,8 +1989,7 @@ def test_requirement_text_cuts_but_never_adds_or_reorders_jd_words():
 
     def result(text):
         findings = []
-        rxq.check_requirement_text(needs_file((text, f'Reqs "{quote}"')), jd, cfg['requirement_qualifiers'],
-                                   cfg['requirement_year_count'], findings)
+        rxq.check_requirement_text(needs_file((text, 'S-001')), jd, cfg, findings)
         return findings[0]
 
     assert result('Strong facilitation skills')[1], 'cutting non-adjacent words failed'
@@ -2011,31 +2009,29 @@ def test_split_requirement_keeps_each_year_count():
     _, cfg = _config.load()
     jd = 'Minimum of 10 years in the industry, with at least 5 years in people management.\n'
 
-    def result(*rows):
+    def result(*texts):
         findings = []
-        rxq.check_requirement_text(needs_file(*((text, f'Quals #1 "{quote}"') for text, quote in rows)),
-                                   jd, cfg['requirement_qualifiers'], cfg['requirement_year_count'], findings)
+        rxq.check_requirement_text(needs_file(*((text, 'S-001') for text in texts)), jd, cfg, findings)
         return findings[0]
 
     ten = 'Minimum of 10 years in the industry'
-    five = 'at least 5 years in people management'
-    split = result((ten, ten), (five, five))
+    five = 'with at least 5 years in people management'
+    split = result(ten, five)
     assert split[1], f'a correct split failed: {split}'
-    assert result((f'{ten}, with {five}', ten))[1], 'the whole clause on one row failed'
-    lost = result((ten, ten), ('people management', 'people management'))
+    assert result(f'{ten}, {five}')[1], 'the whole unit on one row failed'
+    lost = result(ten, 'people management')
     assert not lost[1] and '5 years' in lost[2], f'a count lost from every row passed: {lost}'
-    assert not result(('Minimum of 8 years in the industry', ten), (five, five))[1], 'a changed count passed'
+    assert not result('Minimum of 8 years in the industry', five)[1], 'a changed count passed'
     # One requirement written twice from the same sentence fails; Medtronic
     # APP-024 rows 40 and 41 differed only by 'including AWS'.
-    dup = result((ten, ten), (f'{ten}, with {five}', ten))
+    dup = result(ten, f'{ten}, {five}')
     assert not dup[1] and 'wholly inside' in dup[2], f'an overlapping pair of rows passed: {dup}'
 
     # A spelled-out count with the digit in parentheses ('seven (7) years',
     # APP-029) was invisible to the pattern, so a row dropping it passed.
     findings = []
     spelled = 'Bachelor\'s degree required, with a minimum of seven (7) years of relevant experience.\n'
-    rxq.check_requirement_text(needs_file(("Bachelor's degree required", 'Edu "Bachelor\'s degree required"')),
-                               spelled, cfg['requirement_qualifiers'], cfg['requirement_year_count'], findings)
+    rxq.check_requirement_text(needs_file(("Bachelor's degree required", 'S-001')), spelled, cfg, findings)
     assert not findings[0][1] and '7) years' in findings[0][2], f'a dropped spelled-out count passed: {findings[0]}'
 
 
@@ -2052,17 +2048,16 @@ def test_split_requirement_keeps_modifier_on_some_row():
     jd = ('Possess a deep understanding of clinical trial data to be able to build '
           'AI solutions that conform to regulatory compliance.\n')
 
-    def result(*rows):
+    def result(*texts):
         findings = []
-        rxq.check_requirement_text(needs_file(*((text, f'Skills "{quote}"') for text, quote in rows)),
-                                   jd, cfg['requirement_qualifiers'], cfg['requirement_year_count'], findings)
+        rxq.check_requirement_text(needs_file(*((text, 'S-001') for text in texts)), jd, cfg, findings)
         return findings[0]
 
     first = 'Possess a deep understanding of clinical trial data'
     second = 'build AI solutions that conform to regulatory compliance'
-    split = result((first, first), (second, second))
+    split = result(first, second)
     assert split[1], f'a correct split failed: {split}'
-    lost = result(('Possess clinical trial data', first), (second, second))
+    lost = result('Possess clinical trial data', second)
     assert not lost[1] and 'understanding of' in lost[2], f'a modifier lost from every row passed: {lost}'
 
 
@@ -2179,13 +2174,28 @@ def test_ranked_needs_cover_every_requirement_once():
         'the gap detector was not handed the role statement'
     assert 'CR-006' not in info and info['CR-005']['demand'] == 'required', 'gap QC expected a Not ranked row'
 
+    # 2026-11-18: kinds come from the jd-kind-labeler, written into the rows
+    # by the kinds step before ranking. Every row needs one; an unknown Part
+    # ID or a file that is not the labeler's stops the write.
+    kinds_table = ('## Row Kinds\n\n| Part ID | Kind |\n|---|---|\n'
+                   + ''.join(f'| {n} | {k} |\n' for n, k in enumerate(
+                       ['Qualification', 'Function', 'Function', 'Function', 'Means', 'Boilerplate or attitude'], 1)))
+    for bad_kinds, why in ((kinds_table + '| 9 | Means |\n', 'Part IDs not in'),
+                           (kinds_table.replace('| 6 | Boilerplate or attitude |\n', ''), 'no Kind for Part IDs: 6'),
+                           (kinds_table.replace('## Row Kinds', '## Kinds'), 'Row Kinds')):
+        code, out = run('role_extract_assemble.py', 'kinds', '--folder', FIXTURE_APP,
+                        '--kinds-file', write_block('kinds_bad.md', bad_kinds))
+        assert code != 0 and why in out and _util.read(needs_path) == good, f'a bad kinds file was written ({why}): {out}'
+    code, out = run('role_extract_assemble.py', 'kinds', '--folder', FIXTURE_APP,
+                    '--kinds-file', write_block('kinds.md', kinds_table))
+    assert code == 0, out
+    labeled = _util.read(needs_path)
+    assert '## Needs' not in labeled and '| Boilerplate or attitude |' in labeled, 'the kinds step kept a ranking or lost a kind'
+
     # The assembler rewrites jd_needs.md from the ranker's output, carrying each
-    # requirement's text, Type and Source over from the file, and leaves
-    # research.md alone.
-    ranker = ('## Row Kinds\n\n| # | Kind |\n|---|---|\n'
-              + ''.join(f'| {n} | {k} |\n' for n, k in enumerate(
-                  ['Qualification', 'Function', 'Function', 'Function', 'Means', 'Boilerplate or attitude'], 1))
-              + '\n## Ranked Needs\n\n**The job:**\n'
+    # row's cells, kind included, over from the file, and leaves research.md
+    # alone.
+    ranker = ('## Ranked Needs\n\n**The job:**\n'
               '- Role statement:\n  - owns the operating model for clinical data (L8)\n'
               '- Outcomes:\n  - enable faster study decisions (L8)\n'
               '- Leads, does, or both: leads; what: a team (L17)\n\n'
@@ -2224,71 +2234,91 @@ def test_ranked_needs_cover_every_requirement_once():
 
 
 def test_requirements_are_extracted_into_jd_needs():
-    """Moved 2026-11-10 (GitHub #89): requirement extraction moved from
-    role-intake into role-classify, and the requirements from research.md into
-    jd_needs.md, so the text exists once. The extractor's table is written before
-    ranking, its Type held to the four allowed values, and its rows checked
-    before any ranking is spent on them.
+    """Moved 2026-11-10 (GitHub #89): requirements live in jd_needs.md, written
+    before ranking and checked before any ranking is spent on them. Rebuilt
+    2026-11-18: assemble reads the jd-splitter's '## Parts' (| Unit ID | Text |),
+    fills each 'whole' from its unit, takes the line and heading from the unit,
+    sets Demand by rule, and refuses parts that skip or invent a unit.
     """
+    import jd_sentences
     import requirement_kinds
     import role_extract_qc as rxq
     _, cfg = _config.load()
     needs_path = os.path.join(FIXTURE_APP, 'jd_needs.md')
     research = _util.read(os.path.join(FIXTURE_APP, 'research.md'))
     assert 'Critical Requirements' not in research, 'research.md still holds requirements'
-    table = ('## Critical Requirements\n\n| # | Text | Demand | Source |\n|------|------|------|------|\n'
-             '| 1 | Bachelor\'s degree in a scientific or quantitative discipline | education (required) | '
-             'Requirements "Bachelor\'s degree in a scientific or quantitative discipline" |\n'
-             '| 2 | Familiarity with regulatory submission data packages | preferred | '
-             'Nice to have "Familiarity with regulatory submission data packages"; also Requirements |\n'
-             '| 3 | Direct experience with a commercial data warehouse platform | required | '
-             'Requirements "Direct experience with a commercial data warehouse platform in production" |\n')
+    units = jd_sentences.units(_util.read(os.path.join(FIXTURE_APP, 'jd.md')), cfg)
+    by_text = {u['text']: u for u in units}
+    oversee = by_text['Oversee external data providers, including contracts and performance.']
+    bachelor = by_text["Bachelor's degree in a scientific or quantitative discipline."]
+    nice = by_text['Familiarity with regulatory submission data packages.']
+    rows = []
+    for u in units:
+        if u is oversee:
+            rows += [(u['id'], 'Oversee external data providers'),
+                     (u['id'], 'including contracts and performance.')]
+        else:
+            rows.append((u['id'], 'whole'))
+    table = '## Parts\n\n| Unit ID | Text |\n|---|---|\n' + ''.join(f'| {uid} | {t} |\n' for uid, t in rows)
     code, out = run('role_extract_assemble.py', 'requirements', '--folder', FIXTURE_APP,
-                    '--requirements-file', write_block('reqs.md', table))
+                    '--requirements-file', write_block('parts.md', table))
     assert code == 0, out
     written = _util.read(needs_path)
-    # Every reference becomes the quote's jd.md line. A quote equal to the row
-    # text is dropped; a quote the text was cut from stays; other pointers go.
-    assert '| L21 Requirements |\n' in written, 'a quote equal to the text was kept, or the line is wrong'
-    assert '| 2 | Familiarity with regulatory submission data packages |  | preferred | L27 Nice to have |\n' in written, \
-        'an also-pointer survived'
-    assert '| L23 Requirements "Direct experience with a commercial data warehouse platform in production" |\n' \
-        in written, 'a quote that differs from the text was dropped'
-    piped = {'num': 1, 'text': 'SAS | R', 'kind': None, 'demand': 'required', 'source': 'L5 Skills'}
-    back = requirement_kinds.all_rows(requirement_kinds.read_needs(requirement_kinds.render_requirements('X | Y', [piped])))
-    assert back and back[0]['text'] == 'SAS | R' and back[0]['source'] == 'L5 Skills', f'a pipe in a requirement broke its row: {back}'
-    assert written.startswith('# JD needs: Aldridge Pharma | Director, Clinical Data Strategy\n\n## Requirements\n'), written
-    assert "| 1 | Bachelor's degree in a scientific or quantitative discipline |  | required |" in written, \
-        'a recoverable Demand was not reduced to its allowed value'
+    assert written.startswith('# JD needs: Aldridge Pharma | Director, Clinical Data Strategy\n\n## Requirements\n\n'
+                              + requirement_kinds.UNIT_ROW_HEADER), written[:300]
+    got = requirement_kinds.all_rows(requirement_kinds.read_needs(written))
+    assert len(got) == len(units) + 1, f'{len(got)} rows for {len(units)} units plus one split'
+    by_unit = {}
+    for r in got:
+        by_unit.setdefault(r['unit'], []).append(r)
+    # 'whole' becomes the unit's sentence; the JD line is the unit's line and heading.
+    b = by_unit[bachelor['id']][0]
+    assert (b['text'], b['demand'], b['line'], b['section']) == \
+        (bachelor['text'], 'required', 'L21', '## Requirements'), b
+    assert b['source'] == 'L21 ## Requirements', f'later readers lost the JD reference: {b}'
+    assert f"| {b['num']} | {bachelor['id']} | L21 | ## Requirements | {bachelor['text']} | required |  |  |" in written, \
+        'columns out of order'
+    # Bar comes from jd_bar: 'Familiarity with' is exposure.
+    assert by_unit[nice['id']][0]['bar'] == 'exposure', by_unit[nice['id']]
+    # Demand comes from jd_demand: everything under a 'Nice to have' heading is preferred.
+    assert by_unit[nice['id']][0]['demand'] == 'preferred', by_unit[nice['id']]
+    split = by_unit[oversee['id']]
+    assert [r['text'] for r in split] == ['Oversee external data providers', 'including contracts and performance.'], split
     assert '## Needs' not in written, 're-extraction kept an old ranking'
     code, out = run('role_extract_qc.py', 'requirements', '--folder', FIXTURE_APP)
     assert code == 0, out
 
-    code, out = run('role_extract_assemble.py', 'requirements', '--folder', FIXTURE_APP,
-                    '--requirements-file', write_block('bad.md', table.replace('| preferred |', '| Knowledge |')))
-    assert code != 0 and 'Knowledge' in out, 'a Demand with no allowed value was written'
-    old = write_block('old.md', table.replace('| preferred |', '| contextual |'))
-    code, out = run('role_extract_assemble.py', 'requirements', '--folder', FIXTURE_APP, '--requirements-file', old)
-    assert code != 0 and 'contextual' in out, 'a retired Type value was written as a Demand'
+    # A part naming a unit jd.md does not have, a unit with no part, or a file
+    # that is not the splitter's, stops the write.
+    for bad, why in ((table + '| S-999 | whole |\n', 'S-999'),
+                     (table.replace(f"| {bachelor['id']} | whole |\n", ''), bachelor['id']),
+                     (table.replace('## Parts', '## Critical Requirements'), 'Parts')):
+        code, out = run('role_extract_assemble.py', 'requirements', '--folder', FIXTURE_APP,
+                        '--requirements-file', write_block('bad.md', bad))
+        assert code != 0 and why in out, f'a bad splitter file was written ({why}): {out}'
+    piped = {'num': 1, 'unit': 'S-001', 'text': 'SAS | R', 'kind': None, 'demand': 'required', 'source': 'L5 Skills'}
+    back = requirement_kinds.all_rows(requirement_kinds.read_needs(requirement_kinds.render_requirements('X | Y', [piped])))
+    assert back and back[0]['text'] == 'SAS | R' and back[0]['unit'] == 'S-001', f'a pipe in a requirement broke its row: {back}'
 
     def present(text):
         findings = []
         rxq.check_requirements_present(text, cfg['requirement_optional_words'], findings)
         return findings[0]
 
-    ok = needs_file(('A', 'S "a"'), ('B', 'S "b"'))
+    ok = needs_file(('A', 'S-001'), ('B', 'S-002'))
     assert present(ok)[1], present(ok)
-    assert not present(ok.replace('| 2 | B', '| 3 | B'))[1], 'a gap in the row numbers passed'
-    assert not present(ok.replace('| 2 | B', '| 1 | B'))[1], 'a repeated row number passed'
+    assert not present(ok.replace('| 2 | S-002', '| 3 | S-002'))[1], 'a gap in the row numbers passed'
+    assert not present(ok.replace('| 2 | S-002', '| 1 | S-002'))[1], 'a repeated row number passed'
     assert not present(ok.replace('| required |', '| Knowledge |', 1))[1], 'an unknown Demand passed'
-    # A row whose own text marks it optional must be preferred; the reverse
-    # (a row under a preferred heading) is the extractor's judgment.
-    optional = needs_file(('Python experience is a plus', 'S "a"'))
+    assert not present(ok.replace('| S-001 |', '|  |'))[1], 'a row with no Unit ID passed'
+    assert not present(ok.replace('| required |  |', '| required | expert |', 1))[1], 'a Bar outside the two levels passed'
+    # A row whose own text marks it optional must be preferred.
+    optional = needs_file(('Python experience is a plus', 'S-001'))
     word = present(optional)
     assert not word[1] and 'a plus' in word[2], f'an optional row marked required passed: {word}'
     assert present(optional.replace('| required |', '| preferred |'))[1], 'an optional row marked preferred failed'
-    assert present(needs_file(('Python', 'S "a"'), type_='preferred'))[1], 'a preferred row with no optional word failed'
-    assert not present(ok.replace('| S "b" |', '|  |'))[1], 'a row with no Source passed'
+    assert present(needs_file(('Python', 'S-001'), type_='preferred'))[1], 'a preferred row with no optional word failed'
+    assert not present(ok.replace('| L1 | X |', '|  | X |', 1))[1], 'a row with no Line passed'
     assert not present('# JD needs: X | Y\n\n## Requirements\n\nNone.\n')[1], 'an empty extraction passed'
     assert not present(None)[1], 'a missing jd_needs.md passed'
 
@@ -2581,7 +2611,12 @@ def test_jd_rules_slice_by_step():
     text = jd_rules_slice.load(repo_root, cfg)
     split = jd_rules_slice.slice_steps(text, ['SPLIT'])
     assert split.startswith('# JD processing rules') and '## SPLIT: ' in split, split[:200]
-    planted = text + '\n## KINDS: Kinds of row\n\nA kind rule.\n'
+    kinds = jd_rules_slice.slice_steps(text, ['KINDS'])
+    heads = lambda s: [ln for ln in s.splitlines() if ln.startswith('## ')]
+    assert '## KINDS: Kinds of row' in heads(kinds) and not any(h.startswith('## SPLIT: ') for h in heads(kinds)), \
+        'the kinds slice carried the split rules'
+    assert not any(h.startswith('## KINDS: ') for h in heads(split)), 'the split slice carried the kind rules'
+    planted = text + '\n## RANKX: Ranking\n\nA rank rule.\n'
     for bad, why in ((planted, 'an unknown section key'), (text + '\n## Kinds\n', 'a heading with no key')):
         try:
             jd_rules_slice.slice_steps(bad, ['SPLIT'])
@@ -2594,6 +2629,29 @@ def test_jd_rules_slice_by_step():
         pass
     else:
         raise AssertionError('an unknown step key was accepted')
+
+
+def test_bar_is_set_by_rule():
+    """Built 2026-11-18: Bar says what evidence meets a part, exposure or
+    working, set by rule from config word lists. Cases from the APP-024,
+    APP-028 and APP-029 test of the scale.
+    """
+    import jd_bar
+    _, cfg = _config.load()
+    cases = [
+        ('Knowledge of Good Clinical Practice (GCP) requirements', 'exposure'),     # exposure word
+        ('Familiarity with regulatory submission data packages', 'exposure'),
+        ('Thorough knowledge of Good Clinical Practice (GCP)', 'working'),         # raised by 'thorough'
+        ('Experience with Structured Query Language (SQL)', 'working'),            # working word
+        ('Proven ability to independently diagnose complex operating problems', 'working'),
+        ('Strong judgment in ambiguous circumstances', 'working'),                 # praise word alone
+        ('Supports cross-Medicine adoption of proven approaches', ''),             # 'proven' alone is no bar
+        ("Bachelor's degree from an accredited institution required", ''),        # no bar word
+        ('Leverages advanced analytics to drive insights', ''),                    # 'advanced' is not a bar word
+    ]
+    got = jd_bar.set_bar([t for t, _ in cases], cfg)
+    for (text, want), g in zip(cases, got):
+        assert g == want, f'{text[:45]}...: got {g!r}, want {want!r}'
 
 
 def test_demand_is_set_by_rule():
@@ -3074,13 +3132,21 @@ def test_dispatch_prompts_are_printed_not_composed():
                         ('industry-research', 'research_industry.md')):
         text = prompt(agent)
         assert f'Output file: {os.path.join(FIXTURE_APP, "scratch", name)}' in text, text
-    ranker = prompt('jd-needs-ranker')
+    # 2026-11-18: kind labeling moved from the ranker to jd-kind-labeler, which
+    # alone needs the Company section (to spot boilerplate). Both get only the
+    # KINDS rules, never the split rules.
+    labeler = prompt('jd-kind-labeler')
     company_path = os.path.join(FIXTURE_APP, 'scratch', 'company.md')
-    assert jd_path in ranker and company_path in ranker, ranker
-    assert os.path.join(FIXTURE_APP, 'research.md') not in ranker, 'the ranker was given the whole research file'
+    assert jd_path in labeler and company_path in labeler, labeler
+    assert os.path.join(FIXTURE_APP, 'research.md') not in labeler, 'the labeler was given the whole research file'
     company = _util.read(company_path)
     assert company.startswith('## Company\n') and '## Title' not in company, f'the Company slice is wrong: {company[:200]}'
-    assert os.path.join(FIXTURE_APP, 'jd_needs.md') in ranker, 'the ranker was not given the requirements'
+    kinds_rules = os.path.join(FIXTURE_APP, 'scratch', 'rules_kinds.md')
+    assert f'Rules file: {kinds_rules}' in labeler and 'Output file: ' in labeler, labeler
+    assert '## SPLIT: ' not in _util.read(kinds_rules), 'the split rules reached the kind labeler'
+    ranker = prompt('jd-needs-ranker')
+    assert jd_path in ranker and company_path not in ranker, f'the ranker still gets the Company section: {ranker}'
+    assert os.path.join(FIXTURE_APP, 'jd_needs.md') in ranker and f'Rules file: {kinds_rules}' in ranker, ranker
     assert 'Comms' not in prompt('axis-classifier'), 'an absent optional file was listed'
     _util.write(os.path.join(FIXTURE_APP, 'comms.md'), 'A note.')
     assert 'Comms: ' in prompt('axis-classifier')
@@ -3115,7 +3181,7 @@ def test_dispatch_prompts_are_printed_not_composed():
     # The skills use it, and no listed step still hands an agent pasted content.
     skills = os.path.join(REPO_ROOT, '.claude', 'skills')
     for skill, agents in (('role-research', ['<agent>', 'qc-role-research']),
-                          ('role-extract', ['jd-splitter', 'jd-needs-ranker', 'qc-role-extract']),
+                          ('role-extract', ['jd-splitter', 'jd-kind-labeler', 'jd-needs-ranker', 'qc-role-extract']),
                           ('role-classify', ['axis-classifier', 'qc-role-classify']),
                           ('cv-targeted', ['<agent>', 'cv-architect']), ('gap-analysis', ['qc-gap-analysis'])):
         text = _util.read(os.path.join(skills, skill, 'SKILL.md'))

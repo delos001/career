@@ -134,8 +134,8 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Purpose**: Extract the JD's requirements, label each by kind, and group and rank them into the job's needs, from the files role-intake and role-research wrote. Split out of role-classify 2026-11-16 (`role-extract-split-2026-11`).
 - **Status**: Designed
 - **Inputs**:
-  - Rules: `rules/global-rules.md`; `rules/jd-processing.md` (SPLIT section, for the splitter); `rules/jd-requirement-kinds.md` (read by the ranker and the checks).
-  - Agents: `jd-splitter`, `jd-needs-ranker`, `qc-role-extract`.
+  - Rules: `rules/global-rules.md`; `rules/jd-processing.md` (SPLIT section, for the splitter); the KINDS section of `rules/jd-processing.md` (read by the ranker and the checks).
+  - Agents: `jd-splitter`, `jd-kind-labeler`, `jd-needs-ranker`, `qc-role-extract`.
   - Scripts: `scripts/display/introduce.py`, `scripts/jd_sentences.py`, `scripts/dispatch_prompt.py`, `scripts/jd_rules_slice.py`, `scripts/jd_demand.py`, `scripts/role_extract_assemble.py`, `scripts/role_extract_qc.py`.
   - Files: `jd.md`, `research.md` (its Company section, for the ranker).
   - User input: APP-NNN; confirmation of the ranking, section by section.
@@ -343,7 +343,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 **Built** (detailed entries below):
 - company-research, title-research, industry-research, qc-role-research (role-research skill family)
-- jd-splitter, jd-needs-ranker, qc-role-extract (role-extract skill family)
+- jd-splitter, jd-kind-labeler, jd-needs-ranker, qc-role-extract (role-extract skill family)
 - axis-classifier, qc-role-classify (role-classify skill family)
 - retrieval-scorer (retrieval skill family)
 - gap-detector, qc-gap-analysis (gap-analysis skill family)
@@ -393,17 +393,26 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Purpose**: Split each unit of `jd_sentences.md` into parts (a requirement or a fact), in the unit's own words, for the role-extract skill. Renamed from `critical-requirements-extractor` 2026-11-18; Demand moved to `scripts/jd_demand.py` and the split rules to `rules/jd-processing.md` the same day.
 - **Status**: Designed; being reviewed (role-extract redesign, 2026-11).
 - **Inputs**: Skill-passed (by `role-extract`, via `dispatch_prompt.py`): `<scratch>/jd_sentences.md`, `<scratch>/rules_split.md` (the SPLIT section, cut by `jd_rules_slice.py`) and the output file. Tools: Read, Write.
-- **Outputs**: A `| Unit | Text |` table, one row per part (`whole` when a unit is one part), written to `<scratch>/requirements.md`. `role_extract_assemble.py requirements` is being rebuilt to read it.
+- **Outputs**: A `| Unit ID | Text |` table under `## Parts`, one row per part (`whole` when a unit is one part), written to `<scratch>/requirements.md`; `role_extract_assemble.py requirements` writes it to `jd_needs.md` as `| Part ID | Unit ID | Line | Section | Requirement | Demand | Bar | Kind |`.
 - **Triggers**: Invoked by `role-extract` Phase 1.
 - **Update Triggers**: When the SPLIT rules or the `jd_sentences.md` unit format change.
 
+#### jd-kind-labeler
+
+- **Purpose**: Label each `jd_needs.md` row with a kind (Function, Means, Setting, ...) from the KINDS section of `rules/jd-processing.md`. Split out of `jd-needs-ranker` 2026-11-18 (one objective per agent).
+- **Status**: Designed; not yet run live.
+- **Inputs**: Skill-passed (by `role-extract`, via `dispatch_prompt.py`): `jd.md`, `scratch/company.md` (research.md's Company section, to spot boilerplate), `jd_needs.md`, `<scratch>/rules_kinds.md` (the KINDS slice) and the output file. Tools: Read, Write.
+- **Outputs**: `## Row Kinds` with `| Part ID | Kind |` rows, written to `<scratch>/kinds.md`; `role_extract_assemble.py kinds` writes each kind into `jd_needs.md` and refuses a missing or unknown Part ID.
+- **Triggers**: Invoked by `role-extract` Phase 3.
+- **Update Triggers**: When the KINDS rules or the `jd_needs.md` row layout change.
+
 #### jd-needs-ranker
 
-- **Purpose**: Label each extracted requirement by kind (`rules/jd-requirement-kinds.md`), describe the job, group the requirements into the functions the role delivers, and rank them by the JD's statement of the role, repetition across sections, then space (GitHub #89).
+- **Purpose**: Describe the job, group the rows (already labeled by kind) into the functions the role delivers, and rank them by the JD's statement of the role, repetition across sections, then space (GitHub #89).
 - **Status**: Designed
-- **Inputs**: Skill-passed (by `role-extract`): paths to `jd.md`, `scratch/company.md` (research.md's Company section, cut by `dispatch_prompt.py`) and `jd_needs.md` (the extracted requirements), and the output file. Reads `rules/jd-requirement-kinds.md`. Tools: Read, Write.
-- **Outputs**: Row kinds, the job description, and a needs table in rank order, written to the output file `dispatch_prompt.py` names (`<scratch>/needs.md`). `role_extract_assemble.py needs` rewrites `jd_needs.md` with them, placing the rows outside the needs into Qualifications or Not ranked by kind and carrying each requirement's text, Demand and Source over from the file; mechanical checks in `role_extract_qc.py` X3. Not ranked rows are filtered out of retrieval and gap analysis by `requirement_kinds.py`.
-- **Triggers**: Invoked by `role-extract` Phase 3.
+- **Inputs**: Skill-passed (by `role-extract`): paths to `jd.md`, `jd_needs.md` (rows with their kinds), `<scratch>/rules_kinds.md` (the KINDS slice) and the output file. Tools: Read, Write.
+- **Outputs**: The job description and a needs table in rank order, written to `<scratch>/needs.md`. `role_extract_assemble.py needs` rewrites `jd_needs.md` with them, placing the rows outside the needs into Qualifications or Not ranked by kind and carrying every row's cells over from the file; mechanical checks in `role_extract_qc.py` X3. Not ranked rows are filtered out of retrieval and gap analysis by `requirement_kinds.py`.
+- **Triggers**: Invoked by `role-extract` Phase 4.
 - **Update Triggers**: When the requirement schema changes; when a downstream skill needs more from the ranking.
 
 #### axis-classifier
@@ -426,9 +435,9 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### qc-role-extract
 
-- **Purpose**: Judgment quality-check for role-extract - verifies each requirement's kind follows `rules/jd-requirement-kinds.md`, split rows keep their modifiers, and the ranked needs reflect the job. Mechanical checks are owned by `scripts/role_extract_qc.py`. Split from `qc-role-classify` 2026-11-16.
+- **Purpose**: Judgment quality-check for role-extract - verifies each requirement's kind follows the KINDS section of `rules/jd-processing.md`, split rows keep their modifiers, and the ranked needs reflect the job. Mechanical checks are owned by `scripts/role_extract_qc.py`. Split from `qc-role-classify` 2026-11-16.
 - **Status**: Designed
-- **Inputs**: Skill-passed (by `role-extract`): JD, `scratch/company.md` and `jd_needs.md` paths; `rules/jd-requirement-kinds.md`; the ranker's instructions. Tools: Read, Grep.
+- **Inputs**: Skill-passed (by `role-extract`): JD, `scratch/company.md` and `jd_needs.md` paths; the KINDS section of `rules/jd-processing.md`; the ranker's instructions. Tools: Read, Grep.
 - **Outputs**: QC verdict (PASS / FINDINGS) with a route-back phase per finding.
 - **Triggers**: Invoked by `role-extract` Phase 4 Step 4b, after `role_extract_qc.py check` passes.
 - **Update Triggers**: When the `jd_needs.md` layout, the kinds file or the ranker's steps change; when the skill's phase structure changes.
@@ -491,7 +500,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 - **Purpose**: Deterministic QC for role-extract's writes to `jd_needs.md` (X1-X3): requirements numbered 1..N with text, an allowed Demand and a Source (X1); each requirement's quote found in `jd.md`, its words in the JD line's order (cut, never added or rearranged), and its text keeping the JD clause's modifiers (X2); every requirement's kind known and placed where its kind sets (a need, Qualifications, Not ranked), none left unplaced, the job description present, ids, values and quotes (X3). Holds `_clause_holding`, which `role_extract_assemble.py` imports.
 - **Status**: Designed
-- **Inputs**: Args (`requirements --folder <app_folder>` runs X1 and X2; `check --folder <app_folder>` runs all). Config via `scripts/_config.py`. Filesystem: jd.md, jd_needs.md; `rules/jd-requirement-kinds.md` for the kinds.
+- **Inputs**: Args (`requirements --folder <app_folder>` runs X1 and X2; `check --folder <app_folder>` runs all). Config via `scripts/_config.py`. Filesystem: jd.md, jd_needs.md; the KINDS section of `rules/jd-processing.md` for the kinds.
 - **Outputs**: Per-check `PASS`/`FAIL` lines and a `RESULT` line; exit 0 when all pass, 1 otherwise.
 - **Triggers**: `requirements` by `role-extract` Phase 2; `check` by Phase 4 Step 4a.
 - **Update Triggers**: When the `jd_needs.md` layout or the kinds file changes.
@@ -604,11 +613,12 @@ Schema discipline and reconciliation script details live in `design/design_decis
 **Built** (detailed entries below unless noted):
 - `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/display/introduce.py`, `scripts/assemble.py`
 - `scripts/ingest/jd_headings.py` (puts named JD section headings on their own lines, moving line breaks only; refuses a missing or repeated heading; role-intake Phase 2 runs it on the Phase 1 JD file once the user confirms the heading list; roster entry only)
+- `scripts/jd_bar.py` (imported module: sets each JD part's Bar, exposure, working or blank, by rule from the `bar_*_words` lists in `config.yaml`; called by `role_extract_assemble.py requirements`; roster entry only)
 - `scripts/jd_demand.py` (imported module: sets each JD part's Demand by rule from the word lists `requirement_optional_words` and `requirement_preferred_headings` in `config.yaml`; to be called by `role_extract_assemble.py`; roster entry only)
 - `scripts/jd_sentences.py` (role-extract Phase 1: breaks `jd.md` into numbered units, one per sentence or semicolon part, under their headings, with mechanical hints; writes `<scratch>/jd_sentences.md`; roster entry only)
-- `scripts/role_extract_assemble.py` (role-extract skill: `requirements` and `needs` write the extractor's and ranker's output to `jd_needs.md`; roster entry only)
+- `scripts/role_extract_assemble.py` (role-extract skill: `requirements` writes the jd-splitter's parts to `jd_needs.md` with each row's Unit ID, Line, Section, full text, Demand (`jd_demand.py`) and Bar (`jd_bar.py`); `kinds` writes the jd-kind-labeler's kinds; `needs` writes the ranker's output; roster entry only)
 - `scripts/role_classify_assemble.py` (role-classify skill: `finalize` writes the classifier's output; `approval` prints the approval block from the files; roster entry only)
-- `scripts/requirement_kinds.py` (imported module: reads the kinds from `rules/jd-requirement-kinds.md`, parses the extractor's table, renders and reads `jd_needs.md`, and gives retrieval and gap analysis the requirements table without its Not ranked rows; roster entry only)
+- `scripts/requirement_kinds.py` (imported module: reads the kinds from the KINDS section of `rules/jd-processing.md`, parses the jd-splitter's `## Parts` table, renders and reads `jd_needs.md`, and gives retrieval and gap analysis the requirements table without its Not ranked rows; roster entry only)
 - `scripts/session_log.py` (shared section-append for all skills that write to a session log; `interview` creates or updates one `## Interview: <stage>` section field by field, with the field set read from `templates/session_log.md`, used by preparation-screen, preparation-interview, followup and close-application)
 - `scripts/profile_slice.py` (consumed by retrieval and downstream skills)
 - `scripts/retrieval_payload.py`, `scripts/retrieval_score_merge.py`, `scripts/retrieval_apply.py` (retrieval concern family)

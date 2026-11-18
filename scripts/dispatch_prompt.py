@@ -11,8 +11,8 @@ scorers, gap-detector, and qc-profile-update have their own scripts for the same
 pattern.
 
 An agent whose output a script consumes is given an 'Output file:' to write
-it to (the three research agents, the jd-splitter and the needs ranker), so the
-orchestrator never copies it. An agent with 'jd_rules' gets its sections of
+it to (the three research agents, the jd-splitter, the kind labeler and the needs
+ranker), so the orchestrator never copies it. An agent with 'jd_rules' gets its sections of
 rules/jd-processing.md as a 'Rules file:', sliced by jd_rules_slice.py.
 
 Content the orchestrator itself produces during a run (stakeholder contributions,
@@ -55,10 +55,13 @@ AGENTS = {
     'title-research': {'facts': ['company', 'role'], 'files': ['jd'], 'output': 'research_role.md'},
     'industry-research': {'facts': ['company', 'role'], 'files': ['jd'], 'output': 'research_industry.md'},
     'jd-splitter': {'files': ['jd_sentences'], 'jd_rules': ['SPLIT'], 'output': 'requirements.md'},
-    'jd-needs-ranker': {'files': ['jd', 'company_research', 'jd_needs'], 'output': 'needs.md'},
+    'jd-kind-labeler': {'files': ['jd', 'company_research', 'jd_needs'], 'jd_rules': ['KINDS'],
+                        'output': 'kinds.md'},
+    'jd-needs-ranker': {'files': ['jd', 'jd_needs'], 'jd_rules': ['KINDS'],
+                        'output': 'needs.md'},
     'axis-classifier': {'files': ['jd', 'comms?', 'research', 'jd_needs']},
     'qc-role-research': {'files': ['session_log', 'research', 'jd']},
-    'qc-role-extract': {'files': ['jd', 'company_research', 'jd_needs']},
+    'qc-role-extract': {'files': ['jd', 'company_research', 'jd_needs'], 'jd_rules': ['KINDS']},
     'qc-role-classify': {'files': ['session_log', 'research', 'jd_needs', 'jd']},
     'qc-gap-analysis': {'files': ['gap_analysis']},
     'qc-preparation-screen': {'folders': True},

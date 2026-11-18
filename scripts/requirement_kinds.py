@@ -6,11 +6,11 @@ kinds it uses, and the rows later skills read
 jd_needs.md is the one home of a job's requirements. role-extract writes it in
 two steps:
 
-  1. Extraction: the critical-requirements-extractor's rows are written under
-     '## Requirements', each with its text, Demand (required or preferred)
-     and Source.
-  2. Ranking: jd-needs-ranker labels every row with a kind from
-     rules/jd-requirement-kinds.md (Function, Means, Setting, ...) and groups
+  1. Extraction: the jd-splitter's parts are written under '## Requirements',
+     each with its unit (from jd_sentences.md), text, Demand (required or
+     preferred, set by jd_demand.py) and JD line.
+  2. Ranking: every row is labeled with a kind from the KINDS section of
+     rules/jd-processing.md (Function, Means, Setting, ...) and jd-needs-ranker groups
      the rows into ranked needs. The file is rewritten as the job, one heading
      per need with its rows under it, then the Qualifications and Not ranked
      rows. A row the ranker placed nowhere stays under '## Requirements', where
@@ -23,7 +23,7 @@ those skills use, so every reader filters the same way and sees the same
 '| # | Text | Demand | Source |' table.
 
 The kinds and where each one lands are derived from the rules file at run time,
-not held here: a kind is a '### N. <name>' heading under '## Kinds', and its
+not held here: a kind is a '### N. <name>' heading under KINDS_HEADING, and its
 section text says where it goes ('Not ranked list', 'Qualifications group',
 otherwise a need).
 
@@ -46,9 +46,9 @@ jd_needs.md layout (written by render_needs, read by read_needs):
     - Signals: role-statement, repetition N, space N
     - Quote: L<n> <JD heading> "<verbatim JD passage>"
 
-    | Req | Requirement | Kind | Demand | JD line |
-    |---|---|---|---|---|
-    | 2 | <requirement text, as extracted> | <kind, or kinds joined by + with each part's JD words> | required | preferred | L<n> <JD heading> |
+    | Part ID | Unit ID | Line | Section | Requirement | Demand | Bar | Kind |
+    |---|---|---|---|---|---|---|---|
+    | 2 | S-014 | L<n> | <JD heading> | <requirement text, as split> | required | preferred | exposure | working | (blank) | <kind, or kinds joined by + with each part's JD words> |
 
     ## Qualifications
 
@@ -58,11 +58,15 @@ jd_needs.md layout (written by render_needs, read by read_needs):
 
     <same table, or None.>
 
-Every JD reference is L<n>, the line number in jd.md, written by the scripts
-from the quote (jd_ref). A row's JD line cell carries the quote only when the
-text was cut from a longer passage; a quote equal to the text is dropped, so
-later readers do not load each requirement twice. Before ranking the file holds
-only the H1 and '## Requirements', with the Kind cells empty.
+Part ID is the row's permanent number; later skills cite it as CR-NNN. Unit
+ID, Line and Section are the unit the part was split from, its jd.md line and
+its heading, taken from jd_sentences.units() by role_extract_assemble.py; the
+full sentence is not copied onto the row, since Unit ID and Line find it in
+jd.md. A row dict also carries 'source' ('L<n> <Section>'), the one JD
+reference later readers use. A need's Quote is found from its quote (jd_ref).
+Files written before 2026-11-18 have five columns ('| Req | Requirement |
+Kind | Demand | JD line |', no unit); they are still read. Before ranking the
+file holds only the H1 and '## Requirements', with the Kind cells empty.
 
 Author  : Jason Delosh
 Created : 2026-11-10
@@ -73,7 +77,6 @@ Depends : pyyaml (via _config)
 
 import os
 import re
-import sys
 
 import _util
 
@@ -100,9 +103,17 @@ ALLOWED_DEMANDS = {'required', 'preferred'}
 
 TABLE_HEADER = '| # | Text | Demand | Source |\n|---|------|------|--------|'
 
-# The requirement table in jd_needs.md.
+# The requirement table in jd_needs.md: which row, where it came from, what it
+# says, then the judgments on it (Demand and Bar set at assembly by
+# jd_demand.py and jd_bar.py, Kind at ranking).
+# Files written before 2026-11-18 have the five-column ROW_HEADER.
+UNIT_ROW_HEADER = ('| Part ID | Unit ID | Line | Section | Requirement | Demand | Bar | Kind |\n'
+                   '|---|---|---|---|---|---|---|---|')
 ROW_HEADER = '| Req | Requirement | Kind | Demand | JD line |\n|---|---|---|---|---|'
 
+# The kinds are the '### N. <name>' headings under this section of
+# rules/jd-processing.md (config filenames.jd_rules_file).
+KINDS_HEADING = '## KINDS: Kinds of row'
 _KIND_HEADING_RE = re.compile(r'^### \d+\.\s+(.+?)\s*$')
 _NEED_HEADING_RE = re.compile(r'^### (N-\d+):\s*(.*?)\s*$')
 # Regex: a table cell separator (a pipe not escaped as \|).
@@ -126,8 +137,7 @@ _SOURCE_QUOTE_RE = re.compile(r'\s*["“]([^"“”]+)["”]')
 
 def load_kinds(repo_root, cfg):
     """Return {kind name: NEED | QUALIFICATIONS | NOT_RANKED} from the rules file."""
-    path = os.path.join(repo_root, cfg['paths']['rules'],
-                        cfg['filenames']['requirement_kinds_file'])
+    path = os.path.join(repo_root, cfg['paths']['rules'], cfg['filenames']['jd_rules_file'])
     kinds, current, body, in_kinds = {}, None, [], False
 
     def flush():
@@ -144,7 +154,7 @@ def load_kinds(repo_root, cfg):
         if line.startswith('## '):
             flush()
             current, body = None, []
-            in_kinds = line.strip() == '## Kinds'
+            in_kinds = line.strip() == KINDS_HEADING
             continue
         if not in_kinds:
             continue
@@ -156,7 +166,7 @@ def load_kinds(repo_root, cfg):
             body.append(line)
     flush()
     if not kinds:
-        raise ValueError(f'{path} defines no kinds under "## Kinds"')
+        raise ValueError(f'{path} defines no kinds under "{KINDS_HEADING}"')
     return kinds
 
 
@@ -181,13 +191,50 @@ def placement(names, kinds):
 
 
 # ---------------------------------------------------------------------------
-# The extractor's table
-# The critical-requirements-extractor returns '| # | Text | Demand | Source |'.
-# Its Demand cell is held to ALLOWED_DEMANDS here, before anything is written.
+# Rows and the splitter's table
+# The jd-splitter writes '## Parts' with '| Unit ID | Text |' rows, Text
+# 'whole' when the unit is one part. role_extract_assemble.py turns them into
+# rows.
 # ---------------------------------------------------------------------------
 
-def _row(num, text, demand, source, kind=None):
-    return {'num': num, 'text': text, 'kind': kind, 'demand': demand, 'source': source}
+def _row(num, text, demand, source, kind=None, unit=None, line=None, section=None, bar=None):
+    """Return a row dict. With a line, 'source' is built as 'L<n> <Section>'."""
+    if line:
+        source = f'{line} {section or ""}'.strip()
+    return {'num': num, 'unit': unit, 'line': line, 'section': section, 'text': text,
+            'kind': kind, 'demand': demand, 'bar': bar, 'source': source}
+
+
+# Regex: a jd_sentences.md unit id (S-046, S-046a).
+UNIT_ID_RE = re.compile(r'^S-\d+[a-z]?$')
+
+
+def parse_parts_table(block):
+    """Return [(unit id, text)] from the jd-splitter's '## Parts' table, in order.
+
+    Raises when the heading or every row is missing, or a Unit cell is not a
+    unit id, so a malformed file stops the write instead of losing parts.
+    """
+    if not re.search(r'(?m)^## Parts[ \t]*$', block):
+        raise ValueError('the splitter output has no "## Parts" heading')
+    parts, bad = [], []
+    for line in block.split('\n'):
+        body = line.strip()
+        if not body.startswith('|'):
+            continue
+        cells = [c.strip().replace(r'\|', '|') for c in _CELL_SPLIT_RE.split(body.strip('|'))]
+        if len(cells) < 2 or cells[0] in ('Unit ID', '') or set(cells[0]) <= set('-'):
+            continue
+        if not UNIT_ID_RE.match(cells[0]):
+            bad.append(cells[0])
+            continue
+        # A pipe inside the text would add cells, so the rest is joined back.
+        parts.append((cells[0], ' | '.join(cells[1:])))
+    if bad:
+        raise ValueError(f"Unit cells that are not unit ids: {', '.join(bad)}")
+    if not parts:
+        raise ValueError('the splitter output holds no rows under "## Parts"')
+    return parts
 
 
 def optional_word(text, patterns):
@@ -258,52 +305,6 @@ def jd_heading(source):
     return normalize(_LINE_REF_RE.sub('', head.split(';')[0].strip()))
 
 
-def normalize_demand(value):
-    """Return (allowed Demand, recovered?) for a Demand cell, or (None, False).
-
-    The extractor is an LLM and drifts from the vocabulary. A label bolted onto
-    one valid token ('education (required)') is recoverable: the token is kept.
-    A cell with no token, or both, is not, so the caller fails loudly.
-    """
-    if value in ALLOWED_DEMANDS:
-        return value, False
-    # Neither value is a substring of the other, so a substring scan is a
-    # whole-token test.
-    present = [t for t in sorted(ALLOWED_DEMANDS) if t in value.lower()]
-    return (present[0], True) if len(present) == 1 else (None, False)
-
-
-def parse_extractor_table(block):
-    """Return [row dict] from the extractor's output, Demand normalized.
-
-    Raises on an unrecoverable Demand cell, listing every offender at once;
-    warns on stderr for each recovered one.
-    """
-    rows, offenders, recovered = [], [], []
-    for line in block.split('\n'):
-        stripped = line.strip()
-        if not stripped.startswith('|'):
-            continue
-        cells = [c.strip() for c in stripped.strip('|').split('|')]
-        if len(cells) < 4 or not cells[0].isdigit():
-            continue
-        # Source is the last cell; a pipe inside a quote would add cells, so
-        # everything after Demand is joined back into it.
-        num, text, raw, source = int(cells[0]), cells[1], cells[2], ' | '.join(cells[3:])
-        demand, was_recovered = normalize_demand(raw)
-        if demand is None:
-            offenders.append(f'row {num}: "{raw}"')
-        elif was_recovered:
-            recovered.append(f'row {num}: "{raw}" -> "{demand}"')
-        rows.append(_row(num, text, demand or raw, source))
-    if offenders:
-        raise ValueError(f"requirement Demand has values outside {', '.join(sorted(ALLOWED_DEMANDS))} "
-                         f"({'; '.join(offenders)}); rerun the extractor")
-    if recovered:
-        print(f"WARNING: Demand reduced to its allowed value ({'; '.join(recovered)})", file=sys.stderr)
-    return rows
-
-
 # ---------------------------------------------------------------------------
 # jd_needs.md: path, render, read
 # ---------------------------------------------------------------------------
@@ -318,24 +319,45 @@ def _cell(value):
 
 
 def _row_table(rows):
-    """Return the requirement table lines for rows, or ['None.']."""
+    """Return the requirement table lines for rows, or ['None.'].
+
+    Rows from the jd-splitter carry their unit, so the table gets the
+    seven-column layout; a file written before 2026-11-18 has no unit and
+    keeps its five columns when it is rewritten.
+    """
     if not rows:
         return ['None.']
+    if any(row.get('unit') for row in rows):
+        return [UNIT_ROW_HEADER] + [
+            f"| {row['num']} | {_cell(row.get('unit'))} | {_cell(row.get('line'))} | "
+            f"{_cell(row.get('section'))} | {_cell(row['text'])} | {_cell(row['demand'])} | "
+            f"{_cell(row.get('bar'))} | {_cell(row.get('kind'))} |" for row in rows]
     return [ROW_HEADER] + [
         f"| {row['num']} | {_cell(row['text'])} | {_cell(row.get('kind'))} | "
         f"{_cell(row['demand'])} | {_cell(row['source'])} |" for row in rows]
 
 
 def _table_row(line):
-    """Return a row dict from a requirement table line, or None for any other line."""
+    """Return a row dict from a requirement table line, or None for any other line.
+
+    Eight cells is the current layout (Part ID, Unit ID, Line, Section,
+    Requirement, Demand, Bar, Kind); five is a file written before 2026-11-18,
+    read so later skills keep working on older applications.
+    """
     body = line.strip()
     if not (body.startswith('|') and body.endswith('|')):
         return None
     cells = [c.strip().replace(r'\|', '|') for c in _CELL_SPLIT_RE.split(body[1:-1])]
-    if len(cells) != 5 or not cells[0].isdigit():
+    if not cells[0].isdigit():
         return None
-    num, text, kind, demand, source = cells
-    return _row(int(num), text, demand or None, source or None, kind or None)
+    if len(cells) == 8:
+        num, unit, jd_line, section, text, demand, bar, kind = cells
+        return _row(int(num), text, demand or None, None, kind or None, unit or None,
+                    jd_line or None, section or None, bar)
+    if len(cells) == 5:
+        num, text, kind, demand, source = cells
+        return _row(int(num), text, demand or None, source or None, kind or None)
+    return None
 
 
 def render_requirements(title, rows):

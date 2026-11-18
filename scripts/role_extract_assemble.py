@@ -6,13 +6,19 @@ Writes jd_needs.md, the file the role-extract skill produces, from its two
 agents' output, so none of it is written or composed by hand. Two
 subcommands:
 
-  requirements  Write the critical-requirements-extractor output to jd_needs.md
-            under '## Requirements' (text, Demand, Source). Re-extracting
+  requirements  Write the jd-splitter's parts (scratch/requirements.md,
+            '## Parts' with '| Unit ID | Text |') to jd_needs.md under
+            '## Requirements', one row per part: Part ID, Unit ID, the unit's
+            jd.md Line and Section, the full text ('whole' replaced by the
+            unit's sentence), Demand (jd_demand.py) and Bar (jd_bar.py). Re-extracting
             replaces the whole file, so a ranking built on old rows never
             survives.
+  kinds     Write the jd-kind-labeler's output (scratch/kinds.md, '## Row
+            Kinds' with '| Part ID | Kind |') into each row's Kind cell.
+            Every row must get one; labeling again drops any ranking.
   needs     Rewrite jd_needs.md with the jd-needs-ranker output: the job, each
-            need with its requirements (copied from the file's own rows) and
-            their kinds, then the Qualifications and Not ranked rows. The
+            need with its requirements (copied from the file's own rows, kinds
+            included), then the Qualifications and Not ranked rows. The
             repetition count and the order of the needs are set here, not
             by the ranker.
 
@@ -23,6 +29,7 @@ Author    : Jason Delosh
 Created   : 2026-11-16
 Project   : career
 Usage     : python scripts/role_extract_assemble.py requirements --folder ... --requirements-file ...
+            python scripts/role_extract_assemble.py kinds        --folder ... --kinds-file ...
             python scripts/role_extract_assemble.py needs        --folder ... --needs-file ...
 Depends   : pyyaml (via _config)
 """
@@ -34,6 +41,9 @@ import sys
 
 import _config
 import _util
+import jd_bar
+import jd_demand
+import jd_sentences
 import requirement_kinds
 from role_extract_qc import _clause_holding
 
@@ -68,21 +78,102 @@ def _title(research):
 
 # ---------------------------------------------------------------------------
 # Subcommand: requirements
-# Demand values are held to required or preferred here; wording against the JD is
+# The units come from jd_sentences.units() run on jd.md, the same breakdown
+# jd_sentences.py wrote to scratch for the splitter, so this step reads no
+# scratch file but the splitter's own output. Wording against the JD is
 # role_extract_qc.py's 'requirements' check, run right after this write.
 # ---------------------------------------------------------------------------
 
+def _heading(unit):
+    """Return a unit's heading as jd_sentences.md shows it: 'Section > Subsection'."""
+    return unit['section'] + (f" > {unit['subsection']}" if unit['subsection'] else '')
+
+
+def build_rows(parts, units, cfg):
+    """Return jd_needs.md rows for the splitter's parts, numbered 1..N.
+
+    parts: [(unit id, text)] in the splitter's order, text 'whole' for an
+    unsplit unit. units: jd_sentences.units() for the same jd.md. A part naming
+    a unit jd.md does not have, or a unit with no part, stops the write: the
+    splitter must account for every unit, or a requirement is silently lost.
+    Each row gets its unit, its full text, its unit's line and heading, then a
+    Demand from jd_demand.set_demand and a Bar from jd_bar.set_bar.
+    """
+    by_id = {u['id']: u for u in units}
+    unknown = [uid for uid, _ in parts if uid not in by_id]
+    if unknown:
+        raise ValueError(f"parts name units jd.md does not have: {', '.join(dict.fromkeys(unknown))}; "
+                         f"rerun jd_sentences.py and the splitter")
+    covered = {uid for uid, _ in parts}
+    missing = [u['id'] for u in units if u['id'] not in covered]
+    if missing:
+        raise ValueError(f"the splitter wrote no part for: {', '.join(missing)}; rerun the splitter")
+    rows = []
+    for num, (uid, text) in enumerate(parts, start=1):
+        unit = by_id[uid]
+        full = unit['text'] if text.strip().lower() == 'whole' else text.strip()
+        rows.append(requirement_kinds._row(num, full, None, None, unit=uid,
+                                           line=f"L{unit['line']}", section=_heading(unit)))
+    demands = jd_demand.set_demand(
+        [{'unit': r['unit'], 'text': r['text'], 'heading': _heading(by_id[r['unit']])} for r in rows], cfg)
+    for row, demand, bar in zip(rows, demands, jd_bar.set_bar([r['text'] for r in rows], cfg)):
+        row['demand'], row['bar'] = demand, bar
+    return rows
+
+
 def cmd_requirements(args, cfg):
-    """Write the extractor's rows to jd_needs.md, replacing any earlier file."""
+    """Write the splitter's parts to jd_needs.md, replacing any earlier file."""
     research = _research_path(args.folder, cfg)
-    rows = requirement_kinds.parse_extractor_table(_util.read(args.requirements_file))
-    if not rows:
-        raise ValueError('the extractor output holds no requirement rows')
     jd = _jd_text(args.folder, cfg)
-    for row in rows:
-        row['source'] = requirement_kinds.jd_ref(jd, row['text'], row['source'])
+    parts = requirement_kinds.parse_parts_table(_util.read(args.requirements_file))
+    rows = build_rows(parts, jd_sentences.units(jd, cfg), cfg)
     path = requirement_kinds.needs_path(args.folder, cfg)
     _util.write(path, requirement_kinds.render_requirements(_title(research), rows))
+    print(path)
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: kinds
+# The jd-kind-labeler returns '## Row Kinds' with '| Part ID | Kind |' rows.
+# Whether each kind is known and placed right is role_extract_qc.py X3's check;
+# here every row must get exactly one Kind cell, so none is silently left out.
+# ---------------------------------------------------------------------------
+
+def _row_kinds(block):
+    """Return {Part ID: Kind cell} from a '## Row Kinds' table."""
+    kinds = {}
+    for line in block.split('\n'):
+        cells = [c.strip() for c in line.strip().strip('|').split('|')]
+        if line.strip().startswith('|') and len(cells) >= 2 and cells[0].isdigit():
+            kinds[int(cells[0])] = ' | '.join(cells[1:])
+    return kinds
+
+
+def cmd_kinds(args, cfg):
+    """Write the labeler's kinds into jd_needs.md's rows.
+
+    Labeling again replaces any earlier ranking: the file is rewritten as its
+    rows alone, since a ranking built on old kinds must be redone.
+    """
+    path = requirement_kinds.needs_path(args.folder, cfg)
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f'{path} not found (extract the requirements first)')
+    text = _util.read(args.kinds_file)
+    if not re.search(r'(?m)^## Row Kinds[ \t]*$', text):
+        raise ValueError('kinds file has no "## Row Kinds" heading')
+    kind_by_row = _row_kinds(text)
+    current = requirement_kinds.read_needs(_util.read(path))
+    rows = sorted(requirement_kinds.all_rows(current), key=lambda r: r['num'])
+    nums = {r['num'] for r in rows}
+    unknown = sorted(set(kind_by_row) - nums)
+    if unknown:
+        raise ValueError(f"Part IDs not in {path}: {', '.join(map(str, unknown))}")
+    missing = [r['num'] for r in rows if not kind_by_row.get(r['num'])]
+    if missing:
+        raise ValueError(f"no Kind for Part IDs: {', '.join(map(str, missing))}; rerun the labeler")
+    for r in rows:
+        r['kind'] = kind_by_row[r['num']]
+    _util.write(path, requirement_kinds.render_requirements(current['title'], rows))
     print(path)
 
 
@@ -92,15 +183,6 @@ def cmd_requirements(args, cfg):
 # malformed ranking still lands where QC can name what is wrong with it. A row
 # the ranker placed nowhere stays under '## Requirements' for X3 to report.
 # ---------------------------------------------------------------------------
-
-def _row_kinds(block):
-    """Return {row number: Kind cell} from the ranker's '## Row Kinds' table."""
-    kinds = {}
-    for line in block.split('\n'):
-        cells = [c.strip() for c in line.strip().strip('|').split('|')]
-        if line.strip().startswith('|') and len(cells) >= 2 and cells[0].isdigit():
-            kinds[int(cells[0])] = ' | '.join(cells[1:])
-    return kinds
 
 
 # The ranking is not left to the ranker's arithmetic or ordering. It judges
@@ -112,20 +194,30 @@ def _row_kinds(block):
 #                 split from one clause count it once
 # and sorts by role-statement, repetition, space, the ranker's order last.
 
-def _space(rows, jd_text):
-    """Return the word count of the distinct JD clauses holding `rows`."""
-    clauses = {_clause_holding(jd_text, requirement_kinds.row_quote(r)) for r in rows} - {None}
+def _space(rows, jd_text, units):
+    """Return the word count of the distinct JD clauses holding `rows`.
+
+    A row with a Unit counts its unit's text (from jd_sentences.units), so
+    parts split from one unit count it once. A row from a file written before
+    2026-11-18 has no Unit and is found by its quote.
+    """
+    clauses = set()
+    for r in rows:
+        if r.get('unit') and r['unit'] in units:
+            clauses.add(requirement_kinds.normalize(units[r['unit']]['text']))
+        else:
+            clauses.add(_clause_holding(jd_text, requirement_kinds.row_quote(r)))
     # Word tokens only, so a bullet's leading '-' or a stray '&' is not a word.
-    return sum(len(re.findall(r"[\w']+", c)) for c in clauses)
+    return sum(len(re.findall(r"[\w']+", c)) for c in clauses - {None})
 
 
-def _rank(needs, jd_text):
+def _rank(needs, jd_text, units):
     """Return needs re-signalled and sorted, ids renumbered N-01.. in rank order."""
     keyed = []
     for pos, need in enumerate(needs):
         statement = 'role-statement' in {t.strip() for t in need['signals'].split(',')}
         sections = {requirement_kinds.jd_heading(r['source']) for r in need['rows']} - {''}
-        space = _space(need['rows'], jd_text)
+        space = _space(need['rows'], jd_text, units)
         signals = (['role-statement'] if statement else []) \
             + [f'repetition {len(sections)}', f'space {space}']
         keyed.append(((not statement, -len(sections), -space, pos),
@@ -137,13 +229,12 @@ def _rank(needs, jd_text):
 def cmd_needs(args, cfg):
     """Rewrite jd_needs.md from the ranker's output and the file's own rows.
 
-    The ranker returns '## Row Kinds' (a row-number/kind table), then
-    '## Ranked Needs' (the job lines and the needs table). Rows outside the
-    needs go to Qualifications or Not ranked by their kinds
-    (requirement_kinds.placement), so the ranker never places them. Each
-    requirement's text, Demand and Source are copied from jd_needs.md's existing
-    rows, never from the ranker, so the requirements are never reworded by
-    ranking. A row number the file does not have stops the write; a row whose
+    The ranker returns '## Ranked Needs' (the job lines and the needs table).
+    Each row's kind is already in jd_needs.md (the kinds step). Rows outside
+    the needs go to Qualifications or Not ranked by their kinds
+    (requirement_kinds.placement), so the ranker never places them. Every
+    row's cells are copied from jd_needs.md's existing rows, never from the
+    ranker, so the requirements are never reworded by ranking. A row number the file does not have stops the write; a row whose
     kinds put it in a need the ranker left it out of, or with no known kind, is
     kept under '## Requirements' for X3 to report.
     """
@@ -158,8 +249,7 @@ def cmd_needs(args, cfg):
     m = re.search(r'(?m)^## Ranked Needs[ \t]*$', text)
     if not m:
         raise ValueError('needs file has no "## Ranked Needs" heading')
-    kinds_part, block = text[:m.start()], text[m.start():]
-    kind_by_row = _row_kinds(kinds_part)
+    block = text[m.start():]
     placed = set()
 
     def rows(nums):
@@ -167,7 +257,7 @@ def cmd_needs(args, cfg):
         if unknown:
             raise ValueError(f"row(s) {', '.join(map(str, unknown))} are not in {path}")
         placed.update(nums)
-        return [{**by_num[n], 'kind': kind_by_row.get(n, '')} for n in nums]
+        return [dict(by_num[n]) for n in nums]
 
     # The job lines, with the role statement's and outcomes' nested items kept in place.
     job = []
@@ -185,19 +275,18 @@ def cmd_needs(args, cfg):
         quote = requirement_kinds.jd_ref(jd, '', ' | '.join(cells[4:]))
         needs.append({'id': cells[0], 'label': cells[1],
                       'signals': cells[3], 'quote': quote, 'rows': rows(nums)})
-    needs = _rank(needs, jd)
+    needs = _rank(needs, jd, {u['id']: u for u in jd_sentences.units(jd, cfg)})
     # Place every row the needs did not take by its kinds.
     kinds = requirement_kinds.load_kinds(args.repo_root, cfg)
     by_place = {requirement_kinds.QUALIFICATIONS: [], requirement_kinds.NOT_RANKED: []}
     for num in sorted(set(by_num) - placed):
-        names = requirement_kinds.parse_kind_cell(kind_by_row.get(num, ''))
+        names = requirement_kinds.parse_kind_cell(by_num[num].get('kind') or '')
         place = requirement_kinds.placement(names, kinds)
         if names and all(n in kinds for n in names) and place in by_place:
             by_place[place] += rows([num])
     qualifications = by_place[requirement_kinds.QUALIFICATIONS]
     not_ranked = by_place[requirement_kinds.NOT_RANKED]
-    unplaced = [{**row, 'kind': kind_by_row.get(num, '')}
-                for num, row in sorted(by_num.items()) if num not in placed]
+    unplaced = [dict(row) for num, row in sorted(by_num.items()) if num not in placed]
     out = requirement_kinds.render_needs(current['title'], job, needs, qualifications,
                                          not_ranked, unplaced)
     _util.write(path, out)
@@ -214,11 +303,17 @@ def main():
     parser = argparse.ArgumentParser(description='role-extract artifact writer')
     sub = parser.add_subparsers(dest='command', required=True)
 
-    p_req = sub.add_parser('requirements', help="write the extractor's rows to jd_needs.md")
+    p_req = sub.add_parser('requirements', help="write the jd-splitter's parts to jd_needs.md")
     p_req.add_argument('--folder', required=True, help='the application folder')
     p_req.add_argument('--requirements-file', required=True,
-                       help='path to a file holding the critical-requirements-extractor output table')
+                       help="path to the jd-splitter's output (scratch/requirements.md)")
     p_req.set_defaults(func=cmd_requirements)
+
+    p_kinds = sub.add_parser('kinds', help="write the jd-kind-labeler's kinds into jd_needs.md")
+    p_kinds.add_argument('--folder', required=True, help='the application folder')
+    p_kinds.add_argument('--kinds-file', required=True,
+                         help="path to the jd-kind-labeler's output (scratch/kinds.md)")
+    p_kinds.set_defaults(func=cmd_kinds)
 
     p_needs = sub.add_parser('needs', help="rewrite jd_needs.md with the ranker's output")
     p_needs.add_argument('--folder', required=True, help='the application folder')

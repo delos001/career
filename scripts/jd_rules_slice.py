@@ -43,6 +43,8 @@ import _util
 SHARED_KEY = 'ALL'      # sections every step reads
 STEPS = {
     'SPLIT': 'splits each unit of jd_sentences.md into parts (jd-splitter, role-extract Phase 1)',
+    'KINDS': 'labels each jd_needs.md row with a kind (jd-kind-labeler, role-extract Phase 3; also read '
+             'by jd-needs-ranker, qc-role-extract and requirement_kinds.load_kinds)',
 }
 
 

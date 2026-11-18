@@ -16,14 +16,14 @@ all.
 
 Checks:
   X1  jd_needs.md holds at least one requirement, numbered 1..N with no gaps
-      or repeats, each with text, a Source, and a Demand of required or
-      preferred; a row whose text carries an optional word is preferred.
-  X2  Each requirement's quote is found in jd.md (the Source's one quote, or
-      the row text when the writer dropped a quote equal to it); the row's
-      words appear in that JD line in the same order (cut, never added or
-      rearranged); and every modifier (config requirement_qualifiers) and year count (config
-      requirement_year_count) in the JD clause holding that quote survives on
-      at least one row quoting that clause.
+      or repeats, each with a Unit ID, a Line, text, and a Demand of required
+      or preferred, and a Bar of exposure, working or blank; a row whose text
+      carries an optional word is preferred.
+  X2  Each row's Unit is a unit of jd.md (jd_sentences.units); the row's
+      words appear in that unit in the same order (cut, never added or
+      rearranged); no row sits wholly inside another from the same unit; and
+      every modifier (config requirement_qualifiers) and year count (config
+      requirement_year_count) in a unit survives on at least one row from it.
   X3  jd_needs.md: the job description is present and cites jd.md lines as
       L<n>; each Role statement key item ends with its line, and a need
       with the role-statement signal quotes from one of those lines; the
@@ -51,6 +51,8 @@ import re
 import sys
 
 import _config
+import jd_bar
+import jd_sentences
 import requirement_kinds
 from role_research_qc import _read
 
@@ -113,29 +115,6 @@ def _clause_holding(jd_text, quote):
     return None
 
 
-def _word_out_of_order(jd_text, quote, text):
-    """Return the first word of `text` that is not in the JD line holding
-    `quote` in the same order, or None when every word is.
-
-    The extractor may cut words to isolate a requirement but may not add,
-    replace or rearrange any, so the row's words must be an in-order
-    subsequence of the line's words. Punctuation is ignored: a row drops the
-    full stop that ends its JD sentence.
-    """
-    target = _normalize(quote)
-    line = next((_normalize(raw) for raw in jd_text.split('\n') if target and target in _normalize(raw)), None)
-    if line is None:
-        return None     # the quote check reports a quote that is not in the JD
-    line_words = _WORD_RE.findall(line)
-    pos = 0
-    for word in _WORD_RE.findall(_normalize(text)):
-        try:
-            pos = line_words.index(word, pos) + 1
-        except ValueError:
-            return word
-    return None
-
-
 # ---------------------------------------------------------------------------
 # Checks
 # ---------------------------------------------------------------------------
@@ -161,73 +140,85 @@ def check_requirements_present(needs_text, optional_words, findings):
         problems.append(f"row numbers are not 1..{len(nums)} with no gaps or repeats: {nums}")
     for row in rows:
         cr = f"CR-{row['num']:03d}"
+        if not requirement_kinds.UNIT_ID_RE.match(row.get('unit') or ''):
+            problems.append(f'{cr}: no Unit ID (re-extract: role-extract writes each row with its jd_sentences unit)')
         if not row['text']:
             problems.append(f'{cr}: no text')
         if not row['source']:
-            problems.append(f'{cr}: no Source')
+            problems.append(f'{cr}: no Line')
         if row['demand'] not in requirement_kinds.ALLOWED_DEMANDS:
             problems.append(f"{cr}: Demand {row['demand']!r} is not one of "
                             f"{', '.join(sorted(requirement_kinds.ALLOWED_DEMANDS))}")
+        if row.get('unit') and (row.get('bar') or '') not in jd_bar.ALLOWED_BARS:
+            problems.append(f"{cr}: Bar {row['bar']!r} is not exposure, working or blank")
         word = requirement_kinds.optional_word(row['text'] or '', optional_words)
         if word and row['demand'] == 'required':
             problems.append(f"{cr}: says '{word}', so its Demand is preferred, not required")
     findings.append(('X1', not problems, '; '.join(problems)
-                     or f'{len(rows)} requirements, each with text, Demand and Source'))
+                     or f'{len(rows)} requirements, each with Unit ID, Line, text and Demand'))
 
 
-def check_requirement_text(needs_text, jd_text, qualifiers, year_count, findings):
-    """X2: requirement text keeps the modifiers that set the JD's bar (GitHub #83).
+def _word_outside_unit(unit_text, text):
+    """Return the first word of `text` not in `unit_text` in the same order,
+    or None when every word is. Punctuation is ignored."""
+    unit_words = _WORD_RE.findall(_normalize(unit_text))
+    pos = 0
+    for word in _WORD_RE.findall(_normalize(text)):
+        try:
+            pos = unit_words.index(word, pos) + 1
+        except ValueError:
+            return word
+    return None
+
+
+def check_requirement_text(needs_text, jd_text, cfg, findings):
+    """X2: each row's words come from its own unit, and the bar survives (GitHub #83).
+
+    Each row names its jd_sentences unit, found here by running
+    jd_sentences.units() on jd.md. The row's words must appear in that unit
+    in the same order: cutting words passes, adding or rearranging them fails
+    (six extractor runs on APP-028 and APP-029 cut non-adjacent words, 'Strong
+    facilitation skills', which is allowed). Until 2026-11-18 the extractor
+    gave each row a quote and the check found its clause from the quote; a
+    split part is not one run of JD words, so the unit replaced the quote.
 
     The extractor once dropped 'familiarity with' from a must-have, and the
-    stricter text reached the gap walk. Modifiers are read from the whole JD
-    clause rather than the quote alone: the extractor chooses the quote, so a
-    narrow one would otherwise step around the check.
-
-    The row's words must also appear in the quote's JD line in the same order:
-    cutting words passes, adding or rearranging them fails. Found 2026-11-17:
-    the docstring then said a reworded row passes, and six extractor runs on
-    APP-028 and APP-029 showed rows built by cutting non-adjacent words
-    ('Strong facilitation skills'), which is allowed, with nothing checking
-    that no word was added.
-
-    Modifiers and year counts are held across the rows sharing a clause rather
-    than on each row: in '10 years in the industry, with at least 5 years in
-    people management' each count belongs to one of two requirements, and in
-    'understanding of data ... to be able to be effectively build AI solutions'
-    (Otsuka APP-026) the modifier belongs only to the first half. Whether a
-    modifier carries onto each part of a split clause is a reading judgment,
-    left to qc-role-extract; this check needs it to survive on some row.
+    stricter text reached the gap walk. Modifiers (config
+    requirement_qualifiers) and year counts (config requirement_year_count)
+    are held across the rows sharing a unit rather than on each row: in '10
+    years in the industry, with at least 5 years in people management' each
+    count belongs to one of two parts, and in 'understanding of data ... to be
+    able to be effectively build AI solutions' (Otsuka APP-026) the modifier
+    belongs only to the first half. Whether a modifier carries onto each part
+    is a reading judgment, left to qc-role-extract; this check needs it to
+    survive on some row.
     """
     if needs_text is None:
         findings.append(('X2', False, 'jd_needs.md not found (requirements not extracted)'))
         return
     if jd_text is None:
-        findings.append(('X2', False, 'jd.md not found, so requirement quotes cannot be checked'))
+        findings.append(('X2', False, 'jd.md not found, so requirement wording cannot be checked'))
         return
+    units = {u['id']: u for u in jd_sentences.units(jd_text, cfg)}
     rows = requirement_kinds.all_rows(requirement_kinds.read_needs(needs_text))
+    qualifiers, year_count = cfg['requirement_qualifiers'], cfg['requirement_year_count']
     problems = []
     texts_by_clause = {}
     for row in rows:
-        num, text = row['num'], row['text']
-        # No quote means the writer dropped one equal to the text
-        # (requirement_kinds.jd_ref), so the text is the quote.
-        quotes = _QUOTE_RE.findall(row['source'] or '') or [text]
-        if len(quotes) != 1:
-            problems.append(f'CR-{num:03d}: Source needs at most one quote, found {len(quotes)}')
+        num, text, unit = row['num'], row['text'], row.get('unit')
+        if unit not in units:
+            problems.append(f'CR-{num:03d}: Unit ID {unit!r} is not a unit of jd.md')
             continue
-        clause = _clause_holding(jd_text, quotes[0])
-        if clause is None:
-            problems.append(f'CR-{num:03d}: quote not found in the JD: {quotes[0][:60]}')
-            continue
-        word = _word_out_of_order(jd_text, quotes[0], text)
+        clause = _normalize(units[unit]['text'])
+        word = _word_outside_unit(clause, text)
         if word:
             problems.append(f"CR-{num:03d}: '{word}' is added or out of the JD's order; "
                             f"cut words only, never add or rearrange them")
         texts_by_clause.setdefault(clause, []).append((num, _normalize(text)))
-    # Two rows from one clause where one row's text sits whole inside the
+    # Two rows from one unit where one row's text sits whole inside the
     # other's are the same requirement twice (Medtronic APP-024 rows 40 and 41,
     # with and without 'including AWS'; Acadia APP-025 rows 37 and 38, the second
-    # repeating the first to add a preferred setting). Rows from different clauses may
+    # repeating the first to add a preferred setting). Rows from different units may
     # overlap: 'Bachelor's degree' required and 'Bachelor's degree in X' preferred.
     for entries in texts_by_clause.values():
         for num, norm in entries:
@@ -235,8 +226,8 @@ def check_requirement_text(needs_text, jd_text, qualifiers, year_count, findings
                 if num != other and norm in other_norm:
                     problems.append(f'CR-{num:03d} is wholly inside CR-{other:03d}, from the same JD '
                                     f'sentence; give the extra words their own row, or write one row')
-    # Each modifier or year count in a clause must survive on at least one row
-    # quoting that clause. With one row, that row must keep it.
+    # Each modifier or year count in a unit must survive on at least one row
+    # from that unit. With one row, that row must keep it.
     patterns = list(qualifiers) + [year_count]
     for clause, entries in texts_by_clause.items():
         for pattern in patterns:
@@ -248,11 +239,11 @@ def check_requirement_text(needs_text, jd_text, qualifiers, year_count, findings
     findings.append(('X2', not problems, '; '.join(problems) or f'{len(rows)} requirement rows keep the JD\'s words, order and modifiers'))
 
 
-def check_ranked_needs(needs_text, jd_text, kinds, findings):
+def check_ranked_needs(needs_text, jd_text, kinds, findings, units=None):
     """X3: jd_needs.md places every requirement once, where its kind says.
 
     jd-needs-ranker labels each requirement with a kind from
-    rules/jd-requirement-kinds.md, describes the job, and groups the rows into
+    the KINDS section of rules/jd-processing.md, describes the job, and groups the rows into
     ranked needs; role_extract_assemble.py rewrites jd_needs.md with each
     requirement's text, Demand and Source carried over from the extracted rows.
     This check holds the mechanical half: the job description is present; ids
@@ -326,12 +317,22 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings):
             problems.append(f'{nid}: no requirements')
         for row in need['rows']:
             seen.setdefault(row['num'], []).append((nid, requirement_kinds.NEED, row))
-    # Each row's JD line opens with the line of its quote (the text when the
-    # cell carries none); a hand edit at the user's review can break it.
+    # Each row's JD line opens with its unit's line; a hand edit at the user's
+    # review can break it. A row from a file written before 2026-11-18 has no
+    # Unit, and its line is found from its quote (the text when it has none).
     if jd_text is not None:
         for row in requirement_kinds.all_rows(parsed):
+            label = f"CR-{row['num']:03d}"
+            if row.get('unit') and units is not None:
+                expected = units[row['unit']]['line'] if row['unit'] in units else None
+                m = re.match(r'L(\d+)\b', row['source'] or '')
+                if expected is None:
+                    problems.append(f"{label}: Unit ID {row['unit']} is not a unit of jd.md")
+                elif m is None or int(m.group(1)) != expected:
+                    problems.append(f'{label}: Line should be L{expected}')
+                continue
             quotes = _QUOTE_RE.findall(row['source'] or '') or [row['text']]
-            problems.append(_line_ref_problem(f"CR-{row['num']:03d}", row['source'], jd_text, quotes[0]))
+            problems.append(_line_ref_problem(label, row['source'], jd_text, quotes[0]))
     problems = [p for p in problems if p]
     if req and not parsed['needs']:
         problems.append('no needs')
@@ -374,8 +375,7 @@ def _needs_and_jd(folder, cfg):
 def _requirement_checks(needs_text, jd_text, cfg, findings):
     """X1 and X2: the extraction checks."""
     check_requirements_present(needs_text, cfg['requirement_optional_words'], findings)
-    check_requirement_text(needs_text, jd_text, cfg['requirement_qualifiers'],
-                           cfg['requirement_year_count'], findings)
+    check_requirement_text(needs_text, jd_text, cfg, findings)
 
 
 def cmd_requirements(args, repo_root, cfg):
@@ -390,7 +390,8 @@ def cmd_check(args, repo_root, cfg):
     findings = []
     needs_text, jd_text = _needs_and_jd(args.folder, cfg)
     _requirement_checks(needs_text, jd_text, cfg, findings)
-    check_ranked_needs(needs_text, jd_text, requirement_kinds.load_kinds(repo_root, cfg), findings)
+    units = {u['id']: u for u in jd_sentences.units(jd_text, cfg)} if jd_text is not None else None
+    check_ranked_needs(needs_text, jd_text, requirement_kinds.load_kinds(repo_root, cfg), findings, units)
     return _report(findings)
 
 

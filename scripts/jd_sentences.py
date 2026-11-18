@@ -149,9 +149,9 @@ def render(unit_list, jd_path):
     out = ['# JD sentences', '',
            f'From `{jd_path}`: {sentences} sentences, {len(unit_list)} units.', '',
            'How to read this file:', '',
-           '- **Unit:** one sentence of the job description, or one part of a sentence that has '
-           'semicolons; each part between semicolons is its own unit (S-046a, S-046b). Every unit '
-           'has its own row and ID; drop the letter to get the sentence. Units are listed in '
+           '- **Unit ID:** a unit is one sentence of the job description, or one part of a sentence '
+           'that has semicolons; each part between semicolons is its own unit (S-046a, S-046b). Every '
+           'unit has its own row and Unit ID; drop the letter to get the sentence. Units are listed in '
            'job-description order, under their section heading.',
            '- **Line:** the `jd.md` line the unit came from.',
            '- **From:** `bullet` when that line is a list item, else `paragraph`.',
@@ -164,7 +164,7 @@ def render(unit_list, jd_path):
             current = (u['section'], u['subsection'])
             heading = u['section'] + (f" > {u['subsection']}" if u['subsection'] else '')
             out += ['', f'## {heading or "(no heading)"}', '',
-                    '| ID | Line | From | Hints | Sentence |', '|---|---|---|---|---|']
+                    '| Unit ID | Line | From | Hints | Sentence |', '|---|---|---|---|---|']
         out.append(f"| {u['id']} | L{u['line']} | {u['from']} | {'; '.join(u['hints'])} | "
                    f"{u['text'].replace('|', '/')} |")
     return '\n'.join(out) + '\n'
