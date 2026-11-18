@@ -11,8 +11,9 @@ scorers, gap-detector, and qc-profile-update have their own scripts for the same
 pattern.
 
 An agent whose output a script consumes is given an 'Output file:' to write
-it to (the three research agents, the requirements extractor and the needs
-ranker), so the orchestrator never copies it.
+it to (the three research agents, the jd-splitter and the needs ranker), so the
+orchestrator never copies it. An agent with 'jd_rules' gets its sections of
+rules/jd-processing.md as a 'Rules file:', sliced by jd_rules_slice.py.
 
 Content the orchestrator itself produces during a run (stakeholder contributions,
 QC findings, dispositions) goes in a file passed with --input-file. CV Notes, and
@@ -34,6 +35,7 @@ import sys
 
 import _config
 import _util
+import jd_rules_slice
 import retrieval_payload
 import role_classify_qc
 import role_research_qc
@@ -52,8 +54,7 @@ AGENTS = {
     'company-research': {'facts': ['company', 'role'], 'files': ['jd'], 'output': 'research_company.md'},
     'title-research': {'facts': ['company', 'role'], 'files': ['jd'], 'output': 'research_role.md'},
     'industry-research': {'facts': ['company', 'role'], 'files': ['jd'], 'output': 'research_industry.md'},
-    'critical-requirements-extractor': {'facts': ['company', 'role'], 'files': ['jd_sentences'],
-                                        'output': 'requirements.md'},
+    'jd-splitter': {'files': ['jd_sentences'], 'jd_rules': ['SPLIT'], 'output': 'requirements.md'},
     'jd-needs-ranker': {'files': ['jd', 'company_research', 'jd_needs'], 'output': 'needs.md'},
     'axis-classifier': {'files': ['jd', 'comms?', 'research', 'jd_needs']},
     'qc-role-research': {'files': ['session_log', 'research', 'jd']},
@@ -244,6 +245,13 @@ def build_prompt(agent, src, mode=None, input_file=None, continued=False):
             lines.append(f'{_label(key)}: {path}')
         elif not optional:
             raise FileNotFoundError(f'required file missing: {path}')
+    if spec.get('jd_rules'):
+        # The agent gets only its sections of rules/jd-processing.md, written
+        # to scratch by the slicer, so it never reads other steps' rules.
+        keys = spec['jd_rules']
+        rules_out = os.path.join(src.folder, src.cfg['filenames']['scratch_subdir'],
+                                 f"rules_{'_'.join(k.lower() for k in keys)}.md")
+        lines.append(f'Rules file: {jd_rules_slice.write_slice(src.root, src.cfg, keys, rules_out)}')
     if input_file:
         lines.append(f'Input file: {input_file}')
     if spec.get('output'):

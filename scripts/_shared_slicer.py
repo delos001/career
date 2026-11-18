@@ -2,7 +2,8 @@
 """
 _shared_slicer.py - split a keyed rules file into sections and slice it by key
 
-Shared parsing for the rules slicers (profile_rules_slice.py, cv_rules_slice.py).
+Shared parsing for the rules slicers (profile_rules_slice.py, cv_rules_slice.py,
+jd_rules_slice.py).
 A keyed rules file is its opening text plus '## ' sections, each headed
 '## KEY: name' with KEY in upper-case letters. This module knows nothing about
 what a key means; each slicer passes its own list of valid keys and its own

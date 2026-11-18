@@ -12,7 +12,7 @@ The one exception in the system prompt — "reserve Bash for POSIX scripts" — 
 
 Do not rely on the working directory. Always use absolute paths for both the script being run and any file path arguments passed to it. The scripts resolve the repo root from `__file__` internally, so they can be called from any directory — but argument paths must be absolute to be safe.
 
-Example: `python C:\Users\delos\code\career\scripts\gap_assemble.py assemble --folder C:\Users\delos\code\career\personal\applications\... --requirements-file C:\Users\delos\code\career\...`
+Example: `C:\Users\delos\miniconda3\envs\agents\python.exe C:\Users\delos\code\career\scripts\gap_assemble.py assemble --folder C:\Users\delos\code\career\personal\applications\... --requirements-file C:\Users\delos\code\career\...`
 
 ## Talking to the User
 
@@ -49,6 +49,8 @@ A check is only finished once it has been seen to fail: reintroduce the bug, wat
 ## Tool and Environment Quirks
 
 These have each cost a debugging cycle.
+
+- **Run scripts with `C:\Users\delos\miniconda3\envs\agents\python.exe`.** Bare `python` is the miniconda base environment, which has no `yaml`, so every script fails at `import _config`. Where a skill or this file writes `python`, use this path.
 
 - **PowerShell has no heredoc.** `python - <<'PY'` is a parse error. Write the script to a file and run it.
 - **The Edit tool fails on multi-line matches containing `→` (U+2192).** Use single-line edits, or splice around the glyph.

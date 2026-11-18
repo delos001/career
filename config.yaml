@@ -30,6 +30,7 @@ filenames:
   introductions: introductions.yaml            # next to scripts/display/introduce.py
   axis_registry: registry.md                   # in each rules/<axis>/ folder
   requirement_kinds_file: jd-requirement-kinds.md  # in the rules folder; kinds of JD requirement rows, parsed by requirement_kinds.py
+  jd_rules_file: jd-processing.md              # in the rules folder; rules for each step that works on the JD, read by section through jd_rules_slice.py
   jd_needs_file: jd_needs.md                   # written into each application folder by role-extract; each requirement's kind and the ranked needs
   jd_sentences_file: jd_sentences.md           # written into <app-folder>/scratch/ by scripts/jd_sentences.py; the JD as numbered units with hints
   build_issues_log: build_issues.md            # in the design/ folder; appended to on provisional builds
@@ -113,18 +114,30 @@ requirement_qualifiers:
   - preferably
   - ideally
 
-# Words that mark a requirement optional (scripts/role_extract_qc.py X1). One
-# case-insensitive regex each; a row whose own text carries one must have
-# Demand 'preferred'.
+# Words that mark a requirement optional (scripts/jd_demand.py, which sets
+# Demand; scripts/role_extract_qc.py X1). One case-insensitive regex each; a
+# part whose own text carries one gets Demand 'preferred'. 'bonus' only as
+# "is/be a bonus": bare 'bonus' also means pay ("eligible for a discretionary
+# bonus", APP-029).
 requirement_optional_words:
   - a plus
-  - bonus
+  - (?:is|be) an? (?:\w+ )?bonus
   - nice to have
   - preferred
   - preferably
   - ideally
   - (?:highly )?desirable
   - advantageous
+
+# Words in a JD heading that make every part under it 'preferred'
+# (scripts/jd_demand.py). One case-insensitive regex each, matched against the
+# heading and subheading. Taken from the JDs on file: "Preferred
+# Qualifications", "Preferred", "Nice to Have", "Desirable Requirements".
+# 'bonus' is left out: a "Compensation & Bonus" heading is not optional.
+requirement_preferred_headings:
+  - prefer(?:red|ably)?
+  - nice to have
+  - desirable
 
 # A year count sets a bar too, but a clause can hold one count per requirement
 # ('10 years..., with at least 5 years...'), so it must survive on at least one

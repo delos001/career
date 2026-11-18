@@ -1528,6 +1528,19 @@ Extracting and ranking the requirements moved out of role-classify into a new sk
 
 Refs: `role-classify-split-2026-11`, `requirements-in-jd-needs-2026-11`, `role-intake-critical-requirements-extraction-2026-05`.
 
+#### jd-splitter-one-job-2026-11
+The extraction agent now does one job, splitting each unit of `jd_sentences.md` into parts, and is renamed `jd-splitter` (user, 2026-11-18). The principle: one objective per agent or skill, so a change to one kind of rule cannot disturb another.
+
+- **Demand moved to a script** (`scripts/jd_demand.py`). Tested on nine extractor runs (APP-024, APP-028, APP-029): four rules (optional word in the part, preferred heading, a "with" part inherits from a preferred part of the same unit, else required) matched the agent on 530 of 533 parts; the three misses were bare "bonus" in a pay sentence, fixed in config. Assemble fills each part's text and heading, then sets Demand.
+- **Word lists in `config.yaml`, prose rules in `rules/`** (user). Demand is word lists only (`requirement_optional_words`, `requirement_preferred_headings`). Switch condition: a Demand miss that no added or tightened pattern can fix, which would mean Demand needs judgment again.
+- **Prose rules for JD steps live in `rules/jd-processing.md`**, one `## <KEY>: <name>` section per step, read through `scripts/jd_rules_slice.py` (on `_shared_slicer.py`, like the CV and profile slicers). `dispatch_prompt.py` writes an agent's slice to scratch and passes it as `Rules file:`. The split rules moved there word for word as `SPLIT`. `rules/jd-requirement-kinds.md` is not merged yet.
+- **Company and role no longer passed to the splitter.** They served the retired `contextual` source category (inferring requirements from company context); the splitter uses only the units' words.
+- **The splitter stays a subagent.** Reason: a blank-start read gives the run-to-run stability measured (1 of 105 units split differently); in the main session, the conversation could anchor splits.
+- **A tail part stays with its head** (user, 2026-11-18). Rules 6 and 7 cut an "including" tail or a "while" clause into its own part, which cannot be read alone (APP-029 S-050: "including workflow simplification, governance and role clarification..."). The rules stay: copying the head onto the tail would duplicate the head part, and merging them would stop either being checked alone. Constraint for assemble and the ranker: a part opening with "including" or "while" stays attached to the part before it from the same unit; assemble marks it mechanically, and the ranker never puts it in a different need.
+- **Bar strength** ("familiarity with" against "expert in") is not judged by the splitter. It is to be recorded once in `jd_needs.md` beside the other per-row judgments; its home is decided with the ranker review.
+
+Refs: `role-extract-split-2026-11`, `requirement-kinds-2026-11`.
+
 #### requirement-kinds-2026-11
 The ranker labels every requirement row by kind before grouping, so grouping follows from what each row is instead of shared words. Kinds, their wording lists and the tests that separate them live in `rules/jd-requirement-kinds.md`, built from 741 rows across 23 applications. The wording lists show typical wording and never limit a kind; the definitions decide.
 

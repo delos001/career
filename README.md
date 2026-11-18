@@ -260,7 +260,7 @@ career/
 │   │   ├── title-research.md
 │   │   ├── industry-research.md
 │   │   ├── prep-research.md             # research family (interview prep)
-│   │   ├── critical-requirements-extractor.md # extracts the JD's requirements (role-extract)
+│   │   ├── jd-splitter.md               # splits the JD's units into parts (role-extract)
 │   │   ├── jd-needs-ranker.md           # ranks the JD's needs (role-extract)
 │   │   ├── axis-classifier.md           # five-axis classification (role-classify)
 │   │   ├── retrieval-scorer.md
@@ -275,6 +275,7 @@ career/
 │   └── settings.local.json
 ├── rules/
 │   ├── global-rules.md                  # cross-skill rules; deliberately minimal
+│   ├── jd-processing.md                 # rules per JD-processing step, read through jd_rules_slice.py
 │   ├── orientations/                    # AXIS 1: registry.md + one file per value
 │   │   ├── registry.md
 │   │   ├── transformation-strategy.md
@@ -330,6 +331,7 @@ career/
 │   ├── _shared_slicer.py                # splits a keyed rules file; fails on a missing or unknown key
 │   ├── profile_rules_slice.py           # ALL rules plus one entry type's section
 │   ├── cv_rules_slice.py                # ALL rules plus one CV drafting step's sections
+│   ├── jd_rules_slice.py                # ALL rules plus one JD-processing step's sections
 │   ├── app_id.py, company_slug.py       # ID and slug allocation
 │   ├── assemble.py, session_log.py      # artifact assembly from templates
 │   ├── profile_slice.py                 # addressed slice extraction (no whole-doc loads)

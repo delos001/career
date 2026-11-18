@@ -2570,6 +2570,62 @@ def test_jd_breaks_into_numbered_units_with_hints():
     assert code == 0 and os.path.isfile(os.path.join(folder, 'scratch', 'jd_sentences.md')), printed
 
 
+def test_jd_rules_slice_by_step():
+    """Built 2026-11-18: rules for each step that works on the JD live in
+    rules/jd-processing.md, one keyed section per step. A step gets only its
+    own sections; an unkeyed heading or an unknown key fails rather than
+    routing rules to the wrong step.
+    """
+    import jd_rules_slice
+    repo_root, cfg = _config.load()
+    text = jd_rules_slice.load(repo_root, cfg)
+    split = jd_rules_slice.slice_steps(text, ['SPLIT'])
+    assert split.startswith('# JD processing rules') and '## SPLIT: ' in split, split[:200]
+    planted = text + '\n## KINDS: Kinds of row\n\nA kind rule.\n'
+    for bad, why in ((planted, 'an unknown section key'), (text + '\n## Kinds\n', 'a heading with no key')):
+        try:
+            jd_rules_slice.slice_steps(bad, ['SPLIT'])
+        except ValueError:
+            continue
+        raise AssertionError(f'{why} was accepted')
+    try:
+        jd_rules_slice.slice_steps(text, ['RANK'])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError('an unknown step key was accepted')
+
+
+def test_demand_is_set_by_rule():
+    """Built 2026-11-18: Demand moved out of the extractor into jd_demand.py.
+    Rules matched the agent on 530 of 533 parts across nine runs; the misses
+    were bare 'bonus' read as optional in a pay sentence (APP-029 S-037).
+    """
+    import jd_demand
+    _, cfg = _config.load()
+    parts = [
+        # 0: pay sentence holding 'bonus' stays required
+        {'unit': 'S-001', 'heading': 'Compensation',
+         'text': 'The position may be eligible for a role specific discretionary bonus, relocation, '
+                 'and/or other compensation elements.'},
+        # 1: optional word in the part
+        {'unit': 'S-002', 'heading': 'Qualifications', 'text': 'SAS experience is a bonus.'},
+        # 2-3: preferred part, then its 'with' part inherits
+        {'unit': 'S-003', 'heading': 'Education', 'text': 'Advanced degree preferred'},
+        {'unit': 'S-003', 'heading': 'Education', 'text': 'with a minimum of five (5) years of relevant experience.'},
+        # 4: 'with' part after a preferred part of a different unit does not inherit
+        {'unit': 'S-004', 'heading': 'Education', 'text': 'with strong SQL skills.'},
+        # 5: under a preferred heading
+        {'unit': 'S-005', 'heading': 'Preferred Qualifications', 'text': 'Experience with Spotfire.'},
+        # 6: a bar word does not make a part optional
+        {'unit': 'S-006', 'heading': 'Required Qualifications', 'text': 'Familiarity with CDISC standards.'},
+    ]
+    got = jd_demand.set_demand(parts, cfg)
+    want = ['required', 'preferred', 'preferred', 'preferred', 'required', 'preferred', 'required']
+    for i, (g, w) in enumerate(zip(got, want)):
+        assert g == w, f'part {i} ({parts[i]["text"][:40]}...): got {g}, want {w}'
+
+
 def test_ingest_always_writes_the_identity_header():
     """Shipped 2026-11-17: ingest added a header line only for a title or company
     the JD text did not contain. A name found somewhere in the text does not
@@ -2995,12 +3051,23 @@ def test_dispatch_prompts_are_printed_not_composed():
         assert 'Fixture job description' not in text, 'JD text was pasted into the prompt'
     # 2026-11-17: the extractor reads the JD as numbered units, not the raw JD,
     # and its prompt stops the run when the units were never written.
-    code, out = run('dispatch_prompt.py', 'critical-requirements-extractor', '--folder', FIXTURE_APP)
-    assert code != 0 and 'jd_sentences.md' in out, f'the extractor ran without the sentence file: {out}'
+    code, out = run('dispatch_prompt.py', 'jd-splitter', '--folder', FIXTURE_APP)
+    assert code != 0 and 'jd_sentences.md' in out, f'the splitter ran without the sentence file: {out}'
     assert run('jd_sentences.py', '--folder', FIXTURE_APP)[0] == 0
-    text = prompt('critical-requirements-extractor')
+    text = prompt('jd-splitter')
     sentences_path = os.path.join(FIXTURE_APP, 'scratch', 'jd_sentences.md')
     assert f'JD sentences: {sentences_path}' in text and jd_path not in text, text
+    # 2026-11-18: splitting uses only the units' own words, so the extractor
+    # gets no company or role to infer requirements from.
+    assert 'Company:' not in text and 'Role:' not in text, f'the extractor was given company or role: {text}'
+    # 2026-11-18: the split rules moved to rules/jd-processing.md; the splitter
+    # gets only its SPLIT sections, as a file, never the whole rules file.
+    rules_path = os.path.join(FIXTURE_APP, 'scratch', 'rules_split.md')
+    assert f'Rules file: {rules_path}' in text, text
+    rules = _util.read(rules_path)
+    assert '## SPLIT: ' in rules and '"Or" lists stay whole' in rules, rules
+    assert all(h.startswith('## SPLIT: ') or h.startswith('## ALL: ')
+               for h in rules.splitlines() if h.startswith('## ')), f'other steps\' rules reached the splitter:\n{rules}'
     # 2026-11-16: each research agent writes its own block, so the model never
     # re-types the research into a file.
     for agent, name in (('company-research', 'research_company.md'), ('title-research', 'research_role.md'),
@@ -3048,7 +3115,7 @@ def test_dispatch_prompts_are_printed_not_composed():
     # The skills use it, and no listed step still hands an agent pasted content.
     skills = os.path.join(REPO_ROOT, '.claude', 'skills')
     for skill, agents in (('role-research', ['<agent>', 'qc-role-research']),
-                          ('role-extract', ['critical-requirements-extractor', 'jd-needs-ranker', 'qc-role-extract']),
+                          ('role-extract', ['jd-splitter', 'jd-needs-ranker', 'qc-role-extract']),
                           ('role-classify', ['axis-classifier', 'qc-role-classify']),
                           ('cv-targeted', ['<agent>', 'cv-architect']), ('gap-analysis', ['qc-gap-analysis'])):
         text = _util.read(os.path.join(skills, skill, 'SKILL.md'))

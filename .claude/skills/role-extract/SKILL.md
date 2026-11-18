@@ -27,7 +27,7 @@ Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-N
 ## Phase 1 - Extract the requirements
 
 - Run `python scripts/jd_sentences.py --folder <app_folder>`. It writes `<scratch>/jd_sentences.md`, the job description as numbered sentences with hints. On a failure, stop and tell the user what is wrong with the job description.
-- Run `python scripts/dispatch_prompt.py critical-requirements-extractor --folder <app_folder>` and dispatch `critical-requirements-extractor` with the prompt between `=== PROMPT ===` and `=== END ===` exactly as printed. The agent writes its table to `<scratch>/requirements.md`; never write or edit that file yourself.
+- Run `python scripts/dispatch_prompt.py jd-splitter --folder <app_folder>` and dispatch `jd-splitter` with the prompt between `=== PROMPT ===` and `=== END ===` exactly as printed. The agent writes its table to `<scratch>/requirements.md`; never write or edit that file yourself.
 - Run `python scripts/role_extract_assemble.py requirements --folder <app_folder> --requirements-file <scratch>/requirements.md`. Re-extracting replaces any earlier ranking.
 
 ## Phase 2 - Check the extraction against the job description
