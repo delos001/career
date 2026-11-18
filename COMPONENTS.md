@@ -136,7 +136,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Inputs**:
   - Rules: `rules/global-rules.md`; `rules/jd-requirement-kinds.md` (read by the ranker and the checks).
   - Agents: `critical-requirements-extractor`, `jd-needs-ranker`, `qc-role-extract`.
-  - Scripts: `scripts/display/introduce.py`, `scripts/dispatch_prompt.py`, `scripts/role_extract_assemble.py`, `scripts/role_extract_qc.py`.
+  - Scripts: `scripts/display/introduce.py`, `scripts/jd_sentences.py`, `scripts/dispatch_prompt.py`, `scripts/role_extract_assemble.py`, `scripts/role_extract_qc.py`.
   - Files: `jd.md`, `research.md` (its Company section, for the ranker).
   - User input: APP-NNN; confirmation of the ranking, section by section.
 - **Outputs**: `jd_needs.md`, the one home of the requirements (the job, each ranked need with its requirements' text, kind, Demand and Source, then Qualifications and Not ranked). Hands off to role-classify.
@@ -489,7 +489,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/role_extract_qc.py
 
-- **Purpose**: Deterministic QC for role-extract's writes to `jd_needs.md` (X1-X3): requirements numbered 1..N with text, an allowed Demand and a Source (X1); each requirement's quote found in `jd.md` and its text keeping the JD clause's modifiers (X2); every requirement's kind known and placed where its kind sets (a need, Qualifications, Not ranked), none left unplaced, the job description present, ids, values and quotes (X3). Holds `_clause_holding`, which `role_extract_assemble.py` imports.
+- **Purpose**: Deterministic QC for role-extract's writes to `jd_needs.md` (X1-X3): requirements numbered 1..N with text, an allowed Demand and a Source (X1); each requirement's quote found in `jd.md`, its words in the JD line's order (cut, never added or rearranged), and its text keeping the JD clause's modifiers (X2); every requirement's kind known and placed where its kind sets (a need, Qualifications, Not ranked), none left unplaced, the job description present, ids, values and quotes (X3). Holds `_clause_holding`, which `role_extract_assemble.py` imports.
 - **Status**: Designed
 - **Inputs**: Args (`requirements --folder <app_folder>` runs X1 and X2; `check --folder <app_folder>` runs all). Config via `scripts/_config.py`. Filesystem: jd.md, jd_needs.md; `rules/jd-requirement-kinds.md` for the kinds.
 - **Outputs**: Per-check `PASS`/`FAIL` lines and a `RESULT` line; exit 0 when all pass, 1 otherwise.
@@ -603,6 +603,8 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 **Built** (detailed entries below unless noted):
 - `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/display/introduce.py`, `scripts/assemble.py`
+- `scripts/ingest/jd_headings.py` (puts named JD section headings on their own lines, moving line breaks only; refuses a missing or repeated heading; applied by hand until role-intake runs it, GitHub #93; roster entry only)
+- `scripts/jd_sentences.py` (role-extract Phase 1: breaks `jd.md` into numbered units, one per sentence or semicolon part, under their headings, with mechanical hints; writes `<scratch>/jd_sentences.md`; roster entry only)
 - `scripts/role_extract_assemble.py` (role-extract skill: `requirements` and `needs` write the extractor's and ranker's output to `jd_needs.md`; roster entry only)
 - `scripts/role_classify_assemble.py` (role-classify skill: `finalize` writes the classifier's output; `approval` prints the approval block from the files; roster entry only)
 - `scripts/requirement_kinds.py` (imported module: reads the kinds from `rules/jd-requirement-kinds.md`, parses the extractor's table, renders and reads `jd_needs.md`, and gives retrieval and gap analysis the requirements table without its Not ranked rows; roster entry only)

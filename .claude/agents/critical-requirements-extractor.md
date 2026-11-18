@@ -1,6 +1,6 @@
 ---
 name: critical-requirements-extractor
-description: Extracts a structured list of critical requirements from a job description for the role-extract skill. Comprehensive scan across all JD sections (not just labeled "Requirements"). Writes each requirement with Text / Demand / Source to the output file it is given, for use by the role-extract skill.
+description: Extracts a structured list of critical requirements from a job description for the role-extract skill. Writes each requirement with Text / Demand / Source to the output file it is given, for use by the role-extract skill.
 tools: Read, Write
 ---
 
@@ -9,34 +9,55 @@ tools: Read, Write
 ## Operating rules
 
 - Do not fabricate. Every requirement must trace to specific JD language, shown by the quote in its Source field.
-- If `jd.md` is missing, empty, or looks cut off, write nothing and reply with what is wrong.
 - Write only the output file you are given.
 
 ## Inputs
 
-The dispatching skill gives you the company name, the role title, the path to `jd.md`, and an output file. Read the JD whole. The JD is the substantive input.
+The dispatching skill gives you the company name, the role title, the path to the JD sentences file, and an output file. Read the sentences file whole; it is the substantive input.
 
-## What to extract (scoped)
+## Terms
 
-A flat list of critical requirements. Each item is a concrete competency or qualification the hiring panel will use to evaluate candidates.
+- **Unit:** one row of the sentences file: a sentence of the job description, or the piece of a sentence between semicolons.
+- **Part:** one requirement or one fact inside a unit; something a reader would check on its own. Most units are one part.
+- **Bar words:** words that set how much the job description asks: "familiarity with", "exposure to", "understanding of", "ability to", "may", "might", "a plus", "preferred", "N years".
 
-Requirements can appear anywhere in the JD, including text with no heading. Extract all of them.
+## What to do
 
-Do not skip or ignore a line for being generic ("strong communication skills," "balances competing priorities," a company competencies list): extract it like any other. The ranker decides what is boilerplate and sets it aside.
+Go through the units in order. Do steps 1 and 2 for each unit, then step 3 once.
 
-## Three-field schema per requirement
+1. **Split the unit into parts,** following the *Rules* section below.
+   - If the unit is one part, write `whole` as its text.
+   - If it has more than one part, give each part its own words from the unit, in the same order; never swap or reorder words. Words that apply to every part go on each part: a label before a colon, a lead-in such as "Knowledge of" or "Experience with", a shared noun such as "certifications", or a scope at the end such as "within data, analytics, and reporting solutions". Never add any other word. Together the parts must use every word of the unit, except joining words such as "and".
+     Example: "Clinical Data Knowledge: Thorough understanding of clinical trial workflows, phases (Phase I–IV), data streams (EDC, eCOA/ePRO, lab data, biomarkers), and foundational clinical data structures (CDISC SDTM and ADaM)" is four parts, each starting "Clinical Data Knowledge: Thorough understanding of".
+   - Keep each bar word with the part it belongs to.
 
-Every requirement has exactly three fields:
+2. **Set each part's Demand,** exactly `required` or `preferred`.
+  - `preferred` when the unit marks the part optional with words such as "preferred", "a plus", "ideally", "highly desirable", "nice to have" or "advantageous", or it sits under a preferred or nice-to-have heading. The `optional` hint points to the first case; you confirm it.
+  - `required` for everything else, including parts with bar words such as "familiarity with" or "N years".
+  - A part joined by "with" takes the Demand of the part before it, unless it has its own. In "Advanced degree preferred, with a minimum of five (5) years of relevant experience", both parts are `preferred`.
+  - Hints point; you decide. A hint shows where a word was found, not what it means. A unit about a cash bonus gets `optional: bonus`, but nothing in it is optional, so its Demand is `required`.
 
-- **Text:** the requirement in the JD's own words and the JD's order. You may cut words to isolate one requirement. Every part of a JD line that asks something of the role appears on some row; when you split a line, cut only joining words. Do not add, replace, or rearrange any, and keep every modifier that sets the bar (familiarity with, exposure to, understanding of, ability to, might, a plus, preferred, N years), so the requirement demands exactly what the JD says.
-- **Demand:** exactly `required` or `preferred`, nothing else. `preferred` when the JD marks the requirement optional ("preferred", "a plus", "ideally", "highly desirable", "nice to have", or listed under a preferred or nice-to-have heading). Everything else, duties included, is `required`.
-- **Source:** the JD section heading, then exactly one verbatim quote in double quotes, copied from the single place Text comes from, e.g. `Qualifications "Familiarity with regulatory submission data packages"`. The script replaces this with the quote's jd.md line number. `scripts/role_extract_qc.py` fails a row whose quote is not in the JD, and a JD clause whose wording modifier or year count survives on no row quoting it. When you split a clause, each row still keeps the modifiers that apply to its own part.
+3. **Write the rows** for all units in one file, using the *Output format* below: one row per part, with its unit ID (`S-046a`; a unit split into two parts gives two rows with the same ID), text and Demand. Do not write the section, the `jd.md` line or the full sentence; those are taken from the sentences file.
 
 ## Rules
 
-- One requirement per row. Split an "and" list only when each item is a separate skill, standard, system or credential a candidate could hold without the others ("Python and SQL"; "SDTM, ADaM, and USDM"). A list of areas or activities under one duty stays one row ("Establish standards for data governance, quality, and traceability"). Never write a row that repeats another row's whole text: when the extra words carry their own Demand ("..., preferably in a pharmaceutical or biotech environment"), they are a row of their own; otherwise write one row. Two year counts testing different things are two items, each keeping its own count ("10 years in the industry, with at least 5 years in people management").
-- Never split alternatives. Items joined by "or" or "and/or" ("R, SAS, Python, or SQL") are one requirement, met by any one, so they stay in one row. Examples after "e.g." or "such as" stay in the row's text; they illustrate the requirement and are not requirements themselves.
-- Stop once the JD is exhausted. Do not pad. Empty extraction is acceptable if the JD has no substantive content.
+**Units that ask nothing**
+
+1. **Nothing asked: one part.** A unit that asks nothing of the candidate (company, pay, benefits, legal text, how the role is set up) is one part.
+
+**Lists.** Rules 2, 3 and 4 keep text whole and win over rule 5.
+
+2. **Only the outer list splits.** A list inside an item or in parentheses stays with that item.
+3. **Examples stay whole.** Words after "e.g." or "such as" stay in the part they illustrate.
+4. **"Or" lists stay whole.** Items joined by "or" or "and/or" are one part, because any one meets it. "R, SAS, Python, or SQL" is one part.
+5. **"And" lists split what a CV could claim alone.** This covers every "and" list, including one after "including". Split when each item is a named thing a CV could claim without the others: a skill, tool, standard, regulation, language, credential or field of knowledge. "Knowledge of ICH, GCP, FDA, and 21 CFR Part 11" is four parts; "CDISC standards, including SDTM, ADaM, and USDM" is three; "Excellent written and verbal communication skills" is two; "Strong judgment and accountability" is two. Keep whole when the items are activities, or the topics of one activity. "Define the problem, establish performance measures, identify root causes, and lead implementation" is one part; "Establish standards for data governance, quality, and traceability" is one part.
+6. **An "including" tail of activities is its own part.** When "including" is followed by activities or details rather than named things, the words from "including" to the end are one more part, whether they follow a skill, a list or a duty. "Strong project management skills, including milestone planning, dependency management and vendor coordination" is two parts; "Strong facilitation and stakeholder-management skills, including the ability to frame trade-offs and influence decisions" is three.
+7. **A "while" clause is its own part.** In "the role independently applies a common improvement discipline ..., while influencing senior stakeholders without direct authority", the "while influencing ..." words are their own part.
+
+**Separate requirements**
+
+8. **Separate requirements split.** A degree, each year count, an experience requirement and a track record are each their own part. "Bachelor's degree required, with a minimum of seven (7) years of relevant experience" is two parts; "10 years in the industry, with at least 5 years in people management" is two parts. Qualifiers such as "with measurable results" stay.
+9. **An optional add-on splits.** In "..., preferably in a pharmaceutical or biotech environment", the "preferably" words are their own part.
 
 ## Output format
 
@@ -45,19 +66,11 @@ Write exactly this structure to the output file, then reply with only `written <
 ```
 ## Critical Requirements
 
-| # | Text | Demand | Source |
-|---|------|------|--------|
-| 1 | <requirement in the JD's words> | <required \| preferred> | <JD section> "<verbatim JD quote>" |
-| 2 | <next requirement> | <demand> | <source> |
+| Unit | Text | Demand |
+|---|---|---|
+| S-001 | whole | <required \| preferred> |
+| S-046a | <the part in the unit's words> | <required \| preferred> |
 ...
 ```
 
-The `#` column is a sequential integer starting at 1. It determines the `CR-NNN` id the downstream gap-detector assigns (row 1 → CR-001, row 2 → CR-002, etc.). Do not skip or repeat numbers.
-
-If the JD is too thin to extract any requirements (e.g., a one-line role posting), write:
-
-```
-## Critical Requirements
-
-(none extracted; JD lacks substantive content)
-```
+Rows go in the sentences file's order.

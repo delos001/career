@@ -1977,6 +1977,30 @@ def test_requirement_text_keeps_jd_modifiers():
     assert result('Degree', 'Quals #2 "Bachelor\'s degree required"; also Summary')[1], 'a section pointer after the quote broke the row'
 
 
+def test_requirement_text_cuts_but_never_adds_or_reorders_jd_words():
+    """Added 2026-11-17: X2 said a reworded row passes, so nothing held the
+    extractor to the JD's words. Six runs on APP-028/029 cut non-adjacent words
+    ('Strong facilitation skills'), which is allowed; an added or reordered
+    word now fails.
+    """
+    import role_extract_qc as rxq
+    _, cfg = _config.load()
+    jd = 'Strong executive presence, facilitation, stakeholder-management and internal-consulting skills.\n'
+    quote = 'Strong executive presence, facilitation, stakeholder-management and internal-consulting skills'
+
+    def result(text):
+        findings = []
+        rxq.check_requirement_text(needs_file((text, f'Reqs "{quote}"')), jd, cfg['requirement_qualifiers'],
+                                   cfg['requirement_year_count'], findings)
+        return findings[0]
+
+    assert result('Strong facilitation skills')[1], 'cutting non-adjacent words failed'
+    assert result(quote)[1], 'the whole quote failed'
+    added = result('Strong facilitation and coaching skills')
+    assert not added[1] and "'coaching'" in added[2], f'an added word passed: {added}'
+    assert not result('facilitation and strong executive presence')[1], 'reordered words passed'
+
+
 def test_split_requirement_keeps_each_year_count():
     """A clause can hold one year count per requirement. Requiring both counts on
     every row failed a correct split of '10 years..., with at least 5 years...',
@@ -2005,6 +2029,14 @@ def test_split_requirement_keeps_each_year_count():
     # APP-024 rows 40 and 41 differed only by 'including AWS'.
     dup = result((ten, ten), (f'{ten}, with {five}', ten))
     assert not dup[1] and 'wholly inside' in dup[2], f'an overlapping pair of rows passed: {dup}'
+
+    # A spelled-out count with the digit in parentheses ('seven (7) years',
+    # APP-029) was invisible to the pattern, so a row dropping it passed.
+    findings = []
+    spelled = 'Bachelor\'s degree required, with a minimum of seven (7) years of relevant experience.\n'
+    rxq.check_requirement_text(needs_file(("Bachelor's degree required", 'Edu "Bachelor\'s degree required"')),
+                               spelled, cfg['requirement_qualifiers'], cfg['requirement_year_count'], findings)
+    assert not findings[0][1] and '7) years' in findings[0][2], f'a dropped spelled-out count passed: {findings[0]}'
 
 
 def test_split_requirement_keeps_modifier_on_some_row():
@@ -2410,6 +2442,81 @@ def test_jd_reaches_disk_without_being_retyped():
     finally:
         if os.path.exists(staged):
             os.remove(staged)
+
+
+def test_jd_headings_go_on_their_own_lines_with_words_unchanged():
+    """Found 2026-11-17 (APP-029): a JD pasted from a job board lost the line
+    break before each section heading, so headings sat glued to the paragraph
+    above ("...business outcomes.  Duties & Responsibilities") and every reader
+    of jd.md had to guess which section a sentence belonged to. jd_headings.py
+    puts named headings on their own lines, moves line breaks only, and refuses
+    a missing or ambiguous heading.
+    """
+    script = os.path.join('ingest', 'jd_headings.py')
+    glued = ('Description\n'
+             'The lead owns delivery outcomes.  Duties & Responsibilities\n'
+             'Runs the cadence.  Additional Duties & Responsibilities\n'
+             'Builds dashboards.Compensation\n'
+             'Base pay varies by compensation band.\n')
+    jd = write_block('glued_jd.md', glued)
+
+    # Without --write nothing changes on disk.
+    heads = ['--heading', 'Duties & Responsibilities', '--heading', 'Additional Duties & Responsibilities',
+             '--heading', 'Compensation', '--heading', 'Description']
+    code, printed = run(script, jd, *heads)
+    assert code == 0, printed
+    assert _util.read(jd) == glued, 'a dry run changed the file'
+
+    code, printed = run(script, jd, *heads, '--write')
+    assert code == 0, printed
+    lines = _util.read(jd).splitlines()
+    for heading in ('Duties & Responsibilities', 'Additional Duties & Responsibilities', 'Compensation'):
+        assert heading in lines, f'"{heading}" is not on its own line:\n{lines}'
+    assert 'Runs the cadence.' in lines, f'the nested heading was split twice:\n{lines}'
+    assert re.sub(r'\s+', '', _util.read(jd)) == re.sub(r'\s+', '', glued), 'a word changed'
+
+    # A heading that is not there, or is there twice, stops the run with no write.
+    jd2 = write_block('glued_jd2.md', glued)
+    for bad in ('Qualifications', 'Duties'):
+        code, printed = run(script, jd2, '--heading', bad, '--write')
+        assert code != 0 and _util.read(jd2) == glued, f'"{bad}" was accepted:\n{printed}'
+
+
+def test_jd_breaks_into_numbered_units_with_hints():
+    """Built 2026-11-17: six extractor runs on APP-028/029 found the same
+    requirements but split long sentences differently (72 to 88 rows), because
+    the agent chose the units. jd_sentences.py fixes the units: one per
+    sentence or semicolon part, under its heading, with hints a script can find.
+    """
+    import jd_sentences
+    _, cfg = _config.load()
+    jd = ('**Role:** Lead\n**Company:** Halloway Labs\n\n---\n\n'
+          'Description\n'
+          'The lead advises owners. This may include corporate work.\n'
+          'Duties\n'
+          'Measurement:\n'
+          'Defines measures; presents results.Builds dashboards.\n'
+          'Requirements\n'
+          "• Bachelor's degree required, with seven (7) years of experience.\n"
+          '• Green Belt preferred.\n')
+    got = {u['id']: u for u in jd_sentences.units(jd, cfg)}
+    assert list(got) == ['S-001', 'S-002', 'S-003a', 'S-003b', 'S-004', 'S-005', 'S-006'], list(got)
+    assert got['S-002']['hints'] == ['continues S-001'], got['S-002']
+    assert (got['S-003a']['section'], got['S-003a']['subsection']) == ('Duties', 'Measurement'), got['S-003a']
+    assert got['S-003b']['text'] == 'presents results.', 'the semicolon split or glued sentence end failed'
+    assert got['S-004']['text'] == 'Builds dashboards.', 'a sentence glued to the one before was not split'
+    assert got['S-005']['from'] == 'bullet' and 'degree' in got['S-005']['hints'], got['S-005']
+    assert any(h.startswith('years:') for h in got['S-005']['hints']), 'a spelled-out year count was missed'
+    assert got['S-006']['hints'] == ['optional: preferred'], got['S-006']
+    assert [jd_sentences.sentence_id(i) for i in ('S-046b', 'S-046', 'S-1046a')] == ['S-046', 'S-046', 'S-1046'], \
+        'a unit id did not link back to its sentence'
+
+    folder = os.path.join(RUN_DIR, 'apps', 'x_APP-900')
+    code, printed = run('jd_sentences.py', '--folder', folder)
+    assert code != 0, f'a missing jd.md did not fail:\n{printed}'
+    _util.write(os.path.join(folder, 'jd.md'), jd)
+    code, printed = run('jd_sentences.py', '--folder', folder)
+    assert code == 0 and os.path.isfile(os.path.join(folder, 'scratch', 'jd_sentences.md')), printed
 
 
 def test_ingest_always_writes_the_identity_header():
@@ -2831,10 +2938,18 @@ def test_dispatch_prompts_are_printed_not_composed():
         return out.split('=== PROMPT ===\n')[1].split('\n=== END ===')[0]
 
     jd_path = os.path.join(FIXTURE_APP, 'jd.md')
-    for agent in ('company-research', 'title-research', 'industry-research', 'critical-requirements-extractor'):
+    for agent in ('company-research', 'title-research', 'industry-research'):
         text = prompt(agent)
         assert 'Company: Aldridge Pharma' in text and jd_path in text, text
         assert 'Fixture job description' not in text, 'JD text was pasted into the prompt'
+    # 2026-11-17: the extractor reads the JD as numbered units, not the raw JD,
+    # and its prompt stops the run when the units were never written.
+    code, out = run('dispatch_prompt.py', 'critical-requirements-extractor', '--folder', FIXTURE_APP)
+    assert code != 0 and 'jd_sentences.md' in out, f'the extractor ran without the sentence file: {out}'
+    assert run('jd_sentences.py', '--folder', FIXTURE_APP)[0] == 0
+    text = prompt('critical-requirements-extractor')
+    sentences_path = os.path.join(FIXTURE_APP, 'scratch', 'jd_sentences.md')
+    assert f'JD sentences: {sentences_path}' in text and jd_path not in text, text
     # 2026-11-16: each research agent writes its own block, so the model never
     # re-types the research into a file.
     for agent, name in (('company-research', 'research_company.md'), ('title-research', 'research_role.md'),

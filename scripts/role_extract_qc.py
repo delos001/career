@@ -19,8 +19,9 @@ Checks:
       or repeats, each with text, a Source, and a Demand of required or
       preferred; a row whose text carries an optional word is preferred.
   X2  Each requirement's quote is found in jd.md (the Source's one quote, or
-      the row text when the writer dropped a quote equal to it), and
-      every modifier (config requirement_qualifiers) and year count (config
+      the row text when the writer dropped a quote equal to it); the row's
+      words appear in that JD line in the same order (cut, never added or
+      rearranged); and every modifier (config requirement_qualifiers) and year count (config
       requirement_year_count) in the JD clause holding that quote survives on
       at least one row quoting that clause.
   X3  jd_needs.md: the job description is present and cites jd.md lines as
@@ -71,6 +72,10 @@ _QUOTE_RE = re.compile(r'["“]([^"“”]+)["”]')
 # Regex: where a JD clause ends (see _clause_holding).
 _CLAUSE_END_RE = re.compile(r'[.;!?]\s')
 
+# Regex: one word for the word-order check (see _word_out_of_order); hyphens
+# and apostrophes stay inside a word, other punctuation separates words.
+_WORD_RE = re.compile(r"[\w'\-]+")
+
 
 # ---------------------------------------------------------------------------
 # Parsing helpers
@@ -105,6 +110,29 @@ def _clause_holding(jd_text, quote):
         start = max((m.end() for m in _CLAUSE_END_RE.finditer(line, 0, pos)), default=0)
         end_match = _CLAUSE_END_RE.search(line, pos + len(target))
         return line[start:end_match.start() + 1] if end_match else line[start:]
+    return None
+
+
+def _word_out_of_order(jd_text, quote, text):
+    """Return the first word of `text` that is not in the JD line holding
+    `quote` in the same order, or None when every word is.
+
+    The extractor may cut words to isolate a requirement but may not add,
+    replace or rearrange any, so the row's words must be an in-order
+    subsequence of the line's words. Punctuation is ignored: a row drops the
+    full stop that ends its JD sentence.
+    """
+    target = _normalize(quote)
+    line = next((_normalize(raw) for raw in jd_text.split('\n') if target and target in _normalize(raw)), None)
+    if line is None:
+        return None     # the quote check reports a quote that is not in the JD
+    line_words = _WORD_RE.findall(line)
+    pos = 0
+    for word in _WORD_RE.findall(_normalize(text)):
+        try:
+            pos = line_words.index(word, pos) + 1
+        except ValueError:
+            return word
     return None
 
 
@@ -153,8 +181,14 @@ def check_requirement_text(needs_text, jd_text, qualifiers, year_count, findings
     The extractor once dropped 'familiarity with' from a must-have, and the
     stricter text reached the gap walk. Modifiers are read from the whole JD
     clause rather than the quote alone: the extractor chooses the quote, so a
-    narrow one would otherwise step around the check. A row that keeps every
-    modifier but rewords the rest passes; this check guards the bar, not style.
+    narrow one would otherwise step around the check.
+
+    The row's words must also appear in the quote's JD line in the same order:
+    cutting words passes, adding or rearranging them fails. Found 2026-11-17:
+    the docstring then said a reworded row passes, and six extractor runs on
+    APP-028 and APP-029 showed rows built by cutting non-adjacent words
+    ('Strong facilitation skills'), which is allowed, with nothing checking
+    that no word was added.
 
     Modifiers and year counts are held across the rows sharing a clause rather
     than on each row: in '10 years in the industry, with at least 5 years in
@@ -185,6 +219,10 @@ def check_requirement_text(needs_text, jd_text, qualifiers, year_count, findings
         if clause is None:
             problems.append(f'CR-{num:03d}: quote not found in the JD: {quotes[0][:60]}')
             continue
+        word = _word_out_of_order(jd_text, quotes[0], text)
+        if word:
+            problems.append(f"CR-{num:03d}: '{word}' is added or out of the JD's order; "
+                            f"cut words only, never add or rearrange them")
         texts_by_clause.setdefault(clause, []).append((num, _normalize(text)))
     # Two rows from one clause where one row's text sits whole inside the
     # other's are the same requirement twice (Medtronic APP-024 rows 40 and 41,
@@ -207,7 +245,7 @@ def check_requirement_text(needs_text, jd_text, qualifiers, year_count, findings
                 if not any(re.search(word, norm_text) for _, norm_text in entries):
                     ids = ', '.join(f'CR-{num:03d}' for num, _ in entries)
                     problems.append(f"{ids}: no row keeps '{match.group(0)}' from the JD clause: {clause[:80]}")
-    findings.append(('X2', not problems, '; '.join(problems) or f'{len(rows)} requirement rows keep their JD modifiers'))
+    findings.append(('X2', not problems, '; '.join(problems) or f'{len(rows)} requirement rows keep the JD\'s words, order and modifiers'))
 
 
 def check_ranked_needs(needs_text, jd_text, kinds, findings):
