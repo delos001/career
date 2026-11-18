@@ -4,9 +4,9 @@ jd_extract.py - job-description / role-communication text extractor
 
 Takes one job description (or a related communication such as a recruiter
 email), pulls the plain text out of it, and writes that text to a file. Used by
-the role-intake skill, Phase 1 (JD + comms ingestion); Phase 3 hands the same
-file to assemble.py ingest, so the text reaches jd.md without the model
-re-typing it.
+the role-intake skill, Phase 1 (JD + comms ingestion); Phase 2 puts the JD's
+headings on their own lines in that file, and Phase 5 hands it to assemble.py
+ingest, so the text reaches jd.md without the model re-typing it.
 
 The input can be a file (.txt, .md, .docx, .pdf) or a web address (http/https).
 On success the text is written to --out and only the path and character count

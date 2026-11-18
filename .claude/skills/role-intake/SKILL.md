@@ -15,11 +15,11 @@ description: Starts a new job application by ingesting a job description and rel
 Ask: "Is this a new role, or are you resuming one?"
 
 - **New:** go to Phase 0.
-- **Resuming:** ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-NNN>`; use it as `<app_folder>` and never run Phase 3. Then check the folder against the cases below, in order, and follow the first one that is true. For cases 2 to 4, first tell the user in plain words which application this is (the folder name), what is already saved, and the step being picked up; then go there without asking.
+- **Resuming:** ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-NNN>`; use it as `<app_folder>` and never run Phase 4. Then check the folder against the cases below, in order, and follow the first one that is true. For cases 2 to 4, first tell the user in plain words which application this is (the folder name), what is already saved, and the step being picked up; then go there without asking.
   1. **There is no folder** (the lookup fails): the APP-NNN is probably wrong. Tell the user and ask for it again.
   2. **There is no `jd.md`:** go to Phase 1.
-  3. **There is no session log:** run Phase 2 on `jd.md` and `comms.md`, then Phase 5. Ask the user where the JD and messages came from, since Phase 1's sources are not on disk.
-  4. **Otherwise:** go to Phase 6.
+  3. **There is no session log:** run Phase 3 on `jd.md` and `comms.md`, then Phase 6. Ask the user where the JD and messages came from, since Phase 1's sources are not on disk.
+  4. **Otherwise:** go to Phase 7.
 
 ## Phase 0 - Show the intro
 
@@ -32,7 +32,22 @@ Ask: "Is this a new role, or are you resuming one?"
 - Read the files to work from the text. Never echo the text back to the user.
 - Output: the JD and comms file paths and each one's source (URL, original file path, or `"pasted"`), held in context.
 
-## Phase 2 - Confirm title and company
+## Phase 2 - Confirm the JD headings
+
+- List the JD's section headings, including run-in subheadings (a label opening a paragraph, such as `Performance Measurement and Diagnosis:`), each spelled exactly as in the JD. Where it is unclear whether a line is a heading or where a section starts, ask the user, one question at a time. If the JD has no headings, tell the user and go to Phase 3.
+- Run `python scripts/ingest/jd_headings.py <Phase 1 JD file> --heading "<heading>"`, repeating `--heading` for each one, without `--write`. Correct the spelling of a heading it reports missing; for a heading it reports more than once, pick the occurrence that is the heading from the lines it lists and re-run with `--nth "<heading>" <N>` in place of its `--heading`. Read each before/after it prints; where a cut falls inside a sentence, drop that heading and ask the user about it.
+- Ask the user to check the list against the original posting. Present for confirmation and re-present on corrections until confirmed:
+
+  ```
+  Confirm the JD section headings:
+    <heading>
+    <heading>
+  Reply with corrections or "confirmed".
+  ```
+
+- If the user changed the list, dry-run the changed list and handle its report as above, then confirm again. Run the confirmed list with `--write`.
+
+## Phase 3 - Confirm title and company
 
 - Take the title and company from the JD; ask the user for either one it does not name.
 - Present for confirmation and re-present on corrections until confirmed:
@@ -44,32 +59,33 @@ Ask: "Is this a new role, or are you resuming one?"
   Reply with corrections or "confirmed".
   ```
 
-## Phase 3 - Create the application folder
+## Phase 4 - Create the application folder
 
 - Run `python scripts/assemble.py folder --company "<confirmed company>"`. It prints `app_folder`, the APP-NNN and the slug; tell the user the slug. If it stops because the company has no slug, suggest a 2-5 letter lowercase slug drawn from the company name and ask the user to accept it or give their own; re-run with `--slug`. Once it succeeds, never run it again: each success claims a new APP-NNN. A later slug or company change goes through `relabel` (see *Fixes*).
 
-## Phase 4 - Save the JD
+## Phase 5 - Save the JD
 
 - Run `python scripts/assemble.py ingest --folder <app_folder> --jd-text-file <Phase 1 JD file> --title "<confirmed title>" --company "<confirmed company>"`, plus `--comms-text-file <Phase 1 comms file>` if there is one.
 
-## Phase 5 - Start the session log
+## Phase 6 - Start the session log
 
 - Run `python scripts/assemble.py init --folder <app_folder> --company "<confirmed company>" --role "<confirmed title>" --start-date <today>` with `--jd-source` and, if there are messages, `--comms-source`, each set to the Phase 1 source.
 
-## Phase 6 - Check the application files
+## Phase 7 - Check the application files
 
 - Run `python scripts/role_intake_qc.py check --folder <app_folder>`. Fix anything it reports per *Fixes*, then re-check.
 
-## Phase 7 - Hand off to role-research
+## Phase 8 - Hand off to role-research
 
 - Give the user the folder path and the `jd.md`, `comms.md` (if any) and session log paths. Ask them to review the files and raise anything wrong, or say "approved". Do not show the text.
-- On a correction, fix it per *Fixes*, re-run Phase 6, and return here.
+- On a correction, fix it per *Fixes*, re-run Phase 7, and return here.
 - On approval, tell the user to run `/role-research`.
 
 ## Fixes
 
 | Wrong | Fix |
 |---|---|
-| JD or messages wrong or missing | Phase 1, Phase 4, then Phase 5 with `--replace` |
-| Session log wrong (a source, the comms entry, a field) | Phase 5 with `--replace` |
+| JD or messages wrong or missing, or a JD line wrongly made a heading | Phase 1, Phase 2, Phase 5, then Phase 6 with `--replace` |
+| A JD heading missed | `python scripts/ingest/jd_headings.py <app_folder>/jd.md --heading "<heading>"`, then again with `--write` once the user confirms |
+| Session log wrong (a source, the comms entry, a field) | Phase 6 with `--replace` |
 | Title, company or slug | `python scripts/assemble.py relabel --folder <app_folder>` with `--role`, `--company` and/or `--slug` (it asks for `--slug` when a corrected company is new); the path it prints is `<app_folder>` from then on |

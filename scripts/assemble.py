@@ -6,16 +6,16 @@ Writes what the role-intake skill produces - the application folder, jd.md /
 comms.md, and the session log - so the skill does mechanical file-writing
 through a deterministic tool instead of by hand. One subcommand per write point:
 
-  folder    Phase 3 - resolve the company's slug (company_slug.py; a new
+  folder    Phase 4 - resolve the company's slug (company_slug.py; a new
             company needs --slug, asked for before any ID is claimed), take the
             month from today, claim the next APP-NNN (app_id.py) and create its
             folder; print the folder path, the ID, then the slug. Never run on a
             resume: the folder already exists.
-  ingest    Phase 4 - write jd.md (plus comms.md if supplied) into the folder,
+  ingest    Phase 5 - write jd.md (plus comms.md if supplied) into the folder,
             headed by the confirmed title and company. Refuses a folder that was never
             created. Deletes its input files once saved, but only those inside
             temp/ (Phase 1's working files).
-  init      Phase 5 - write the initial session log (metadata filled in, the
+  init      Phase 6 - write the initial session log (metadata filled in, the
             research date and axis sections marked pending) into the folder.
             --replace rewrites it, refused once research or a later section
             exists.
@@ -150,7 +150,7 @@ def _stem_ids(folder, cfg):
 
 
 # ---------------------------------------------------------------------------
-# Subcommand: folder  (role-intake Phase 3)
+# Subcommand: folder  (role-intake Phase 4)
 # Claims the next APP-NNN and creates its application folder in one call, so the
 # ID never exists only in the conversation and nothing later creates the folder
 # as a side effect. Every call is a new application; a resume finds its folder
@@ -173,7 +173,7 @@ def cmd_folder(args, repo_root, cfg):
 
 
 # ---------------------------------------------------------------------------
-# Subcommand: ingest  (role-intake Phase 4)
+# Subcommand: ingest  (role-intake Phase 5)
 # Writes the JD (and comms if present) into the application folder. Run this
 # before 'init' so raw inputs are persisted before the session log is written -
 # if the session closes between the two calls the inputs survive and the run
@@ -215,7 +215,7 @@ def cmd_ingest(args, repo_root, cfg):
 
 
 # ---------------------------------------------------------------------------
-# Subcommand: init  (role-intake Phase 5)
+# Subcommand: init  (role-intake Phase 6)
 # Writes the initial session log into an already-existing application folder.
 # Run after 'ingest'. JD and comms are already on disk; this step only needs
 # their canonical paths (for the session log) plus the confirmed metadata.
@@ -289,7 +289,7 @@ def cmd_init(args, repo_root, cfg):
 # ---------------------------------------------------------------------------
 # Subcommand: relabel  (correction, role-intake or role-research)
 # Corrects the company and/or title after the folder exists, keeping the
-# APP-NNN. Going back to Phase 2 and running forward would repeat Phase 3,
+# APP-NNN. Going back to Phase 3 and running forward would repeat Phase 4,
 # which claims a new APP-NNN and makes a second folder. Rewrites the session
 # log's H1 and Company/Role lines, the research H1, and jd.md's identity header,
 # then renames the folder when the slug changes. --slug on
@@ -423,14 +423,14 @@ def main():
     parser = argparse.ArgumentParser(description='role-intake artifact assembler')
     sub = parser.add_subparsers(dest='command', required=True)
 
-    p_folder = sub.add_parser('folder', help='Phase 3: claim the next APP-NNN and create its folder; '
+    p_folder = sub.add_parser('folder', help='Phase 4: claim the next APP-NNN and create its folder; '
                                              'prints the folder path, the APP-NNN, then the slug')
     p_folder.add_argument('--company', required=True, help='the confirmed company name')
     p_folder.add_argument('--slug', default=None,
                           help='only for a company with no recorded slug; recorded for reuse')
     p_folder.set_defaults(func=cmd_folder)
 
-    p_ingest = sub.add_parser('ingest', help='Phase 4: write JD + comms into the application folder')
+    p_ingest = sub.add_parser('ingest', help='Phase 5: write JD + comms into the application folder')
     p_ingest.add_argument('--folder', required=True, help='the application folder printed by the folder step')
     p_ingest.add_argument('--jd-text-file', required=True,
                           help='path to a file holding the extracted JD text')
@@ -442,7 +442,7 @@ def main():
                           help='confirmed company; written as the jd.md Company header line')
     p_ingest.set_defaults(func=cmd_ingest)
 
-    p_init = sub.add_parser('init', help='Phase 5: write initial session log (run after ingest); '
+    p_init = sub.add_parser('init', help='Phase 6: write initial session log (run after ingest); '
                                          'the APP-NNN and month come from the folder name')
     p_init.add_argument('--folder', required=True, help='the application folder')
     p_init.add_argument('--company', required=True)

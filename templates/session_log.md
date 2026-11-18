@@ -2,7 +2,7 @@
 
 **Used by:** role-intake (creates); role-research (fills the research date); role-classify (fills the axis fields). Downstream skills append their own sections below role-intake's; each writing skill owns its own sections.
 
-One per evaluated job, written to `session_log.md` in the application folder (`python scripts/paths.py app <APP-NNN>`). `scripts/assemble.py` renders the skeleton below: tokens in `{{double braces}}` are substituted. The `{{research_completed_date}}`, `{{role_level}}`, `{{industry}}`, and `{{axis_*}}` tokens are set to a pending marker at `init` (role-intake Phase 5). `role_research_assemble.py research` (role-research) fills the date; `role_classify_assemble.py finalize` fills the rest. All other fields are populated at `init`.
+One per evaluated job, written to `session_log.md` in the application folder (`python scripts/paths.py app <APP-NNN>`). `scripts/assemble.py` renders the skeleton below: tokens in `{{double braces}}` are substituted. The `{{research_completed_date}}`, `{{role_level}}`, `{{industry}}`, and `{{axis_*}}` tokens are set to a pending marker at `init` (role-intake Phase 6). `role_research_assemble.py research` (role-research) fills the date; `role_classify_assemble.py finalize` fills the rest. All other fields are populated at `init`.
 
 ## Skeleton
 
@@ -66,9 +66,9 @@ The session log is the ONE home for an interview's scheduling metadata. Each fac
 ## Field notes
 
 - **{{app_id}}** - the global application counter, from `scripts/app_id.py`.
-- **{{role_level}}** - the Level-axis value. NOT inferred at JD read-in; `_(pending)_` at `init`, filled by `finalize` (Phase 7) from the axis-classifier's Level result.
-- **{{industry}}** - the Industry-axis value. NOT inferred at JD read-in; `_(pending)_` at `init`, filled by `finalize` (Phase 7) from the axis-classifier's Industry result.
-- **{{jd_file}}** / **{{comms_file}}** - filenames within the application folder. `jd.md` always present after Phase 3; `comms.md` present only when role communications were ingested.
+- **{{role_level}}** - the Level-axis value. NOT inferred at JD read-in; `_(pending)_` at `init`, filled by `finalize` (role-classify Phase 1) from the axis-classifier's Level result.
+- **{{industry}}** - the Industry-axis value. NOT inferred at JD read-in; `_(pending)_` at `init`, filled by `finalize` (role-classify Phase 1) from the axis-classifier's Industry result.
+- **{{jd_file}}** / **{{comms_file}}** - filenames within the application folder. `jd.md` always present after role-intake Phase 5; `comms.md` present only when role communications were ingested.
 - **{{jd_source}}** / **{{comms_source}}** - where the text came from: a URL, the original file path, or `"pasted"`. Never the copy in the application folder, which `{{jd_file}}` / `{{comms_file}}` already name; `init` refuses it. `{{comms_source}}` is blank when no comms were ingested.
 - **Dates** - `YYYY-MM-DD`. `{{start_date}}` is set at creation; `{{research_completed_date}}` is `_(pending)_` until finalization.
 - **{{axis_classification}}** / **{{axis_gaps}}** - `_(pending)_` markers at `init`; replaced at `finalize` with the `axis-classifier` subagent's output, which carries the `## Axis Classification` and `## Axis Gaps` headings and the per-axis lines.

@@ -2398,6 +2398,27 @@ def test_role_intake_checks_its_own_handoff():
     code, out = run('role_intake_qc.py', 'check', '--folder', folder)
     assert code != 0 and 'jd.md' in out, f'a missing jd.md passed:\n{out}'
 
+    # GitHub #93 (2026-11-17): the user confirms the JD's headings and they are
+    # put on their own lines before ingest writes jd.md, and the intro tells the
+    # user to keep the original posting open for that check.
+    skill = _util.read(os.path.join(REPO_ROOT, '.claude', 'skills', 'role-intake', 'SKILL.md'))
+    phases = re.split(r'(?m)^## Phase ', skill)[1:]
+    def phase_of(*needles):
+        hits = [i for i, p in enumerate(phases) if all(n in p for n in needles)]
+        return hits[0] if hits else None
+    headings = phase_of('jd_headings.py', '--write', 'Reply with corrections or "confirmed"')
+    ingest = phase_of('assemble.py ingest')
+    assert headings is not None and ingest is not None and headings < ingest, \
+        'role-intake does not confirm and write the JD headings before ingest'
+    # Within the phase, the user confirms before the write ('--write' also
+    # appears earlier, in the dry run's 'without --write').
+    text = phases[headings]
+    assert text.index('Reply with corrections') < text.rindex('`--write`'), \
+        'role-intake writes the JD headings before the user confirms them'
+    intro = _util.read(os.path.join(SCRIPTS_DIR, 'display', 'introductions.yaml'))
+    intro = intro.split('\nrole-intake: |', 1)[1].split('\nrole-research: |', 1)[0]
+    assert 'keep the original job posting open' in intro.lower(),'the intro does not tell the user to keep the posting open'
+
 
 def test_jd_reaches_disk_without_being_retyped():
     """Shipped 2026-11-16: jd_extract.py printed the JD and the model re-typed it
@@ -2474,6 +2495,36 @@ def test_jd_headings_go_on_their_own_lines_with_words_unchanged():
         assert heading in lines, f'"{heading}" is not on its own line:\n{lines}'
     assert 'Runs the cadence.' in lines, f'the nested heading was split twice:\n{lines}'
     assert re.sub(r'\s+', '', _util.read(jd)) == re.sub(r'\s+', '', glued), 'a word changed'
+
+    # A run-in subheading named without its colon keeps the colon (review of
+    # #93, 2026-11-17): jd_sentences.py reads a trailing colon as a subsection,
+    # so a colon left on the body line turned the subheading into a section.
+    runin = write_block('runin_jd.md', 'Runs the cadence. Measurement and Diagnosis: Defines metrics.\n')
+    code, printed = run(script, runin, '--heading', 'Measurement and Diagnosis', '--write')
+    assert code == 0, printed
+    assert _util.read(runin).splitlines() == ['Runs the cadence.', 'Measurement and Diagnosis:', 'Defines metrics.'], \
+        f'the colon did not stay with the heading:\n{_util.read(runin)}'
+
+    # A heading that also starts a sentence is placed by choosing its occurrence
+    # (review of #93): the refusal lists each one, and --nth picks the heading.
+    twice = write_block('twice_jd.md', 'Offers growth.  Benefits\nBenefits include a pension.\n')
+    code, printed = run(script, twice, '--heading', 'Benefits')
+    assert code != 0 and 'line 1' in printed and 'line 2' in printed, f'the occurrences were not listed:\n{printed}'
+    code, printed = run(script, twice, '--nth', 'Benefits', '1', '--write')
+    assert code == 0, printed
+    assert _util.read(twice).splitlines() == ['Offers growth.', 'Benefits', 'Benefits include a pension.'], \
+        f'--nth did not place the chosen occurrence:\n{_util.read(twice)}'
+    code, printed = run(script, twice, '--nth', 'Benefits', '5')
+    assert code != 0, f'an occurrence past the last one was accepted:\n{printed}'
+
+    # On jd.md the identity header written by ingest is not searched (review of
+    # #93): a missed heading named "Company" must not cut '**Company:** ...'.
+    saved = write_block('saved_jd.md', '**Role:** Lead\n**Company:** Halloway Labs\n\n---\n\n'
+                                       'Runs the cadence.  Company\nHalloway makes assays.\n')
+    code, printed = run(script, saved, '--heading', 'Company', '--write')
+    assert code == 0, printed
+    assert _util.read(saved).splitlines()[:2] == ['**Role:** Lead', '**Company:** Halloway Labs'] \
+        and 'Company' in _util.read(saved).splitlines(), f'the identity header was searched:\n{_util.read(saved)}'
 
     # A heading that is not there, or is there twice, stops the run with no write.
     jd2 = write_block('glued_jd2.md', glued)

@@ -59,7 +59,7 @@ _HEADER = (
     '# Company -> preferred folder slug registry.\n'
     '#\n'
     '# One entry per company, keyed by the slug used in application folder names\n'
-    '# (<slug>_APP-NNN_YYYY-MM). role-intake Phase 3 looks a company up here before\n'
+    '# (<slug>_APP-NNN_YYYY-MM). role-intake Phase 4 looks a company up here before\n'
     '# asking for a slug, so a repeat application reuses the same slug. Maintained\n'
     '# by scripts/company_slug.py; edit through the script rather than by hand.\n'
 )
