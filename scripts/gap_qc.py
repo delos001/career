@@ -64,7 +64,7 @@ import _config
 import _util
 import gap_assemble
 import profile_update as pu
-import requirement_kinds
+import jd_extraction_tables
 from inventory_model import pr
 
 
@@ -166,17 +166,17 @@ def _parse_requirements(artifact_text):
 
 def _requirement_info(app_folder, cfg):
     """Return {CR-NNN: info} in need rank order for the requirements gap analysis
-    covers (requirement_kinds.requirement_info: demand, need, core).
+    covers (jd_extraction_tables.requirement_info: demand, need, core).
 
     Read from jd_needs.md. Rows on its Not ranked list are left out: gap
     analysis never evaluates them, so they are neither expected nor allowed in
     the artifact. Returns None when the application has no requirements on file.
     """
     try:
-        requirement_kinds.ranked_rows(app_folder, cfg)
+        jd_extraction_tables.ranked_rows(app_folder, cfg)
     except (FileNotFoundError, ValueError):
         return None
-    return requirement_kinds.requirement_info(app_folder, cfg)
+    return jd_extraction_tables.requirement_info(app_folder, cfg)
 
 
 def _parse_staging_items(staging_text):

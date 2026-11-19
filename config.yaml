@@ -29,8 +29,10 @@ filenames:
   research_file_template: research_file.md      # in the templates/ folder
   introductions: introductions.yaml            # next to scripts/display/introduce.py
   axis_registry: registry.md                   # in each rules/<axis>/ folder
-  jd_rules_file: jd-processing.md              # in the rules folder; rules for each step that works on the JD, read by section through jd_rules_slice.py; requirement_kinds.py parses its KINDS section for the kind list
-  jd_needs_file: jd_needs.md                   # written into each application folder by role-extract; each requirement's kind and the ranked needs
+  jd_rules_file: jd-processing.md              # in the rules folder; rules for each step that works on the JD, read by section through jd_rules_slice.py; jd_extraction_tables.py parses its KINDS section for the kind list
+  jd_assemble_split_file: jd_assemble_split.md # written into <app-folder>/scratch/ by role-extract Phase 2 (assemble the split); one row per jd-splitter part with its line, heading, Demand and Bar
+  jd_assemble_kinds_file: jd_assemble_kinds.md # written into <app-folder>/scratch/ by role-extract Phase 5; the assembled split's rows with each row's Kind
+  jd_needs_file: jd_needs.md                  # written into each application folder by role-extract; each requirement's kind and the ranked needs
   jd_sentences_file: jd_sentences.md           # written into <app-folder>/scratch/ by scripts/jd_sentences.py; the JD as numbered units with hints
   build_issues_log: build_issues.md            # in the design/ folder; appended to on provisional builds
   retrieval_manifest: retrieval.md             # written into each application folder by the retrieval skill
@@ -150,6 +152,7 @@ bar_working_words:
   - expertise
   - track record
   - mastery
+  - \d+(?:-\d+)?\)?\+? years           # a year count needs direct evidence ("two (2) years leading ...", APP-029 S-044)
 bar_exposure_words:
   - familiar(?:ity)? with
   - exposure to

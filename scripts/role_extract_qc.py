@@ -10,9 +10,9 @@ are right).
 Moved from role_classify_qc.py when role-extract was split out of
 role-classify (2026-11-16): X1 was C7, X2 was C8, X3 was C6.
 
-Two commands. 'requirements' runs X1 and X2 alone, right after extraction, so
-a bad extraction is caught before ranking is spent on it. 'check' runs them
-all.
+Two commands. 'requirements' runs X1 and X2 alone on scratch/jd_assemble_split.md,
+right after extraction, so a bad extraction is caught before ranking is spent
+on it. 'check' runs them all on jd_needs.md.
 
 Checks:
   X1  jd_needs.md holds at least one requirement, numbered 1..N with no gaps
@@ -53,7 +53,7 @@ import sys
 import _config
 import jd_bar
 import jd_sentences
-import requirement_kinds
+import jd_extraction_tables
 from role_research_qc import _read
 
 
@@ -83,13 +83,13 @@ _WORD_RE = re.compile(r"[\w'\-]+")
 # Parsing helpers
 # ---------------------------------------------------------------------------
 
-_normalize = requirement_kinds.normalize
+_normalize = jd_extraction_tables.normalize
 
 
 def _line_ref_problem(label, cell, jd_text, quote):
     """Return a problem string when `cell` does not open with L<n> for `quote`'s
     jd.md line, else None. Every JD reference is a jd.md line number."""
-    expected = requirement_kinds.quote_line(jd_text, quote)
+    expected = jd_extraction_tables.quote_line(jd_text, quote)
     m = re.match(r'L(\d+)\b', cell or '')
     if expected is not None and (m is None or int(m.group(1)) != expected):
         return f'{label}: JD line should open with L{expected}'
@@ -129,9 +129,9 @@ def check_requirements_present(needs_text, optional_words, findings):
     extractor's judgment, since JD headings have no standard form.
     """
     if needs_text is None:
-        findings.append(('X1', False, 'jd_needs.md not found (requirements not extracted)'))
+        findings.append(('X1', False, 'requirements file not found (requirements not extracted)'))
         return
-    rows = requirement_kinds.all_rows(requirement_kinds.read_needs(needs_text))
+    rows = jd_extraction_tables.all_rows(jd_extraction_tables.read_needs(needs_text))
     problems = []
     nums = sorted(row['num'] for row in rows)
     if not rows:
@@ -140,18 +140,18 @@ def check_requirements_present(needs_text, optional_words, findings):
         problems.append(f"row numbers are not 1..{len(nums)} with no gaps or repeats: {nums}")
     for row in rows:
         cr = f"CR-{row['num']:03d}"
-        if not requirement_kinds.UNIT_ID_RE.match(row.get('unit') or ''):
+        if not jd_extraction_tables.UNIT_ID_RE.match(row.get('unit') or ''):
             problems.append(f'{cr}: no Unit ID (re-extract: role-extract writes each row with its jd_sentences unit)')
         if not row['text']:
             problems.append(f'{cr}: no text')
         if not row['source']:
             problems.append(f'{cr}: no Line')
-        if row['demand'] not in requirement_kinds.ALLOWED_DEMANDS:
+        if row['demand'] not in jd_extraction_tables.ALLOWED_DEMANDS:
             problems.append(f"{cr}: Demand {row['demand']!r} is not one of "
-                            f"{', '.join(sorted(requirement_kinds.ALLOWED_DEMANDS))}")
+                            f"{', '.join(sorted(jd_extraction_tables.ALLOWED_DEMANDS))}")
         if row.get('unit') and (row.get('bar') or '') not in jd_bar.ALLOWED_BARS:
             problems.append(f"{cr}: Bar {row['bar']!r} is not exposure, working or blank")
-        word = requirement_kinds.optional_word(row['text'] or '', optional_words)
+        word = jd_extraction_tables.optional_word(row['text'] or '', optional_words)
         if word and row['demand'] == 'required':
             problems.append(f"{cr}: says '{word}', so its Demand is preferred, not required")
     findings.append(('X1', not problems, '; '.join(problems)
@@ -194,13 +194,13 @@ def check_requirement_text(needs_text, jd_text, cfg, findings):
     survive on some row.
     """
     if needs_text is None:
-        findings.append(('X2', False, 'jd_needs.md not found (requirements not extracted)'))
+        findings.append(('X2', False, 'requirements file not found (requirements not extracted)'))
         return
     if jd_text is None:
         findings.append(('X2', False, 'jd.md not found, so requirement wording cannot be checked'))
         return
     units = {u['id']: u for u in jd_sentences.units(jd_text, cfg)}
-    rows = requirement_kinds.all_rows(requirement_kinds.read_needs(needs_text))
+    rows = jd_extraction_tables.all_rows(jd_extraction_tables.read_needs(needs_text))
     qualifiers, year_count = cfg['requirement_qualifiers'], cfg['requirement_year_count']
     problems = []
     texts_by_clause = {}
@@ -258,10 +258,10 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings, units=None):
     if needs_text is None:
         findings.append(('X3', False, 'jd_needs.md not found (requirements not extracted)'))
         return
-    parsed = requirement_kinds.read_needs(needs_text)
-    req = {row['num'] for row in requirement_kinds.all_rows(parsed)}
+    parsed = jd_extraction_tables.read_needs(needs_text)
+    req = {row['num'] for row in jd_extraction_tables.all_rows(parsed)}
     problems = []
-    for row in parsed[requirement_kinds.UNPLACED]:
+    for row in parsed[jd_extraction_tables.UNPLACED]:
         problems.append(f"CR-{row['num']:03d} is in no need, Qualifications or Not ranked")
     jd_lines = (jd_text or '').split('\n')
     # The role statement and outcomes: items a few words each, each citing its line.
@@ -311,17 +311,17 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings, units=None):
             problems.append(_line_ref_problem(nid, need.get('Quote'), jd_text, quotes[0]))
         # The role-statement signal needs the quote on a line the role statement cites.
         if 'role-statement' in signals and len(quotes) == 1 and jd_text is not None \
-                and requirement_kinds.quote_line(jd_text, quotes[0]) not in statement_lines:
+                and jd_extraction_tables.quote_line(jd_text, quotes[0]) not in statement_lines:
             problems.append(f'{nid}: role-statement signal, but its quote is on no Role statement line')
         if not need['rows']:
             problems.append(f'{nid}: no requirements')
         for row in need['rows']:
-            seen.setdefault(row['num'], []).append((nid, requirement_kinds.NEED, row))
+            seen.setdefault(row['num'], []).append((nid, jd_extraction_tables.NEED, row))
     # Each row's JD line opens with its unit's line; a hand edit at the user's
     # review can break it. A row from a file written before 2026-11-18 has no
     # Unit, and its line is found from its quote (the text when it has none).
     if jd_text is not None:
-        for row in requirement_kinds.all_rows(parsed):
+        for row in jd_extraction_tables.all_rows(parsed):
             label = f"CR-{row['num']:03d}"
             if row.get('unit') and units is not None:
                 expected = units[row['unit']]['line'] if row['unit'] in units else None
@@ -336,7 +336,7 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings, units=None):
     problems = [p for p in problems if p]
     if req and not parsed['needs']:
         problems.append('no needs')
-    for place, heading in requirement_kinds.SECTION_FOR.items():
+    for place, heading in jd_extraction_tables.SECTION_FOR.items():
         if heading not in parsed['sections']:
             problems.append(f'no `## {heading}` section')
         for row in parsed[heading]:
@@ -350,13 +350,13 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings, units=None):
         if not kind:
             problems.append(f'CR-{num:03d} has no Kind')
             continue
-        names = requirement_kinds.parse_kind_cell(kind)
+        names = jd_extraction_tables.parse_kind_cell(kind)
         unknown = [k for k in names if k not in kinds]
         if unknown:
             problems.append(f"CR-{num:03d}: unknown kind {', '.join(unknown)}")
-        elif requirement_kinds.placement(names, kinds) != place:
+        elif jd_extraction_tables.placement(names, kinds) != place:
             problems.append(f'CR-{num:03d} is in {where} but its kind places it in '
-                            f'{requirement_kinds.placement(names, kinds)}')
+                            f'{jd_extraction_tables.placement(names, kinds)}')
     findings.append(('X3', not problems, '; '.join(problems)
                      or f"{len(parsed['needs'])} needs; all {len(req)} requirements have a "
                         f"kind and land once where it places them"))
@@ -366,10 +366,16 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings, units=None):
 # Commands
 # ---------------------------------------------------------------------------
 
-def _needs_and_jd(folder, cfg):
-    """Return (jd_needs.md text, jd.md text), each None when absent."""
-    return (_read(requirement_kinds.needs_path(folder, cfg)),
-            _read(os.path.join(folder, cfg['filenames']['jd_file'])))
+def _needs_and_jd(folder, cfg, scratch=False):
+    """Return (requirements file text, jd.md text), each None when absent.
+
+    scratch=True reads scratch/jd_assemble_split.md, for the Phase 3
+    extraction check; otherwise jd_needs.md, for the full check.
+    """
+    fn = cfg['filenames']
+    path = (os.path.join(folder, fn['scratch_subdir'], fn['jd_assemble_split_file']) if scratch
+            else os.path.join(folder, fn['jd_needs_file']))
+    return _read(path), _read(os.path.join(folder, fn['jd_file']))
 
 
 def _requirement_checks(needs_text, jd_text, cfg, findings):
@@ -379,9 +385,9 @@ def _requirement_checks(needs_text, jd_text, cfg, findings):
 
 
 def cmd_requirements(args, repo_root, cfg):
-    """Run the extraction checks only (X1, X2); return exit code."""
+    """Run the extraction checks only (X1, X2) on jd_assemble_split.md; return exit code."""
     findings = []
-    _requirement_checks(*_needs_and_jd(args.folder, cfg), cfg, findings)
+    _requirement_checks(*_needs_and_jd(args.folder, cfg, scratch=True), cfg, findings)
     return _report(findings)
 
 
@@ -391,7 +397,7 @@ def cmd_check(args, repo_root, cfg):
     needs_text, jd_text = _needs_and_jd(args.folder, cfg)
     _requirement_checks(needs_text, jd_text, cfg, findings)
     units = {u['id']: u for u in jd_sentences.units(jd_text, cfg)} if jd_text is not None else None
-    check_ranked_needs(needs_text, jd_text, requirement_kinds.load_kinds(repo_root, cfg), findings, units)
+    check_ranked_needs(needs_text, jd_text, jd_extraction_tables.load_kinds(repo_root, cfg), findings, units)
     return _report(findings)
 
 

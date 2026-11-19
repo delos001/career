@@ -51,7 +51,7 @@ import sys
 
 import _config
 import _util
-import requirement_kinds
+import jd_extraction_tables
 import retrieval_payload
 
 
@@ -598,7 +598,7 @@ def cmd_assemble(args, repo_root, cfg):
     narratives = retrieval_payload.parse_narratives(narratives_text)
     themes = retrieval_payload.parse_themes(positioning_text)
 
-    places = requirement_kinds.row_places(args.folder, cfg)
+    places = jd_extraction_tables.row_places(args.folder, cfg)
     inventory_rows = _build_inventory_rows(
         repo_root, jd_axes, inventory_entries, inv_scores, role_companies, places
     )

@@ -51,7 +51,7 @@ import sys
 
 import _config
 import _util
-import requirement_kinds
+import jd_extraction_tables
 
 
 # ---------------------------------------------------------------------------
@@ -99,9 +99,9 @@ def _fill(skeleton, values):
 # ---------------------------------------------------------------------------
 
 def _requirements_lookup(app_folder, cfg):
-    """Return {CR-NNN: info} in need rank order (requirement_kinds.requirement_info)."""
-    requirement_kinds.ranked_rows(app_folder, cfg)  # raises when nothing is on file
-    return requirement_kinds.requirement_info(app_folder, cfg)
+    """Return {CR-NNN: info} in need rank order (jd_extraction_tables.requirement_info)."""
+    jd_extraction_tables.ranked_rows(app_folder, cfg)  # raises when nothing is on file
+    return jd_extraction_tables.requirement_info(app_folder, cfg)
 
 
 def _in_need_order(requirements, req_lookup):

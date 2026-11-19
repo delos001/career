@@ -18,7 +18,9 @@ Set by rule, from word lists in config.yaml, checked in this order:
   3. else a praise word alone (bar_praise_words) sets working: "Strong
      judgment", "Strong process-design capability";
   4. else no bar.
-Year counts stay in the text; role_extract_qc.py X2 guards them.
+A year count is in bar_working_words (2026-11-19): "at least two (2) years
+leading ..." names no working word but only direct evidence meets it.
+role_extract_qc.py X2 separately checks a year count survives the split.
 
 Tested 2026-11-18 on APP-029 (89 rows), APP-028 and APP-024: every level read
 right except two APP-029 rows that the ranker sets aside as Not ranked (a pay
@@ -29,12 +31,12 @@ Called by role_extract_assemble.py with Demand. No command line.
 Author  : Jason Delosh
 Created : 2026-11-18
 Project : career
-Depends : requirement_kinds (normalize)
+Depends : jd_extraction_tables (normalize)
 """
 
 import re
 
-import requirement_kinds
+import jd_extraction_tables
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +67,7 @@ def _has(text, patterns):
 
 def bar_of(text, cfg):
     """Return one part's Bar: 'exposure', 'working' or ''."""
-    low = requirement_kinds.normalize(text or '')
+    low = jd_extraction_tables.normalize(text or '')
     if _has(low, cfg['bar_working_words']):
         return WORKING
     if _has(low, cfg['bar_exposure_words']):

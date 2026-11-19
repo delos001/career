@@ -26,12 +26,12 @@ heading. No command line: it has no input of its own.
 Author  : Jason Delosh
 Created : 2026-11-18
 Project : career
-Depends : requirement_kinds (optional_word, normalize)
+Depends : jd_extraction_tables (optional_word, normalize)
 """
 
 import re
 
-import requirement_kinds
+import jd_extraction_tables
 
 
 # ---------------------------------------------------------------------------
@@ -57,7 +57,7 @@ _WITH_RE = re.compile(r'^\W*with\b', re.IGNORECASE)
 
 def _heading_is_preferred(heading, patterns):
     """True when a heading holds a preferred-heading word."""
-    text = requirement_kinds.normalize(heading or '')
+    text = jd_extraction_tables.normalize(heading or '')
     return any(re.search(rf'\b(?:{p})\b', text) for p in patterns)
 
 
@@ -71,7 +71,7 @@ def set_demand(parts, cfg):
     """
     demands, prev_unit, prev_demand = [], None, None
     for part in parts:
-        if requirement_kinds.optional_word(part['text'], cfg['requirement_optional_words']):
+        if jd_extraction_tables.optional_word(part['text'], cfg['requirement_optional_words']):
             demand = PREFERRED
         elif _heading_is_preferred(part['heading'], cfg['requirement_preferred_headings']):
             demand = PREFERRED

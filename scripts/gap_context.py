@@ -54,7 +54,7 @@ import sys
 
 import _config
 import _util
-import requirement_kinds
+import jd_extraction_tables
 import retrieval_payload
 from inventory_model import entry_block
 from role_research_qc import research_heading
@@ -135,14 +135,14 @@ def build_context(app_folder, repo_root, cfg, max_bytes):
 
     # Rows on jd_needs.md's Not ranked list never reach the detector; no
     # requirements at all raises. Rows come in need rank order with their need.
-    requirements = requirement_kinds.requirements_table(app_folder, cfg, by_need=True)
+    requirements = jd_extraction_tables.requirements_table(app_folder, cfg, by_need=True)
 
     # The job section (role statement, lead-or-do line) leads the role context:
     # it is what this posting says the role does; research adds market context.
     job = retrieval_payload.extract_section(
-        _util.read(requirement_kinds.needs_path(app_folder, cfg)), '## The job')
+        _util.read(jd_extraction_tables.needs_path(app_folder, cfg)), '## The job')
     if not job or not job.strip():
-        raise ValueError(f'{requirement_kinds.needs_path(app_folder, cfg)} has no "## The job" content')
+        raise ValueError(f'{jd_extraction_tables.needs_path(app_folder, cfg)} has no "## The job" content')
     role_parts = [f'## The job\n\n{job.strip()}']
     for name in ROLE_CONTEXT_SECTIONS:
         # research_heading: an older file carries '## Role' for the title section.

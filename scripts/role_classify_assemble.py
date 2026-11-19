@@ -31,7 +31,7 @@ import sys
 
 import _config
 import _util
-import requirement_kinds
+import jd_extraction_tables
 from assemble import _replace_section
 from role_research_qc import _metadata_fields, _section_body
 
@@ -152,9 +152,9 @@ def cmd_approval(args, cfg):
     meta = _metadata_fields(log_text) or {}
     axes = _axis_value_lines(_section_body(log_text, 'Axis Classification') or '')
     gaps = (_section_body(log_text, 'Axis Gaps') or '_(missing)_').strip()
-    needs_file = requirement_kinds.needs_path(args.folder, cfg)
+    needs_file = jd_extraction_tables.needs_path(args.folder, cfg)
     needs = _util.read(needs_file) if os.path.isfile(needs_file) else ''
-    need_count = len(requirement_kinds.read_needs(needs)['needs'])
+    need_count = len(jd_extraction_tables.read_needs(needs)['needs'])
     level = meta.get('Role Level', '')
     if axes.get('Tier'):
         level = f"{level}, {axes['Tier']}"

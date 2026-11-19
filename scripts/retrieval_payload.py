@@ -62,7 +62,7 @@ import sys
 
 import _config
 import _util
-import requirement_kinds
+import jd_extraction_tables
 from inventory_model import document, entry_block, pr
 
 
@@ -721,13 +721,13 @@ def build_scoring_context(app_folder, cfg, prefix, max_bytes):
     administrative detail) are left out, so no scorer matches the profile
     against them. The Demand column is left out: the scorer judges evidence
     strength only, and priority is applied from the ranking by script.
-    requirement_kinds raises when there are no requirements.
+    jd_extraction_tables raises when there are no requirements.
     """
     jd_path = os.path.join(app_folder, cfg['filenames']['jd_file'])
     if not os.path.isfile(jd_path):
         raise FileNotFoundError(f'scoring context source missing: {jd_path}')
 
-    requirements = requirement_kinds.requirements_table(app_folder, cfg, demand=False)
+    requirements = jd_extraction_tables.requirements_table(app_folder, cfg, demand=False)
     jd_text = _util.read(jd_path).strip('\n')
     if not jd_text.strip():
         raise ValueError(f'{jd_path} is empty')

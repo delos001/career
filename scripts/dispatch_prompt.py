@@ -54,9 +54,9 @@ AGENTS = {
     'company-research': {'facts': ['company', 'role'], 'files': ['jd'], 'output': 'research_company.md'},
     'title-research': {'facts': ['company', 'role'], 'files': ['jd'], 'output': 'research_role.md'},
     'industry-research': {'facts': ['company', 'role'], 'files': ['jd'], 'output': 'research_industry.md'},
-    'jd-splitter': {'files': ['jd_sentences'], 'jd_rules': ['SPLIT'], 'output': 'requirements.md'},
-    'jd-kind-labeler': {'files': ['jd', 'company_research', 'jd_needs'], 'jd_rules': ['KINDS'],
-                        'output': 'kinds.md'},
+    'jd-splitter': {'files': ['jd_sentences'], 'jd_rules': ['SPLIT'], 'output': 'jd_split.md'},
+    'jd-kind-labeler': {'files': ['jd', 'company_research', 'jd_assemble_split'], 'jd_rules': ['KINDS'],
+                        'output': 'jd_kinds.md'},
     'jd-needs-ranker': {'files': ['jd', 'jd_needs'], 'jd_rules': ['KINDS', 'RANK'],
                         'output': 'needs.md'},
     'axis-classifier': {'files': ['jd', 'comms?', 'research', 'jd_needs']},
@@ -109,6 +109,7 @@ class _Sources:
             'research': os.path.join(self.folder, fn['research_file']),
             'jd_needs': os.path.join(self.folder, fn['jd_needs_file']),
             'jd_sentences': os.path.join(self.folder, fn['scratch_subdir'], fn['jd_sentences_file']),
+            'jd_assemble_split': os.path.join(self.folder, fn['scratch_subdir'], fn['jd_assemble_split_file']),
             'session_log': os.path.join(self.folder, fn['session_log_file']),
             'retrieval': os.path.join(self.folder, fn['retrieval_manifest']),
             'gap_analysis': os.path.join(self.folder, fn['gap_analysis_file']),
@@ -180,8 +181,9 @@ class _Sources:
     def write_company_research(self):
         """Copy research.md's Company section to scratch.
 
-        The ranker uses only the company's mission and values (to spot
-        boilerplate), so it reads this slice, not the whole research file.
+        The kind labeler and qc-role-extract use only the company's mission
+        and values (to spot boilerplate), so they read this slice, not the
+        whole research file.
         """
         research_path = self.path('research')
         if not os.path.isfile(research_path):

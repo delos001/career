@@ -1088,9 +1088,9 @@ def test_scorer_context_is_copied_verbatim():
     context_path = os.path.join(scratch, f'{FIXTURE_PREFIX}_scoring_context.md')
     context = _util.read(context_path)
 
-    import requirement_kinds
+    import jd_extraction_tables
     _, cfg = _config.load()
-    requirements = requirement_kinds.requirements_table(FIXTURE_APP, cfg, demand=False)
+    requirements = jd_extraction_tables.requirements_table(FIXTURE_APP, cfg, demand=False)
     jd = _util.read(os.path.join(FIXTURE_APP, 'jd.md')).strip('\n')
     assert requirements in context, 'the requirements table is not in the context'
     # The scorer judges evidence strength only, so it never sees Demand.
@@ -1525,9 +1525,9 @@ def test_detector_context_carries_unscored_profile_sections():
     context_path = os.path.join(scratch, 'gap_detector_context.md')
     context = _util.read(context_path)
 
-    import requirement_kinds
+    import jd_extraction_tables
     research = h2_bodies(_util.read(os.path.join(FIXTURE_APP, 'research.md')))
-    table = requirement_kinds.requirements_table(FIXTURE_APP, _config.load()[1], by_need=True)
+    table = jd_extraction_tables.requirements_table(FIXTURE_APP, _config.load()[1], by_need=True)
     assert table in context, 'the requirements table is not in the context'
     assert table.split('\n')[2].startswith('| 3 | N-01 '), f'the detector table is not in need rank order: {table}'
     for name in ('Title', 'Company', 'Industry'):
@@ -2072,15 +2072,15 @@ def test_ranked_needs_cover_every_requirement_once():
     Moved 2026-11-10: jd_needs.md is the requirements' only home, so ranking
     rewrites the file from its own rows and a row the ranker drops stays on file.
     """
-    import requirement_kinds
+    import jd_extraction_tables
     import role_extract_qc as rxq
     repo_root, cfg = _config.load()
-    kinds = requirement_kinds.load_kinds(repo_root, cfg)
+    kinds = jd_extraction_tables.load_kinds(repo_root, cfg)
     # Employment conditions (travel, location, authorization) are checked by
     # gap analysis's eligibility phase, so they are never a Qualification row
     # that counts toward go / no-go or claims a CV slot (2026-11-11).
-    assert kinds.get('Employment condition') == requirement_kinds.NOT_RANKED, kinds
-    assert kinds.get('Qualification') == requirement_kinds.QUALIFICATIONS, kinds
+    assert kinds.get('Employment condition') == jd_extraction_tables.NOT_RANKED, kinds
+    assert kinds.get('Qualification') == jd_extraction_tables.QUALIFICATIONS, kinds
     research_path = os.path.join(FIXTURE_APP, 'research.md')
     needs_path = os.path.join(FIXTURE_APP, 'jd_needs.md')
     jd = _util.read(os.path.join(FIXTURE_APP, 'jd.md'))
@@ -2088,7 +2088,7 @@ def test_ranked_needs_cover_every_requirement_once():
     good = _util.read(needs_path)
     row6 = '| 6 | Familiarity with regulatory submission data packages | Means | preferred | L27 Nice to have |\n'
     assert row6 in good, 'fixture row 6 changed shape'
-    table_head = requirement_kinds.ROW_HEADER + '\n'
+    table_head = jd_extraction_tables.ROW_HEADER + '\n'
 
     def result(needs_text):
         findings = []
@@ -2174,9 +2174,19 @@ def test_ranked_needs_cover_every_requirement_once():
         'the gap detector was not handed the role statement'
     assert 'CR-006' not in info and info['CR-005']['demand'] == 'required', 'gap QC expected a Not ranked row'
 
-    # 2026-11-18: kinds come from the jd-kind-labeler, written into the rows
-    # by the kinds step before ranking. Every row needs one; an unknown Part
-    # ID or a file that is not the labeler's stops the write.
+    # 2026-11-18: kinds come from the jd-kind-labeler, joined to the rows by the
+    # kinds step before ranking. Every row needs one; an unknown Part ID or a
+    # file that is not the labeler's stops the write. 2026-11-19: the step reads
+    # scratch/jd_assemble_split.md and writes scratch/jd_assemble_kinds.md,
+    # never jd_needs.md.
+    split_path = os.path.join(FIXTURE_APP, 'scratch', 'jd_assemble_split.md')
+    kinds_path = os.path.join(FIXTURE_APP, 'scratch', 'jd_assemble_kinds.md')
+    split_rows = [dict(r, kind=None) for r in jd_extraction_tables.all_rows(jd_extraction_tables.read_needs(good))]
+    # The fixture rows predate Unit IDs, so the stand-in split keeps their older
+    # layout (blank Kind cells) and with it each row's JD line.
+    _util.write(split_path, jd_extraction_tables.render_requirements('Aldridge Pharma | Director', split_rows))
+    if os.path.exists(kinds_path):
+        os.remove(kinds_path)
     kinds_table = ('## Row Kinds\n\n| Part ID | Kind |\n|---|---|\n'
                    + ''.join(f'| {n} | {k} |\n' for n, k in enumerate(
                        ['Qualification', 'Function', 'Function', 'Function', 'Means', 'Boilerplate or attitude'], 1)))
@@ -2185,12 +2195,16 @@ def test_ranked_needs_cover_every_requirement_once():
                            (kinds_table.replace('## Row Kinds', '## Kinds'), 'Row Kinds')):
         code, out = run('role_extract_assemble.py', 'kinds', '--folder', FIXTURE_APP,
                         '--kinds-file', write_block('kinds_bad.md', bad_kinds))
-        assert code != 0 and why in out and _util.read(needs_path) == good, f'a bad kinds file was written ({why}): {out}'
+        assert code != 0 and why in out and not os.path.exists(kinds_path), f'a bad kinds file was written ({why}): {out}'
     code, out = run('role_extract_assemble.py', 'kinds', '--folder', FIXTURE_APP,
                     '--kinds-file', write_block('kinds.md', kinds_table))
-    assert code == 0, out
-    labeled = _util.read(needs_path)
+    assert code == 0 and kinds_path in out, out
+    labeled = _util.read(kinds_path)
     assert '## Needs' not in labeled and '| Boilerplate or attitude |' in labeled, 'the kinds step kept a ranking or lost a kind'
+    assert _util.read(needs_path) == good, 'the kinds step wrote jd_needs.md'
+    # Interim, 2026-11-19: the needs step still reads jd_needs.md, so the
+    # labeled rows are put there by hand until it reads jd_assemble_kinds.md.
+    _util.write(needs_path, labeled)
 
     # The assembler rewrites jd_needs.md from the ranker's output, carrying each
     # row's cells, kind included, over from the file, and leaves research.md
@@ -2241,10 +2255,10 @@ def test_requirements_are_extracted_into_jd_needs():
     sets Demand by rule, and refuses parts that skip or invent a unit.
     """
     import jd_sentences
-    import requirement_kinds
+    import jd_extraction_tables
     import role_extract_qc as rxq
     _, cfg = _config.load()
-    needs_path = os.path.join(FIXTURE_APP, 'jd_needs.md')
+    needs_path = os.path.join(FIXTURE_APP, 'scratch', 'jd_assemble_split.md')
     research = _util.read(os.path.join(FIXTURE_APP, 'research.md'))
     assert 'Critical Requirements' not in research, 'research.md still holds requirements'
     units = jd_sentences.units(_util.read(os.path.join(FIXTURE_APP, 'jd.md')), cfg)
@@ -2264,9 +2278,13 @@ def test_requirements_are_extracted_into_jd_needs():
                     '--requirements-file', write_block('parts.md', table))
     assert code == 0, out
     written = _util.read(needs_path)
-    assert written.startswith('# JD needs: Aldridge Pharma | Director, Clinical Data Strategy\n\n## Requirements\n\n'
-                              + requirement_kinds.UNIT_ROW_HEADER), written[:300]
-    got = requirement_kinds.all_rows(requirement_kinds.read_needs(written))
+    assert written.startswith('# Aldridge Pharma | Director, Clinical Data Strategy\n\n## Requirements\n\n'
+                              + jd_extraction_tables.SPLIT_ROW_HEADER), written[:300]
+    assert '| Kind |' not in written, '2026-11-19: the assembled split has no Kind column'
+    # 2026-11-19: the title is company and role only; the older 'JD needs:' form still reads.
+    assert jd_extraction_tables.read_needs(written)['title'] == 'Aldridge Pharma | Director, Clinical Data Strategy'
+    assert jd_extraction_tables.read_needs('# JD needs: A | B\n')['title'] == 'A | B', 'the older title no longer reads'
+    got = jd_extraction_tables.all_rows(jd_extraction_tables.read_needs(written))
     assert len(got) == len(units) + 1, f'{len(got)} rows for {len(units)} units plus one split'
     by_unit = {}
     for r in got:
@@ -2276,18 +2294,23 @@ def test_requirements_are_extracted_into_jd_needs():
     assert (b['text'], b['demand'], b['line'], b['section']) == \
         (bachelor['text'], 'required', 'L21', '## Requirements'), b
     assert b['source'] == 'L21 ## Requirements', f'later readers lost the JD reference: {b}'
-    assert f"| {b['num']} | {bachelor['id']} | L21 | ## Requirements | {bachelor['text']} | required |  |  |" in written, \
+    assert f"| {b['num']} | {bachelor['id']} | L21 | ## Requirements | {bachelor['text']} | required |  |" in written, \
         'columns out of order'
     # Bar comes from jd_bar: 'Familiarity with' is exposure.
     assert by_unit[nice['id']][0]['bar'] == 'exposure', by_unit[nice['id']]
     # 2026-11-18: the file ends with a Definitions appendix for a reviewer,
     # every kind's definition copied from the rules file, never parsed as rows.
     repo_root, _ = _config.load()
-    defs = requirement_kinds.kind_definitions(repo_root, cfg)
-    assert [n for n, _ in defs] == list(requirement_kinds.load_kinds(repo_root, cfg)), defs
+    defs = jd_extraction_tables.kind_definitions(repo_root, cfg)
+    assert [n for n, _ in defs] == list(jd_extraction_tables.load_kinds(repo_root, cfg)), defs
     assert written.rstrip().endswith(written[written.index('## Definitions'):].rstrip()), 'Definitions is not last'
+    # The assembled split carries no Kind, so its appendix has no Kind definitions;
+    # the appendix for files with a Kind column still copies every one.
+    import role_extract_assemble
+    with_kind = '\n'.join(role_extract_assemble._definitions(repo_root, cfg))
     for name, text in defs:
-        assert f'- **{name}:** {text}' in written, f'the {name} definition is missing or reworded'
+        assert f'- **{name}:** {text}' in with_kind, f'the {name} definition is missing or reworded'
+        assert f'- **{name}:** ' not in written, f'the split file still defines the {name} kind'
     assert '- **exposure:** ' in written and '- **preferred:** ' in written, 'Demand or Bar definitions missing'
     # Demand comes from jd_demand: everything under a 'Nice to have' heading is preferred.
     assert by_unit[nice['id']][0]['demand'] == 'preferred', by_unit[nice['id']]
@@ -2306,7 +2329,7 @@ def test_requirements_are_extracted_into_jd_needs():
                         '--requirements-file', write_block('bad.md', bad))
         assert code != 0 and why in out, f'a bad splitter file was written ({why}): {out}'
     piped = {'num': 1, 'unit': 'S-001', 'text': 'SAS | R', 'kind': None, 'demand': 'required', 'source': 'L5 Skills'}
-    back = requirement_kinds.all_rows(requirement_kinds.read_needs(requirement_kinds.render_requirements('X | Y', [piped])))
+    back = jd_extraction_tables.all_rows(jd_extraction_tables.read_needs(jd_extraction_tables.render_requirements('X | Y', [piped])))
     assert back and back[0]['text'] == 'SAS | R' and back[0]['unit'] == 'S-001', f'a pipe in a requirement broke its row: {back}'
 
     def present(text):
@@ -2608,6 +2631,20 @@ def test_jd_breaks_into_numbered_units_with_hints():
     code, printed = run('jd_sentences.py', '--folder', folder)
     assert code == 0 and os.path.isfile(os.path.join(folder, 'scratch', 'jd_sentences.md')), printed
 
+    # 2026-11-19: what a unit is lives in the SPLIT rules, and the file's header
+    # copies it from there, so the definition has one home outside the script.
+    import jd_rules_slice
+    repo_root, _ = _config.load()
+    split_rules = jd_rules_slice.slice_steps(jd_rules_slice.load(repo_root, cfg), ['SPLIT'])
+    rule_line = next(line for line in split_rules.split('\n') if line.startswith('**Unit:** '))
+    written = _util.read(os.path.join(folder, 'scratch', 'jd_sentences.md'))
+    assert f"- **Unit:** {rule_line[len('**Unit:** '):]}" in written, 'the header does not carry the rules file\'s unit definition'
+    try:
+        jd_sentences.unit_definition(split_rules.replace('**Unit:** ', '**Units:** '))
+        raise AssertionError('rules with no unit definition did not stop the script')
+    except ValueError:
+        pass
+
 
 def test_jd_rules_slice_by_step():
     """Built 2026-11-18: rules for each step that works on the JD live in
@@ -2657,6 +2694,8 @@ def test_bar_is_set_by_rule():
         ('Supports cross-Medicine adoption of proven approaches', ''),             # 'proven' alone is no bar
         ("Bachelor's degree from an accredited institution required", ''),        # no bar word
         ('Leverages advanced analytics to drive insights', ''),                    # 'advanced' is not a bar word
+        ('including at least two (2) years leading cross-functional improvement initiatives', 'working'),  # year count (2026-11-19, APP-029)
+        ('5+ years in clinical operations', 'working'),
     ]
     got = jd_bar.set_bar([t for t, _ in cases], cfg)
     for (text, want), g in zip(cases, got):
@@ -3164,9 +3203,17 @@ def test_dispatch_prompts_are_printed_not_composed():
     # 2026-11-18: kind labeling moved from the ranker to jd-kind-labeler, which
     # alone needs the Company section (to spot boilerplate). Both get only the
     # KINDS rules, never the split rules.
+    # 2026-11-19: the labeler reads the assembled split in scratch, never jd_needs.md.
+    split_path = os.path.join(FIXTURE_APP, 'scratch', 'jd_assemble_split.md')
+    if os.path.exists(split_path):
+        os.remove(split_path)
+    code, out = run('dispatch_prompt.py', 'jd-kind-labeler', '--folder', FIXTURE_APP)
+    assert code != 0 and 'jd_assemble_split.md' in out, f'the labeler ran without the assembled split: {out}'
+    _util.write(split_path, '# Aldridge Pharma | Director\n')
     labeler = prompt('jd-kind-labeler')
     company_path = os.path.join(FIXTURE_APP, 'scratch', 'company.md')
-    assert jd_path in labeler and company_path in labeler, labeler
+    assert jd_path in labeler and company_path in labeler and split_path in labeler, labeler
+    assert os.path.join(FIXTURE_APP, 'jd_needs.md') not in labeler, 'the labeler was given jd_needs.md'
     assert os.path.join(FIXTURE_APP, 'research.md') not in labeler, 'the labeler was given the whole research file'
     company = _util.read(company_path)
     assert company.startswith('## Company\n') and '## Title' not in company, f'the Company slice is wrong: {company[:200]}'

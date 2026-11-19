@@ -6,7 +6,7 @@ Reads an application's jd.md and writes <app-folder>/scratch/jd_sentences.md:
 the JD as numbered units under their section and subsection headings, so
 every later step works from the same fixed breakdown instead of each agent
 deciding where one requirement ends and the next begins. Used by role-extract
-Phase 1, before the requirements extractor runs.
+Phase 1, before the jd-splitter agent runs.
 
 A unit is one sentence, or one part of a sentence split at a semicolon
 (S-046a, S-046b). Each unit carries:
@@ -41,7 +41,8 @@ import sys
 
 import _config
 import _util
-import requirement_kinds
+import jd_rules_slice
+import jd_extraction_tables
 
 
 # ---------------------------------------------------------------------------
@@ -115,7 +116,7 @@ def units(jd_text, cfg):
                 # semicolon continues its own sentence by construction.
                 if k == 0 and out and continues.match(part):
                     hints.append(f"continues {out[-1]['id']}")
-                word = requirement_kinds.optional_word(part, cfg['requirement_optional_words'])
+                word = jd_extraction_tables.optional_word(part, cfg['requirement_optional_words'])
                 if word:
                     hints.append(f'optional: {word}')
                 counts = list(dict.fromkeys(m.group(0) for m in years.finditer(part)))
@@ -143,16 +144,29 @@ def sentence_id(unit_id):
     return re.match(r'S-\d+', unit_id).group(0)
 
 
-def render(unit_list, jd_path):
-    """Return the jd_sentences.md text for the units."""
+# What a unit is lives in the SPLIT section of the JD rules file, on a line
+# opening '**Unit:** '. The header copies it from there, so the definition is
+# never typed into this script and cannot drift from the rules the splitter reads.
+_UNIT_LABEL = '**Unit:** '
+
+
+def unit_definition(split_rules):
+    """Return the unit definition from the SPLIT rules text; raise when it is missing."""
+    for line in split_rules.split('\n'):
+        if line.startswith(_UNIT_LABEL):
+            return line[len(_UNIT_LABEL):].strip()
+    raise ValueError(f'the SPLIT rules have no line opening "{_UNIT_LABEL.strip()}"; nothing written')
+
+
+def render(unit_list, jd_path, definition):
+    """Return the jd_sentences.md text for the units; definition is unit_definition()'s text."""
     sentences = len({sentence_id(u['id']) for u in unit_list})
     out = ['# JD sentences', '',
            f'From `{jd_path}`: {sentences} sentences, {len(unit_list)} units.', '',
            'How to read this file:', '',
-           '- **Unit ID:** a unit is one sentence of the job description, or one part of a sentence '
-           'that has semicolons; each part between semicolons is its own unit (S-046a, S-046b). Every '
-           'unit has its own row and Unit ID; drop the letter to get the sentence. Units are listed in '
-           'job-description order, under their section heading.',
+           f'- **Unit:** {definition}',
+           '- **Unit ID:** every unit has its own row and Unit ID; drop the letter to get the sentence. '
+           'Units are listed in job-description order, under their section heading.',
            '- **Line:** the `jd.md` line the unit came from.',
            '- **From:** `bullet` when that line is a list item, else `paragraph`.',
            '- **Hints:** words found in the unit\'s text: `continues S-NNN` (opens with a word '
@@ -179,7 +193,7 @@ def main():
     parser.add_argument('--folder', required=True, help='absolute path to the application folder')
     args = parser.parse_args()
     sys.stdout.reconfigure(encoding='utf-8')
-    _, cfg = _config.load()
+    repo_root, cfg = _config.load()
     fn = cfg['filenames']
 
     jd_path = os.path.join(args.folder, fn['jd_file'])
@@ -191,8 +205,15 @@ def main():
         print(f'Error: {jd_path} holds no JD text after its headings; nothing written', file=sys.stderr)
         return 1
 
+    try:
+        split_rules = jd_rules_slice.slice_steps(jd_rules_slice.load(repo_root, cfg), ['SPLIT'])
+        definition = unit_definition(split_rules)
+    except ValueError as e:
+        print(f'Error: {e}', file=sys.stderr)
+        return 1
+
     dest = os.path.join(args.folder, fn['scratch_subdir'], fn['jd_sentences_file'])
-    _util.write(dest, render(unit_list, jd_path))
+    _util.write(dest, render(unit_list, jd_path, definition))
     print(f'{dest} ({len(unit_list)} units)')
     return 0
 

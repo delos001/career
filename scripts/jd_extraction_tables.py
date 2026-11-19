@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-requirement_kinds.py - the requirements file (jd_needs.md): its layout, the
-kinds it uses, and the rows later skills read
+jd_extraction_tables.py - role-extract's table files: their layout, the kinds
+they use, and the rows later skills read (named requirement_kinds.py until
+2026-11-19)
 
 jd_needs.md is the one home of a job's requirements. role-extract writes it in
 two steps:
@@ -113,6 +114,10 @@ TABLE_HEADER = '| # | Text | Demand | Source |\n|---|------|------|--------|'
 # Files written before 2026-11-18 have the five-column ROW_HEADER.
 UNIT_ROW_HEADER = ('| Part ID | Unit ID | Line | Section | Requirement | Demand | Bar | Kind |\n'
                    '|---|---|---|---|---|---|---|---|')
+# scratch/jd_assemble_split.md has no Kind column (2026-11-19): kinds are
+# added by a later step, which writes its own file.
+SPLIT_ROW_HEADER = ('| Part ID | Unit ID | Line | Section | Requirement | Demand | Bar |\n'
+                    '|---|---|---|---|---|---|---|')
 ROW_HEADER = '| Req | Requirement | Kind | Demand | JD line |\n|---|---|---|---|---|'
 
 # The kinds are the '### N. <name>' headings under this section of
@@ -362,15 +367,21 @@ def _cell(value):
     return (value or '').replace('|', r'\|')
 
 
-def _row_table(rows):
+def _row_table(rows, with_kind=True):
     """Return the requirement table lines for rows, or ['None.'].
 
     Rows from the jd-splitter carry their unit, so the table gets the
-    seven-column layout; a file written before 2026-11-18 has no unit and
-    keeps its five columns when it is rewritten.
+    eight-column layout, or seven with no Kind when with_kind is False (the
+    assembled split); a file written before 2026-11-18 has no unit and keeps
+    its five columns when it is rewritten.
     """
     if not rows:
         return ['None.']
+    if not with_kind:
+        return [SPLIT_ROW_HEADER] + [
+            f"| {row['num']} | {_cell(row.get('unit'))} | {_cell(row.get('line'))} | "
+            f"{_cell(row.get('section'))} | {_cell(row['text'])} | {_cell(row['demand'])} | "
+            f"{_cell(row.get('bar'))} |" for row in rows]
     if any(row.get('unit') for row in rows):
         return [UNIT_ROW_HEADER] + [
             f"| {row['num']} | {_cell(row.get('unit'))} | {_cell(row.get('line'))} | "
@@ -398,20 +409,26 @@ def _table_row(line):
         num, unit, jd_line, section, text, demand, bar, kind = cells
         return _row(int(num), text, demand or None, None, kind or None, unit or None,
                     jd_line or None, section or None, bar)
+    if len(cells) == 7:
+        # The assembled split: the eight-column layout without Kind.
+        num, unit, jd_line, section, text, demand, bar = cells
+        return _row(int(num), text, demand or None, None, None, unit or None,
+                    jd_line or None, section or None, bar)
     if len(cells) == 5:
         num, text, kind, demand, source = cells
         return _row(int(num), text, demand or None, source or None, kind or None)
     return None
 
 
-def render_requirements(title, rows, definitions=()):
-    """Return jd_needs.md text holding the extracted rows only (before ranking).
+def render_requirements(title, rows, definitions=(), with_kind=True):
+    """Return the text of a file holding the extracted rows only (before ranking).
 
     definitions: the lines of the '## Definitions' appendix (built by
     role_extract_assemble.py), placed last so readers can stop before it.
+    with_kind=False writes the assembled split, which has no Kind column.
     """
-    out = [f'# JD needs: {title}', '', f'## {UNPLACED}', '']
-    out += _row_table(rows)
+    out = [f'# {title}', '', f'## {UNPLACED}', '']
+    out += _row_table(rows, with_kind)
     if definitions:
         out += [''] + list(definitions)
     return '\n'.join(out) + '\n'
@@ -453,7 +470,8 @@ def read_needs(text):
     Unknown lines are ignored; the QC script reports what is missing."""
     out = {'title': '', 'job': {}, 'job_items': {}, 'needs': [], 'Qualifications': [], 'Not ranked': [],
            UNPLACED: [], 'sections': []}
-    m = re.match(r'# JD needs:\s*(.*)', text)
+    # The title is '# <Company> | <Role>'; files written before 2026-11-19 open '# JD needs: '.
+    m = re.match(r'# (?:JD needs:\s*)?(.*)', text)
     if m:
         out['title'] = m.group(1).strip()
     section, rows, job_field = None, None, None
