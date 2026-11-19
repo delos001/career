@@ -3,20 +3,28 @@
 role_research_assemble.py - role-research artifact writer
 
 Writes research.md from the three research agents' output blocks (company,
-role, industry) and fills the session log's research-completed date, so the
+role, industry) and records the research-completed date, so the
 role-research skill writes files through a deterministic tool instead of by
 hand. Moved out of assemble.py when research became its own skill (2026-11-16).
 
+The session log's `Research Completed Date` means the user approved the
+research, so later skills can tell finished research from research still
+being checked (2026-11-19). Every write that changes research.md sets it back
+to pending; only `complete`, run at the user's approval, writes the date.
+research.md carries no copy of the date.
+
   research  Write (or, on a re-run, refresh) research.md. The APP-NNN, company
             and role come from the session log, never from the caller. On a
-            re-run only the Industry, Company and Title sections and the
-            completed date are replaced, so sections other skills added are
-            left in place. Every write lays the file out as Industry, Company,
-            Title, other sections, then one Sources list in citation order (see
-            Layout). An older file's '## Role' is renamed '## Title'.
+            re-run only the Industry, Company and Title sections are replaced,
+            so sections other skills added are left in place. Every write lays
+            the file out as Industry, Company, Title, other sections, then one
+            Sources list in citation order (see Layout). An older file's
+            '## Role' is renamed '## Title'.
   layout    Re-lay out an existing research.md without new research. Run
             after any hand edit: it renumbers each section's sources by first
             citation, which a hand edit can break (2026-11-17, APP-029).
+  complete  Write the completed date into the session log. Run once the user
+            approves the research (role-research Phase 4).
 
 Nothing repo-dependent is hardcoded here: filenames and the template location
 come from config.yaml (via _config); the structure comes from
@@ -25,9 +33,10 @@ templates/research_file.md.
 Author    : Jason Delosh
 Created   : 2026-11-16
 Project   : career
-Usage     : python scripts/role_research_assemble.py research --folder ... --date ...
+Usage     : python scripts/role_research_assemble.py research --folder ...
                 --company-file ... --role-file ... --industry-file ...
             python scripts/role_research_assemble.py layout --folder ...
+            python scripts/role_research_assemble.py complete --folder ... --date ...
 Depends   : pyyaml (via _config)
 """
 
@@ -103,6 +112,9 @@ def _layout(text):
     """Return research.md rebuilt in reading order with all sources last."""
     first = re.search(r'(?m)^## ', text)
     header = (text[:first.start()] if first else text).rstrip()
+    # The completed date lives in the session log only (2026-11-19); an older
+    # file's copy is dropped so it cannot disagree with the log.
+    header = re.sub(r'(?m)^\*\*Research completed:\*\*.*\n?', '', header).rstrip()
     sections = re.split(r'(?m)^(?=## )', text[first.start():]) if first else []
     # An older file's '## Role' takes the current name, '## Title'.
     headings = {s.split('\n', 1)[0][3:].strip() for s in sections}
@@ -144,6 +156,26 @@ def _layout(text):
 
 
 # ---------------------------------------------------------------------------
+# Completed date (2026-11-19)
+# The session log's metadata line. Pending until the user approves the research.
+# ---------------------------------------------------------------------------
+
+PENDING = '_(pending)_'
+
+
+def _set_completed(session_log, value):
+    """Write `value` as the session log's research-completed date.
+
+    A log missing the line is left as is: role_research_qc.py I2 reports a
+    missing line, so it is not checked twice.
+    """
+    # Lambda replacement: the value is inserted literally, never read as a
+    # regex template.
+    _util.write(session_log, re.sub(r'(?m)^- Research Completed Date: .*$',
+                                    lambda _m: f'- Research Completed Date: {value}', _util.read(session_log)))
+
+
+# ---------------------------------------------------------------------------
 # Subcommand: research
 # ---------------------------------------------------------------------------
 
@@ -170,27 +202,21 @@ def cmd_research(args, repo_root, cfg):
             'company': meta['Company'],
             'role': meta['Role'],
             'app_id': meta['APP-NNN'],
-            'research_completed_date': args.date,
             'company_block': company_block,
             'role_block': role_block,
             'industry_block': industry_block,
         })
         _util.write(research_file, _layout(body))
     else:
-        # Re-run: replace only the research sections and the completed-date
-        # line, so a current-state refresh does not clobber anything else.
+        # Re-run: replace only the research sections, so a current-state
+        # refresh does not clobber anything else.
         text = _util.read(research_file)
-        # Lambda replacement: the value is inserted literally, never read as a
-        # regex template.
-        text = re.sub(r'(?m)^\*\*Research completed:\*\* .*$',
-                      lambda _m: f'**Research completed:** {args.date}', text)
         text = _replace_section(text, 'Company', company_block)
         text = _replace_section(text, research_heading(text, 'Title'), role_block)
         text = _replace_section(text, 'Industry', industry_block)
         _util.write(research_file, _layout(text))
-    log_text = re.sub(r'(?m)^- Research Completed Date: .*$',
-                      lambda _m: f'- Research Completed Date: {args.date}', _util.read(session_log))
-    _util.write(session_log, log_text)
+    # New research is not approved research.
+    _set_completed(session_log, PENDING)
     print(research_file)
 
 
@@ -203,7 +229,25 @@ def cmd_layout(args, repo_root, cfg):
     if not os.path.exists(research_file):
         raise FileNotFoundError(f'research file not found (run role-research first): {research_file}')
     _util.write(research_file, _layout(_util.read(research_file)))
+    # Layout follows a hand edit, and edited research is not approved research.
+    _set_completed(os.path.join(args.folder, cfg['filenames']['session_log_file']), PENDING)
     print(research_file)
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: complete
+# ---------------------------------------------------------------------------
+
+def cmd_complete(args, repo_root, cfg):
+    research_file = os.path.join(args.folder, cfg['filenames']['research_file'])
+    session_log = os.path.join(args.folder, cfg['filenames']['session_log_file'])
+    for path in (research_file, session_log):
+        if not os.path.exists(path):
+            raise FileNotFoundError(f'not found (run role-research first): {path}')
+    if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', args.date):
+        raise ValueError(f'--date must be YYYY-MM-DD: {args.date!r}')
+    _set_completed(session_log, args.date)
+    print(session_log)
 
 
 # ---------------------------------------------------------------------------
@@ -219,7 +263,6 @@ def main():
     p_res = sub.add_parser('research', help='write research.md; APP-NNN, company and role '
                                             'come from the session log')
     p_res.add_argument('--folder', required=True, help='the application folder')
-    p_res.add_argument('--date', required=True, help='YYYY-MM-DD')
     p_res.add_argument('--company-file', required=True)
     p_res.add_argument('--role-file', required=True)
     p_res.add_argument('--industry-file', required=True)
@@ -229,6 +272,11 @@ def main():
                                           'by first citation')
     p_lay.add_argument('--folder', required=True, help='the application folder')
     p_lay.set_defaults(func=cmd_layout)
+
+    p_com = sub.add_parser('complete', help='write the completed date once the user approves the research')
+    p_com.add_argument('--folder', required=True, help='the application folder')
+    p_com.add_argument('--date', required=True, help='YYYY-MM-DD')
+    p_com.set_defaults(func=cmd_complete)
 
     args = parser.parse_args()
     try:

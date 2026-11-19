@@ -18,7 +18,7 @@ role_classify_qc.py, role_classify_assemble.py, role_research_assemble.py and
 dispatch_prompt.py import this file's parsing helpers.
 
 Checks:
-  I1  Research file completeness: H1 + APP-NNN + Research completed lines;
+  I1  Research file completeness: H1 + APP-NNN line;
       Industry / Company / Title sections ('Role' in files before 2026-11-17)
       each carrying non-empty Summary and
       Key facts, and sources with at least one URL: one `## Sources` list at
@@ -29,7 +29,8 @@ Checks:
       every marker carries its section's letter, and no URL sits in Key
       facts. No pending markers outside role-classify's sections.
   I2  Session log completeness: every Metadata field line present, the
-      required ones non-empty, dates well-formed. No pending markers outside
+      required ones non-empty, dates well-formed (Research Completed Date may
+      be pending until the user approves). No other pending markers outside
       role-classify's sections.
   I3  Cross-file consistency: company, role, and APP-NNN match between the
       two files.
@@ -82,6 +83,12 @@ METADATA_OPTIONAL = ['Comms file', 'Comms source', 'Role Level', 'Industry']
 
 # Metadata date fields that must be YYYY-MM-DD.
 DATE_FIELDS = ['Session Start Date', 'Research Completed Date']
+
+# The research-completed date stays pending until the user approves the
+# research (2026-11-19), and these checks run before approval, so it may be
+# pending; a value that is not pending must still be a date.
+_COMPLETED_LINE_RE = re.compile(r'(?m)^- Research Completed Date:.*$')
+PENDING = '_(pending)_'
 
 # What role-classify fills after role-research hands off: whole sections, and
 # metadata lines. Their pending markers are not role-research's to clear.
@@ -207,10 +214,9 @@ def check_research(research_text, findings):
     problems = []
     if _h1_company_role(research_text, 'Research') is None:
         problems.append('H1 is not `# Research: <company> | <role>`')
-    for label in ('APP-NNN', 'Research completed'):
-        m = re.search(rf'^\*\*{re.escape(label)}:\*\*\s*(.+)$', research_text, re.MULTILINE)
-        if not m or not m.group(1).strip():
-            problems.append(f'missing or empty **{label}:** line')
+    m = re.search(r'^\*\*APP-NNN:\*\*\s*(.+)$', research_text, re.MULTILINE)
+    if not m or not m.group(1).strip():
+        problems.append('missing or empty **APP-NNN:** line')
     # Since 2026-11-17 the sources sit in one `## Sources` list at the end of
     # the file; older files carry a `### Sources` inside each block.
     file_sources = _section_body(research_text, 'Sources')
@@ -263,9 +269,9 @@ def check_session_log(log_text, meta, findings):
             problems.append(f'metadata field {field!r} line missing')
     for field in DATE_FIELDS:
         value = meta.get(field, '')
-        if value and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', value):
+        if value and value != PENDING and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', value):
             problems.append(f'{field} malformed: {value!r}')
-    if _PENDING_RE.search(_outside_classify(log_text)):
+    if _PENDING_RE.search(_COMPLETED_LINE_RE.sub('', _outside_classify(log_text))):
         problems.append('pending markers or unfilled template tokens remain')
     findings.append(('I2', not problems, '; '.join(problems) or 'session log complete'))
 

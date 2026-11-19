@@ -2774,7 +2774,7 @@ def test_research_citations_resolve_to_numbered_sources():
         blocks = {'Company': (company_facts, company_sources),
                   'Title': ('- Title meaning [t1]', '- [t1] https://example.com/title'),
                   'Industry': ('- Sector fact [i1]\n- From the posting [JD]', '- [i1] https://example.com/ind')}
-        text = '# Research: Halloway Labs | Director\n\n**APP-NNN:** APP-001\n**Research completed:** 2026-01-11\n\n'
+        text = '# Research: Halloway Labs | Director\n\n**APP-NNN:** APP-001\n\n'
         for name, (facts, sources) in blocks.items():
             text += f'## {name}\n\n### Summary\nS.\n\n### Key facts\n{facts}\n\n### Sources\n{sources}\n\n'
         return text
@@ -2821,7 +2821,7 @@ def test_research_file_reads_industry_company_role_with_sources_last():
                                                '### Sources\n- [i1] https://i-one.com\n'),
     }
     args = ('--company-file', blocks['company'], '--role-file', blocks['role'], '--industry-file', blocks['industry'])
-    code, out = run('role_research_assemble.py', 'research', '--folder', FIXTURE_APP, '--date', '2026-01-11', *args)
+    code, out = run('role_research_assemble.py', 'research', '--folder', FIXTURE_APP, *args)
     assert code == 0, out
     text = _util.read(research_path)
     headings = re.findall(r'(?m)^## (.+)$', text)
@@ -2838,7 +2838,7 @@ def test_research_file_reads_industry_company_role_with_sources_last():
 
     # A re-run rebuilds the same layout and keeps a section another skill added.
     _util.write(research_path, text.replace('## Sources', '## Interview prep: x\n\nNotes.\n\n## Sources'))
-    code, out = run('role_research_assemble.py', 'research', '--folder', FIXTURE_APP, '--date', '2026-01-12', *args)
+    code, out = run('role_research_assemble.py', 'research', '--folder', FIXTURE_APP, *args)
     assert code == 0, out
     rerun = _util.read(research_path)
     assert re.findall(r'(?m)^## (.+)$', rerun) == ['Industry', 'Company', 'Title', 'Interview prep',
@@ -2872,7 +2872,7 @@ def test_research_layout_renumbers_after_a_hand_edit():
         '--industry-file', write_block('industry.md', '## Industry\n\n### Summary\nS.\n\n### Key facts\n- I [i1]\n\n'
                                                       '### Sources\n- [i1] https://i-one.com\n'),
     )
-    code, out = run('role_research_assemble.py', 'research', '--folder', FIXTURE_APP, '--date', '2026-01-11', *blocks)
+    code, out = run('role_research_assemble.py', 'research', '--folder', FIXTURE_APP, *blocks)
     assert code == 0, out
     clean = _util.read(research_path)
 
@@ -2938,7 +2938,7 @@ def test_interview_prep_research_lands_in_its_section():
               for k in ('company', 'role', 'industry')}
     blocks['role'] = write_block('role.md', '## Title\n\n### Summary\nS.\n\n### Key facts\n- F [t1]\n\n'
                                             '### Sources\n- [t1] https://title.com\n')
-    code, out = run('role_research_assemble.py', 'research', '--folder', FIXTURE_APP, '--date', '2026-01-11',
+    code, out = run('role_research_assemble.py', 'research', '--folder', FIXTURE_APP,
                     '--company-file', blocks['company'], '--role-file', blocks['role'],
                     '--industry-file', blocks['industry'])
     assert code == 0, out
@@ -2998,7 +2998,15 @@ def test_role_intake_hands_classification_to_role_classify():
     dated_log = handed_log.replace(f'Research Completed Date: {pending}', 'Research Completed Date: 2026-01-11')
     session = detail(riq.check_session_log, dated_log, riq._metadata_fields(dated_log))
     assert 'pending' not in session[2] and 'Role Level' not in session[2], session
-    assert 'pending' in detail(riq.check_session_log, handed_log, handed_meta)[2], 'a pending research date passed'
+    # The research date stays pending until the user approves (2026-11-19), so
+    # role-research's checks, which run before approval, accept it pending, but
+    # not malformed.
+    session = detail(riq.check_session_log, handed_log, handed_meta)
+    assert 'pending' not in session[2] and 'Research Completed' not in session[2], \
+        f'a pending research date failed QC: {session}'
+    bad_log = handed_log.replace(f'Research Completed Date: {pending}', 'Research Completed Date: Nov 11')
+    assert 'malformed' in detail(riq.check_session_log, bad_log, riq._metadata_fields(bad_log))[2], \
+        'a malformed research date passed'
 
     # role-classify's checks refuse the hand-off state until it is filled.
     complete = detail(rcq.check_complete, handed_log, handed_meta)
@@ -3010,7 +3018,7 @@ def test_role_intake_hands_classification_to_role_classify():
     # The research step reads APP-NNN, company and role from the session log
     # (2026-11-16), so a resumed run has nothing to carry over by hand.
     os.remove(research_path)
-    code, out = run('role_research_assemble.py', 'research', '--folder', FIXTURE_APP, '--date', '2026-01-11',
+    code, out = run('role_research_assemble.py', 'research', '--folder', FIXTURE_APP,
                     '--company-file', blocks['company'], '--role-file', blocks['role'],
                     '--industry-file', blocks['industry'])
     assert code == 0, out
@@ -3021,7 +3029,19 @@ def test_role_intake_hands_classification_to_role_classify():
     # could only ever read None once a gap blocked role-classify, and nothing read it.
     research_written = _util.read(research_path)
     assert 'Axis Gaps' not in research_written, 'the research step wrote an Axis Gaps section'
-    assert '- Research Completed Date: 2026-01-11' in _util.read(log_path), 'the research step left the date pending'
+    # Written research is not approved research: the session log's date stays
+    # pending until `complete` runs at the user's approval. research.md carries
+    # no copy of the date, and laying out an older file drops its copy.
+    assert f'- Research Completed Date: {pending}' in _util.read(log_path), 'the research step dated the session log'
+    assert 'Research completed' not in research_written, 'research.md carries a completed date'
+    import role_research_assemble
+    older = research_written.replace('**APP-NNN:** APP-001', '**APP-NNN:** APP-001\n**Research completed:** 2026-01-01')
+    assert 'Research completed' in older and 'Research completed' not in role_research_assemble._layout(older), \
+        'layout kept an older file\'s completed date'
+    code, out = run('role_research_assemble.py', 'complete', '--folder', FIXTURE_APP, '--date', '2026-01-11')
+    assert code == 0, out
+    assert '- Research Completed Date: 2026-01-11' in _util.read(log_path), 'approval left the session log pending'
+    assert _util.read(research_path) == research_written, 'approval changed research.md'
     code, out = run('role_classify_assemble.py', 'finalize', '--folder', FIXTURE_APP,
                     '--axis-file', write_block('axes.md', f'## Axis Classification\n\n{axes}\n\n## Axis Gaps\n\nNone'))
     assert code == 0, out

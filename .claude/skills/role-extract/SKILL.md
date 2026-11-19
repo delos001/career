@@ -15,7 +15,7 @@ description: Extract the job's requirements from the job description. Requiremen
 Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-NNN>`; use it as `<app_folder>`. Then check the folder against the cases below, in order, and follow the first one that is true:
 
 - **There is no folder or no session log:** role-intake has not finished for this APP-NNN. Tell the user role intake must be completed first and stop.
-- **There is no `research.md`:** tell the user role research must be completed first and stop.
+- **There is no `research.md`, or `Research Completed Date` in the session log is still pending:** tell the user role research must be completed and approved first and stop.
 - **There is no `jd_needs.md`:** go to Phase 0.
 - **`jd_needs.md` rows have no Kind:** go to Phase 2.
 - **`jd_needs.md` has no `## Needs` section:** go to Phase 4.

@@ -480,11 +480,11 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/role_research_assemble.py
 
-- **Purpose**: Write `research.md` from the three research agents' blocks and fill the session log's research-completed date (`research --folder --date --company-file --role-file --industry-file`); reads APP-NNN, company and role from the session log. On a re-run it replaces only the three research sections and the date. Moved out of `assemble.py` 2026-11-16.
+- **Purpose**: Write `research.md` from the three research agents' blocks (`research --folder --company-file --role-file --industry-file`); reads APP-NNN, company and role from the session log. On a re-run it replaces only the three research sections. `layout` re-lays out the file after a hand edit. Both set the session log's research-completed date to pending; `complete --folder --date` writes the date when the user approves. Moved out of `assemble.py` 2026-11-16.
 - **Status**: Designed
 - **Inputs**: Args; the three block files; `templates/research_file.md`. Config via `scripts/_config.py`.
 - **Outputs**: `research.md`; the session log's research date. Path to stdout; errors to stderr with exit 1.
-- **Triggers**: Invoked by `role-research` Phase 2.
+- **Triggers**: Invoked by `role-research` Phase 2 (`research`), its passage-edit route (`layout`) and Phase 4 approval (`complete`).
 - **Update Triggers**: When `templates/research_file.md` changes shape; when a research agent's output becomes a new section.
 
 #### scripts/role_classify_qc.py

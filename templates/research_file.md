@@ -6,7 +6,7 @@ One per evaluated job, written to `research.md` in the application folder (`pyth
 
 A **current-state document**: re-running or deepening research overwrites the affected sections; it does not accumulate a history of everything ever found.
 
-`scripts/role_research_assemble.py` renders the skeleton below: tokens in `{{double braces}}` are substituted. The `{{*_block}}` tokens are filled with the verbatim output of the three role-research agents - `company-research`, `title-research`, and `industry-research`. Each block carries its own heading and body:
+`scripts/role_research_assemble.py` renders the skeleton below: tokens in `{{double braces}}` are substituted. The research-completed date lives in the session log only (`Research Completed Date`); files before 2026-11-19 carry a `**Research completed:**` line, which laying the file out removes. The `{{*_block}}` tokens are filled with the verbatim output of the three role-research agents - `company-research`, `title-research`, and `industry-research`. Each block carries its own heading and body:
 
 - `{{industry_block}}` - `## Industry` with Summary / Key facts.
 - `{{company_block}}` - `## Company` with Summary / Key facts.
@@ -24,7 +24,6 @@ Axis gaps are recorded in the session log only. The job's requirements live in t
 # Research: {{company}} | {{role}}
 
 **APP-NNN:** {{app_id}}
-**Research completed:** {{research_completed_date}}
 
 {{industry_block}}
 

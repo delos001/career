@@ -47,20 +47,17 @@ role-extract: |
   works.
 
   Steps:
-    1. Pull out the job's requirements in the JD's own words, and check each
-       one against the JD before going on.
-    2. Label each requirement by kind, describe the job, group the
-       requirements into the work the role delivers, and rank those needs.
-       Boilerplate and other rows that are not needs are set aside, so later
-       steps never use them.
-    3. Check both, then you confirm the ranking section by section.
+    1. Split the JD into single requirements in its own words, categorize the
+       split parts, and check each one against the JD before going on.
+    2. Label what each requirement asks for.
+    3. Describe the job, group the requirements into the work the role
+       delivers, and rank those needs.
+    4. Check the labels and the ranking, then you confirm the ranking section
+       by section.
 
   Next: role-classify classifies the job against the five axes.
 
   Have ready: the APP-NNN of a role that has finished role-research.
-
-  Operates under rules/global-rules.md - halts and asks for direction on any
-  failure or ambiguity rather than guessing.
 
 role-classify: |
   # role-classify - classify the job
@@ -77,9 +74,6 @@ role-classify: |
   Next: retrieval finds the profile content that fits the job.
 
   Have ready: the APP-NNN of a role that has finished role-extract.
-
-  Operates under rules/global-rules.md - halts and asks for direction on any
-  failure or ambiguity rather than guessing.
 
 retrieval: |
   # retrieval - surface the relevant profile content for a role
@@ -110,9 +104,6 @@ retrieval: |
 
   Have ready: completed role-intake, role-research, role-extract and role-classify runs for
   the role.
-
-  Operates under rules/global-rules.md - halts and asks for direction on any
-  failure or ambiguity rather than guessing.
 
 gap-analysis: |
   # gap-analysis - evaluate candidate-to-role fit
@@ -149,9 +140,6 @@ gap-analysis: |
   Have ready: a completed retrieval run for the role (the application
   folder must contain retrieval.md).
 
-  Operates under rules/global-rules.md - halts and asks for direction on any
-  failure or ambiguity rather than guessing.
-
 cv-targeted: |
   # cv-targeted - draft a role-tailored CV
 
@@ -185,9 +173,6 @@ cv-targeted: |
   Have ready: a completed gap-analysis run for the role (the application folder
   must contain gap_analysis.md).
 
-  Operates under rules/global-rules.md - halts and asks for direction on any
-  failure or ambiguity rather than guessing.
-
 cv-render: |
   # cv-render - render the targeted CV to a formatted .docx
 
@@ -210,9 +195,6 @@ cv-render: |
 
   Have ready: a completed cv-targeted run for the role (the application folder
   must contain cv_content.md).
-
-  Operates under rules/global-rules.md - halts and asks for direction on any
-  failure or ambiguity rather than guessing.
 
 profile-update: |
   # profile-update - promote staged updates into your profile
@@ -241,6 +223,3 @@ profile-update: |
   ownership") are treated as binding instructions, not commentary.
 
   Have ready: nothing. The staging file is the input.
-
-  Operates under rules/global-rules.md - halts and asks for direction on any
-  failure or ambiguity rather than guessing.

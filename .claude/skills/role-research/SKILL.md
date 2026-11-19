@@ -29,7 +29,7 @@ Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-N
 
 ## Phase 2 - Write the research file
 
-- Run `python scripts/role_research_assemble.py research --folder <app_folder> --date <today> --company-file <scratch>/research_company.md --role-file <scratch>/research_role.md --industry-file <scratch>/research_industry.md`.
+- Run `python scripts/role_research_assemble.py research --folder <app_folder> --company-file <scratch>/research_company.md --role-file <scratch>/research_role.md --industry-file <scratch>/research_industry.md`.
 
 ## Phase 3 - Check the research file
 
@@ -42,7 +42,7 @@ Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-N
 
 - Present each finding QC left open as its own decision, one per response: what is wrong, the recommended fix, the before/after text.
 - Give the user the `research.md` path and ask for corrections or "approved". On a correction, fix it per *Routing on failure* and re-run Phase 3.
-- On approval, tell the user to run `/role-extract`.
+- On approval, run `python scripts/role_research_assemble.py complete --folder <app_folder> --date <today>`, then tell the user to run `/role-extract`.
 
 ## Routing on failure
 
@@ -50,5 +50,5 @@ Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-N
 |---|---|
 | A section missing or substantially wrong | Phase 1, then Phase 2 |
 | One claim, hedge or source wrong | Edit that passage in `research.md` directly, showing the before/after first, then run `python scripts/role_research_assemble.py layout --folder <app_folder>` |
-| Session log check fails | If the research date is still pending, re-run Phase 2. Otherwise stop and tell the user role-intake's files changed after its check. |
+| Session log check fails | Stop and tell the user role-intake's files changed after its check. |
 | Title or company wrong | Run `python scripts/assemble.py relabel --folder <app_folder>` with `--role` and/or `--company` (and `--slug` if it asks for one); the path it prints is `<app_folder>` from then on. Then Phase 1. |
