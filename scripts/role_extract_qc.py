@@ -10,7 +10,7 @@ are right).
 Moved from role_classify_qc.py when role-extract was split out of
 role-classify (2026-11-16): X1 was C7, X2 was C8, X3 was C6.
 
-Two commands. 'requirements' runs X1 and X2 alone on scratch/jd_assemble_split.md,
+Two commands. 'requirements' runs X1 and X2 alone on scratch/jd_assemble.md,
 right after extraction, so a bad extraction is caught before ranking is spent
 on it. 'check' runs them all on jd_needs.md.
 
@@ -369,11 +369,11 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings, units=None):
 def _needs_and_jd(folder, cfg, scratch=False):
     """Return (requirements file text, jd.md text), each None when absent.
 
-    scratch=True reads scratch/jd_assemble_split.md, for the Phase 3
+    scratch=True reads scratch/jd_assemble.md, for the Phase 3
     extraction check; otherwise jd_needs.md, for the full check.
     """
     fn = cfg['filenames']
-    path = (os.path.join(folder, fn['scratch_subdir'], fn['jd_assemble_split_file']) if scratch
+    path = (os.path.join(folder, fn['scratch_subdir'], fn['jd_assemble_file']) if scratch
             else os.path.join(folder, fn['jd_needs_file']))
     return _read(path), _read(os.path.join(folder, fn['jd_file']))
 
@@ -385,7 +385,7 @@ def _requirement_checks(needs_text, jd_text, cfg, findings):
 
 
 def cmd_requirements(args, repo_root, cfg):
-    """Run the extraction checks only (X1, X2) on jd_assemble_split.md; return exit code."""
+    """Run the extraction checks only (X1, X2) on jd_assemble.md; return exit code."""
     findings = []
     _requirement_checks(*_needs_and_jd(args.folder, cfg, scratch=True), cfg, findings)
     return _report(findings)

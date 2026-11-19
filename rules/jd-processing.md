@@ -6,7 +6,7 @@ Keys:
 
 - `SPLIT`: splitting each unit of `jd_sentences.md` into parts (the jd-splitter agent, role-extract Phase 1).
 - `RANK`: describing the job, grouping the rows into needs and ranking them (the jd-needs-ranker agent, role-extract Phase 6). role-extract's QC reads it too.
-- `KINDS`: labeling each `jd_needs.md` row with a kind (the jd-kind-labeler agent, role-extract Phase 4). The ranker and role-extract's QC read it too, and `scripts/jd_extraction_tables.py` reads the kind list and where each kind lands from the `### N. <name>` headings under `## KINDS: Kinds of row`.
+- `KINDS`: labeling each `jd_assemble.md` row with a kind (the jd-kind-labeler agent, role-extract Phase 4). The ranker and role-extract's QC read it too, and `scripts/jd_extraction_tables.py` reads the kind list and where each kind lands from the `### N. <name>` headings under `## KINDS: Kinds of row`.
 
 ## SPLIT: Splitting units into parts
 
@@ -24,8 +24,8 @@ Keys:
 3. **Examples stay whole.** Words after "e.g." or "such as" stay in the part they illustrate.
 4. **"Or" lists stay whole.** Items joined by "or" or "and/or" are one part, because any one meets it. "R, SAS, Python, or SQL" is one part.
 5. **"And" lists split what a CV could claim alone.** This covers every "and" list, including one after "including". Split when each item is a named thing a CV could claim without the others: a skill, tool, standard, regulation, language, credential or field of knowledge. "Knowledge of ICH, GCP, FDA, and 21 CFR Part 11" is four parts; "CDISC standards, including SDTM, ADaM, and USDM" is three; "Excellent written and verbal communication skills" is two; "Strong judgment and accountability" is two. Keep whole when the items are activities, or the topics of one activity. "Define the problem, establish performance measures, identify root causes, and lead implementation" is one part; "Establish standards for data governance, quality, and traceability" is one part.
-6. **An "including" tail of activities is its own part.** When "including" is followed by activities or details rather than named things, the words from "including" to the end of its list are one more part, whether they follow a skill, a list or a duty. "Strong project management skills, including milestone planning, dependency management and vendor coordination" is two parts; "Strong facilitation and stakeholder-management skills, including the ability to frame trade-offs and influence decisions" is three.
-7. **A "while" clause is its own part.** In "the role independently applies a common improvement discipline ..., while influencing senior stakeholders without direct authority", the "while influencing ..." words are their own part.
+6. **An "including" tail of activities is its own part.** When "including" is followed by activities or details rather than named things, the words from "including" to the end of its list are one more part, whether they follow a skill, a list or a duty. Split any "and" list before it by rule 5 first. "Strong project and program management skills, including milestone planning, dependency management and vendor coordination" is three parts: project management skills, program management skills, and the "including" words.
+7. **A "while" clause is its own part.** The words from "while" to the end of the unit are one more part, with or without a comma before "while". "Supports adoption of proven approaches while documenting where variation is intentional" is two parts.
 
 **Separate requirements**
 

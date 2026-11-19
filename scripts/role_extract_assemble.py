@@ -6,17 +6,18 @@ Writes jd_needs.md, the file the role-extract skill produces, from its two
 agents' output, so none of it is written or composed by hand. Two
 subcommands:
 
-  requirements  Write the jd-splitter's parts (scratch/jd_split.md,
-            '## Parts' with '| Unit ID | Text |') to scratch/jd_assemble_split.md under
-            '## Requirements', one row per part: Part ID, Unit ID, the unit's
-            jd.md Line and Section, the full text ('whole' replaced by the
-            unit's sentence), Demand (jd_demand.py) and Bar (jd_bar.py). Re-extracting
+  requirements  Join the jd-splitter's parts (scratch/jd_split.md,
+            '## Parts' with '| Unit ID | Part |') to scratch/jd_sentences.md on
+            Unit ID, writing scratch/jd_assemble.md under '## Requirements',
+            one row per part: Unit ID, Part ID (numbered here), the unit's
+            Section, Line, From and Hints, the Part ('whole' replaced by the
+            Unit text), Demand (jd_demand.py) and Bar (jd_bar.py). Re-extracting
             replaces the whole file, so a ranking built on old rows never
             survives.
   kinds     Join the jd-kind-labeler's output (scratch/jd_kinds.md, '## Row
-            Kinds' with '| Part ID | Kind |') to scratch/jd_assemble_split.md's
-            rows, writing scratch/jd_assemble_kinds.md with a Kind column.
-            Every row must get one.
+            Kinds' with '| Part ID | Kind |') to scratch/jd_assemble.md's rows,
+            rewriting that file in place with a Kind column. Every row must
+            get one.
   needs     Rewrite jd_needs.md with the jd-needs-ranker output: the job, each
             need with its requirements (copied from the file's own rows, kinds
             included), then the Qualifications and Not ranked rows. The
@@ -24,8 +25,8 @@ subcommands:
             by the ranker.
 
 Both moved here from role_classify_assemble.py when role-extract was split
-out of role-classify (2026-11-16). requirements writes scratch/jd_assemble_split.md;
-kinds writes scratch/jd_assemble_kinds.md; needs writes jd_needs.md.
+out of role-classify (2026-11-16). requirements writes scratch/jd_assemble.md;
+kinds adds the Kind column to it in place; needs writes jd_needs.md.
 
 Author    : Jason Delosh
 Created   : 2026-11-16
@@ -80,10 +81,9 @@ def _title(research):
 
 # ---------------------------------------------------------------------------
 # Subcommand: requirements
-# The units come from jd_sentences.units() run on jd.md, the same breakdown
-# jd_sentences.py wrote to scratch for the splitter, so this step reads no
-# scratch file but the splitter's own output. Wording against the JD is
-# role_extract_qc.py's 'requirements' check, run right after this write.
+# The units come from scratch/jd_sentences.md, the file the splitter read, so
+# each row carries the unit exactly as the splitter saw it. Wording against
+# jd.md is role_extract_qc.py's 'requirements' check, run right after this write.
 # ---------------------------------------------------------------------------
 
 def _definitions(repo_root, cfg, with_kind=True):
@@ -108,25 +108,21 @@ def _definitions(repo_root, cfg, with_kind=True):
     return out + ['']
 
 
-def _heading(unit):
-    """Return a unit's heading as jd_sentences.md shows it: 'Section > Subsection'."""
-    return unit['section'] + (f" > {unit['subsection']}" if unit['subsection'] else '')
-
-
 def build_rows(parts, units, cfg):
-    """Return jd_needs.md rows for the splitter's parts, numbered 1..N.
+    """Return jd_assemble.md rows for the splitter's parts, numbered 1..N.
 
-    parts: [(unit id, text)] in the splitter's order, text 'whole' for an
-    unsplit unit. units: jd_sentences.units() for the same jd.md. A part naming
-    a unit jd.md does not have, or a unit with no part, stops the write: the
-    splitter must account for every unit, or a requirement is silently lost.
-    Each row gets its unit, its full text, its unit's line and heading, then a
-    Demand from jd_demand.set_demand and a Bar from jd_bar.set_bar.
+    parts: [(unit id, part)] in the splitter's order, part 'whole' for an
+    unsplit unit. units: jd_sentences.read() of scratch/jd_sentences.md. A part
+    naming a unit the file does not have, or a unit with no part, stops the
+    write: the splitter must account for every unit, or a requirement is
+    silently lost. Each row gets its unit, its Part ID, the unit's heading,
+    line, From and Hints, the part (the Unit text for 'whole'), then a Demand
+    from jd_demand.set_demand and a Bar from jd_bar.set_bar.
     """
     by_id = {u['id']: u for u in units}
     unknown = [uid for uid, _ in parts if uid not in by_id]
     if unknown:
-        raise ValueError(f"parts name units jd.md does not have: {', '.join(dict.fromkeys(unknown))}; "
+        raise ValueError(f"parts name units jd_sentences.md does not have: {', '.join(dict.fromkeys(unknown))}; "
                          f"rerun jd_sentences.py and the splitter")
     covered = {uid for uid, _ in parts}
     missing = [u['id'] for u in units if u['id'] not in covered]
@@ -135,25 +131,36 @@ def build_rows(parts, units, cfg):
     rows = []
     for num, (uid, text) in enumerate(parts, start=1):
         unit = by_id[uid]
-        full = unit['text'] if text.strip().lower() == 'whole' else text.strip()
+        # A part cut before the unit's next words can keep the comma that
+        # joined them ('Strong process-design capability,'); the splitter
+        # keeps or drops it from run to run, so it is dropped here.
+        full = unit['text'] if text.strip().lower() == 'whole' else text.strip().rstrip(',').rstrip()
         rows.append(jd_extraction_tables._row(num, full, None, None, unit=uid,
-                                           line=f"L{unit['line']}", section=_heading(unit)))
+                                           line=f"L{unit['line']}", section=unit['heading'],
+                                           from_=unit['from'], hints='; '.join(unit['hints'])))
     demands = jd_demand.set_demand(
-        [{'unit': r['unit'], 'text': r['text'], 'heading': _heading(by_id[r['unit']])} for r in rows], cfg)
+        [{'unit': r['unit'], 'text': r['text'], 'heading': r['section']} for r in rows], cfg)
     for row, demand, bar in zip(rows, demands, jd_bar.set_bar([r['text'] for r in rows], cfg)):
         row['demand'], row['bar'] = demand, bar
     return rows
 
 
 def cmd_requirements(args, cfg):
-    """Write the splitter's parts to jd_assemble_split.md, replacing any earlier file."""
+    """Join the splitter's parts to jd_sentences.md into jd_assemble.md, replacing any earlier file."""
     research = _research_path(args.folder, cfg)
-    jd = _jd_text(args.folder, cfg)
+    fn = cfg['filenames']
+    sentences = os.path.join(args.folder, fn['scratch_subdir'], fn['jd_sentences_file'])
+    if not os.path.isfile(sentences):
+        raise FileNotFoundError(f'{sentences} not found (run jd_sentences.py and the splitter first)')
+    units = jd_sentences.read(_util.read(sentences))
+    if not units:
+        raise ValueError(f'{sentences} holds no units; rerun jd_sentences.py')
     parts = jd_extraction_tables.parse_parts_table(_util.read(args.requirements_file))
-    rows = build_rows(parts, jd_sentences.units(jd, cfg), cfg)
-    path = os.path.join(args.folder, cfg['filenames']['scratch_subdir'], cfg['filenames']['jd_assemble_split_file'])
+    rows = build_rows(parts, units, cfg)
+    path = os.path.join(args.folder, fn['scratch_subdir'], fn['jd_assemble_file'])
     _util.write(path, jd_extraction_tables.render_requirements(
-        _title(research), rows, _definitions(args.repo_root, cfg, with_kind=False), with_kind=False))
+        _title(research), rows, _definitions(args.repo_root, cfg, with_kind=False),
+        with_kind=False, assembled=True))
     print(path)
 
 
@@ -175,15 +182,14 @@ def _row_kinds(block):
 
 
 def cmd_kinds(args, cfg):
-    """Join the labeler's kinds to the assembled split's rows.
+    """Join the labeler's kinds to scratch/jd_assemble.md's rows, in place.
 
-    Reads scratch/jd_assemble_split.md and writes scratch/jd_assemble_kinds.md,
-    the same rows with a Kind column. Neither file holds a ranking, so a
-    ranking built on old kinds never survives a relabel.
+    Rewrites the file with a Kind column, replacing any kinds from an earlier
+    label run. The file holds no ranking, so a ranking built on old kinds
+    never survives a relabel. Nothing is written unless every row gets a kind.
     """
     fn = cfg['filenames']
-    path = os.path.join(args.folder, fn['scratch_subdir'], fn['jd_assemble_split_file'])
-    out_path = os.path.join(args.folder, fn['scratch_subdir'], fn['jd_assemble_kinds_file'])
+    path = os.path.join(args.folder, fn['scratch_subdir'], fn['jd_assemble_file'])
     if not os.path.isfile(path):
         raise FileNotFoundError(f'{path} not found (assemble the split first)')
     text = _util.read(args.kinds_file)
@@ -201,9 +207,10 @@ def cmd_kinds(args, cfg):
         raise ValueError(f"no Kind for Part IDs: {', '.join(map(str, missing))}; rerun the labeler")
     for r in rows:
         r['kind'] = kind_by_row[r['num']]
-    _util.write(out_path, jd_extraction_tables.render_requirements(current['title'], rows,
-                                                                _definitions(args.repo_root, cfg)))
-    print(out_path)
+    _util.write(path, jd_extraction_tables.render_requirements(current['title'], rows,
+                                                            _definitions(args.repo_root, cfg),
+                                                            with_kind=True, assembled=True))
+    print(path)
 
 
 # ---------------------------------------------------------------------------
@@ -332,13 +339,13 @@ def main():
     parser = argparse.ArgumentParser(description='role-extract artifact writer')
     sub = parser.add_subparsers(dest='command', required=True)
 
-    p_req = sub.add_parser('requirements', help="write the jd-splitter's parts to jd_assemble_split.md")
+    p_req = sub.add_parser('requirements', help="write the jd-splitter's parts to scratch/jd_assemble.md")
     p_req.add_argument('--folder', required=True, help='the application folder')
     p_req.add_argument('--requirements-file', required=True,
                        help="path to the jd-splitter's output (scratch/jd_split.md)")
     p_req.set_defaults(func=cmd_requirements)
 
-    p_kinds = sub.add_parser('kinds', help="join the jd-kind-labeler's kinds to the split into scratch/jd_assemble_kinds.md")
+    p_kinds = sub.add_parser('kinds', help="add the jd-kind-labeler's kinds to scratch/jd_assemble.md in place")
     p_kinds.add_argument('--folder', required=True, help='the application folder')
     p_kinds.add_argument('--kinds-file', required=True,
                          help="path to the jd-kind-labeler's output (scratch/jd_kinds.md)")

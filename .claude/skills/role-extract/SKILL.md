@@ -16,8 +16,8 @@ Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-N
 
 - **There is no folder or no session log:** role-intake has not finished for this APP-NNN. Tell the user role intake must be completed first and stop.
 - **There is no `research.md`, or `Research Completed Date` in the session log is still pending:** tell the user role research must be completed and approved first and stop.
-- **There is no `<scratch>/jd_assemble_split.md`:** go to Phase 0.
-- **There is no `<scratch>/jd_assemble_kinds.md`:** go to Phase 3.
+- **There is no `<scratch>/jd_assemble.md`:** go to Phase 0.
+- **`<scratch>/jd_assemble.md` has no `Kind` column:** go to Phase 3.
 - **There is no `jd_needs.md`, or it has no `## Needs` section:** go to Phase 6.
 - **Otherwise:** tell the user the needs are already ranked, then go to Phase 8 to re-check them.
 
@@ -32,7 +32,7 @@ Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-N
 
 ## Phase 2 - Assemble the split
 
-- Run `python scripts/role_extract_assemble.py requirements --folder <app_folder> --requirements-file <scratch>/jd_split.md`. It writes `<scratch>/jd_assemble_split.md`, one row per part, and sets each row's Demand and Bar. Re-extracting replaces any earlier kinds and ranking.
+- Run `python scripts/role_extract_assemble.py requirements --folder <app_folder> --requirements-file <scratch>/jd_split.md`. It joins the parts to `<scratch>/jd_sentences.md` and writes `<scratch>/jd_assemble.md`, one row per part, and sets each row's Part ID, Demand and Bar. Re-extracting replaces any earlier kinds and ranking.
 
 ## Phase 3 - Check the split against the job description
 
@@ -45,7 +45,7 @@ Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-N
 
 ## Phase 5 - Assemble the kinds
 
-- Run `python scripts/role_extract_assemble.py kinds --folder <app_folder> --kinds-file <scratch>/jd_kinds.md`. It writes `<scratch>/jd_assemble_kinds.md`, the split's rows with each row's Kind.
+- Run `python scripts/role_extract_assemble.py kinds --folder <app_folder> --kinds-file <scratch>/jd_kinds.md`. It adds each row's Kind to `<scratch>/jd_assemble.md`, replacing any earlier kinds.
 
 ## Phase 6 - Rank the needs
 

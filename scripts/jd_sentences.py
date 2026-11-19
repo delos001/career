@@ -178,10 +178,40 @@ def render(unit_list, jd_path, definition):
             current = (u['section'], u['subsection'])
             heading = u['section'] + (f" > {u['subsection']}" if u['subsection'] else '')
             out += ['', f'## {heading or "(no heading)"}', '',
-                    '| Unit ID | Line | From | Hints | Sentence |', '|---|---|---|---|---|']
+                    '| Unit ID | Line | From | Hints | Unit |', '|---|---|---|---|---|']
         out.append(f"| {u['id']} | L{u['line']} | {u['from']} | {'; '.join(u['hints'])} | "
                    f"{u['text'].replace('|', '/')} |")
     return '\n'.join(out) + '\n'
+
+
+# ---------------------------------------------------------------------------
+# Reading the file
+# role_extract_assemble.py joins the splitter's parts to this file, so the
+# assembled split carries the units exactly as the splitter saw them.
+# ---------------------------------------------------------------------------
+
+def read(text):
+    """Return [unit dict] from jd_sentences.md text: id, line (int), heading, from, hints, text.
+
+    heading is the '## ' heading the unit sits under ('' for '(no heading)');
+    hints is the list render() joined with '; '.
+    """
+    heading, out = '', []
+    for line in text.split('\n'):
+        if line.startswith('## '):
+            heading = line[3:].strip()
+            heading = '' if heading == '(no heading)' else heading
+            continue
+        body = line.strip()
+        if not body.startswith('|'):
+            continue
+        cells = [c.strip() for c in body.strip('|').split('|')]
+        if len(cells) < 5 or not jd_extraction_tables.UNIT_ID_RE.match(cells[0]):
+            continue
+        out.append({'id': cells[0], 'line': int(cells[1].lstrip('L')), 'heading': heading,
+                    'from': cells[2], 'hints': [h for h in cells[3].split('; ') if h],
+                    'text': ' | '.join(cells[4:])})
+    return out
 
 
 # ---------------------------------------------------------------------------

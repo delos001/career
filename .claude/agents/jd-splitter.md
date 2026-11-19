@@ -1,6 +1,6 @@
 ---
 name: jd-splitter
-description: Splits each numbered unit of a job description (jd_sentences.md) into parts, one requirement each, in the unit's own words, following the SPLIT rules it is given, for the role-extract skill. Writes Unit / Text rows to the output file it is given.
+description: Splits each numbered unit of a job description (jd_sentences.md) into parts, one requirement each, in the unit's own words, following the SPLIT rules it is given, for the role-extract skill. Writes Unit ID / Part rows to the output file it is given.
 tools: Read, Write
 ---
 
@@ -20,10 +20,10 @@ The dispatching skill gives you the input file (the job description as numbered 
 Go through the units in order. Do step 1 for each unit, then step 2 once.
 
 1. **Split the unit into parts,** following the rules file.
-   - If the unit is one part, write `whole` as its text.
+   - If the unit is one part, write `whole` as its part.
    - If it has more than one part, write each part following the rules file.
 
-2. **Write the rows** for all units in one file, using the *Output format* below: one row per part, in the input file's order, with its Unit ID (`S-046a`; a unit split into two parts gives two rows with the same Unit ID) and text. Do not write the section, the `jd.md` line or the full sentence.
+2. **Write the rows** for all units in one file, using the *Output format* below: one row per part, in the input file's order, with its Unit ID (`S-046a`; a unit split into two parts gives two rows with the same Unit ID) and part. Do not write the section, the `jd.md` line or the full unit.
 
 ## Output format
 
@@ -32,7 +32,7 @@ Write exactly this structure to the output file, then reply with only `written <
 ```
 ## Parts
 
-| Unit ID | Text |
+| Unit ID | Part |
 |---|---|
 | S-001 | whole |
 | S-046a | <the part in the unit's words> |
