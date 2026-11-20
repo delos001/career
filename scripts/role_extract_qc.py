@@ -199,7 +199,7 @@ def check_requirement_text(needs_text, jd_text, cfg, findings):
     if jd_text is None:
         findings.append(('X2', False, 'jd.md not found, so requirement wording cannot be checked'))
         return
-    units = {u['id']: u for u in jd_sentences.units(jd_text, cfg)}
+    units = {u['id']: u for u in jd_sentences.units(jd_text)}
     rows = jd_extraction_tables.all_rows(jd_extraction_tables.read_needs(needs_text))
     qualifiers, year_count = cfg['requirement_qualifiers'], cfg['requirement_year_count']
     problems = []
@@ -396,7 +396,7 @@ def cmd_check(args, repo_root, cfg):
     findings = []
     needs_text, jd_text = _needs_and_jd(args.folder, cfg)
     _requirement_checks(needs_text, jd_text, cfg, findings)
-    units = {u['id']: u for u in jd_sentences.units(jd_text, cfg)} if jd_text is not None else None
+    units = {u['id']: u for u in jd_sentences.units(jd_text)} if jd_text is not None else None
     check_ranked_needs(needs_text, jd_text, jd_extraction_tables.load_kinds(repo_root, cfg), findings, units)
     return _report(findings)
 

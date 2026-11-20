@@ -115,8 +115,8 @@ def build_rows(parts, units, cfg):
     unsplit unit. units: jd_sentences.read() of scratch/jd_sentences.md. A part
     naming a unit the file does not have, or a unit with no part, stops the
     write: the splitter must account for every unit, or a requirement is
-    silently lost. Each row gets its unit, its Part ID, the unit's heading,
-    line, From and Hints, the part (the Unit text for 'whole'), then a Demand
+    silently lost. Each row gets its unit, its Part ID, the unit's heading
+    and line, the part (the Unit text for 'whole'), then a Demand
     from jd_demand.set_demand and a Bar from jd_bar.set_bar.
     """
     by_id = {u['id']: u for u in units}
@@ -136,8 +136,7 @@ def build_rows(parts, units, cfg):
         # keeps or drops it from run to run, so it is dropped here.
         full = unit['text'] if text.strip().lower() == 'whole' else text.strip().rstrip(',').rstrip()
         rows.append(jd_extraction_tables._row(num, full, None, None, unit=uid,
-                                           line=f"L{unit['line']}", section=unit['heading'],
-                                           from_=unit['from'], hints='; '.join(unit['hints'])))
+                                           line=f"L{unit['line']}", section=unit['heading']))
     demands = jd_demand.set_demand(
         [{'unit': r['unit'], 'text': r['text'], 'heading': r['section']} for r in rows], cfg)
     for row, demand, bar in zip(rows, demands, jd_bar.set_bar([r['text'] for r in rows], cfg)):
@@ -311,7 +310,7 @@ def cmd_needs(args, cfg):
         quote = jd_extraction_tables.jd_ref(jd, '', ' | '.join(cells[4:]))
         needs.append({'id': cells[0], 'label': cells[1],
                       'signals': cells[3], 'quote': quote, 'rows': rows(nums)})
-    needs = _rank(needs, jd, {u['id']: u for u in jd_sentences.units(jd, cfg)})
+    needs = _rank(needs, jd, {u['id']: u for u in jd_sentences.units(jd)})
     # Place every row the needs did not take by its kinds.
     kinds = jd_extraction_tables.load_kinds(args.repo_root, cfg)
     by_place = {jd_extraction_tables.QUALIFICATIONS: [], jd_extraction_tables.NOT_RANKED: []}

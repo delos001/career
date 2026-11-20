@@ -2182,8 +2182,8 @@ def test_ranked_needs_cover_every_requirement_once():
     split_rows = [dict(r, kind=None) for r in jd_extraction_tables.all_rows(jd_extraction_tables.read_needs(good))]
     # The fixture rows predate Unit IDs, so the stand-in gives each one so it
     # takes jd_assemble.md's real layout.
-    assembled_rows = [dict(r, unit=f"S-{r['num']:03d}", line='L5', section='Requirements',
-                           hints='', **{'from': 'bullet'}) for r in split_rows]
+    assembled_rows = [dict(r, unit=f"S-{r['num']:03d}", line='L5', section='Requirements')
+                      for r in split_rows]
     unlabeled = jd_extraction_tables.render_requirements('Aldridge Pharma | Director', assembled_rows,
                                                          with_kind=False, assembled=True)
     assert unlabeled.count(jd_extraction_tables.ASSEMBLE_ROW_HEADER) == 1, unlabeled
@@ -2205,7 +2205,7 @@ def test_ranked_needs_cover_every_requirement_once():
     assert jd_extraction_tables.ASSEMBLE_KIND_ROW_HEADER in labeled, 'jd_assemble.md has no Kind column'
     assert '## Needs' not in labeled and '| Boilerplate or attitude |' in labeled, 'the kinds step kept a ranking or lost a kind'
     back = sorted(jd_extraction_tables.all_rows(jd_extraction_tables.read_needs(labeled)), key=lambda r: r['num'])
-    assert [r['kind'] for r in back] == row_kinds and back[0]['unit'] == 'S-001' and back[0]['from'] == 'bullet', back
+    assert [r['kind'] for r in back] == row_kinds and back[0]['unit'] == 'S-001', back
     assert _util.read(needs_path) == good, 'the kinds step wrote jd_needs.md'
     # A relabel replaces the earlier kinds in place rather than adding a column.
     code, out = run('role_extract_assemble.py', 'kinds', '--folder', FIXTURE_APP,
@@ -2317,10 +2317,15 @@ def test_requirements_are_extracted_into_jd_needs():
     assert (b['text'], b['demand'], b['line'], b['section']) == \
         (bachelor['text'], 'required', 'L21', '## Requirements'), b
     assert b['source'] == 'L21 ## Requirements', f'later readers lost the JD reference: {b}'
-    # 2026-11-19: Unit ID first, then Part ID, Section, Line, From, Hints, Part, Demand, Bar.
-    assert (b['from'], b['hints']) == (bachelor['from'], '; '.join(bachelor['hints'])), b
-    assert (f"| {bachelor['id']} | {b['num']} | ## Requirements | L21 | {bachelor['from']} | "
-            f"{'; '.join(bachelor['hints'])} | {bachelor['text']} | required |  |") in written, 'columns out of order'
+    # 2026-11-20: Unit ID first, then Part ID, Section, Line, Part, Demand, Bar.
+    assert (f"| {bachelor['id']} | {b['num']} | ## Requirements | L21 | "
+            f"{bachelor['text']} | required |  |") in written, 'columns out of order'
+    # A jd_assemble.md written before 2026-11-20 has From and Hints after Line; it still reads.
+    old_line = (f"| {bachelor['id']} | {b['num']} | ## Requirements | L21 | bullet | degree | "
+                f"{bachelor['text']} | required |  | Qualification |")
+    old = jd_extraction_tables._table_row(old_line)
+    assert (old['unit'], old['text'], old['demand'], old['kind']) == \
+        (bachelor['id'], bachelor['text'], 'required', 'Qualification'), old
     # Bar comes from jd_bar: 'Familiarity with' is exposure.
     assert by_unit[nice['id']][0]['bar'] == 'exposure', by_unit[nice['id']]
     # 2026-11-18: the file ends with a Definitions appendix for a reviewer,
@@ -2620,11 +2625,12 @@ def test_jd_headings_go_on_their_own_lines_with_words_unchanged():
         assert code != 0 and _util.read(jd2) == glued, f'"{bad}" was accepted:\n{printed}'
 
 
-def test_jd_breaks_into_numbered_units_with_hints():
+def test_jd_breaks_into_numbered_units():
     """Built 2026-11-17: six extractor runs on APP-028/029 found the same
     requirements but split long sentences differently (72 to 88 rows), because
     the agent chose the units. jd_sentences.py fixes the units: one per
-    sentence or semicolon part, under its heading, with hints a script can find.
+    sentence or semicolon part, under its heading. 2026-11-20: the From and
+    Hints columns were removed; nothing read them.
     """
     import jd_sentences
     _, cfg = _config.load()
@@ -2637,15 +2643,12 @@ def test_jd_breaks_into_numbered_units_with_hints():
           'Requirements\n'
           "• Bachelor's degree required, with seven (7) years of experience.\n"
           '• Green Belt preferred.\n')
-    got = {u['id']: u for u in jd_sentences.units(jd, cfg)}
+    got = {u['id']: u for u in jd_sentences.units(jd)}
     assert list(got) == ['S-001', 'S-002', 'S-003a', 'S-003b', 'S-004', 'S-005', 'S-006'], list(got)
-    assert got['S-002']['hints'] == ['continues S-001'], got['S-002']
     assert (got['S-003a']['section'], got['S-003a']['subsection']) == ('Duties', 'Measurement'), got['S-003a']
     assert got['S-003b']['text'] == 'presents results.', 'the semicolon split or glued sentence end failed'
     assert got['S-004']['text'] == 'Builds dashboards.', 'a sentence glued to the one before was not split'
-    assert got['S-005']['from'] == 'bullet' and 'degree' in got['S-005']['hints'], got['S-005']
-    assert any(h.startswith('years:') for h in got['S-005']['hints']), 'a spelled-out year count was missed'
-    assert got['S-006']['hints'] == ['optional: preferred'], got['S-006']
+    assert got['S-005']['text'].startswith("Bachelor's degree"), 'a bullet marker was kept in the unit text'
     assert [jd_sentences.sentence_id(i) for i in ('S-046b', 'S-046', 'S-1046a')] == ['S-046', 'S-046', 'S-1046'], \
         'a unit id did not link back to its sentence'
 
@@ -2658,11 +2661,14 @@ def test_jd_breaks_into_numbered_units_with_hints():
     # 2026-11-19: the unit's text sits in a Unit column, and read() gives back
     # every unit as written, which is what assemble joins the parts to.
     on_file = _util.read(os.path.join(folder, 'scratch', 'jd_sentences.md'))
-    assert '| Unit ID | Line | From | Hints | Unit |' in on_file, on_file
+    assert '| Unit ID | Line | Unit |' in on_file and 'Hints' not in on_file, on_file
     back = {u['id']: u for u in jd_sentences.read(on_file)}
     assert list(back) == list(got), list(back)
-    assert all((back[i]['text'], back[i]['line'], back[i]['from'], back[i]['hints'])
-               == (got[i]['text'], got[i]['line'], got[i]['from'], got[i]['hints']) for i in got), back
+    assert all((back[i]['text'], back[i]['line']) == (got[i]['text'], got[i]['line']) for i in got), back
+    # A file written before 2026-11-20 has From and Hints columns; read() still gives the unit text.
+    old = jd_sentences.read('## Duties\n\n| Unit ID | Line | From | Hints | Unit |\n|---|---|---|---|---|\n'
+                            '| S-001 | L5 | paragraph |  | Defines measures. |\n')
+    assert old[0]['text'] == 'Defines measures.', old
     assert back['S-003a']['heading'] == 'Duties > Measurement', back['S-003a']
 
     # 2026-11-19: what a unit is lives in the SPLIT rules, and the file's header

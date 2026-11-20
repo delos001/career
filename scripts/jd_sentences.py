@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-jd_sentences.py - break jd.md into numbered units with mechanical hints
+jd_sentences.py - break jd.md into numbered units
 
 Reads an application's jd.md and writes <app-folder>/scratch/jd_sentences.md:
 the JD as numbered units under their section and subsection headings, so
@@ -9,16 +9,7 @@ deciding where one requirement ends and the next begins. Used by role-extract
 Phase 1, before the jd-splitter agent runs.
 
 A unit is one sentence, or one part of a sentence split at a semicolon
-(S-046a, S-046b). Each unit carries:
-  Line   the jd.md line it came from
-  From   'bullet' when its line is a list item, else 'paragraph'
-  Hints  words the script found in the unit's text, never a verdict:
-           continues S-NNN  opens with a pointer word (config
-                            jd_sentence_continues_words)
-           optional: <word> holds an optional word (config
-                            requirement_optional_words)
-           years: <count>   holds a year count (config requirement_year_count)
-           degree           names a degree (config jd_sentence_degree_words)
+(S-046a, S-046b). Each unit carries the jd.md line it came from.
 
 Headings are found from layout, so jd.md must have its headings on their own
 lines (scripts/ingest/jd_headings.py, GitHub #93): a short line with no
@@ -48,7 +39,7 @@ import jd_extraction_tables
 # ---------------------------------------------------------------------------
 # Patterns
 # Layout patterns are fixed here because they describe text shape, not
-# vocabulary; the word lists the hints use come from config.yaml.
+# vocabulary.
 # ---------------------------------------------------------------------------
 
 # Regex: a list item's marker at the start of a line (bullet, dash, star, "1." or "1)").
@@ -86,11 +77,8 @@ def _body_start(lines):
     return 0
 
 
-def units(jd_text, cfg):
-    """Return [unit dict] for the JD: id, line, section, subsection, from, hints, text."""
-    continues = re.compile(rf"^{cfg['jd_sentence_continues_words']}\b", re.I)
-    years = re.compile(cfg['requirement_year_count'], re.I)
-    degree = re.compile(rf"\b{cfg['jd_sentence_degree_words']}\b", re.I)
+def units(jd_text):
+    """Return [unit dict] for the JD: id, line, section, subsection, text."""
     lines = jd_text.split('\n')
     section = subsection = ''
     out, n = [], 0
@@ -104,29 +92,15 @@ def units(jd_text, cfg):
             else:
                 section, subsection = text, ''
             continue
-        source = 'bullet' if _BULLET_RE.match(text) else 'paragraph'
         for sentence in (s.strip() for s in _SENTENCE_END_RE.split(_BULLET_RE.sub('', text))):
             if not sentence:
                 continue
             n += 1
             parts = [p.strip() for p in sentence.split(';') if p.strip()]
             for k, part in enumerate(parts):
-                hints = []
-                # Only a sentence's first part can point back; a part after a
-                # semicolon continues its own sentence by construction.
-                if k == 0 and out and continues.match(part):
-                    hints.append(f"continues {out[-1]['id']}")
-                word = jd_extraction_tables.optional_word(part, cfg['requirement_optional_words'])
-                if word:
-                    hints.append(f'optional: {word}')
-                counts = list(dict.fromkeys(m.group(0) for m in years.finditer(part)))
-                if counts:
-                    hints.append('years: ' + ', '.join(counts))
-                if degree.search(part):
-                    hints.append('degree')
                 out.append({'id': f'S-{n:03d}' + (chr(ord('a') + k) if len(parts) > 1 else ''),
                             'line': index + 1, 'section': section, 'subsection': subsection,
-                            'from': source, 'hints': hints, 'text': part})
+                            'text': part})
     return out
 
 
@@ -167,20 +141,15 @@ def render(unit_list, jd_path, definition):
            f'- **Unit:** {definition}',
            '- **Unit ID:** every unit has its own row and Unit ID; drop the letter to get the sentence. '
            'Units are listed in job-description order, under their section heading.',
-           '- **Line:** the `jd.md` line the unit came from.',
-           '- **From:** `bullet` when that line is a list item, else `paragraph`.',
-           '- **Hints:** words found in the unit\'s text: `continues S-NNN` (opens with a word '
-           'pointing back to the unit before), `optional: <word>`, `years: <count>`, `degree`. '
-           'Never a verdict.']
+           '- **Line:** the `jd.md` line the unit came from.']
     current = None
     for u in unit_list:
         if (u['section'], u['subsection']) != current:
             current = (u['section'], u['subsection'])
             heading = u['section'] + (f" > {u['subsection']}" if u['subsection'] else '')
             out += ['', f'## {heading or "(no heading)"}', '',
-                    '| Unit ID | Line | From | Hints | Unit |', '|---|---|---|---|---|']
-        out.append(f"| {u['id']} | L{u['line']} | {u['from']} | {'; '.join(u['hints'])} | "
-                   f"{u['text'].replace('|', '/')} |")
+                    '| Unit ID | Line | Unit |', '|---|---|---|']
+        out.append(f"| {u['id']} | L{u['line']} | {u['text'].replace('|', '/')} |")
     return '\n'.join(out) + '\n'
 
 
@@ -191,10 +160,11 @@ def render(unit_list, jd_path, definition):
 # ---------------------------------------------------------------------------
 
 def read(text):
-    """Return [unit dict] from jd_sentences.md text: id, line (int), heading, from, hints, text.
+    """Return [unit dict] from jd_sentences.md text: id, line (int), heading, text.
 
-    heading is the '## ' heading the unit sits under ('' for '(no heading)');
-    hints is the list render() joined with '; '.
+    heading is the '## ' heading the unit sits under ('' for '(no heading)').
+    A file written before 2026-11-20 also has From and Hints columns; they
+    are skipped.
     """
     heading, out = '', []
     for line in text.split('\n'):
@@ -206,11 +176,12 @@ def read(text):
         if not body.startswith('|'):
             continue
         cells = [c.strip() for c in body.strip('|').split('|')]
-        if len(cells) < 5 or not jd_extraction_tables.UNIT_ID_RE.match(cells[0]):
+        if len(cells) < 3 or not jd_extraction_tables.UNIT_ID_RE.match(cells[0]):
             continue
+        # The older layout puts From ('bullet' or 'paragraph') third.
+        text_at = 4 if len(cells) >= 5 and cells[2] in ('bullet', 'paragraph') else 2
         out.append({'id': cells[0], 'line': int(cells[1].lstrip('L')), 'heading': heading,
-                    'from': cells[2], 'hints': [h for h in cells[3].split('; ') if h],
-                    'text': ' | '.join(cells[4:])})
+                    'text': ' | '.join(cells[text_at:])})
     return out
 
 
@@ -219,7 +190,7 @@ def read(text):
 # ---------------------------------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser(description='Break jd.md into numbered units with hints.')
+    parser = argparse.ArgumentParser(description='Break jd.md into numbered units.')
     parser.add_argument('--folder', required=True, help='absolute path to the application folder')
     args = parser.parse_args()
     sys.stdout.reconfigure(encoding='utf-8')
@@ -230,7 +201,7 @@ def main():
     if not os.path.isfile(jd_path):
         print(f'Error: {jd_path} not found; role-intake writes it', file=sys.stderr)
         return 1
-    unit_list = units(_util.read(jd_path), cfg)
+    unit_list = units(_util.read(jd_path))
     if not unit_list:
         print(f'Error: {jd_path} holds no JD text after its headings; nothing written', file=sys.stderr)
         return 1

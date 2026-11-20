@@ -118,10 +118,11 @@ UNIT_ROW_HEADER = ('| Part ID | Unit ID | Line | Section | Requirement | Demand 
 # scratch/jd_sentences.md, Unit ID first. Phase 2 writes it with no Kind
 # column (ASSEMBLE_ROW_HEADER); Phase 5 rewrites it in place with a Kind
 # column at the end (ASSEMBLE_KIND_ROW_HEADER).
-ASSEMBLE_ROW_HEADER = ('| Unit ID | Part ID | Section | Line | From | Hints | Part | Demand | Bar |\n'
-                       '|---|---|---|---|---|---|---|---|---|')
-ASSEMBLE_KIND_ROW_HEADER = ('| Unit ID | Part ID | Section | Line | From | Hints | Part | Demand | Bar | Kind |\n'
-                            '|---|---|---|---|---|---|---|---|---|---|')
+# Files written before 2026-11-20 also have From and Hints after Line.
+ASSEMBLE_ROW_HEADER = ('| Unit ID | Part ID | Section | Line | Part | Demand | Bar |\n'
+                       '|---|---|---|---|---|---|---|')
+ASSEMBLE_KIND_ROW_HEADER = ('| Unit ID | Part ID | Section | Line | Part | Demand | Bar | Kind |\n'
+                            '|---|---|---|---|---|---|---|---|')
 ROW_HEADER = '| Req | Requirement | Kind | Demand | JD line |\n|---|---|---|---|---|'
 
 # The kinds are the '### N. <name>' headings under this section of
@@ -250,18 +251,12 @@ def placement(names, kinds):
 # rows.
 # ---------------------------------------------------------------------------
 
-def _row(num, text, demand, source, kind=None, unit=None, line=None, section=None, bar=None,
-         from_=None, hints=None):
-    """Return a row dict. With a line, 'source' is built as 'L<n> <Section>'.
-
-    from_ and hints are the unit's From and Hints cells from jd_sentences.md;
-    only the assembled split carries them.
-    """
+def _row(num, text, demand, source, kind=None, unit=None, line=None, section=None, bar=None):
+    """Return a row dict. With a line, 'source' is built as 'L<n> <Section>'."""
     if line:
         source = f'{line} {section or ""}'.strip()
     return {'num': num, 'unit': unit, 'line': line, 'section': section, 'text': text,
-            'kind': kind, 'demand': demand, 'bar': bar, 'source': source,
-            'from': from_, 'hints': hints}
+            'kind': kind, 'demand': demand, 'bar': bar, 'source': source}
 
 
 # Regex: a jd_sentences.md unit id (S-046, S-046a).
@@ -392,8 +387,7 @@ def _row_table(rows, with_kind=True, assembled=False):
         header = ASSEMBLE_KIND_ROW_HEADER if with_kind else ASSEMBLE_ROW_HEADER
         return [header] + [
             f"| {_cell(row.get('unit'))} | {row['num']} | {_cell(row.get('section'))} | "
-            f"{_cell(row.get('line'))} | {_cell(row.get('from'))} | {_cell(row.get('hints'))} | "
-            f"{_cell(row['text'])} | {_cell(row['demand'])} | {_cell(row.get('bar'))} |"
+            f"{_cell(row.get('line'))} | {_cell(row['text'])} | {_cell(row['demand'])} | {_cell(row.get('bar'))} |"
             + (f" {_cell(row.get('kind'))} |" if with_kind else '') for row in rows]
     if any(row.get('unit') for row in rows):
         return [UNIT_ROW_HEADER] + [
@@ -408,8 +402,10 @@ def _row_table(rows, with_kind=True, assembled=False):
 def _table_row(line):
     """Return a row dict from a requirement table line, or None for any other line.
 
-    Nine or ten cells opening with a Unit ID is scratch/jd_assemble.md, before
-    and after Phase 5 adds the Kind (ASSEMBLE_ROW_HEADER, ASSEMBLE_KIND_ROW_HEADER).
+    Seven or eight cells opening with a Unit ID is scratch/jd_assemble.md, before
+    and after Phase 5 adds the Kind (ASSEMBLE_ROW_HEADER, ASSEMBLE_KIND_ROW_HEADER);
+    nine or ten is that file written before 2026-11-20, with From and Hints
+    after Line, which are skipped.
     Eight cells is the ranked layout (Part ID, Unit ID, Line, Section,
     Requirement, Demand, Bar, Kind); five is a file written before 2026-11-18,
     read so later skills keep working on older applications.
@@ -418,11 +414,13 @@ def _table_row(line):
     if not (body.startswith('|') and body.endswith('|')):
         return None
     cells = [c.strip().replace(r'\|', '|') for c in _CELL_SPLIT_RE.split(body[1:-1])]
-    if len(cells) in (9, 10) and UNIT_ID_RE.match(cells[0]) and cells[1].isdigit():
-        unit, num, section, jd_line, from_, hints, text, demand, bar = cells[:9]
-        kind = cells[9] if len(cells) == 10 else None
+    if len(cells) in (7, 8, 9, 10) and UNIT_ID_RE.match(cells[0]) and cells[1].isdigit():
+        if len(cells) >= 9:
+            cells = cells[:4] + cells[6:]
+        unit, num, section, jd_line, text, demand, bar = cells[:7]
+        kind = cells[7] if len(cells) == 8 else None
         return _row(int(num), text, demand or None, None, kind or None, unit, jd_line or None,
-                    section or None, bar, from_ or None, hints)
+                    section or None, bar)
     if not cells[0].isdigit():
         return None
     if len(cells) == 8:
