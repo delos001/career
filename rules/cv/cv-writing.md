@@ -44,6 +44,8 @@ These rules apply to every bullet on the CV, including role summaries and projec
 
 **State what was done.** Every bullet states what the candidate did or achieved. "Responsible for X" and lists of duties are not bullets.
 
+**Leadership wording.** Never write "line management" or a bare "direct reports"; use the inventory entry's own wording for who reported to the candidate.
+
 **Figures.** Keep a figure when it shows the need being met. When a bullet runs long, cut other words first and the persuasive figure last. Never invent a number.
 
 **One sentence per bullet (hard rule).** Each bullet is one sentence. Two accomplishments become two bullets; one accomplishment written as two sentences becomes one.

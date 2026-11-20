@@ -13,6 +13,8 @@ These apply to every entry type.
 - Work that was designed but never built is written as "proposed" or "would", and the entry says it was not built.
 - Full sentences end in periods, not semicolons.
 - Ask for a missing fact instead of inferring it. Flag an unverified fact in one line.
+- Leading people is one kind of experience: operational, functional and matrix leadership of a team are all it. Never write "line management" or a bare "direct reports"; in-house FSP staff are "FSP staff who reported to me day to day".
+- A limit the candidate states about one piece of work applies to that entry only. A role-wide hedge on a staged item ("usually") does not carry onto an entry once the candidate gives that entry's specifics.
 - `scripts/profile_update_qc.py` (check P15) catches first person, banned phrases, em dashes, filler words, and missing final periods. Do not restate that list here; fix what it reports.
 
 ## RL: Employment & Role History
@@ -31,6 +33,8 @@ These apply to every entry type.
 - Name a tool here only when it is the object of the work (evaluating Pinnacle 21 Enterprise). Tools used hands-on go in Hands-on Tools. Otherwise use the umbrella term (BI dashboards, clinical data platforms).
 - Group the people involved as teams or functions (cross-functional teams, Clinical Operations). Name them in Context.
 - No purpose clause that restates Impact. No "from greenfield": Work-state already says it.
+
+**Level.** Approving deliverables as the accountable lead is leadership, even when the review is hands-on. Use ic only for review-only or build work with no decision authority.
 
 **Hands-on Tools: software and languages used hands-on in this work.** Test: did you use it yourself?
 - Names separated by ` | `, written exactly as the vendor writes them, with no version numbers.
