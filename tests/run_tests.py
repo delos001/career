@@ -2280,7 +2280,7 @@ def test_requirements_are_extracted_into_jd_needs():
     if os.path.exists(sentences_path):
         os.remove(sentences_path)
     code, out = run('role_extract_assemble.py', 'requirements', '--folder', FIXTURE_APP,
-                    '--requirements-file', write_block('parts_none.md', '## Parts\n\n| Unit ID | Part |\n|---|---|\n| S-001 | whole |\n'))
+                    '--requirements-file', write_block('parts_none.md', '## Parts\n\n| Unit ID | Part ID | Part |\n|---|---|---|\n| S-001 | 1 | whole |\n'))
     assert code != 0 and 'jd_sentences.md' in out, f'assemble ran without jd_sentences.md: {out}'
     assert run('jd_sentences.py', '--folder', FIXTURE_APP)[0] == 0
     units = jd_sentences.read(_util.read(sentences_path))
@@ -2296,7 +2296,9 @@ def test_requirements_are_extracted_into_jd_needs():
                      (u['id'], 'including contracts and performance.')]
         else:
             rows.append((u['id'], 'whole'))
-    table = '## Parts\n\n| Unit ID | Part |\n|---|---|\n' + ''.join(f'| {uid} | {t} |\n' for uid, t in rows)
+    # 2026-11-23: the splitter numbers the parts; assemble keeps its Part IDs.
+    table = ('## Parts\n\n| Unit ID | Part ID | Part |\n|---|---|---|\n'
+             + ''.join(f'| {uid} | {n} | {t} |\n' for n, (uid, t) in enumerate(rows, 1)))
     code, out = run('role_extract_assemble.py', 'requirements', '--folder', FIXTURE_APP,
                     '--requirements-file', write_block('parts.md', table))
     assert code == 0, out
@@ -2314,36 +2316,39 @@ def test_requirements_are_extracted_into_jd_needs():
         by_unit.setdefault(r['unit'], []).append(r)
     # 'whole' becomes the unit's sentence; the JD line is the unit's line and heading.
     b = by_unit[bachelor['id']][0]
-    assert (b['text'], b['demand'], b['line'], b['section']) == \
-        (bachelor['text'], 'required', 'L21', '## Requirements'), b
+    assert (b['text'], b['line'], b['section']) == (bachelor['text'], 'L21', '## Requirements'), b
     assert b['source'] == 'L21 ## Requirements', f'later readers lost the JD reference: {b}'
-    # 2026-11-20: Unit ID first, then Part ID, Section, Line, Part, Demand, Bar.
-    assert (f"| {bachelor['id']} | {b['num']} | ## Requirements | L21 | "
-            f"{bachelor['text']} | required |  |") in written, 'columns out of order'
+    # 2026-11-23: Line, Section, Unit ID, Part ID, Part.
+    assert (f"| L21 | ## Requirements | {bachelor['id']} | {b['num']} | "
+            f"{bachelor['text']} |\n") in written, 'columns out of order'
+    # 2026-11-23: Part ID is the splitter's, kept as written.
+    assert b['num'] == next(n for n, (uid, _) in enumerate(rows, 1) if uid == bachelor['id']), b
+    # 2026-11-23: assemble sets no Demand or Bar.
+    assert all(r['demand'] is None and not r.get('bar') for r in got), 'assemble set a Demand or Bar'
+    assert '| Demand |' not in written and '| Bar |' not in written, 'jd_assemble.md still has Demand or Bar'
     # A jd_assemble.md written before 2026-11-20 has From and Hints after Line; it still reads.
     old_line = (f"| {bachelor['id']} | {b['num']} | ## Requirements | L21 | bullet | degree | "
                 f"{bachelor['text']} | required |  | Qualification |")
     old = jd_extraction_tables._table_row(old_line)
     assert (old['unit'], old['text'], old['demand'], old['kind']) == \
         (bachelor['id'], bachelor['text'], 'required', 'Qualification'), old
-    # Bar comes from jd_bar: 'Familiarity with' is exposure.
-    assert by_unit[nice['id']][0]['bar'] == 'exposure', by_unit[nice['id']]
-    # 2026-11-18: the file ends with a Definitions appendix for a reviewer,
-    # every kind's definition copied from the rules file, never parsed as rows.
+    # 2026-11-18: files with a Kind column end with a Definitions appendix for
+    # a reviewer, every kind's definition copied from the rules file, never
+    # parsed as rows. 2026-11-23: the assembled split has no Kind, Demand or
+    # Bar, so it has nothing to define and no appendix.
     repo_root, _ = _config.load()
     defs = jd_extraction_tables.kind_definitions(repo_root, cfg)
     assert [n for n, _ in defs] == list(jd_extraction_tables.load_kinds(repo_root, cfg)), defs
-    assert written.rstrip().endswith(written[written.index('## Definitions'):].rstrip()), 'Definitions is not last'
-    # The assembled split carries no Kind, so its appendix has no Kind definitions;
-    # the appendix for files with a Kind column still copies every one.
+    assert '## Definitions' not in written, 'the assembled split has a Definitions appendix'
     import role_extract_assemble
     with_kind = '\n'.join(role_extract_assemble._definitions(repo_root, cfg))
+    kinds_only = '\n'.join(role_extract_assemble._definitions(repo_root, cfg, demand_bar=False))
     for name, text in defs:
         assert f'- **{name}:** {text}' in with_kind, f'the {name} definition is missing or reworded'
-        assert f'- **{name}:** ' not in written, f'the split file still defines the {name} kind'
-    assert '- **exposure:** ' in written and '- **preferred:** ' in written, 'Demand or Bar definitions missing'
-    # Demand comes from jd_demand: everything under a 'Nice to have' heading is preferred.
-    assert by_unit[nice['id']][0]['demand'] == 'preferred', by_unit[nice['id']]
+        assert f'- **{name}:** {text}' in kinds_only, f'the {name} definition is missing from the kinds appendix'
+    assert '- **exposure:** ' in with_kind and '- **preferred:** ' in with_kind, 'Demand or Bar definitions missing'
+    assert '- **exposure:** ' not in kinds_only and '- **preferred:** ' not in kinds_only, \
+        'the kinds appendix defines Demand or Bar, which jd_assemble.md does not carry'
     split = by_unit[oversee['id']]
     assert [r['text'] for r in split] == ['Oversee external data providers', 'including contracts and performance.'], split
     assert '## Needs' not in written, 're-extraction kept an old ranking'
@@ -2352,8 +2357,24 @@ def test_requirements_are_extracted_into_jd_needs():
 
     # A part naming a unit jd.md does not have, a unit with no part, or a file
     # that is not the splitter's, stops the write.
-    for bad, why in ((table + '| S-999 | whole |\n', 'S-999'),
-                     (table.replace(f"| {bachelor['id']} | whole |\n", ''), bachelor['id']),
+    # 2026-11-23: Part IDs are the splitter's, never renumbered here, so a
+    # splitter that skips a number lands in the file and the check catches it.
+    skipped = table.replace('| 1 | ', '| 0 | ', 1)
+    code, out = run('role_extract_assemble.py', 'requirements', '--folder', FIXTURE_APP,
+                    '--requirements-file', write_block('parts_skip.md', skipped))
+    assert code == 0, out
+    nums = sorted(r['num'] for r in jd_extraction_tables.all_rows(jd_extraction_tables.read_needs(_util.read(needs_path))))
+    assert nums[0] == 0, f'assemble renumbered the Part IDs: {nums[:3]}'
+    code, out = run('role_extract_qc.py', 'requirements', '--folder', FIXTURE_APP)
+    assert code != 0 and 'X1' in out and 'no gaps' in out, f'a Part ID of 0 passed: {out}'
+    assert run('role_extract_assemble.py', 'requirements', '--folder', FIXTURE_APP,
+               '--requirements-file', write_block('parts.md', table))[0] == 0
+    # A row with no whole-number Part ID stops the write.
+    bachelor_row = next(line for line in table.split('\n') if line.startswith(f"| {bachelor['id']} |"))
+    for bad, why in ((table + f'| S-999 | {len(rows) + 1} | whole |\n', 'S-999'),
+                     (table.replace(bachelor_row + '\n', ''), bachelor['id']),
+                     (table.replace(bachelor_row, f"| {bachelor['id']} | x | whole |"), 'Part ID'),
+                     (table.replace(bachelor_row, f"| {bachelor['id']} | whole |"), 'Part ID'),
                      (table.replace('## Parts', '## Critical Requirements'), 'Parts')):
         code, out = run('role_extract_assemble.py', 'requirements', '--folder', FIXTURE_APP,
                         '--requirements-file', write_block('bad.md', bad))

@@ -30,7 +30,7 @@ filenames:
   introductions: introductions.yaml            # next to scripts/display/introduce.py
   axis_registry: registry.md                   # in each rules/<axis>/ folder
   jd_rules_file: jd-processing.md              # in the rules folder; rules for each step that works on the JD, read by section through jd_rules_slice.py; jd_extraction_tables.py parses its KINDS section for the kind list
-  jd_assemble_file: jd_assemble.md             # in <app-folder>/scratch/; role-extract Phase 2 writes one row per jd-splitter part with its unit, line, heading, Demand and Bar; Phase 5 adds each row's Kind in place
+  jd_assemble_file: jd_assemble.md             # in <app-folder>/scratch/; role-extract Phase 3 writes one row per jd-splitter part with its unit, Part ID, line and heading; the kinds step adds each row's Kind in place
   jd_needs_file: jd_needs.md                  # written into each application folder by role-extract; each requirement's kind and the ranked needs
   jd_sentences_file: jd_sentences.md           # written into <app-folder>/scratch/ by scripts/jd_sentences.py; the JD as numbered units with hints
   build_issues_log: build_issues.md            # in the design/ folder; appended to on provisional builds

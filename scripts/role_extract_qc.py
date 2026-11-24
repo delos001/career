@@ -15,10 +15,11 @@ right after extraction, so a bad extraction is caught before ranking is spent
 on it. 'check' runs them all on jd_needs.md.
 
 Checks:
-  X1  jd_needs.md holds at least one requirement, numbered 1..N with no gaps
-      or repeats, each with a Unit ID, a Line, text, and a Demand of required
-      or preferred, and a Bar of exposure, working or blank; a row whose text
-      carries an optional word is preferred.
+  X1  The file holds at least one requirement, numbered 1..N with no gaps
+      or repeats, each with a Unit ID, a Line and text. On jd_needs.md each
+      row also has a Demand of required or preferred and a Bar of exposure,
+      working or blank, and a row whose text carries an optional word is
+      preferred; scratch/jd_assemble.md has no Demand or Bar (2026-11-23).
   X2  Each row's Unit is a unit of jd.md (jd_sentences.units); the row's
       words appear in that unit in the same order (cut, never added or
       rearranged); no row sits wholly inside another from the same unit; and
@@ -119,7 +120,7 @@ def _clause_holding(jd_text, quote):
 # Checks
 # ---------------------------------------------------------------------------
 
-def check_requirements_present(needs_text, optional_words, findings):
+def check_requirements_present(needs_text, optional_words, findings, demand_bar=True):
     """X1: the extracted requirements are on file, numbered, with Demand and Source.
 
     Row numbers are the CR-NNN ids every later skill cites, so a gap or a
@@ -127,6 +128,8 @@ def check_requirements_present(needs_text, optional_words, findings):
     text carries an optional word (config requirement_optional_words) must be
     'preferred'; the reverse (a row under a preferred heading) is the
     extractor's judgment, since JD headings have no standard form.
+    demand_bar=False skips the Demand and Bar checks, for jd_assemble.md,
+    which carries neither.
     """
     if needs_text is None:
         findings.append(('X1', False, 'requirements file not found (requirements not extracted)'))
@@ -146,6 +149,8 @@ def check_requirements_present(needs_text, optional_words, findings):
             problems.append(f'{cr}: no text')
         if not row['source']:
             problems.append(f'{cr}: no Line')
+        if not demand_bar:
+            continue
         if row['demand'] not in jd_extraction_tables.ALLOWED_DEMANDS:
             problems.append(f"{cr}: Demand {row['demand']!r} is not one of "
                             f"{', '.join(sorted(jd_extraction_tables.ALLOWED_DEMANDS))}")
@@ -155,7 +160,7 @@ def check_requirements_present(needs_text, optional_words, findings):
         if word and row['demand'] == 'required':
             problems.append(f"{cr}: says '{word}', so its Demand is preferred, not required")
     findings.append(('X1', not problems, '; '.join(problems)
-                     or f'{len(rows)} requirements, each with Unit ID, Line, text and Demand'))
+                     or f"{len(rows)} requirements, each with Unit ID, Line, text{' and Demand' if demand_bar else ''}"))
 
 
 def _word_outside_unit(unit_text, text):
@@ -369,7 +374,7 @@ def check_ranked_needs(needs_text, jd_text, kinds, findings, units=None):
 def _needs_and_jd(folder, cfg, scratch=False):
     """Return (requirements file text, jd.md text), each None when absent.
 
-    scratch=True reads scratch/jd_assemble.md, for the Phase 3
+    scratch=True reads scratch/jd_assemble.md, for the Phase 4
     extraction check; otherwise jd_needs.md, for the full check.
     """
     fn = cfg['filenames']
@@ -378,16 +383,16 @@ def _needs_and_jd(folder, cfg, scratch=False):
     return _read(path), _read(os.path.join(folder, fn['jd_file']))
 
 
-def _requirement_checks(needs_text, jd_text, cfg, findings):
+def _requirement_checks(needs_text, jd_text, cfg, findings, demand_bar=True):
     """X1 and X2: the extraction checks."""
-    check_requirements_present(needs_text, cfg['requirement_optional_words'], findings)
+    check_requirements_present(needs_text, cfg['requirement_optional_words'], findings, demand_bar)
     check_requirement_text(needs_text, jd_text, cfg, findings)
 
 
 def cmd_requirements(args, repo_root, cfg):
     """Run the extraction checks only (X1, X2) on jd_assemble.md; return exit code."""
     findings = []
-    _requirement_checks(*_needs_and_jd(args.folder, cfg, scratch=True), cfg, findings)
+    _requirement_checks(*_needs_and_jd(args.folder, cfg, scratch=True), cfg, findings, demand_bar=False)
     return _report(findings)
 
 

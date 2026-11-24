@@ -4,9 +4,9 @@ Rules for each step that works on a job description after role-intake saves it. 
 
 Keys:
 
-- `SPLIT`: splitting each unit of `jd_sentences.md` into parts (the jd-splitter agent, role-extract Phase 1).
-- `RANK`: describing the job, grouping the rows into needs and ranking them (the jd-needs-ranker agent, role-extract Phase 6). role-extract's QC reads it too.
-- `KINDS`: labeling each `jd_assemble.md` row with a kind (the jd-kind-labeler agent, role-extract Phase 4). The ranker and role-extract's QC read it too, and `scripts/jd_extraction_tables.py` reads the kind list and where each kind lands from the `### N. <name>` headings under `## KINDS: Kinds of row`.
+- `SPLIT`: splitting each unit of `jd_sentences.md` into parts (the jd-splitter agent, role-extract Phase 2).
+- `RANK`: describing the job, grouping the rows into needs and ranking them (the jd-needs-ranker agent). role-extract's QC reads it too.
+- `KINDS`: labeling each `jd_assemble.md` row with a kind (the jd-kind-labeler agent). The ranker and role-extract's QC read it too, and `scripts/jd_extraction_tables.py` reads the kind list and where each kind lands from the `### N. <name>` headings under `## KINDS: Kinds of row`.
 
 ## SPLIT: Splitting units into parts
 

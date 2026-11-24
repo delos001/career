@@ -7,13 +7,13 @@ agents' output, so none of it is written or composed by hand. Two
 subcommands:
 
   requirements  Join the jd-splitter's parts (scratch/jd_split.md,
-            '## Parts' with '| Unit ID | Part |') to scratch/jd_sentences.md on
-            Unit ID, writing scratch/jd_assemble.md under '## Requirements',
-            one row per part: Unit ID, Part ID (numbered here), the unit's
-            Section, Line, From and Hints, the Part ('whole' replaced by the
-            Unit text), Demand (jd_demand.py) and Bar (jd_bar.py). Re-extracting
-            replaces the whole file, so a ranking built on old rows never
-            survives.
+            '## Parts' with '| Unit ID | Part ID | Part |') to
+            scratch/jd_sentences.md on Unit ID, writing scratch/jd_assemble.md
+            under '## Requirements', one row per part: the unit's Line and
+            Section, the Unit ID, the Part ID (as the splitter numbered it) and
+            the Part ('whole' replaced by the Unit text). It sets no Demand or Bar
+            (2026-11-23). Re-extracting replaces the whole file, so a ranking
+            built on old rows never survives.
   kinds     Join the jd-kind-labeler's output (scratch/jd_kinds.md, '## Row
             Kinds' with '| Part ID | Kind |') to scratch/jd_assemble.md's rows,
             rewriting that file in place with a Kind column. Every row must
@@ -86,50 +86,53 @@ def _title(research):
 # jd.md is role_extract_qc.py's 'requirements' check, run right after this write.
 # ---------------------------------------------------------------------------
 
-def _definitions(repo_root, cfg, with_kind=True):
+def _definitions(repo_root, cfg, demand_bar=True):
     """Return the lines of a file's '## Definitions' appendix.
 
     Kind definitions come from the rules file (jd_extraction_tables.kind_definitions);
     Demand and Bar definitions sit beside the code that sets them (jd_demand,
     jd_bar). Nothing is typed here, so the appendix cannot drift from them.
-    with_kind=False leaves Kind out, for the assembled split, which has no Kind.
+    demand_bar=False leaves Demand and Bar out, for jd_assemble.md, which has
+    neither column. The assembled split before the kinds step has nothing to
+    define, so it gets no appendix.
     """
     out = ['## Definitions', '',
            'For a person reviewing this file. Later skills read only the tables above.', '']
-    if with_kind:
-        out += [f"**Kind** (what a row asks for; full rules in the KINDS section of "
-                f"`{cfg['paths']['rules']}/{cfg['filenames']['jd_rules_file']}`):", '']
-        out += [f'- **{name}:** {text}' for name, text in jd_extraction_tables.kind_definitions(repo_root, cfg)]
+    out += [f"**Kind** (what a row asks for; full rules in the KINDS section of "
+            f"`{cfg['paths']['rules']}/{cfg['filenames']['jd_rules_file']}`):", '']
+    out += [f'- **{name}:** {text}' for name, text in jd_extraction_tables.kind_definitions(repo_root, cfg)]
+    out += ['']
+    if demand_bar:
+        out += ['**Demand** (how firmly the job description asks):', '']
+        out += [f'- **{name}:** {text}' for name, text in jd_demand.DEFINITIONS]
+        out += ['', '**Bar** (what evidence meets it):', '']
+        out += [f'- **{name}:** {text}' for name, text in jd_bar.DEFINITIONS]
         out += ['']
-    out += ['**Demand** (how firmly the job description asks):', '']
-    out += [f'- **{name}:** {text}' for name, text in jd_demand.DEFINITIONS]
-    out += ['', '**Bar** (what evidence meets it):', '']
-    out += [f'- **{name}:** {text}' for name, text in jd_bar.DEFINITIONS]
-    return out + ['']
+    return out
 
 
-def build_rows(parts, units, cfg):
-    """Return jd_assemble.md rows for the splitter's parts, numbered 1..N.
+def build_rows(parts, units):
+    """Return jd_assemble.md rows for the splitter's parts.
 
-    parts: [(unit id, part)] in the splitter's order, part 'whole' for an
-    unsplit unit. units: jd_sentences.read() of scratch/jd_sentences.md. A part
-    naming a unit the file does not have, or a unit with no part, stops the
-    write: the splitter must account for every unit, or a requirement is
-    silently lost. Each row gets its unit, its Part ID, the unit's heading
-    and line, the part (the Unit text for 'whole'), then a Demand
-    from jd_demand.set_demand and a Bar from jd_bar.set_bar.
+    parts: [(unit id, part id, part)] in the splitter's order, part 'whole'
+    for an unsplit unit. units: jd_sentences.read() of scratch/jd_sentences.md.
+    A part naming a unit the file does not have, or a unit with no part, stops
+    the write: the splitter must account for every unit, or a requirement is
+    silently lost. Each row gets its unit, the splitter's Part ID, the unit's
+    heading and line, and the part (the Unit text for 'whole'). Part IDs are
+    kept as written; role_extract_qc.py X1 reports any that do not run 1..N.
     """
     by_id = {u['id']: u for u in units}
-    unknown = [uid for uid, _ in parts if uid not in by_id]
+    unknown = [uid for uid, _, _ in parts if uid not in by_id]
     if unknown:
         raise ValueError(f"parts name units jd_sentences.md does not have: {', '.join(dict.fromkeys(unknown))}; "
                          f"rerun jd_sentences.py and the splitter")
-    covered = {uid for uid, _ in parts}
+    covered = {uid for uid, _, _ in parts}
     missing = [u['id'] for u in units if u['id'] not in covered]
     if missing:
         raise ValueError(f"the splitter wrote no part for: {', '.join(missing)}; rerun the splitter")
     rows = []
-    for num, (uid, text) in enumerate(parts, start=1):
+    for uid, num, text in parts:
         unit = by_id[uid]
         # A part cut before the unit's next words can keep the comma that
         # joined them ('Strong process-design capability,'); the splitter
@@ -137,10 +140,6 @@ def build_rows(parts, units, cfg):
         full = unit['text'] if text.strip().lower() == 'whole' else text.strip().rstrip(',').rstrip()
         rows.append(jd_extraction_tables._row(num, full, None, None, unit=uid,
                                            line=f"L{unit['line']}", section=unit['heading']))
-    demands = jd_demand.set_demand(
-        [{'unit': r['unit'], 'text': r['text'], 'heading': r['section']} for r in rows], cfg)
-    for row, demand, bar in zip(rows, demands, jd_bar.set_bar([r['text'] for r in rows], cfg)):
-        row['demand'], row['bar'] = demand, bar
     return rows
 
 
@@ -155,11 +154,10 @@ def cmd_requirements(args, cfg):
     if not units:
         raise ValueError(f'{sentences} holds no units; rerun jd_sentences.py')
     parts = jd_extraction_tables.parse_parts_table(_util.read(args.requirements_file))
-    rows = build_rows(parts, units, cfg)
+    rows = build_rows(parts, units)
     path = os.path.join(args.folder, fn['scratch_subdir'], fn['jd_assemble_file'])
     _util.write(path, jd_extraction_tables.render_requirements(
-        _title(research), rows, _definitions(args.repo_root, cfg, with_kind=False),
-        with_kind=False, assembled=True))
+        _title(research), rows, with_kind=False, assembled=True))
     print(path)
 
 
@@ -207,7 +205,7 @@ def cmd_kinds(args, cfg):
     for r in rows:
         r['kind'] = kind_by_row[r['num']]
     _util.write(path, jd_extraction_tables.render_requirements(current['title'], rows,
-                                                            _definitions(args.repo_root, cfg),
+                                                            _definitions(args.repo_root, cfg, demand_bar=False),
                                                             with_kind=True, assembled=True))
     print(path)
 

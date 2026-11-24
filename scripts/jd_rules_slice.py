@@ -42,11 +42,11 @@ import _util
 
 SHARED_KEY = 'ALL'      # sections every step reads
 STEPS = {
-    'SPLIT': 'splits each unit of jd_sentences.md into parts (jd-splitter, role-extract Phase 1)',
-    'KINDS': 'labels each jd_needs.md row with a kind (jd-kind-labeler, role-extract Phase 4; also read '
+    'SPLIT': 'splits each unit of jd_sentences.md into parts (jd-splitter, role-extract Phase 2)',
+    'KINDS': 'labels each jd_assemble.md row with a kind (jd-kind-labeler; also read '
              'by jd-needs-ranker, qc-role-extract and jd_extraction_tables.load_kinds)',
-    'RANK':  'describes the job, groups rows into needs and ranks them (jd-needs-ranker, role-extract '
-             'Phase 6; also read by qc-role-extract)',
+    'RANK':  'describes the job, groups rows into needs and ranks them (jd-needs-ranker; '
+             'also read by qc-role-extract)',
 }
 
 
