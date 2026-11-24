@@ -33,7 +33,7 @@ Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-N
 
 ## Phase 3 - Assemble the split
 
-- Run `python scripts/role_extract_assemble.py requirements --folder <app_folder> --requirements-file <scratch>/jd_split.md`. It joins the parts to `<scratch>/jd_sentences.md` and writes `<scratch>/jd_assemble.md`, one row per part with its section and line. Re-extracting replaces any earlier kinds and ranking.
+- Run `python scripts/role_extract_assemble.py requirements --folder <app_folder> --requirements-file <scratch>/jd_split.md`. It joins the parts to `<scratch>/jd_sentences.md` and writes `<scratch>/jd_assemble.md` as an outline: one block per sentence with its line and section, and each part under its Part ID. Re-extracting replaces any earlier kinds and ranking.
 
 ## Phase 4 - Check the split against the job description
 

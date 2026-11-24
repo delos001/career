@@ -120,7 +120,12 @@ def _clause_holding(jd_text, quote):
 # Checks
 # ---------------------------------------------------------------------------
 
-def check_requirements_present(needs_text, optional_words, findings, demand_bar=True):
+def _needs_rows(text):
+    """Return every row of a jd_needs.md text, in file order."""
+    return jd_extraction_tables.all_rows(jd_extraction_tables.read_needs(text))
+
+
+def check_requirements_present(needs_text, optional_words, findings, demand_bar=True, read_rows=_needs_rows):
     """X1: the extracted requirements are on file, numbered, with Demand and Source.
 
     Row numbers are the CR-NNN ids every later skill cites, so a gap or a
@@ -129,12 +134,13 @@ def check_requirements_present(needs_text, optional_words, findings, demand_bar=
     'preferred'; the reverse (a row under a preferred heading) is the
     extractor's judgment, since JD headings have no standard form.
     demand_bar=False skips the Demand and Bar checks, for jd_assemble.md,
-    which carries neither.
+    which carries neither. read_rows parses the file's text into rows
+    (jd_extraction_tables.read_assemble for jd_assemble.md's outline).
     """
     if needs_text is None:
         findings.append(('X1', False, 'requirements file not found (requirements not extracted)'))
         return
-    rows = jd_extraction_tables.all_rows(jd_extraction_tables.read_needs(needs_text))
+    rows = read_rows(needs_text)
     problems = []
     nums = sorted(row['num'] for row in rows)
     if not rows:
@@ -176,7 +182,7 @@ def _word_outside_unit(unit_text, text):
     return None
 
 
-def check_requirement_text(needs_text, jd_text, cfg, findings):
+def check_requirement_text(needs_text, jd_text, cfg, findings, read_rows=_needs_rows):
     """X2: each row's words come from its own unit, and the bar survives (GitHub #83).
 
     Each row names its jd_sentences unit, found here by running
@@ -205,7 +211,7 @@ def check_requirement_text(needs_text, jd_text, cfg, findings):
         findings.append(('X2', False, 'jd.md not found, so requirement wording cannot be checked'))
         return
     units = {u['id']: u for u in jd_sentences.units(jd_text)}
-    rows = jd_extraction_tables.all_rows(jd_extraction_tables.read_needs(needs_text))
+    rows = read_rows(needs_text)
     qualifiers, year_count = cfg['requirement_qualifiers'], cfg['requirement_year_count']
     problems = []
     texts_by_clause = {}
@@ -383,16 +389,17 @@ def _needs_and_jd(folder, cfg, scratch=False):
     return _read(path), _read(os.path.join(folder, fn['jd_file']))
 
 
-def _requirement_checks(needs_text, jd_text, cfg, findings, demand_bar=True):
+def _requirement_checks(needs_text, jd_text, cfg, findings, demand_bar=True, read_rows=_needs_rows):
     """X1 and X2: the extraction checks."""
-    check_requirements_present(needs_text, cfg['requirement_optional_words'], findings, demand_bar)
-    check_requirement_text(needs_text, jd_text, cfg, findings)
+    check_requirements_present(needs_text, cfg['requirement_optional_words'], findings, demand_bar, read_rows)
+    check_requirement_text(needs_text, jd_text, cfg, findings, read_rows)
 
 
 def cmd_requirements(args, repo_root, cfg):
-    """Run the extraction checks only (X1, X2) on jd_assemble.md; return exit code."""
+    """Run the extraction checks only (X1, X2) on jd_assemble.md's outline; return exit code."""
     findings = []
-    _requirement_checks(*_needs_and_jd(args.folder, cfg, scratch=True), cfg, findings, demand_bar=False)
+    _requirement_checks(*_needs_and_jd(args.folder, cfg, scratch=True), cfg, findings, demand_bar=False,
+                        read_rows=jd_extraction_tables.read_assemble)
     return _report(findings)
 
 

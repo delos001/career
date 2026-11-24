@@ -9,9 +9,9 @@ two steps:
 
   1. Extraction: the jd-splitter's parts, each with the Part ID it gave, are
      written to scratch/jd_assemble.md under '## Requirements' with their
-     unit (from jd_sentences.md), text and JD line. Since 2026-11-23 no
-     Demand or Bar is set there; jd_needs.md rows still carry both
-     (jd_demand.py, jd_bar.py).
+     unit (from jd_sentences.md), text and JD line, as an outline (see
+     render_assemble). Since 2026-11-23 no Demand or Bar is set there;
+     jd_needs.md rows still carry both (jd_demand.py, jd_bar.py).
   2. Ranking: every row is labeled with a kind from the KINDS section of
      rules/jd-processing.md (Function, Means, Setting, ...) and jd-needs-ranker groups
      the rows into ranked needs. The file is rewritten as the job, one heading
@@ -112,24 +112,10 @@ TABLE_HEADER = '| # | Text | Demand | Source |\n|---|------|------|--------|'
 
 # The requirement table in jd_needs.md: which row, where it came from, what it
 # says, then the judgments on it (Demand and Bar by jd_demand.py and
-# jd_bar.py, Kind at ranking; none of them in scratch/jd_assemble.md before
-# the kinds step).
+# jd_bar.py, Kind at ranking; none of them in scratch/jd_assemble.md).
 # Files written before 2026-11-18 have the five-column ROW_HEADER.
 UNIT_ROW_HEADER = ('| Part ID | Unit ID | Line | Section | Requirement | Demand | Bar | Kind |\n'
                    '|---|---|---|---|---|---|---|---|')
-# scratch/jd_assemble.md (2026-11-19): the splitter's parts joined to
-# scratch/jd_sentences.md, Part ID as the splitter numbered it. Since
-# 2026-11-23 it opens with where the part sits in the JD (Line, Section),
-# then Unit ID, Part ID and Part, and carries no Demand or Bar. The assemble
-# step writes it with no Kind column (ASSEMBLE_ROW_HEADER); the kinds step
-# rewrites it in place with a Kind column at the end
-# (ASSEMBLE_KIND_ROW_HEADER). Files written before 2026-11-23 open with
-# Unit ID and have Demand and Bar after Part; files written before
-# 2026-11-20 also have From and Hints after Line.
-ASSEMBLE_ROW_HEADER = ('| Line | Section | Unit ID | Part ID | Part |\n'
-                       '|---|---|---|---|---|')
-ASSEMBLE_KIND_ROW_HEADER = ('| Line | Section | Unit ID | Part ID | Part | Kind |\n'
-                            '|---|---|---|---|---|---|')
 ROW_HEADER = '| Req | Requirement | Kind | Demand | JD line |\n|---|---|---|---|---|'
 
 # The kinds are the '### N. <name>' headings under this section of
@@ -386,23 +372,15 @@ def _cell(value):
     return (value or '').replace('|', r'\|')
 
 
-def _row_table(rows, with_kind=True, assembled=False):
+def _row_table(rows):
     """Return the requirement table lines for rows, or ['None.'].
 
-    assembled=True writes scratch/jd_assemble.md's layout: ASSEMBLE_ROW_HEADER,
-    or ASSEMBLE_KIND_ROW_HEADER when with_kind is True. Otherwise rows from the
-    jd-splitter carry their unit, so the table gets the eight-column layout
-    (jd_needs.md); a file written before 2026-11-18 has no unit and keeps its
-    five columns when it is rewritten.
+    Rows from the jd-splitter carry their unit, so the table gets the
+    eight-column layout (jd_needs.md); a file written before 2026-11-18 has no
+    unit and keeps its five columns when it is rewritten.
     """
     if not rows:
         return ['None.']
-    if assembled:
-        header = ASSEMBLE_KIND_ROW_HEADER if with_kind else ASSEMBLE_ROW_HEADER
-        return [header] + [
-            f"| {_cell(row.get('line'))} | {_cell(row.get('section'))} | "
-            f"{_cell(row.get('unit'))} | {row['num']} | {_cell(row['text'])} |"
-            + (f" {_cell(row.get('kind'))} |" if with_kind else '') for row in rows]
     if any(row.get('unit') for row in rows):
         return [UNIT_ROW_HEADER] + [
             f"| {row['num']} | {_cell(row.get('unit'))} | {_cell(row.get('line'))} | "
@@ -414,14 +392,8 @@ def _row_table(rows, with_kind=True, assembled=False):
 
 
 def _table_row(line):
-    """Return a row dict from a requirement table line, or None for any other line.
+    """Return a row dict from a jd_needs.md requirement table line, or None for any other line.
 
-    Five or six cells opening with a JD line (L<n>) is scratch/jd_assemble.md,
-    before and after the kinds step adds the Kind (ASSEMBLE_ROW_HEADER,
-    ASSEMBLE_KIND_ROW_HEADER). Seven or eight cells opening with a Unit ID is
-    that file written before 2026-11-23, with Demand and Bar after Part; nine
-    or ten is that file written before 2026-11-20, with From and Hints after
-    Line, which are skipped.
     Eight cells is the ranked layout (Part ID, Unit ID, Line, Section,
     Requirement, Demand, Bar, Kind); five is a file written before 2026-11-18,
     read so later skills keep working on older applications.
@@ -430,18 +402,6 @@ def _table_row(line):
     if not (body.startswith('|') and body.endswith('|')):
         return None
     cells = [c.strip().replace(r'\|', '|') for c in _CELL_SPLIT_RE.split(body[1:-1])]
-    if len(cells) in (5, 6) and re.fullmatch(r'L\d+', cells[0]) and UNIT_ID_RE.match(cells[2]) \
-            and cells[3].isdigit():
-        jd_line, section, unit, num, text = cells[:5]
-        kind = cells[5] if len(cells) == 6 else None
-        return _row(int(num), text, None, None, kind or None, unit, jd_line or None, section or None)
-    if len(cells) in (7, 8, 9, 10) and UNIT_ID_RE.match(cells[0]) and cells[1].isdigit():
-        if len(cells) >= 9:
-            cells = cells[:4] + cells[6:]
-        unit, num, section, jd_line, text, demand, bar = cells[:7]
-        kind = cells[7] if len(cells) == 8 else None
-        return _row(int(num), text, demand or None, None, kind or None, unit, jd_line or None,
-                    section or None, bar)
     if not cells[0].isdigit():
         return None
     if len(cells) == 8:
@@ -454,19 +414,79 @@ def _table_row(line):
     return None
 
 
-def render_requirements(title, rows, definitions=(), with_kind=True, assembled=False):
-    """Return the text of a file holding the extracted rows only (before ranking).
+def render_requirements(title, rows, definitions=()):
+    """Return the text of a jd_needs.md holding the extracted rows only (before ranking).
 
     definitions: the lines of the '## Definitions' appendix (built by
     role_extract_assemble.py), placed last so readers can stop before it.
-    assembled=True writes scratch/jd_assemble.md's layout; with_kind=False
-    leaves out the Kind column, which the kinds step adds.
     """
     out = [f'# {title}', '', f'## {UNPLACED}', '']
-    out += _row_table(rows, with_kind, assembled)
+    out += _row_table(rows)
     if definitions:
         out += [''] + list(definitions)
     return '\n'.join(out) + '\n'
+
+
+# ---------------------------------------------------------------------------
+# scratch/jd_assemble.md: render, read
+# The splitter's parts joined to scratch/jd_sentences.md, as an outline
+# (2026-11-23; a table until then). One block per unit, in the splitter's
+# order, under '## Requirements':
+#
+#     ### S-003
+#     - Line: L8
+#     - Section: Description
+#     - Part ID 3: <part, in the unit's words>
+#     - Part ID 4: <part>
+#
+# Part ID is the splitter's number, kept as written. No Demand, Bar or Kind.
+# ---------------------------------------------------------------------------
+
+# Regex: a unit block's heading, its Line and Section bullets, and a part bullet.
+_ASSEMBLE_UNIT_RE = re.compile(r'^### (S-\d+[a-z]?)\s*$')
+_ASSEMBLE_FIELD_RE = re.compile(r'^- (Line|Section): (.*?)\s*$')
+_ASSEMBLE_PART_RE = re.compile(r'^- Part ID (\d+): (.*?)\s*$')
+
+
+def render_assemble(title, rows):
+    """Return scratch/jd_assemble.md's text for rows in the splitter's order.
+
+    A unit's parts sit together under one heading; a unit whose parts are not
+    adjacent in `rows` gets a second block, so the order is never changed.
+    """
+    out = [f'# {title}', '', f'## {UNPLACED}']
+    unit = None
+    for row in rows:
+        if row.get('unit') != unit:
+            unit = row.get('unit')
+            out += ['', f'### {unit}', f"- Line: {row.get('line') or ''}",
+                    f"- Section: {row.get('section') or ''}"]
+        out.append(f"- Part ID {row['num']}: {row['text']}")
+    return '\n'.join(out) + '\n'
+
+
+def read_assemble(text):
+    """Return [row dict] from scratch/jd_assemble.md's text, in file order.
+
+    Each row gets its block's unit, Line and Section; Demand, Bar and Kind are
+    None. Lines that are not a unit heading, field or part are ignored; the
+    QC script reports what is missing.
+    """
+    rows, unit, fields = [], None, {}
+    for line in text.split('\n'):
+        m = _ASSEMBLE_UNIT_RE.match(line)
+        if m:
+            unit, fields = m.group(1), {}
+            continue
+        m = _ASSEMBLE_FIELD_RE.match(line)
+        if m and unit:
+            fields[m.group(1)] = m.group(2)
+            continue
+        m = _ASSEMBLE_PART_RE.match(line)
+        if m and unit:
+            rows.append(_row(int(m.group(1)), m.group(2), None, None, unit=unit,
+                             line=fields.get('Line') or None, section=fields.get('Section') or None))
+    return rows
 
 
 def render_needs(title, job_lines, needs, qualifications, not_ranked, unplaced=(), definitions=()):

@@ -261,7 +261,6 @@ career/
 │   │   ├── industry-research.md
 │   │   ├── prep-research.md             # research family (interview prep)
 │   │   ├── jd-splitter.md               # splits the JD's units into parts (role-extract)
-│   │   ├── jd-kind-labeler.md           # labels each JD row's kind (role-extract)
 │   │   ├── jd-needs-ranker.md           # ranks the JD's needs (role-extract)
 │   │   ├── axis-classifier.md           # five-axis classification (role-classify)
 │   │   ├── retrieval-scorer.md

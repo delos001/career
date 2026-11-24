@@ -9,15 +9,10 @@ subcommands:
   requirements  Join the jd-splitter's parts (scratch/jd_split.md,
             '## Parts' with '| Unit ID | Part ID | Part |') to
             scratch/jd_sentences.md on Unit ID, writing scratch/jd_assemble.md
-            under '## Requirements', one row per part: the unit's Line and
-            Section, the Unit ID, the Part ID (as the splitter numbered it) and
-            the Part ('whole' replaced by the Unit text). It sets no Demand or Bar
-            (2026-11-23). Re-extracting replaces the whole file, so a ranking
-            built on old rows never survives.
-  kinds     Join the jd-kind-labeler's output (scratch/jd_kinds.md, '## Row
-            Kinds' with '| Part ID | Kind |') to scratch/jd_assemble.md's rows,
-            rewriting that file in place with a Kind column. Every row must
-            get one.
+            as an outline under '## Requirements': one block per unit with its
+            Line and Section, then each part with its Part ID (as the splitter
+            numbered it; 'whole' replaced by the Unit text). It sets no Demand
+            or Bar (2026-11-23). Re-extracting replaces the whole file.
   needs     Rewrite jd_needs.md with the jd-needs-ranker output: the job, each
             need with its requirements (copied from the file's own rows, kinds
             included), then the Qualifications and Not ranked rows. The
@@ -25,14 +20,14 @@ subcommands:
             by the ranker.
 
 Both moved here from role_classify_assemble.py when role-extract was split
-out of role-classify (2026-11-16). requirements writes scratch/jd_assemble.md;
-kinds adds the Kind column to it in place; needs writes jd_needs.md.
+out of role-classify (2026-11-16). The kinds subcommand, which added the
+jd-kind-labeler's kinds to the jd_assemble.md table, was removed 2026-11-23
+when that file became an outline.
 
 Author    : Jason Delosh
 Created   : 2026-11-16
 Project   : career
 Usage     : python scripts/role_extract_assemble.py requirements --folder ... --requirements-file ...
-            python scripts/role_extract_assemble.py kinds        --folder ... --kinds-file ...
             python scripts/role_extract_assemble.py needs        --folder ... --needs-file ...
 Depends   : pyyaml (via _config)
 """
@@ -86,33 +81,29 @@ def _title(research):
 # jd.md is role_extract_qc.py's 'requirements' check, run right after this write.
 # ---------------------------------------------------------------------------
 
-def _definitions(repo_root, cfg, demand_bar=True):
-    """Return the lines of a file's '## Definitions' appendix.
+def _definitions(repo_root, cfg):
+    """Return the lines of jd_needs.md's '## Definitions' appendix.
 
     Kind definitions come from the rules file (jd_extraction_tables.kind_definitions);
     Demand and Bar definitions sit beside the code that sets them (jd_demand,
     jd_bar). Nothing is typed here, so the appendix cannot drift from them.
-    demand_bar=False leaves Demand and Bar out, for jd_assemble.md, which has
-    neither column. The assembled split before the kinds step has nothing to
-    define, so it gets no appendix.
+    jd_assemble.md has no Kind, Demand or Bar, so it gets no appendix.
     """
     out = ['## Definitions', '',
            'For a person reviewing this file. Later skills read only the tables above.', '']
     out += [f"**Kind** (what a row asks for; full rules in the KINDS section of "
             f"`{cfg['paths']['rules']}/{cfg['filenames']['jd_rules_file']}`):", '']
     out += [f'- **{name}:** {text}' for name, text in jd_extraction_tables.kind_definitions(repo_root, cfg)]
+    out += ['', '**Demand** (how firmly the job description asks):', '']
+    out += [f'- **{name}:** {text}' for name, text in jd_demand.DEFINITIONS]
+    out += ['', '**Bar** (what evidence meets it):', '']
+    out += [f'- **{name}:** {text}' for name, text in jd_bar.DEFINITIONS]
     out += ['']
-    if demand_bar:
-        out += ['**Demand** (how firmly the job description asks):', '']
-        out += [f'- **{name}:** {text}' for name, text in jd_demand.DEFINITIONS]
-        out += ['', '**Bar** (what evidence meets it):', '']
-        out += [f'- **{name}:** {text}' for name, text in jd_bar.DEFINITIONS]
-        out += ['']
     return out
 
 
 def build_rows(parts, units):
-    """Return jd_assemble.md rows for the splitter's parts.
+    """Return row dicts for the splitter's parts, for jd_assemble.md.
 
     parts: [(unit id, part id, part)] in the splitter's order, part 'whole'
     for an unsplit unit. units: jd_sentences.read() of scratch/jd_sentences.md.
@@ -156,57 +147,7 @@ def cmd_requirements(args, cfg):
     parts = jd_extraction_tables.parse_parts_table(_util.read(args.requirements_file))
     rows = build_rows(parts, units)
     path = os.path.join(args.folder, fn['scratch_subdir'], fn['jd_assemble_file'])
-    _util.write(path, jd_extraction_tables.render_requirements(
-        _title(research), rows, with_kind=False, assembled=True))
-    print(path)
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: kinds
-# The jd-kind-labeler returns '## Row Kinds' with '| Part ID | Kind |' rows.
-# Whether each kind is known and placed right is role_extract_qc.py X3's check;
-# here every row must get exactly one Kind cell, so none is silently left out.
-# ---------------------------------------------------------------------------
-
-def _row_kinds(block):
-    """Return {Part ID: Kind cell} from a '## Row Kinds' table."""
-    kinds = {}
-    for line in block.split('\n'):
-        cells = [c.strip() for c in line.strip().strip('|').split('|')]
-        if line.strip().startswith('|') and len(cells) >= 2 and cells[0].isdigit():
-            kinds[int(cells[0])] = ' | '.join(cells[1:])
-    return kinds
-
-
-def cmd_kinds(args, cfg):
-    """Join the labeler's kinds to scratch/jd_assemble.md's rows, in place.
-
-    Rewrites the file with a Kind column, replacing any kinds from an earlier
-    label run. The file holds no ranking, so a ranking built on old kinds
-    never survives a relabel. Nothing is written unless every row gets a kind.
-    """
-    fn = cfg['filenames']
-    path = os.path.join(args.folder, fn['scratch_subdir'], fn['jd_assemble_file'])
-    if not os.path.isfile(path):
-        raise FileNotFoundError(f'{path} not found (assemble the split first)')
-    text = _util.read(args.kinds_file)
-    if not re.search(r'(?m)^## Row Kinds[ \t]*$', text):
-        raise ValueError('kinds file has no "## Row Kinds" heading')
-    kind_by_row = _row_kinds(text)
-    current = jd_extraction_tables.read_needs(_util.read(path))
-    rows = sorted(jd_extraction_tables.all_rows(current), key=lambda r: r['num'])
-    nums = {r['num'] for r in rows}
-    unknown = sorted(set(kind_by_row) - nums)
-    if unknown:
-        raise ValueError(f"Part IDs not in {path}: {', '.join(map(str, unknown))}")
-    missing = [r['num'] for r in rows if not kind_by_row.get(r['num'])]
-    if missing:
-        raise ValueError(f"no Kind for Part IDs: {', '.join(map(str, missing))}; rerun the labeler")
-    for r in rows:
-        r['kind'] = kind_by_row[r['num']]
-    _util.write(path, jd_extraction_tables.render_requirements(current['title'], rows,
-                                                            _definitions(args.repo_root, cfg, demand_bar=False),
-                                                            with_kind=True, assembled=True))
+    _util.write(path, jd_extraction_tables.render_assemble(_title(research), rows))
     print(path)
 
 
@@ -341,12 +282,6 @@ def main():
     p_req.add_argument('--requirements-file', required=True,
                        help="path to the jd-splitter's output (scratch/jd_split.md)")
     p_req.set_defaults(func=cmd_requirements)
-
-    p_kinds = sub.add_parser('kinds', help="add the jd-kind-labeler's kinds to scratch/jd_assemble.md in place")
-    p_kinds.add_argument('--folder', required=True, help='the application folder')
-    p_kinds.add_argument('--kinds-file', required=True,
-                         help="path to the jd-kind-labeler's output (scratch/jd_kinds.md)")
-    p_kinds.set_defaults(func=cmd_kinds)
 
     p_needs = sub.add_parser('needs', help="rewrite jd_needs.md with the ranker's output")
     p_needs.add_argument('--folder', required=True, help='the application folder')
