@@ -24,3 +24,9 @@ python-docx>=1.2.0
 pypdf>=6.16.2
 requests>=2.34.2
 beautifulsoup4>=4.15.0
+
+# --- Optional: CV length measurement (Windows only) ----------------------
+# pywin32 : cv_measure.py opens the rendered CV in Microsoft Word to measure
+#           its page length. Without it, or without Word, the length is
+#           reported as unmeasured and the measurement test skips.
+pywin32>=312; sys_platform == "win32"

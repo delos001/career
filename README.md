@@ -376,7 +376,8 @@ career/
 │   ├── company-slugs.yaml               # company name -> reused folder slug
 │   └── questions-library.md
 ├── config.yaml                          # every path, filename, ID pattern, axis schema, cutoff
-├── requirements.txt                     # 2 required packages, 3 optional JD-input routes
+├── environment.yml                      # conda env "career": Python 3.13, then requirements.txt
+├── requirements.txt                     # required packages, plus optional JD-input and CV-measure
 ├── COMPONENTS.md                        # per-component registry: inputs, outputs, triggers
 ├── CLAUDE.md                            # agent operating instructions for this repo
 └── README.md
@@ -398,9 +399,10 @@ The pipeline is generic and does not encode one candidate. What it needs is a pr
 
 - Claude Code
 - Python 3.13
-- `pip install -r requirements.txt`
+- With conda: `conda env create -f environment.yml`, which creates the `career` environment and installs `requirements.txt` into it
+- Without conda: `pip install -r requirements.txt`
 
-Everything else the scripts import is standard library. What the five packages are actually for:
+Everything else the scripts import is standard library. What the six packages are actually for:
 
 Required:
 
@@ -416,7 +418,13 @@ Optional, and only for a job description supplied in that format. Each is import
 | `pypdf` | a JD supplied as PDF |
 | `requests`, `beautifulsoup4` | a JD supplied as a URL |
 
-A JD pasted as text or handed over as `.txt` or `.docx` needs neither table beyond the required two.
+A JD pasted as text or handed over as `.txt` or `.docx` needs nothing beyond the required two.
+
+Optional, Windows only, for measuring the CV's length:
+
+| Package | Needed for |
+|---|---|
+| `pywin32` | `cv_measure.py`, which opens the rendered CV in Microsoft Word to measure its page length. Without it, or without Word, the length is reported as unmeasured. pip skips it on other platforms. |
 
 **Setup**
 

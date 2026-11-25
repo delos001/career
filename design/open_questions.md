@@ -30,7 +30,7 @@ Added by Claude from research, 2026-11-24 (each untested):
 - Principles set by the user: definitions define a concept in plain words a person can read cold; no examples or application rules inside a definition; JD phrasing ("ability to X", "experience doing X") is not a reason to change a definition; definitions are a foundation for later steps, not tuned to an error number.
 - Decided: copy-only form, checked by script (0 copy errors in 1,663 slots); Role shape is answered as a choice among its options, not copied; an Other slot shows gaps; Logistic merged into Scope; Bar is its own slot.
 - Results (10 JDs, APP-020 to APP-029; reviewer agents judged each slot against the definitions): run 1, 183 errors in 1,530 slots (12%), about 60 from copying into Role shape; run 2 after definition revisions, 154 in 1,663 (9%). Largest remaining: Function vs Means, Capability vs Function. Target agreed: 5%. Reviewer findings are unverified model judgments.
-- Open: which of paths 2 to 5, or the reference JD, to add next. The agreed stop point after run 2 was a method change, not more wording.
+- Open: which path (2 to 7, 9, or the combined path), or the reference JD, to test next. The agreed stop point after run 2 was a method change, not more wording.
 - Held for form design: whether one slot's words may sit inside another's (fragments like Function "applying"); whether lists under one verb are split by script.
 - Not yet synced: removed agents jd-activity-extractor and jd-needs-ranker are still referenced in COMPONENTS.md, README.md, several scripts and tests.
 - Evidence: `temp/slot_test/` (review, review2, findings, findings2; tally.py and build_review.py rebuild the counts).
