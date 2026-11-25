@@ -2281,10 +2281,11 @@ def test_requirements_are_extracted_into_jd_needs():
         by_unit.setdefault(r['unit'], []).append(r)
     # 'whole' becomes the unit's sentence; the JD line is the unit's line and heading.
     b = by_unit[bachelor['id']][0]
-    assert (b['text'], b['line'], b['section']) == (bachelor['text'], 'L21', '## Requirements'), b
-    assert b['source'] == 'L21 ## Requirements', f'later readers lost the JD reference: {b}'
+    # 2026-11-24: the heading's '## ' mark is not part of the section name.
+    assert (b['text'], b['line'], b['section']) == (bachelor['text'], 'L21', 'Requirements'), b
+    assert b['source'] == 'L21 Requirements', f'later readers lost the JD reference: {b}'
     # 2026-11-23: the unit heading, Line, Section, then each part under its Part ID.
-    assert (f"### {bachelor['id']}\n- Line: L21\n- Section: ## Requirements\n"
+    assert (f"### {bachelor['id']}\n- Line: L21\n- Section: Requirements\n"
             f"- Part ID {b['num']}: {bachelor['text']}\n") in written, 'the unit block is out of order'
     split_block = (f"### {oversee['id']}\n- Line: L{oversee['line']}\n- Section: {oversee['heading']}\n"
                    f"- Part ID ")
@@ -2478,10 +2479,13 @@ def test_role_intake_checks_its_own_handoff():
     def phase_of(*needles):
         hits = [i for i, p in enumerate(phases) if all(n in p for n in needles)]
         return hits[0] if hits else None
+    # 2026-11-24: reordered to after ingest, so headings are always marked on
+    # jd.md itself, and before the session log, so a resume reruns them.
     headings = phase_of('jd_headings.py', '--write', 'Reply with corrections or "confirmed"')
     ingest = phase_of('assemble.py ingest')
-    assert headings is not None and ingest is not None and headings < ingest, \
-        'role-intake does not confirm and write the JD headings before ingest'
+    init = phase_of('assemble.py init')
+    assert None not in (headings, ingest, init) and ingest < headings < init, \
+        'role-intake does not confirm the JD headings after ingest and before the session log'
     # Within the phase, the user confirms before the write ('--write' also
     # appears earlier, in the dry run's 'without --write').
     text = phases[headings]
@@ -2563,10 +2567,17 @@ def test_jd_headings_go_on_their_own_lines_with_words_unchanged():
     code, printed = run(script, jd, *heads, '--write')
     assert code == 0, printed
     lines = _util.read(jd).splitlines()
-    for heading in ('Duties & Responsibilities', 'Additional Duties & Responsibilities', 'Compensation'):
-        assert heading in lines, f'"{heading}" is not on its own line:\n{lines}'
+    # 2026-11-24: each confirmed heading is also marked '## ', the only thing
+    # jd_sentences.py takes as a heading, including one already on its own line.
+    for heading in ('Description', 'Duties & Responsibilities', 'Additional Duties & Responsibilities', 'Compensation'):
+        assert f'## {heading}' in lines, f'"{heading}" is not on its own line, marked:\n{lines}'
     assert 'Runs the cadence.' in lines, f'the nested heading was split twice:\n{lines}'
-    assert re.sub(r'\s+', '', _util.read(jd)) == re.sub(r'\s+', '', glued), 'a word changed'
+    assert re.sub(r'\s+', '', _util.read(jd).replace('## ', '')) == re.sub(r'\s+', '', glued), 'a word changed'
+    # A re-run on marked headings changes nothing, so adding a missed heading
+    # later leaves the others as they are.
+    marked = _util.read(jd)
+    code, printed = run(script, jd, *heads, '--write')
+    assert code == 0 and _util.read(jd) == marked, f'a re-run changed marked headings:\n{_util.read(jd)}'
 
     # A run-in subheading named without its colon keeps the colon (review of
     # #93, 2026-11-17): jd_sentences.py reads a trailing colon as a subsection,
@@ -2574,7 +2585,7 @@ def test_jd_headings_go_on_their_own_lines_with_words_unchanged():
     runin = write_block('runin_jd.md', 'Runs the cadence. Measurement and Diagnosis: Defines metrics.\n')
     code, printed = run(script, runin, '--heading', 'Measurement and Diagnosis', '--write')
     assert code == 0, printed
-    assert _util.read(runin).splitlines() == ['Runs the cadence.', 'Measurement and Diagnosis:', 'Defines metrics.'], \
+    assert _util.read(runin).splitlines() == ['Runs the cadence.', '## Measurement and Diagnosis:', 'Defines metrics.'], \
         f'the colon did not stay with the heading:\n{_util.read(runin)}'
 
     # A heading that also starts a sentence is placed by choosing its occurrence
@@ -2584,7 +2595,7 @@ def test_jd_headings_go_on_their_own_lines_with_words_unchanged():
     assert code != 0 and 'line 1' in printed and 'line 2' in printed, f'the occurrences were not listed:\n{printed}'
     code, printed = run(script, twice, '--nth', 'Benefits', '1', '--write')
     assert code == 0, printed
-    assert _util.read(twice).splitlines() == ['Offers growth.', 'Benefits', 'Benefits include a pension.'], \
+    assert _util.read(twice).splitlines() == ['Offers growth.', '## Benefits', 'Benefits include a pension.'], \
         f'--nth did not place the chosen occurrence:\n{_util.read(twice)}'
     code, printed = run(script, twice, '--nth', 'Benefits', '5')
     assert code != 0, f'an occurrence past the last one was accepted:\n{printed}'
@@ -2596,7 +2607,7 @@ def test_jd_headings_go_on_their_own_lines_with_words_unchanged():
     code, printed = run(script, saved, '--heading', 'Company', '--write')
     assert code == 0, printed
     assert _util.read(saved).splitlines()[:2] == ['**Role:** Lead', '**Company:** Halloway Labs'] \
-        and 'Company' in _util.read(saved).splitlines(), f'the identity header was searched:\n{_util.read(saved)}'
+        and '## Company' in _util.read(saved).splitlines(), f'the identity header was searched:\n{_util.read(saved)}'
 
     # A heading that is not there, or is there twice, stops the run with no write.
     jd2 = write_block('glued_jd2.md', glued)
@@ -2615,16 +2626,22 @@ def test_jd_breaks_into_numbered_units():
     import jd_sentences
     _, cfg = _config.load()
     jd = ('**Role:** Lead\n**Company:** Halloway Labs\n\n---\n\n'
-          'Description\n'
+          '## Description\n'
           'The lead advises owners. This may include corporate work.\n'
-          'Duties\n'
-          'Measurement:\n'
+          '## Duties\n'
+          '## Measurement:\n'
           'Defines measures; presents results.Builds dashboards.\n'
-          'Requirements\n'
+          '## Requirements\n'
           "• Bachelor's degree required, with seven (7) years of experience.\n"
-          '• Green Belt preferred.\n')
+          '• Green Belt preferred.\n'
+          'PMP certification preferred\n'
+          'Experience with SAS and R\n')
     got = {u['id']: u for u in jd_sentences.units(jd)}
-    assert list(got) == ['S-001', 'S-002', 'S-003a', 'S-003b', 'S-004', 'S-005', 'S-006'], list(got)
+    # 2026-11-24: only a line marked '## ' is a heading. A short line with no
+    # full stop used to be taken as one, so the last two requirements vanished.
+    assert list(got) == ['S-001', 'S-002', 'S-003a', 'S-003b', 'S-004', 'S-005', 'S-006', 'S-007', 'S-008'], \
+        f'a short unmarked line was not kept as a unit: {list(got)}'
+    assert got['S-008']['text'] == 'Experience with SAS and R' and got['S-008']['section'] == 'Requirements', got['S-008']
     assert (got['S-003a']['section'], got['S-003a']['subsection']) == ('Duties', 'Measurement'), got['S-003a']
     assert got['S-003b']['text'] == 'presents results.', 'the semicolon split or glued sentence end failed'
     assert got['S-004']['text'] == 'Builds dashboards.', 'a sentence glued to the one before was not split'

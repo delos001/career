@@ -68,7 +68,7 @@ The session log is the ONE home for an interview's scheduling metadata. Each fac
 - **{{app_id}}** - the global application counter, from `scripts/app_id.py`.
 - **{{role_level}}** - the Level-axis value. NOT inferred at JD read-in; `_(pending)_` at `init`, filled by `finalize` (role-classify Phase 1) from the axis-classifier's Level result.
 - **{{industry}}** - the Industry-axis value. NOT inferred at JD read-in; `_(pending)_` at `init`, filled by `finalize` (role-classify Phase 1) from the axis-classifier's Industry result.
-- **{{jd_file}}** / **{{comms_file}}** - filenames within the application folder. `jd.md` always present after role-intake Phase 5; `comms.md` present only when role communications were ingested.
+- **{{jd_file}}** / **{{comms_file}}** - filenames within the application folder. `jd.md` always present after role-intake Phase 4; `comms.md` present only when role communications were ingested.
 - **{{jd_source}}** / **{{comms_source}}** - where the text came from: a URL, the original file path, or `"pasted"`. Never the copy in the application folder, which `{{jd_file}}` / `{{comms_file}}` already name; `init` refuses it. `{{comms_source}}` is blank when no comms were ingested.
 - **Dates** - `YYYY-MM-DD`. `{{start_date}}` is set at creation; `{{research_completed_date}}` is `_(pending)_` until the user approves the research.
 - **{{axis_classification}}** / **{{axis_gaps}}** - `_(pending)_` markers at `init`; replaced at `finalize` with the `axis-classifier` subagent's output, which carries the `## Axis Classification` and `## Axis Gaps` headings and the per-axis lines.

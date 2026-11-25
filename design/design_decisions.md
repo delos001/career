@@ -1597,6 +1597,12 @@ Retrieval and gap analysis ran on the extractor's Type, a record of which JD sec
 
 Refs: `requirements-in-jd-needs-2026-11`, `requirement-kinds-2026-11`, GitHub #89, #88.
 
+#### jd-headings-marked-2026-11
+Which lines of `jd.md` are headings is decided once, by the user, in role-intake Phase 5, and carried forward as a `## ` mark that `jd_headings.py --write` puts on each confirmed heading. `jd_sentences.py` takes only marked lines as headings; every other line is JD text (user, 2026-11-24).
+- Why: `jd_sentences.py` re-guessed headings from line shape (8 words or fewer, no full stop), so short unbulleted requirement lines ("PMP certification preferred") were taken as headings and silently dropped. Heading detection needs judgment the plain text cannot carry (the posting's bold or size); the confirmation already existed but was discarded after the line breaks were placed.
+- Mark in `jd.md`, not a separate list file: a list file is a second place holding the decision, and the two can disagree.
+- Headings are confirmed after ingest, on `jd.md` itself, and before the session log (user, 2026-11-24): new applications and fixes follow one procedure, and a run stopped before the headings has no session log, so the resume check reruns them; re-marking changes nothing. Cost: `jd.md` is no longer word for word; `jd_headings.py` checks words unchanged with marks removed. A `jd.md` saved before 2026-11-24 has no marks and reads as having no headings until re-marked (role-intake *Fixes*).
+
 ### gap-analysis
 
 (The skill formerly referenced as `role_evaluation` in pre-build design notes is named `gap-analysis` as built. The old slug `gap-analysis-cluster-derivation` is retained below as a deferred presentation enhancement; v1 of the built skill renders requirements in CR-NNN order rather than cluster-grouped.)

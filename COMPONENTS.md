@@ -603,10 +603,10 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 **Built** (detailed entries below unless noted):
 - `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/display/introduce.py`, `scripts/assemble.py`
-- `scripts/ingest/jd_headings.py` (puts named JD section headings on their own lines, moving line breaks only; refuses a missing or repeated heading; role-intake Phase 2 runs it on the Phase 1 JD file once the user confirms the heading list; roster entry only)
+- `scripts/ingest/jd_headings.py` (puts named JD section headings on their own lines, marked `## `, moving line breaks and adding marks only; refuses a missing or repeated heading; role-intake Phase 5 runs it on `jd.md` once the user confirms the heading list; roster entry only)
 - `scripts/jd_bar.py` (imported module: sets each JD part's Bar, exposure, working or blank, by rule from the `bar_*_words` lists in `config.yaml`; called by `role_extract_assemble.py requirements`; roster entry only)
 - `scripts/jd_demand.py` (imported module: sets each JD part's Demand by rule from the word lists `requirement_optional_words` and `requirement_preferred_headings` in `config.yaml`; to be called by `role_extract_assemble.py`; roster entry only)
-- `scripts/jd_sentences.py` (role-extract Phase 1: breaks `jd.md` into numbered units, one per sentence or semicolon part, under their headings, each with its `jd.md` line; writes `<scratch>/jd_sentences.md`; roster entry only)
+- `scripts/jd_sentences.py` (role-extract Phase 1: breaks `jd.md` into numbered units, one per sentence or semicolon part, under their headings (only lines marked `## ` by `jd_headings.py`), each with its `jd.md` line; writes `<scratch>/jd_sentences.md`; roster entry only)
 - `scripts/role_extract_assemble.py` (role-extract skill: `requirements` joins the jd-splitter's parts to `jd_sentences.md` and writes `jd_assemble.md` as an outline, one block per unit with its Line and Section and each part under the splitter's Part ID; `needs` writes the ranker's output; roster entry only)
 - `scripts/role_classify_assemble.py` (role-classify skill: `finalize` writes the classifier's output; `approval` prints the approval block from the files; roster entry only)
 - `scripts/jd_extraction_tables.py` (imported module: reads the kinds from the KINDS section of `rules/jd-processing.md`, parses the jd-splitter's `## Parts` table, renders and reads the `jd_assemble.md` outline and `jd_needs.md`, and gives retrieval and gap analysis the requirements table without its Not ranked rows; roster entry only)
@@ -649,7 +649,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/ingest/jd_extract.py
 
-- **Purpose**: Extract job-description or role-communication text from a .txt/.md/.docx/.pdf file or an http(s) URL and write it to a file (`--out`), which role-intake Phase 5 passes to `assemble.py ingest` with only line breaks moved (Phase 2), so the text is never re-typed by the model.
+- **Purpose**: Extract job-description or role-communication text from a .txt/.md/.docx/.pdf file or an http(s) URL and write it to a file (`--out`), which role-intake Phase 4 passes to `assemble.py ingest` unchanged, so the text is never re-typed by the model.
 - **Status**: Designed
 - **Inputs**: User input (path or URL); `--out` file path. Deps: python-docx, pypdf, requests, beautifulsoup4.
 - **Outputs**: The `--out` file; only its path and character count to stdout (the JD is not echoed); errors to stderr with exit 1 (fails loudly on empty extraction, writing nothing).
@@ -662,7 +662,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Status**: Designed
 - **Inputs**: Config: `config.yaml` (applications path, APP-NNN scheme) via `scripts/_config.py`. Filesystem: the configured applications folder.
 - **Outputs**: Next APP-NNN to stdout; an empty marker file `.app_ids/APP-NNN` in the applications folder.
-- **Triggers**: Imported by `scripts/assemble.py folder` (role-intake Phase 4), which claims the ID and creates the folder in one call.
+- **Triggers**: Imported by `scripts/assemble.py folder` (role-intake Phase 3), which claims the ID and creates the folder in one call.
 - **Update Triggers**: When the application folder naming convention changes.
 
 #### scripts/display/introduce.py

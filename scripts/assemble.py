@@ -150,7 +150,7 @@ def _stem_ids(folder, cfg):
 
 
 # ---------------------------------------------------------------------------
-# Subcommand: folder  (role-intake Phase 4)
+# Subcommand: folder  (role-intake Phase 3)
 # Claims the next APP-NNN and creates its application folder in one call, so the
 # ID never exists only in the conversation and nothing later creates the folder
 # as a side effect. Every call is a new application; a resume finds its folder
@@ -173,7 +173,7 @@ def cmd_folder(args, repo_root, cfg):
 
 
 # ---------------------------------------------------------------------------
-# Subcommand: ingest  (role-intake Phase 5)
+# Subcommand: ingest  (role-intake Phase 4)
 # Writes the JD (and comms if present) into the application folder. Run this
 # before 'init' so raw inputs are persisted before the session log is written -
 # if the session closes between the two calls the inputs survive and the run

@@ -4,19 +4,19 @@
 role-intake: |
   # role-intake - start a new application
 
-  Takes in the job description and any recruiter messages, puts its section
-  headings back on their own lines, creates the application's folder, saves
-  the job description there, and starts the session log.
+  Takes in the job description and any recruiter messages, creates the
+  application's folder, saves the job description there, marks its section
+  headings, and starts the session log.
 
   Steps:
     1. Read in the job description - paste it, or give a .txt / .docx / .pdf
        path or a URL - and any recruiter messages.
-    2. Confirm the job description's section headings. Text copied from a
+    2. Confirm the role title and company.
+    3. Create the application folder.
+    4. Save the job description; you get its path to review.
+    5. Confirm the job description's section headings. Text copied from a
        job board often loses its line breaks, so headings run into the text
        around them.
-    3. Confirm the role title and company.
-    4. Create the application folder.
-    5. Save the job description; you get its path to review.
     6. Start the session log.
 
   Next: role-research researches the industry, company and title.

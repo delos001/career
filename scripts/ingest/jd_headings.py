@@ -7,11 +7,14 @@ after) each section heading, so the heading ends up glued to the paragraph of
 the section before it: "...business outcomes.  Duties & Responsibilities".
 Every reader of jd.md then has to guess which section a sentence belongs to.
 
-This script moves line breaks only. The caller names the headings (deciding
-what is a heading is a judgment the user confirms; the script does not guess),
-and the script puts each one on its own line. It never adds, removes or changes
-a word: before writing, it checks that the text with all whitespace removed is
-identical to the input, and refuses to write if it is not.
+This script moves line breaks and marks headings, nothing else. The caller
+names the headings (deciding what is a heading is a judgment the user confirms;
+the script does not guess), and the script puts each one on its own line,
+marked '## '. jd_sentences.py takes only marked lines as headings, so the mark
+carries the user's confirmation forward to role-extract. It never adds, removes
+or changes a word: before writing, it checks that the text with the marks and
+all whitespace removed is identical to the input, and refuses to write if it
+is not.
 
 Rules for a heading match:
   - case-sensitive, and the heading must stand alone: the character before it
@@ -24,8 +27,9 @@ Rules for a heading match:
   - each heading must occur exactly once. None means a typo and stops the run.
     More than one stops the run and lists each occurrence with its line, so the
     caller can pick the heading and re-run with --nth "<heading>" <N>.
-A heading already on its own line is left as it is. On jd.md, the identity
-header ingest writes above the '---' rule is not searched.
+A heading already on its own line is marked; one already marked is left as it
+is, so a re-run to add a missed heading changes only that heading. On jd.md,
+the identity header ingest writes above the '---' rule is not searched.
 
 Without --write the script prints each split as before/after and changes
 nothing. With --write it saves the file in place.
@@ -61,7 +65,8 @@ def find_headings(lines, headings, start=0):
     'lines' is the file split on newlines; positions are character offsets in
     that line. A match counts only when it is bounded on both sides by the line
     edge, whitespace or punctuation (anything that is not a letter or digit).
-    Lines before index 'start' (jd.md's identity header) are not searched.
+    Lines before index 'start' (jd.md's identity header) are not searched. On a
+    line already marked '## ', only the text after the mark is searched.
     """
     taken = {}      # line_index -> list of (start, end) spans already claimed
     found = {h: [] for h in headings}
@@ -72,7 +77,7 @@ def find_headings(lines, headings, start=0):
         for i, line in enumerate(lines):
             if i < start:
                 continue
-            for m in pattern.finditer(line):
+            for m in pattern.finditer(line, _mark_end(line)):
                 spans = taken.setdefault(i, [])
                 if any(m.start() < e and s < m.end() for s, e in spans):
                     continue    # inside a longer heading already matched
@@ -81,11 +86,17 @@ def find_headings(lines, headings, start=0):
     return found
 
 
+def _mark_end(line):
+    """Return where a line's text starts: after its '## ' mark, or 0 when unmarked."""
+    return len(jd_sentences.HEADING_MARK) if jd_sentences.heading_text(line) is not None else 0
+
+
 # ---------------------------------------------------------------------------
 # Splitting the lines
-# Each line holding a heading is cut at the heading's edges. Spaces at a cut are
-# dropped (they were only there because the line break was lost); empty pieces
-# are dropped, so a heading already alone on its line yields just itself.
+# Each line holding a heading is cut at the heading's edges, and each heading
+# piece is marked '## '. Spaces at a cut are dropped (they were only there
+# because the line break was lost); empty pieces are dropped, so a heading
+# already alone on its line yields just itself, marked.
 # ---------------------------------------------------------------------------
 
 def split_lines(lines, found):
@@ -100,10 +111,11 @@ def split_lines(lines, found):
         if i not in cuts:
             new_lines.append(line)
             continue
-        pieces, pos = [], 0
+        # An existing mark is dropped here and put back on the heading piece.
+        pieces, pos = [], _mark_end(line)
         for s, e in sorted(cuts[i]):
             pieces.append(line[pos:s])
-            pieces.append(line[s:e])
+            pieces.append(jd_sentences.HEADING_MARK + line[s:e])
             pos = e
         pieces.append(line[pos:])
         pieces = [p.strip() for p in pieces if p.strip()]
@@ -114,8 +126,10 @@ def split_lines(lines, found):
 
 
 def same_words(a, b):
-    """True when a and b are identical once every whitespace character is removed."""
-    return re.sub(r'\s+', '', a) == re.sub(r'\s+', '', b)
+    """True when a and b are identical once heading marks and whitespace are removed."""
+    def bare(text):
+        return re.sub(r'\s+', '', re.sub(r'(?m)^' + re.escape(jd_sentences.HEADING_MARK), '', text))
+    return bare(a) == bare(b)
 
 
 # ---------------------------------------------------------------------------
@@ -212,7 +226,7 @@ def main():
         return 1
 
     if not changes:
-        print('No change: every heading is already on its own line.')
+        print('No change: every heading is already on its own line and marked.')
         return 0
     print(report(changes))
     if args.write:
