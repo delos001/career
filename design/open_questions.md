@@ -7,7 +7,7 @@ Items blocking specific work that need answers now. When answered, move resolved
 ### Role extraction: the user's proposed paths (raised 2026-11-24, testing)
 Two steps: split the JD into a useful form, then apply meaningful categories that retrieval, gap analysis and CV writing can use. The user proposed five paths, usable alone or in combination:
 1. **Slot form after semantic role labeling** (PropBank: who acts, what is acted on, with what, how, why). A fixed form per JD unit; the model copies exact words into each slot or leaves it empty, so it never decides how many parts a sentence has, and most labels follow from the slot. Status: tested twice; details below.
-2. **spaCy grammar parser.** Parse each sentence into verb, objects and modifiers by script. Status: untested. Likely fit: splitting lists under one verb and keeping a method inside its work phrase, both held below.
+2. **spaCy grammar parser.** Parse each sentence into verb, objects and modifiers by script. Status: probed 2026-11-25 (details below). Likely fit: splitting lists under one verb and keeping a method inside its work phrase, both held below.
 3. **Yes/no questions instead of split rules.** Fixed questions the model answers to make each categorization easier to decide. Status: untested.
 4. **Dense X Retrieval propositions.** Split text into atomic, self-contained statements, one fact per unit, so one tag per unit. Catch: it rewrites the text, so each proposition must record which original words it came from. Status: untested.
 5. **Trained classifier.** A model that only assigns categories, trained on phrases already labeled from the JDs in the repo. Status: untested; needs a labeled set first.
@@ -25,6 +25,14 @@ Added by Claude from research, 2026-11-24 (each untested):
 - Gap: O*NET covers Function, Means, Capability and Qualification, and Setting only partly (its Work Context is conditions, not industry or organization type). Result, Scope, Bar, Role shape, Employment condition and Boilerplate need another source; the spaCy parse can supply the role-in-sentence slots from grammar (a purpose clause for Result, "with" or "for" phrases for Scope).
 - Training (path 9): not needed for the split, since spaCy is already trained. Not needed for the mapping at first, since the O*NET descriptors act as the labeled examples; add SetFit only if measured mapping accuracy is poor, for example on pharma or clinical terms.
 - Untested risk: spaCy parse quality on long sentences with many parallel clauses (APP-029 S-001).
+
+**Path 2 probe results (2026-11-25).** Script `temp/spacy_probe/probe.py` (rebuilt once; outputs in `temp/spacy_probe/v2/`, 7 applications).
+- Small model (`en_core_web_sm`): unusable on JD bullet style; opening verbs ("Coordinates", "Identifies") tagged as nouns in about 17 of 66 APP-029 units. Prefixing a subject recovered the verbs but broke other parses; dropped.
+- Transformer model (`en_core_web_trf`): opening-verb and noun/verb errors largely gone; S-001 splits correctly. Parse time about 1 to 2 seconds per JD on CPU.
+- Most remaining errors were script-side and fixed by reassembling pieces the parser keeps apart (shared objects across verb lists, inherited subjects, heading content, example lists, nested "including" lists).
+- Parser limits with no safe script fix: shared head noun split ("Global capability and product owners"); closing phrase attached to one or all list items (both readings plausible); "Experience leading ..." read as a command verb; hyphenated verbs split ("co-develop").
+- Error rate on the rebuilt output: not measured. The last counts (46/66 mine, 28/66 blind reviewer, APP-029) predate the rebuild.
+- Environment: `en_core_web_trf` needs a shim for srsly 2.5 on Python 3.13 (in `probe.py`); on Python 3.12 with srsly 2.4.8 it loads without one (test env `career312`; repo tests give the same 91/97 there as on 3.13).
 
 **Path 1 detail.** Slot definitions live in `rules/jd-processing.md` under `## SPLIT: Units and slots`.
 - Principles set by the user: definitions define a concept in plain words a person can read cold; no examples or application rules inside a definition; JD phrasing ("ability to X", "experience doing X") is not a reason to change a definition; definitions are a foundation for later steps, not tuned to an error number.

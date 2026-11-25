@@ -28,16 +28,6 @@ Ask for the APP-NNN and find its folder with `python scripts/paths.py app <APP-N
 
 - Run `python scripts/jd_sentences.py --folder <app_folder>`. It writes `<scratch>/jd_sentences.md`, the job description as numbered sentences. On a failure, stop and tell the user what is wrong with the job description.
 
-## Phase 2 - Split the sentences into parts
-- Run `python scripts/dispatch_prompt.py jd-splitter --folder <app_folder>` and dispatch `jd-splitter` with the prompt between `=== PROMPT ===` and `=== END ===` exactly as printed. The agent writes its table, each part with its Part ID, to `<scratch>/jd_split.md`; never write or edit that file yourself.
 
-## Phase 3 - Assemble the split
-
-- Run `python scripts/role_extract_assemble.py requirements --folder <app_folder> --requirements-file <scratch>/jd_split.md`. It joins the parts to `<scratch>/jd_sentences.md` and writes `<scratch>/jd_assemble.md` as an outline: one block per sentence with its line and section, and each part under its Part ID. Re-extracting replaces any earlier kinds and ranking.
-
-## Phase 4 - Check the split against the job description
-
-- Run `python scripts/role_extract_qc.py requirements --folder <app_folder>`.
-- On a failure, tell the user which requirement does not match the job description and redo Phase 2. Do not label or rank until it passes.
 
 
