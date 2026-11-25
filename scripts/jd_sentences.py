@@ -28,6 +28,7 @@ Depends : pyyaml (via _config)
 """
 
 import argparse
+import functools
 import os
 import re
 import sys
@@ -73,12 +74,23 @@ def heading_text(line):
     return line[len(HEADING_MARK):].strip() if line.startswith(HEADING_MARK) else None
 
 
+@functools.lru_cache(maxsize=1)
+def _abbreviations():
+    """Return the single-period abbreviations from config sentence_abbreviations."""
+    return frozenset(_config.load()[1]['sentence_abbreviations'])
+
+
+def _is_abbreviation(token):
+    """True when a token is a dotted abbreviation or a listed one ('U.S.', '(e.g.', 'Dr.')."""
+    return bool(_DOTTED_ABBREV_RE.fullmatch(token)) or token.lstrip('(').rstrip('.') in _abbreviations()
+
+
 def _sentences(text):
-    """Return text cut at each sentence end, except one right after a dotted abbreviation."""
+    """Return text cut at each sentence end, except one right after an abbreviation."""
     out, start = [], 0
     for m in _SENTENCE_END_RE.finditer(text):
         before = text[start:m.start()].split()
-        if before and _DOTTED_ABBREV_RE.fullmatch(before[-1]):
+        if before and _is_abbreviation(before[-1]):
             continue
         out.append(text[start:m.start()])
         start = m.end()

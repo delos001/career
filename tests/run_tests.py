@@ -2636,7 +2636,8 @@ def test_jd_breaks_into_numbered_units():
           '• Green Belt preferred.\n'
           'PMP certification preferred\n'
           'Experience with SAS and R\n'
-          'Supports the U.S. Medical team, e.g. Field Medical. Holds a Ph.D. Travel is required.\n')
+          'Supports the U.S. Medical team, e.g. Field Medical. Holds a Ph.D. Travel is required.\n'
+          'Reports to Dr. Lane at Acme Inc. Holdings. Leads the team.\n')
     got = {u['id']: u for u in jd_sentences.units(jd)}
     # 2026-11-24: only a line marked '## ' is a heading. A short line with no
     # full stop used to be taken as one, so the last two requirements vanished.
@@ -2645,8 +2646,10 @@ def test_jd_breaks_into_numbered_units():
     assert got['S-008']['text'] == 'Experience with SAS and R' and got['S-008']['section'] == 'Requirements', got['S-008']
     # 2026-11-24: a dotted abbreviation does not end a sentence ("U.S. Medical"
     # used to split into "Supports the U.S." and "Medical team ...").
+    # A listed single-period one (config sentence_abbreviations) does not either.
     assert [got[i]['text'] for i in list(got)[9:]] == [
-        'Supports the U.S. Medical team, e.g. Field Medical.', 'Holds a Ph.D. Travel is required.'], \
+        'Supports the U.S. Medical team, e.g. Field Medical.', 'Holds a Ph.D. Travel is required.',
+        'Reports to Dr. Lane at Acme Inc. Holdings.', 'Leads the team.'], \
         f'a dotted abbreviation split a sentence: {[got[i]["text"] for i in list(got)[8:]]}'
     assert (got['S-003a']['section'], got['S-003a']['subsection']) == ('Duties', 'Measurement'), got['S-003a']
     assert got['S-003b']['text'] == 'presents results.', 'the semicolon split or glued sentence end failed'

@@ -114,6 +114,13 @@ requirement_qualifiers:
   - preferably
   - ideally
 
+# Abbreviations closed by one period that never end a JD sentence
+# (scripts/jd_sentences.py), matched case-sensitively without the period, so
+# "Dr. Smith" or "Acme Inc. Holdings" stays one unit. Dotted ones ("U.S.",
+# "e.g.") are found by shape and need no entry. 'etc' is left out: in a JD it
+# usually ends the sentence it closes.
+sentence_abbreviations: [Dr, Mr, Mrs, Ms, Sr, Jr, Inc, Ltd, Corp, Co, St, Dept, vs]
+
 # Words that mark a requirement optional (scripts/jd_demand.py, which sets
 # Demand; scripts/role_extract_qc.py X1). One case-insensitive regex each; a
 # part whose own text carries one gets Demand 'preferred'. 'bonus' only as
