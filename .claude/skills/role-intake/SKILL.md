@@ -54,18 +54,20 @@ Ask: "Is this a new role, or are you resuming one?"
 
 ## Phase 5 - Confirm the JD headings
 
-- List the JD's section headings, including run-in subheadings (a label opening a paragraph, such as `Performance Measurement and Diagnosis:`), each spelled exactly as in the JD. Where it is unclear whether a line is a heading or where a section starts, ask the user, one question at a time. If the JD has no headings, tell the user and go to Phase 6.
-- Run `python scripts/ingest/jd_headings.py <app_folder>/jd.md --heading "<heading>"`, repeating `--heading` for each one, without `--write`. Correct the spelling of a heading it reports missing; for a heading it reports more than once, pick the occurrence that is the heading from the lines it lists and re-run with `--nth "<heading>" <N>` in place of its `--heading`. Read each before/after it prints; where a cut falls inside a sentence, drop that heading and ask the user about it.
+- List the JD's section headings and subheadings, including run-in ones (a label opening a paragraph, such as `Performance Measurement and Diagnosis:`), each spelled exactly as in the JD. A subheading divides the section above it; a heading ending in a colon is not a subheading for that reason alone. Where it is unclear whether a line is a heading, which level it is, or where a section starts, ask the user, one question at a time. If the JD has no headings, tell the user and go to Phase 6.
+- Run `python scripts/ingest/jd_headings.py <app_folder>/jd.md --heading "<heading>"`, repeating `--heading` for each section heading and `--subheading` for each subheading, without `--write`. Correct the spelling of a heading it reports missing; for a heading it reports more than once, pick the occurrence that is the heading from the lines it lists and re-run with `--nth "<heading>" <N>` in place of its `--heading`. Read each before/after it prints; where a cut falls inside a sentence, drop that heading and ask the user about it.
+- Find text with no heading of its own that would fall under an unrelated heading above it (pay, benefits, an equal-opportunity statement, a company introduction, recruiter contact details). For each, suggest a generic heading (such as `Compensation`) and ask the user whether to add it, one at a time. Add each accepted one to the run with `--add "<heading>" <line>` (or `--add-sub` for a subheading), `<line>` being the `jd.md` line it goes before.
 - Ask the user to check the list against the original posting. Give them the link to `<app_folder>/jd.md` so they can open it and edit it directly if they need to; after an edit, re-read `jd.md` and dry-run the list again. Present for confirmation and re-present on corrections until confirmed:
 
   ```
   Confirm the JD section headings (open jd.md to check or edit: <link to <app_folder>/jd.md>):
     <heading>
-    <heading>
+      <subheading>
+    <heading>  (added)
   Reply with corrections or "confirmed".
   ```
 
-- If the user changed the list, dry-run the changed list and handle its report as above, then confirm again. Run the confirmed list with `--write`. It marks each heading `## `; role-extract takes only marked lines as headings, so a heading left off the list is read as JD text.
+- If the user changed the list, dry-run the changed list and handle its report as above, then confirm again. Run the confirmed list with `--write`. It marks each heading `## ` and each subheading `### `; role-extract takes only marked lines as headings, at the marked level, so a heading left off the list is read as JD text.
 
 ## Phase 6 - Start the session log
 
@@ -86,6 +88,6 @@ Ask: "Is this a new role, or are you resuming one?"
 | Wrong | Fix |
 |---|---|
 | JD or messages wrong or missing, or a JD line wrongly made a heading | Phase 1, Phase 4, Phase 5, then Phase 6 with `--replace` |
-| A JD heading missed, or `jd.md` has no `## ` heading marks (saved before 2026-11-24) | Phase 5 for the missing headings |
+| A JD heading missed or at the wrong level, or `jd.md` has no `## ` heading marks (saved before 2026-11-24) | Phase 5 for those headings |
 | Session log wrong (a source, the comms entry, a field) | Phase 6 with `--replace` |
 | Title, company or slug | `python scripts/assemble.py relabel --folder <app_folder>` with `--role`, `--company` and/or `--slug` (it asks for `--slug` when a corrected company is new); the path it prints is `<app_folder>` from then on |

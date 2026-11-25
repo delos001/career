@@ -10,8 +10,9 @@ Every reader of jd.md then has to guess which section a sentence belongs to.
 This script moves line breaks and marks headings, nothing else. The caller
 names the headings (deciding what is a heading is a judgment the user confirms;
 the script does not guess), and the script puts each one on its own line,
-marked '## '. jd_sentences.py takes only marked lines as headings, so the mark
-carries the user's confirmation forward to role-extract. It never adds, removes
+marked '## ' for a section heading or '### ' for a subheading (--subheading).
+jd_sentences.py takes only marked lines as headings, at the marked level, so
+the mark carries the user's confirmation forward to role-extract. It never adds, removes
 or changes a word: before writing, it checks that the text with the marks and
 all whitespace removed is identical to the input, and refuses to write if it
 is not.
@@ -27,8 +28,17 @@ Rules for a heading match:
   - each heading must occur exactly once. None means a typo and stops the run.
     More than one stops the run and lists each occurrence with its line, so the
     caller can pick the heading and re-run with --nth "<heading>" <N>.
-A heading already on its own line is marked; one already marked is left as it
-is, so a re-run to add a missed heading changes only that heading. On jd.md,
+--add / --add-sub insert a heading the posting does not have (text with no
+heading of its own, such as pay, would otherwise fall under the heading above
+it), as its own line '## [added] <heading>' before the given line. It is the
+one change that adds words, so the tag keeps it visibly not from the posting
+and the word check skips it. It shifts every later line number, so it is
+refused once the application's session log exists (role-intake Phase 5 runs
+before it): later steps cite jd.md lines.
+
+A heading already on its own line is marked; one already marked at the level
+asked for is left as it is, so a re-run to add a missed heading changes only
+that heading, and a re-run with a heading's level changed re-marks it. On jd.md,
 the identity header ingest writes above the '---' rule is not searched.
 
 Without --write the script prints each split as before/after and changes
@@ -38,7 +48,8 @@ Author    : Jason Delosh
 Created   : 2026-11-17
 Project   : career
 Usage     : python scripts/ingest/jd_headings.py <file> --heading "<text>" [--heading ...]
-            [--nth "<text>" <N> ...] [--write]
+            [--subheading "<text>" ...] [--nth "<text>" <N> ...]
+            [--add "<heading>" <LINE> ...] [--add-sub "<heading>" <LINE> ...] [--write]
 Depends   : scripts/_util.py; scripts/jd_sentences.py (where jd.md's body starts)
 """
 
@@ -47,6 +58,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import _config  # noqa: E402
 import _util  # noqa: E402
 import jd_sentences  # noqa: E402
 
@@ -66,16 +78,16 @@ def find_headings(lines, headings, start=0):
     that line. A match counts only when it is bounded on both sides by the line
     edge, whitespace or punctuation (anything that is not a letter or digit).
     Lines before index 'start' (jd.md's identity header) are not searched. On a
-    line already marked '## ', only the text after the mark is searched.
+    line already marked, only the text after the mark is searched.
     """
     taken = {}      # line_index -> list of (start, end) spans already claimed
     found = {h: [] for h in headings}
     for heading in sorted(headings, key=len, reverse=True):
-        # ':?' keeps a run-in subheading's colon with the heading even when the
-        # caller leaves it off; jd_sentences.py reads that colon as a subsection.
+        # ':?' keeps a run-in heading's colon with the heading even when the
+        # caller leaves it off, so the colon is not left opening the body text.
         pattern = re.compile(r'(?<![^\W_])' + re.escape(heading) + r':?(?![^\W_])')
         for i, line in enumerate(lines):
-            if i < start:
+            if i < start or _is_added(line):
                 continue
             for m in pattern.finditer(line, _mark_end(line)):
                 spans = taken.setdefault(i, [])
@@ -86,25 +98,37 @@ def find_headings(lines, headings, start=0):
     return found
 
 
+def _is_added(line):
+    """True for a heading line the user added ('## [added] Compensation')."""
+    text = jd_sentences.heading_text(line)
+    return text is not None and text.startswith(jd_sentences.ADDED_TAG)
+
+
 def _mark_end(line):
-    """Return where a line's text starts: after its '## ' mark, or 0 when unmarked."""
-    return len(jd_sentences.HEADING_MARK) if jd_sentences.heading_text(line) is not None else 0
+    """Return where a line's text starts: after its heading mark, or 0 when unmarked."""
+    mark = jd_sentences.heading_mark(line)
+    return len(mark) if mark else 0
 
 
 # ---------------------------------------------------------------------------
 # Splitting the lines
 # Each line holding a heading is cut at the heading's edges, and each heading
-# piece is marked '## '. Spaces at a cut are dropped (they were only there
-# because the line break was lost); empty pieces are dropped, so a heading
-# already alone on its line yields just itself, marked.
+# piece is marked: '### ' for a subheading, '## ' for any other. Spaces at a
+# cut are dropped (they were only there because the line break was lost);
+# empty pieces are dropped, so a heading already alone on its line yields just
+# itself, marked.
 # ---------------------------------------------------------------------------
 
-def split_lines(lines, found):
-    """Return (new_lines, changes); changes is [(line_number, before, [after lines])]."""
-    cuts = {}       # line_index -> sorted list of (start, end)
-    for matches in found.values():
+def split_lines(lines, found, subheadings=()):
+    """Return (new_lines, changes); changes is [(line_number, before, [after lines])].
+
+    subheadings: the headings to mark '### '; every other heading is marked '## '.
+    """
+    cuts = {}       # line_index -> sorted list of (start, end, mark)
+    for heading, matches in found.items():
+        mark = jd_sentences.SUBHEADING_MARK if heading in subheadings else jd_sentences.HEADING_MARK
         for i, s, e in matches:
-            cuts.setdefault(i, []).append((s, e))
+            cuts.setdefault(i, []).append((s, e, mark))
 
     new_lines, changes = [], []
     for i, line in enumerate(lines):
@@ -113,9 +137,9 @@ def split_lines(lines, found):
             continue
         # An existing mark is dropped here and put back on the heading piece.
         pieces, pos = [], _mark_end(line)
-        for s, e in sorted(cuts[i]):
+        for s, e, mark in sorted(cuts[i]):
             pieces.append(line[pos:s])
-            pieces.append(jd_sentences.HEADING_MARK + line[s:e])
+            pieces.append(mark + line[s:e])
             pos = e
         pieces.append(line[pos:])
         pieces = [p.strip() for p in pieces if p.strip()]
@@ -126,10 +150,37 @@ def split_lines(lines, found):
 
 
 def same_words(a, b):
-    """True when a and b are identical once heading marks and whitespace are removed."""
+    """True when a and b are identical once added headings, marks and whitespace are removed."""
     def bare(text):
-        return re.sub(r'\s+', '', re.sub(r'(?m)^' + re.escape(jd_sentences.HEADING_MARK), '', text))
+        kept = '\n'.join(l for l in text.split('\n') if not _is_added(l))
+        return re.sub(r'\s+', '', re.sub(r'(?m)' + jd_sentences.MARK_RE.pattern, '', kept))
     return bare(a) == bare(b)
+
+
+# ---------------------------------------------------------------------------
+# Adding headings
+# Each added heading becomes its own line before the line the caller names,
+# numbered as the file stands before this run. Inserted bottom-up so earlier
+# numbers still hold.
+# ---------------------------------------------------------------------------
+
+def add_headings(lines, adds, start):
+    """Return (new_lines, problems); adds is [(heading, line_number, mark)]."""
+    problems = []
+    for heading, n, _ in adds:
+        if not (start < n <= len(lines)) or not lines[n - 1].strip():
+            problems.append(f'--add "{heading}" {n}: line {n} is not a JD text line')
+        elif jd_sentences.heading_mark(lines[n - 1].strip()):
+            problems.append(f'--add "{heading}" {n}: line {n} is already a heading')
+        elif any(_is_added(l) and jd_sentences.heading_text(l) == jd_sentences.ADDED_TAG + heading
+                 for l in lines):
+            problems.append(f'--add "{heading}": already added')
+    if problems:
+        return lines, problems
+    new_lines = list(lines)
+    for heading, n, mark in sorted(adds, key=lambda a: a[1], reverse=True):
+        new_lines.insert(n - 1, mark + jd_sentences.ADDED_TAG + heading)
+    return new_lines, []
 
 
 # ---------------------------------------------------------------------------
@@ -167,8 +218,15 @@ def main():
     parser.add_argument('file', help='the JD text file (jd.md, or the intake text file)')
     parser.add_argument('--heading', action='append', default=[],
                         help='a section heading exactly as it appears; repeat for each one')
+    parser.add_argument('--subheading', action='append', default=[],
+                        help='a subheading exactly as it appears, marked one level below a heading; repeat for each one')
     parser.add_argument('--nth', action='append', nargs=2, default=[], metavar=('HEADING', 'N'),
-                        help='a heading that appears more than once: use its Nth occurrence; repeat for each one')
+                        help='a heading or subheading that appears more than once: use its Nth occurrence; '
+                             'repeat for each one (a subheading is also named with --subheading)')
+    parser.add_argument('--add', action='append', nargs=2, default=[], metavar=('HEADING', 'LINE'),
+                        help='add a section heading the posting lacks, before line LINE; new applications only')
+    parser.add_argument('--add-sub', action='append', nargs=2, default=[], metavar=('HEADING', 'LINE'),
+                        help='add a subheading the posting lacks, before line LINE; new applications only')
     parser.add_argument('--write', action='store_true',
                         help='save the change; without it the script only prints the before/after')
     args = parser.parse_args()
@@ -192,12 +250,34 @@ def main():
             problems.append(f'--nth "{heading}" {n}: N must be a whole number from 1')
         else:
             nth[heading] = int(n)
-    headings = list(dict.fromkeys(args.heading + list(nth)))
-    if not headings:
-        parser.error('give at least one --heading or --nth')
+    headings = list(dict.fromkeys(args.heading + args.subheading + list(nth)))
+    adds = []
+    for flag, pairs, mark in (('--add', args.add, jd_sentences.HEADING_MARK),
+                              ('--add-sub', args.add_sub, jd_sentences.SUBHEADING_MARK)):
+        for heading, n in pairs:
+            if not n.isdigit():
+                problems.append(f'{flag} "{heading}" {n}: LINE must be a line number')
+            else:
+                adds.append((heading.strip(), int(n), mark))
+    if not headings and not adds:
+        parser.error('give at least one --heading, --subheading, --nth or --add')
+    # An added line shifts every later line number, and later steps cite jd.md
+    # lines, so adding is for a new application only: before its session log.
+    if adds:
+        _, cfg = _config.load()
+        log = os.path.join(os.path.dirname(os.path.abspath(args.file)), cfg['filenames']['session_log_file'])
+        if os.path.isfile(log):
+            problems.append(f'--add refused: {log} exists, so later steps may cite this file\'s line numbers')
+    both = set(args.heading) & set(args.subheading)
+    if both:
+        parser.error(f'named as both a heading and a subheading: {", ".join(sorted(both))}')
     # jd.md opens with the '**Role:** / **Company:**' header ingest writes; the
     # same body-start rule role-extract uses keeps it out of the search.
-    found = find_headings(lines, headings, jd_sentences._body_start(lines))
+    start = jd_sentences._body_start(lines)
+    if adds and not problems:
+        lines, add_problems = add_headings(lines, adds, start)
+        problems += add_problems
+    found = find_headings(lines, headings, start)
     for heading, matches in found.items():
         if not matches:
             problems.append(f'"{heading}" does not appear as a stand-alone heading')
@@ -217,7 +297,7 @@ def main():
             print(p if p.startswith('  ') else f'Error: {p}', file=sys.stderr)
         return 1
 
-    new_lines, changes = split_lines(lines, found)
+    new_lines, changes = split_lines(lines, found, set(args.subheading))
     new_text = '\n'.join(new_lines) + ('\n' if trailing_newline else '')
 
     # The guarantee this script exists to keep: line breaks moved, words untouched.
@@ -225,13 +305,15 @@ def main():
         print('Error: the split changed the text itself; nothing written', file=sys.stderr)
         return 1
 
-    if not changes:
+    if not changes and not adds:
         print('No change: every heading is already on its own line and marked.')
         return 0
     print(report(changes))
+    for heading, n, mark in adds:
+        print(f'added before line {n}: {mark}{jd_sentences.ADDED_TAG}{heading}')
     if args.write:
         _util.write(os.path.abspath(args.file), new_text)
-        print(f'\nwritten {args.file} ({len(changes)} line(s) split)')
+        print(f'\nwritten {args.file} ({len(changes)} line(s) split, {len(adds)} heading(s) added)')
     else:
         print(f'\n{len(changes)} line(s) would be split; nothing written (add --write to save)')
     return 0

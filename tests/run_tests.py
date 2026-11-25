@@ -2580,13 +2580,18 @@ def test_jd_headings_go_on_their_own_lines_with_words_unchanged():
     assert code == 0 and _util.read(jd) == marked, f'a re-run changed marked headings:\n{_util.read(jd)}'
 
     # A run-in subheading named without its colon keeps the colon (review of
-    # #93, 2026-11-17): jd_sentences.py reads a trailing colon as a subsection,
-    # so a colon left on the body line turned the subheading into a section.
+    # #93, 2026-11-17), so the colon is not left opening the body line.
+    # 2026-11-24: its level comes from --subheading, marked '### ', not from the colon.
     runin = write_block('runin_jd.md', 'Runs the cadence. Measurement and Diagnosis: Defines metrics.\n')
-    code, printed = run(script, runin, '--heading', 'Measurement and Diagnosis', '--write')
+    code, printed = run(script, runin, '--subheading', 'Measurement and Diagnosis', '--write')
     assert code == 0, printed
-    assert _util.read(runin).splitlines() == ['Runs the cadence.', '## Measurement and Diagnosis:', 'Defines metrics.'], \
-        f'the colon did not stay with the heading:\n{_util.read(runin)}'
+    assert _util.read(runin).splitlines() == ['Runs the cadence.', '### Measurement and Diagnosis:', 'Defines metrics.'], \
+        f'the colon did not stay with the subheading, or it was not marked ###:\n{_util.read(runin)}'
+    # Re-run with the level changed re-marks it; naming both levels is refused.
+    code, printed = run(script, runin, '--heading', 'Measurement and Diagnosis', '--write')
+    assert code == 0 and '## Measurement and Diagnosis:' in _util.read(runin).splitlines(), _util.read(runin)
+    code, printed = run(script, runin, '--heading', 'X', '--subheading', 'X')
+    assert code != 0, f'a heading named at both levels was accepted:\n{printed}'
 
     # A heading that also starts a sentence is placed by choosing its occurrence
     # (review of #93): the refusal lists each one, and --nth picks the heading.
@@ -2599,6 +2604,25 @@ def test_jd_headings_go_on_their_own_lines_with_words_unchanged():
         f'--nth did not place the chosen occurrence:\n{_util.read(twice)}'
     code, printed = run(script, twice, '--nth', 'Benefits', '5')
     assert code != 0, f'an occurrence past the last one was accepted:\n{printed}'
+
+    # 2026-11-24: --add inserts a heading the posting lacks, tagged '[added]',
+    # so text with no heading (pay) is not filed under the heading above it.
+    # It is refused once the session log exists, since it shifts line numbers.
+    import jd_sentences
+    add_dir = os.path.join(RUN_DIR, 'add_heading')
+    paid = os.path.join(add_dir, 'jd.md')
+    _util.write(paid, '## Requirements\nA degree is required.\nThe salary range is $1 to $2.\n')
+    code, printed = run(script, paid, '--add', 'Compensation', '3', '--write')
+    assert code == 0, printed
+    assert _util.read(paid).splitlines() == ['## Requirements', 'A degree is required.',
+                                             '## [added] Compensation', 'The salary range is $1 to $2.'], _util.read(paid)
+    pay = jd_sentences.units(_util.read(paid))[-1]
+    assert (pay['section'], pay['text']) == ('Compensation', 'The salary range is $1 to $2.'), pay
+    code, printed = run(script, paid, '--add', 'Compensation', '4')
+    assert code != 0 and 'already added' in printed, f'a heading was added twice:\n{printed}'
+    _util.write(os.path.join(add_dir, 'session_log.md'), '# log\n')
+    code, printed = run(script, paid, '--add', 'Benefits', '4')
+    assert code != 0 and 'refused' in printed, f'--add ran after the session log existed:\n{printed}'
 
     # On jd.md the identity header written by ingest is not searched (review of
     # #93): a missed heading named "Company" must not cut '**Company:** ...'.
@@ -2629,9 +2653,9 @@ def test_jd_breaks_into_numbered_units():
           '## Description\n'
           'The lead advises owners. This may include corporate work.\n'
           '## Duties\n'
-          '## Measurement:\n'
+          '### Measurement:\n'
           'Defines measures; presents results.Builds dashboards.\n'
-          '## Requirements\n'
+          '## Requirements:\n'
           "• Bachelor's degree required, with seven (7) years of experience.\n"
           '• Green Belt preferred.\n'
           'PMP certification preferred\n'
@@ -2643,7 +2667,10 @@ def test_jd_breaks_into_numbered_units():
     # full stop used to be taken as one, so the last two requirements vanished.
     assert list(got)[:9] == ['S-001', 'S-002', 'S-003a', 'S-003b', 'S-004', 'S-005', 'S-006', 'S-007', 'S-008'], \
         f'a short unmarked line was not kept as a unit: {list(got)}'
-    assert got['S-008']['text'] == 'Experience with SAS and R' and got['S-008']['section'] == 'Requirements', got['S-008']
+    # 2026-11-24: the level comes from the mark. '## Requirements:' is a section
+    # despite its colon (it used to nest under Duties), named without the colon.
+    assert (got['S-008']['section'], got['S-008']['subsection']) == ('Requirements', ''), got['S-008']
+    assert got['S-008']['text'] == 'Experience with SAS and R', got['S-008']
     # 2026-11-24: a dotted abbreviation does not end a sentence ("U.S. Medical"
     # used to split into "Supports the U.S." and "Medical team ...").
     # A listed single-period one (config sentence_abbreviations) does not either.

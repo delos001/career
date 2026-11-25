@@ -11,12 +11,15 @@ Phase 1, before the jd-splitter agent runs.
 A unit is one sentence, or one part of a sentence split at a semicolon
 (S-046a, S-046b). Each unit carries the jd.md line it came from.
 
-Headings are never guessed. A heading is a line marked '## ', which only
-scripts/ingest/jd_headings.py writes, for the headings the user confirmed in
-role-intake Phase 5; one ending in ':' is a subheading under the last heading.
-Every other non-empty line is JD text, however short. (Until 2026-11-24 a short
-line with no full stop was taken as a heading, which silently dropped short
-requirement lines such as "PMP certification preferred".)
+Headings are never guessed. A section heading is a line marked '## ' and a
+subheading one marked '### ', which only scripts/ingest/jd_headings.py writes,
+for the headings and levels the user confirmed in role-intake Phase 5 (a
+heading the user added, tagged '[added] ', is named without the tag). Every
+other non-empty line is JD text, however short. (Until 2026-11-24 a short line
+with no full stop was taken as a heading, which silently dropped short
+requirement lines such as "PMP certification preferred", and a heading ending
+in ':' was always a subheading, which nested top-level "Requirements:" under
+an unrelated section.)
 
 Fails loudly, writing nothing, when jd.md is missing or holds no JD text.
 
@@ -61,17 +64,35 @@ _SENTENCE_END_RE = re.compile(r'(?<=[.!?])\s+(?=[A-Z(])|(?<=[a-z][.!?])(?=[A-Z][
 # stays joined to the next, which keeps every word in one unit.
 _DOTTED_ABBREV_RE = re.compile(r'\(?(?:[A-Za-z]{1,2}\.){2,}')
 
-# The mark jd_headings.py puts in front of a confirmed heading.
+# The marks jd_headings.py puts in front of a confirmed section heading and a
+# confirmed subheading.
 HEADING_MARK = '## '
+SUBHEADING_MARK = '### '
+
+# Regex: either mark at the start of a line.
+MARK_RE = re.compile(r'^#{2,3} ')
+
+# The tag after the mark on a heading the user added at intake, one the posting
+# itself does not have ('## [added] Compensation'); never part of the name.
+ADDED_TAG = '[added] '
 
 
 # ---------------------------------------------------------------------------
 # Breaking the JD into units
 # ---------------------------------------------------------------------------
 
+def heading_mark(line):
+    """Return the mark a line opens with (HEADING_MARK or SUBHEADING_MARK), or None for JD text."""
+    for mark in (SUBHEADING_MARK, HEADING_MARK):
+        if line.startswith(mark):
+            return mark
+    return None
+
+
 def heading_text(line):
-    """Return the heading on a marked line ('## Duties' -> 'Duties'), or None for JD text."""
-    return line[len(HEADING_MARK):].strip() if line.startswith(HEADING_MARK) else None
+    """Return the heading on a marked line ('### Duties:' -> 'Duties:'), or None for JD text."""
+    mark = heading_mark(line)
+    return line[len(mark):].strip() if mark else None
 
 
 @functools.lru_cache(maxsize=1)
@@ -119,12 +140,14 @@ def units(jd_text):
         text = lines[index].strip()
         if not text:
             continue
-        heading = heading_text(text)
-        if heading is not None:
-            if heading.endswith(':'):
-                subsection = heading.rstrip(':').strip()
+        mark = heading_mark(text)
+        if mark is not None:
+            # The level is the confirmed mark; a trailing colon is only spelling.
+            name = heading_text(text).removeprefix(ADDED_TAG).rstrip(':').strip()
+            if mark == SUBHEADING_MARK:
+                subsection = name
             else:
-                section, subsection = heading, ''
+                section, subsection = name, ''
             continue
         for sentence in (s.strip() for s in _sentences(_BULLET_RE.sub('', text))):
             if not sentence:
