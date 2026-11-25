@@ -53,6 +53,13 @@ _BULLET_RE = re.compile(r'^\s*(?:[•\-\*]|\d+[.)])\s+')
 # matches, since a comma or lowercase word follows it.
 _SENTENCE_END_RE = re.compile(r'(?<=[.!?])\s+(?=[A-Z(])|(?<=[a-z][.!?])(?=[A-Z][a-z])')
 
+# Regex: a dotted abbreviation, letter groups each closed by a period ("U.S.",
+# "e.g.", "Ph.D."). A sentence end found right after one is not a sentence end,
+# so "the U.S. Medical team" stays one unit. Matched by shape, not by a list.
+# Cost: a sentence that really ends on one ("based in the U.S. We offer")
+# stays joined to the next, which keeps every word in one unit.
+_DOTTED_ABBREV_RE = re.compile(r'\(?(?:[A-Za-z]{1,2}\.){2,}')
+
 # The mark jd_headings.py puts in front of a confirmed heading.
 HEADING_MARK = '## '
 
@@ -64,6 +71,19 @@ HEADING_MARK = '## '
 def heading_text(line):
     """Return the heading on a marked line ('## Duties' -> 'Duties'), or None for JD text."""
     return line[len(HEADING_MARK):].strip() if line.startswith(HEADING_MARK) else None
+
+
+def _sentences(text):
+    """Return text cut at each sentence end, except one right after a dotted abbreviation."""
+    out, start = [], 0
+    for m in _SENTENCE_END_RE.finditer(text):
+        before = text[start:m.start()].split()
+        if before and _DOTTED_ABBREV_RE.fullmatch(before[-1]):
+            continue
+        out.append(text[start:m.start()])
+        start = m.end()
+    out.append(text[start:])
+    return out
 
 
 def _body_start(lines):
@@ -94,7 +114,7 @@ def units(jd_text):
             else:
                 section, subsection = heading, ''
             continue
-        for sentence in (s.strip() for s in _SENTENCE_END_RE.split(_BULLET_RE.sub('', text))):
+        for sentence in (s.strip() for s in _sentences(_BULLET_RE.sub('', text))):
             if not sentence:
                 continue
             n += 1
