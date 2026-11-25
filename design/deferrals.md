@@ -58,6 +58,22 @@ Distinct from staleness *detection*, which is a live bug in GitHub #47, not a de
 - Blocks: nothing currently.
 - Refs: `rule-staleness-threshold`, GitHub #47.
 
+### spacy-environment-setup
+**Undecided: whether the repo environment carries spaCy at all.** It does only if the spaCy path (or the spaCy plus O*NET path) is chosen for role extraction (`open_questions.md`, "Role extraction: the user's proposed paths"). Probe evidence, 2026-11-25:
+- `en_core_web_trf` needs spacy-curated-transformers 0.2.2 to <1.0; every such release calls a srsly function that srsly 2.5 removed. Python 3.13 has no older srsly build, so on 3.13 it only loads with a shim (in `temp/spacy_probe/probe.py`).
+- On Python 3.12 with srsly 2.4.8 it loads without a shim. Tested 2026-11-25 in a throwaway env (since removed): the repo tests gave the same 91/97 there as on 3.13 (the 6 failures predate this).
+- conda did not pull `click`, which spaCy needs; list it explicitly.
+- conda installed the CUDA build of PyTorch (about 3.3 GB). The laptop has an RTX 5090 and the user wants the GPU used. The spaCy parse itself takes about 1 to 2 seconds per JD on CPU, so CuPy (spaCy's GPU route) was skipped; O*NET embedding matching would use the GPU through PyTorch without it.
+
+Steps at trigger:
+1. Update `environment.yml`: `python=3.12`; add spaCy, the `en_core_web_trf` model, `srsly<2.5` and `click`; comment when the srsly pin can be lifted (a spacy-curated-transformers release the model allows works with srsly 2.5).
+2. Recreate `career` from the file; do not downgrade Python in place.
+3. Run `tests/run_tests.py`; expect the same results as before.
+4. Remove the shim from any script.
+- Trigger: the spaCy path, alone or combined, is chosen for role extraction.
+- Blocks: nothing currently.
+- Refs: `open_questions.md` "Path 2 probe results (2026-11-25)".
+
 ## Moved to GitHub (2026-07-16)
 
 Citations of moved entries were repointed at their GitHub issues and the forwarding headings deleted (GitHub #55, 2026-11-05). The one kept below records where its content landed.
