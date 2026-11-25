@@ -100,7 +100,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 - **Status**: Designed
 - **Inputs**:
   - Rules: `rules/global-rules.md`.
-  - Scripts: `scripts/display/introduce.py`, `scripts/ingest/jd_extract.py`, `scripts/ingest/jd_headings.py`, `scripts/assemble.py` (which calls `app_id.py` and `company_slug.py`), `scripts/role_intake_qc.py`.
+  - Scripts: `scripts/display/introduce.py`, `scripts/ingest/jd_extract.py`, `scripts/ingest/jd_headings.py`, `scripts/assemble.py` (which calls `app_id.py`, `company_slug.py` and `ingest/jd_unwrap.py`), `scripts/role_intake_qc.py`.
   - Templates: `templates/session_log.md`.
   - User input: job description (paste / file / URL), role communications (optional), a slug only for a new company, JD heading and title/company confirmation.
 - **Outputs**:
@@ -603,6 +603,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 **Built** (detailed entries below unless noted):
 - `scripts/ingest/jd_extract.py`, `scripts/app_id.py`, `scripts/display/introduce.py`, `scripts/assemble.py`
+- `scripts/ingest/jd_unwrap.py` (rejoins a JD sentence hard-wrapped across lines when the next line opens in lower case, moving line breaks only; `assemble.py ingest` calls it as it writes `jd.md`; a CLI for a `jd.md` saved before 2026-11-24; roster entry only)
 - `scripts/ingest/jd_headings.py` (puts named JD section headings on their own lines, marked `## `, and subheadings marked `### ` (`--subheading`), moving line breaks and adding marks only, except `--add`/`--add-sub`, which insert a heading the posting lacks as `## [added] <heading>` and are refused once the session log exists; refuses a missing or repeated heading; role-intake Phase 5 runs it on `jd.md` once the user confirms the heading list; roster entry only)
 - `scripts/jd_bar.py` (imported module: sets each JD part's Bar, exposure, working or blank, by rule from the `bar_*_words` lists in `config.yaml`; called by `role_extract_assemble.py requirements`; roster entry only)
 - `scripts/jd_demand.py` (imported module: sets each JD part's Demand by rule from the word lists `requirement_optional_words` and `requirement_preferred_headings` in `config.yaml`; to be called by `role_extract_assemble.py`; roster entry only)

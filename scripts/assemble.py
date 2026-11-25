@@ -53,6 +53,9 @@ import _util
 import app_id
 import company_slug
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ingest'))
+import jd_unwrap  # noqa: E402
+
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -186,7 +189,9 @@ def cmd_ingest(args, repo_root, cfg):
 
     jd_file_name = cfg['filenames']['jd_file']
     jd_path = os.path.join(app_folder, jd_file_name)
-    jd_text = _util.read(args.jd_text_file)
+    # Rejoin sentences hard-wrapped across lines before anything cites a jd.md
+    # line number (ingest/jd_unwrap.py; line breaks only, words checked).
+    jd_text, _ = jd_unwrap.unwrap(_util.read(args.jd_text_file))
     # Always prepend the confirmed title and company as an identity header, so
     # every jd.md names its role the same way at the top. A name found somewhere
     # in the JD text does not identify the role, and relabel rewrites these lines.

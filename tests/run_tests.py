@@ -2526,6 +2526,19 @@ def test_jd_reaches_disk_without_being_retyped():
     assert jd_body == _util.read(out), 'jd.md is not the extracted text'
     assert os.path.isfile(out), 'ingest deleted an input file outside temp/'
 
+    # 2026-11-24: ingest rejoins a sentence hard-wrapped across lines (the next
+    # line opens in lower case), before anything cites a jd.md line. A line
+    # opening in upper case, a closed sentence, a blank line and a heading stay.
+    wrapped = write_block('wrapped_jd.txt', 'Leads the work across\nmany teams. Owns the\nbudget.\n'
+                                            'Partners with\nClinical teams.\n\nlowercase after a blank.\n'
+                                            '## Duties\nruns the cadence.\n')
+    code, printed = run('assemble.py', 'ingest', '--folder', folder, '--jd-text-file', wrapped, *JD_IDENT)
+    assert code == 0, printed
+    jd_body = _util.read(os.path.join(folder, 'jd.md')).partition('\n\n---\n\n')[2]
+    assert jd_body.splitlines() == ['Leads the work across many teams. Owns the budget.', 'Partners with',
+                                    'Clinical teams.', '', 'lowercase after a blank.', '## Duties',
+                                    'runs the cadence.'], jd_body
+
     # An input file in temp/ is deleted once saved, so Phase 1 files do not pile up.
     root, cfg = _config.load()
     staged = os.path.join(root, cfg['paths']['temp'], 'intake', 'run_tests_jd.txt')
@@ -2677,7 +2690,7 @@ def test_jd_breaks_into_numbered_units():
     assert [got[i]['text'] for i in list(got)[9:]] == [
         'Supports the U.S. Medical team, e.g. Field Medical.', 'Holds a Ph.D. Travel is required.',
         'Reports to Dr. Lane at Acme Inc. Holdings.', 'Leads the team.'], \
-        f'a dotted abbreviation split a sentence: {[got[i]["text"] for i in list(got)[8:]]}'
+        f'an abbreviation split a sentence: {[got[i]["text"] for i in list(got)[8:]]}'
     assert (got['S-003a']['section'], got['S-003a']['subsection']) == ('Duties', 'Measurement'), got['S-003a']
     assert got['S-003b']['text'] == 'presents results.', 'the semicolon split or glued sentence end failed'
     assert got['S-004']['text'] == 'Builds dashboards.', 'a sentence glued to the one before was not split'

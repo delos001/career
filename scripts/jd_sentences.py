@@ -132,7 +132,11 @@ def _body_start(lines):
 
 
 def units(jd_text):
-    """Return [unit dict] for the JD: id, line, section, subsection, text."""
+    """Return [unit dict] for the JD: id, line, section, subsection, text.
+
+    Works line by line: a sentence hard-wrapped across lines is rejoined in
+    jd.md itself when it is saved (scripts/ingest/jd_unwrap.py).
+    """
     lines = jd_text.split('\n')
     section = subsection = ''
     out, n = [], 0

@@ -50,12 +50,13 @@ Ask: "Is this a new role, or are you resuming one?"
 
 ## Phase 4 - Save the JD
 
-- Run `python scripts/assemble.py ingest --folder <app_folder> --jd-text-file <Phase 1 JD file> --title "<confirmed title>" --company "<confirmed company>"`, plus `--comms-text-file <Phase 1 comms file>` if there is one.
+- Run `python scripts/assemble.py ingest --folder <app_folder> --jd-text-file <Phase 1 JD file> --title "<confirmed title>" --company "<confirmed company>"`, plus `--comms-text-file <Phase 1 comms file>` if there is one. It rejoins sentences hard-wrapped across lines where the next line opens in lower case.
 
 ## Phase 5 - Confirm the JD headings
 
 - List the JD's section headings and subheadings, including run-in ones (a label opening a paragraph, such as `Performance Measurement and Diagnosis:`), each spelled exactly as in the JD. A subheading divides the section above it; a heading ending in a colon is not a subheading for that reason alone. Where it is unclear whether a line is a heading, which level it is, or where a section starts, ask the user, one question at a time. If the JD has no headings, tell the user and go to Phase 6.
 - Run `python scripts/ingest/jd_headings.py <app_folder>/jd.md --heading "<heading>"`, repeating `--heading` for each section heading and `--subheading` for each subheading, without `--write`. Correct the spelling of a heading it reports missing; for a heading it reports more than once, pick the occurrence that is the heading from the lines it lists and re-run with `--nth "<heading>" <N>` in place of its `--heading`. Read each before/after it prints; where a cut falls inside a sentence, drop that heading and ask the user about it.
+- Find lines that are not part of the posting (page metadata such as `title: ...`, a stray job title or company name repeated at the top, navigation or link text), and sentences still broken across lines (a line ending mid-sentence whose next line opens in upper case, which Phase 4 does not rejoin). Point each one out to the user, one at a time, and ask them to delete or rejoin it in `jd.md` through the link below if they agree; re-read `jd.md` after.
 - Find text with no heading of its own that would fall under an unrelated heading above it (pay, benefits, an equal-opportunity statement, a company introduction, recruiter contact details). For each, suggest a generic heading (such as `Compensation`) and ask the user whether to add it, one at a time. Add each accepted one to the run with `--add "<heading>" <line>` (or `--add-sub` for a subheading), `<line>` being the `jd.md` line it goes before.
 - Ask the user to check the list against the original posting. Give them the link to `<app_folder>/jd.md` so they can open it and edit it directly if they need to; after an edit, re-read `jd.md` and dry-run the list again. Present for confirmation and re-present on corrections until confirmed:
 
