@@ -50,7 +50,7 @@ Ask: "Is this a new role, or are you resuming one?"
 
 ## Phase 4 - Save the JD
 
-- Run `python scripts/assemble.py ingest --folder <app_folder> --jd-text-file <Phase 1 JD file> --title "<confirmed title>" --company "<confirmed company>"`, plus `--comms-text-file <Phase 1 comms file>` if there is one. It rejoins sentences hard-wrapped across lines where the next line opens in lower case.
+- Run `python scripts/assemble.py ingest --folder <app_folder> --jd-text-file <Phase 1 JD file> --title "<confirmed title>" --company "<confirmed company>"`, plus `--comms-text-file <Phase 1 comms file>` if there is one. It saves the JD text unchanged as `<app_folder>/jd_raw.txt`, then writes `jd.md` from it, rejoining sentences hard-wrapped across lines where the next line opens in lower case. Never edit `jd_raw.txt`; every later change goes into `jd.md`.
 
 ## Phase 5 - Confirm the JD headings
 
@@ -88,7 +88,8 @@ Ask: "Is this a new role, or are you resuming one?"
 
 | Wrong | Fix |
 |---|---|
-| JD or messages wrong or missing, or a JD line wrongly made a heading | Phase 1, Phase 4, Phase 5, then Phase 6 with `--replace` |
+| JD or messages wrong or missing | Phase 1, Phase 4, Phase 5, then Phase 6 with `--replace` |
+| A JD line wrongly made a heading, or `jd.md` edited wrongly | Phase 4 with `--jd-text-file <app_folder>/jd_raw.txt` and no `--comms-text-file` (`comms.md` stays as it is), then Phase 5 |
 | A JD heading missed or at the wrong level, or `jd.md` has no `## ` heading marks (saved before 2026-11-24) | Phase 5 for those headings |
 | Session log wrong (a source, the comms entry, a field) | Phase 6 with `--replace` |
 | Title, company or slug | `python scripts/assemble.py relabel --folder <app_folder>` with `--role`, `--company` and/or `--slug` (it asks for `--slug` when a corrected company is new); the path it prints is `<app_folder>` from then on |

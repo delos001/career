@@ -104,7 +104,7 @@ Schema discipline and reconciliation script details live in `design/design_decis
   - Templates: `templates/session_log.md`.
   - User input: job description (paste / file / URL), role communications (optional), a slug only for a new company, JD heading and title/company confirmation.
 - **Outputs**:
-  - Files: in `personal/applications/<SLUG>_APP-NNN_YYYY-MM/`: `jd.md`, `comms.md` (optional), `session_log.md`.
+  - Files: in `personal/applications/<SLUG>_APP-NNN_YYYY-MM/`: `jd_raw.txt` (the JD as it arrived, never edited), `jd.md`, `comms.md` (optional), `session_log.md`.
   - Skills: hands off to role-research.
   - Side effects: consumes the next APP-NNN; records a new company's slug.
 - **Triggers**:
@@ -677,10 +677,10 @@ Schema discipline and reconciliation script details live in `design/design_decis
 
 #### scripts/assemble.py
 
-- **Purpose**: Write role-intake's artifacts deterministically rather than by hand. Subcommands: `folder` (Phase 4; takes the company, resolves its slug via `company_slug.py` (a new company needs `--slug`, asked before any ID is claimed), takes the month from today, claims the APP-NNN via `app_id.py` and creates its folder in one call), `ingest` (Phase 5; `--folder`, `--title`, `--company`; writes `jd.md` / `comms.md`, always headed by `**Role:**` and `**Company:**` lines, refuses a folder never created, then deletes its input files if they sit in `temp/`), `init` (Phase 6; `--folder`; reads the APP-NNN and month from the folder name; `--replace` rewrites the log, refused once research or a later section exists), `relabel` (a title, company or slug corrected in role-intake or role-research: rewrites the labels in place, keeps the APP-NNN, renames the folder on a slug change, refuses a folder later skills have written to; a slug change for a recorded company replaces its registry slug and is refused while another application uses the old one). Every write is section-scoped; `role_research_assemble.py` and `role_classify_assemble.py` import its section helpers.
+- **Purpose**: Write role-intake's artifacts deterministically rather than by hand. Subcommands: `folder` (Phase 4; takes the company, resolves its slug via `company_slug.py` (a new company needs `--slug`, asked before any ID is claimed), takes the month from today, claims the APP-NNN via `app_id.py` and creates its folder in one call), `ingest` (Phase 4; `--folder`, `--title`, `--company`; saves the JD text unchanged as `jd_raw.txt`, then writes `jd.md` from it and `comms.md`, always headed by `**Role:**` and `**Company:**` lines, refuses a folder never created, then deletes its input files if they sit in `temp/`), `init` (Phase 6; `--folder`; reads the APP-NNN and month from the folder name; `--replace` rewrites the log, refused once research or a later section exists), `relabel` (a title, company or slug corrected in role-intake or role-research: rewrites the labels in place, keeps the APP-NNN, renames the folder on a slug change, refuses a folder later skills have written to; a slug change for a recorded company replaces its registry slug and is refused while another application uses the old one). Every write is section-scoped; `role_research_assemble.py` and `role_classify_assemble.py` import its section helpers.
 - **Status**: Designed
 - **Inputs**: Skill-passed args (company, title, dates, sources, paths) and the Phase 1 text files. Config: `config.yaml` (paths, filenames, naming patterns) via `scripts/_config.py`. Templates: `session_log.md` (read as the structure source).
-- **Outputs**: the `personal/applications/<SLUG>_APP-NNN_YYYY-MM/` folder and, inside it, `jd.md`, `comms.md` and `session_log.md`. Paths echoed to stdout.
+- **Outputs**: the `personal/applications/<SLUG>_APP-NNN_YYYY-MM/` folder and, inside it, `jd_raw.txt`, `jd.md`, `comms.md` and `session_log.md`. Paths echoed to stdout.
 - **Triggers**: Invoked by `role-intake` Phases 4 to 6, and `relabel` in Phase 8 and by `role-research`.
 - **Update Triggers**: When `templates/session_log.md` changes shape; when the role-intake phase structure changes.
 

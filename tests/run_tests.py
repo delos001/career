@@ -2539,6 +2539,17 @@ def test_jd_reaches_disk_without_being_retyped():
                                     'Clinical teams.', '', 'lowercase after a blank.', '## Duties',
                                     'runs the cadence.'], jd_body
 
+    # 2026-11-26: ingest saves its input unchanged as jd_raw.txt before any
+    # change, so jd.md can be rebuilt after the posting is gone; re-ingesting
+    # from jd_raw.txt itself gives the same jd.md and leaves jd_raw.txt as it was.
+    raw_path = os.path.join(folder, 'jd_raw.txt')
+    assert _util.read(raw_path) == _util.read(wrapped), 'jd_raw.txt is not the ingested text unchanged'
+    built = _util.read(os.path.join(folder, 'jd.md'))
+    code, printed = run('assemble.py', 'ingest', '--folder', folder, '--jd-text-file', raw_path, *JD_IDENT)
+    assert code == 0, printed
+    assert _util.read(os.path.join(folder, 'jd.md')) == built, 'jd.md rebuilt from jd_raw.txt differs'
+    assert _util.read(raw_path) == _util.read(wrapped), 're-ingesting from jd_raw.txt changed it'
+
     # An input file in temp/ is deleted once saved, so Phase 1 files do not pile up.
     root, cfg = _config.load()
     staged = os.path.join(root, cfg['paths']['temp'], 'intake', 'run_tests_jd.txt')

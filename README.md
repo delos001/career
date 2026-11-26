@@ -139,7 +139,7 @@ flowchart LR
 
 | # | Stage | Skill | Reads | Writes |
 |---|---|---|---|---|
-| 1 | Role intake | `role-intake` | Job description, recruiter messages | application folder, `jd.md`, `session_log.md` |
+| 1 | Role intake | `role-intake` | Job description, recruiter messages | application folder, `jd_raw.txt`, `jd.md`, `session_log.md` |
 | 2 | Role research | `role-research` | `jd.md`, web research | `research.md` |
 | 3 | Role extract | `role-extract` | `jd.md`, `research.md` (Company) | `jd_needs.md` (requirements, kinds, ranked needs) |
 | 4 | Role classify | `role-classify` | `jd.md`, `research.md`, `jd_needs.md`, axis registries | axis classification |

@@ -11,7 +11,8 @@ through a deterministic tool instead of by hand. One subcommand per write point:
             month from today, claim the next APP-NNN (app_id.py) and create its
             folder; print the folder path, the ID, then the slug. Never run on a
             resume: the folder already exists.
-  ingest    Phase 5 - write jd.md (plus comms.md if supplied) into the folder,
+  ingest    Phase 4 - save the JD text unchanged as jd_raw.txt, then write
+            jd.md from it (plus comms.md if supplied) into the folder,
             headed by the confirmed title and company. Refuses a folder that was never
             created. Deletes its input files once saved, but only those inside
             temp/ (Phase 1's working files).
@@ -189,9 +190,14 @@ def cmd_ingest(args, repo_root, cfg):
 
     jd_file_name = cfg['filenames']['jd_file']
     jd_path = os.path.join(app_folder, jd_file_name)
+    # Keep the JD as it arrived (Phase 1's extracted plain text) before any
+    # change, so jd.md can be rebuilt from it after the posting is gone. Nothing
+    # edits it afterwards; a re-ingest may pass this same file as its input.
+    raw_text = _util.read(args.jd_text_file)
+    _util.write(os.path.join(app_folder, cfg['filenames']['jd_raw_file']), raw_text)
     # Rejoin sentences hard-wrapped across lines before anything cites a jd.md
     # line number (ingest/jd_unwrap.py; line breaks only, words checked).
-    jd_text, _ = jd_unwrap.unwrap(_util.read(args.jd_text_file))
+    jd_text, _ = jd_unwrap.unwrap(raw_text)
     # Always prepend the confirmed title and company as an identity header, so
     # every jd.md names its role the same way at the top. A name found somewhere
     # in the JD text does not identify the role, and relabel rewrites these lines.

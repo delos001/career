@@ -24,6 +24,7 @@ filenames:
   research_file: research.md                   # written into each application folder
   session_log_file: session_log.md             # written into each application folder by role-intake; shared multi-skill log appended to by downstream skills
   jd_file: jd.md                               # JD persisted into each application folder
+  jd_raw_file: jd_raw.txt                      # the JD's extracted plain text as it arrived, saved by role-intake ingest and never edited; jd.md is built from it
   comms_file: comms.md                         # role communications persisted into each application folder
   session_log_template: session_log.md         # in the templates/ folder
   research_file_template: research_file.md      # in the templates/ folder
